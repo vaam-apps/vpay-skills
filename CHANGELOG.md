@@ -82,7 +82,7 @@ unchanged. Specifically:
 ### Decided this release
 
 - **Page length.** Four `SKILL.md` files now exceed CONTRIBUTING's 100–150 line
-  budget: `vpay-mtn-momo` (356), `vpay-orange-money` (312),
+  budget: `vpay-mtn-momo` (370), `vpay-orange-money` (312),
   `vpay-provider-adapters` (278), `vpay-payments` (267). They were **not**
   split. The reasoning is recorded in CONTRIBUTING.md item 2; in short, each is
   long because of a negative claim, and a reference page is one an agent *may*

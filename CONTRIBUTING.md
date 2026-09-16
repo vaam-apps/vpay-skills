@@ -34,7 +34,7 @@ Those pull in different directions, and when they do, the briefing wins:
    opens).
 
    **Four pages knowingly exceed this, decided 2026-09-16 and recorded rather
-   than quietly normalised:** `vpay-mtn-momo` (356), `vpay-orange-money` (312),
+   than quietly normalised:** `vpay-mtn-momo` (370), `vpay-orange-money` (312),
    `vpay-provider-adapters` (278) and `vpay-payments` (267). Each is long
    because of a **negative** claim — no rail in this repository has ever
    returned money to anyone; nothing settles a pending refund; MTN's
@@ -59,10 +59,11 @@ Those pull in different directions, and when they do, the briefing wins:
    the budget itself should move is a **maintainer decision** and is not taken
    here; the fourteen-of-twenty overrun noted below is the evidence for it.
 
-   _As of 2026-09-16, fourteen of the twenty `SKILL.md` files are already over
-   150 lines and the median is 170 — so the stated budget and the practised one
-   have differed for some time. That is recorded as a fact about the corpus, not
-   as permission._
+   _Measured 2026-09-16: **fourteen** of the twenty `SKILL.md` files were
+   already over 150 lines before this release, median **165.5**; after it,
+   **sixteen** are, median **179.5**. So the stated budget and the practised one
+   have differed for some time, and this release widened the gap. That is
+   recorded as a fact about the corpus, not as permission._
 3. Add or update the entry in [`coverage.json`](coverage.json).
 4. Run the gate:
 
