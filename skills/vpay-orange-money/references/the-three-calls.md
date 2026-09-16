@@ -3,9 +3,21 @@
 _Verified against vpay `93c6dfd0` (2026-09-16). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
-`submit`, `query_status` and `parse_callback` are implemented; `refund` and
-`account_holder_name` are the port's `Unsupported` default. Everything below
-is proven against a WireMock container **only** — see
+`submit`, `query_status` and `parse_callback` are implemented, and they are
+**still the only three calls this adapter puts on a wire** — that has not
+changed and is why this page keeps its title.
+
+What did change on 2026-09-15: ~~`refund` and `account_holder_name` are the
+port's `Unsupported` default~~ — `account_holder_name` still is;
+**`refund` is now an override answering
+`NotImplemented("orange_money::refund")`**, because RFC-0003 § 5 decided an
+Orange refund *is* an outbound transfer and `supports_refunds` flipped to
+`true`. It makes no wire call, so there is nothing for this page to describe:
+the reason, and item 5 of the flow doc's "to confirm" list that unblocks it,
+are in the SKILL.md and in [unverified.md](unverified.md).
+`parse_destination` is implemented too and likewise touches no network.
+
+Everything below is proven against a WireMock container **only** — see
 [unverified.md](unverified.md).
 
 Every call goes through `vpay_provider::http`: redirects are returned rather
@@ -141,6 +153,11 @@ As of 2026-09-03, 57 unit tests in the crate, 57 passed, 0 skipped
 halves: token-URL derivation, the status table, the request body's shape
 (`amount` as a JSON number), callback parsing, `ref_extra`'s shape,
 payment-URL validation.
+
+**That number is a 2026-09-03 measurement and the crate has grown since** —
+the `refund` token and `parse_destination` arrived on 2026-09-15 with their
+own cases. Re-run the command rather than quoting this figure; do not raise it
+from a count of `#[test]` attributes, which is not a measurement.
 
 The wire behaviour is covered by `backends/tests/conformance` against a real
 `wiremock/wiremock` container. Neither proves anything about Orange.

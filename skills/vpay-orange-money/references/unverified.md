@@ -11,7 +11,44 @@ against the real rail". Read it before you change anything in that crate, and
 **date anything you resolve**.
 
 Nothing here is a bug report. Each item is a question with a stated default,
-and the default is written into the code so the uncertainty is visible.
+and the default is written into the code so the uncertainty is visible — with
+**one exception, new on 2026-09-15**, which has no default at all because
+writing one would mean inventing a money-path wire call.
+
+## The one item that blocks a shipping token: Orange's transfer product
+
+> **Item 5 of the flow doc's "To confirm with Orange Cameroun" list**, and
+> since 2026-09-15 it is not one assumption among ten — it is the thing
+> `orange_money::refund` waits on.
+
+**No Orange transfer API is documented anywhere in vpay — not even
+reconstructed — and none has been invented.** The three calls this adapter
+makes were rebuilt from Orange Developer's public overview plus community SDKs
+that agree with each other. For transfers there is no such source in this
+repository, so an endpoint path and a request body would be *guessed*, in the
+money path, on a rail nobody has ever called.
+
+That item used to read "Refund/disbursement availability" — a question about
+whether Orange refunds at all. RFC-0003 § 5 settled it on 2026-09-15: an
+Orange refund **is** a transfer back to a payee, so the rail can refund,
+`supports_refunds` is `true`, and the refusal stopped being a fact about the
+rail and became work vpay owes. What is open is now the **specification**:
+which product, on what endpoint, with what request body, under which
+credential, and with what amount rules. **It is not answerable from anything
+in this repository.** More reading does not close it; Orange does.
+
+Three things hang off the answer:
+
+| waiting on it                       | why                                                                                                                     |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `orange_money::refund`              | the token stays until there is a specification to write the call against — the workspace's only `NotImplemented` as of 2026-09-16 |
+| `supports_partial_refunds: false`   | "any amount up to the charge" is a property of a transfer product, and this repository has never seen Orange's           |
+| `Refunded::fee`                     | whether that product reports a fee is not merely unverified, it is **unasked**. `None` and `Some(0)` must not be collapsed (issue #46) |
+
+`parse_destination` is deliberately **not** waiting on it and is built:
+*who* a refund is addressed to is vpay's own merchant-facing parameter and is
+fully known; *how* an Orange transfer body would carry that payee is not known
+here at all.
 
 ## The assumptions in the wire path
 
@@ -24,7 +61,7 @@ and the default is written into the code so the uncertainty is visible.
 | 5   | **The 401 → re-mint → retry path is unproven.** No mapping returns 401 from `webpayment` or `transactionstatus` _after_ a good token; only the 401 on the token endpoint itself is covered (`bad_credentials_are_not_reported_as_a_payer_problem`) | A token expiring in flight is the commonest real-world 401, and nothing exercises it                                                                                                                                                                                                             |
 | 6   | **`lang` defaults to `fr`** when a deployment configures none                                                                                                                                                                                      | The one defaulted field in the request body; wrong wording on Orange's page, nothing worse                                                                                                                                                                                                       |
 | 7   | Transaction and daily limits for XAF                                                                                                                                                                                                               | Unknown failure modes at volume                                                                                                                                                                                                                                                                  |
-| 8   | **Whether Orange exposes an account-holder lookup at all**, and under which product and credential (issue #47). Orange has a KYC/customer product; **its route is not confirmed from this repository and is not being claimed**                    | While unknown, `supports_account_holder_lookup: false` and the port's `Unsupported` is correct. If the answer is "yes, here", the flag becomes `true`, the adapter overrides `account_holder_name` with its **own `NotImplemented` token** until it is written, and `docs/status.md` grows a row |
+| 8   | **Whether Orange exposes an account-holder lookup at all**, and under which product and credential (issue #47). Orange has a KYC/customer product; **its route is not confirmed from this repository and is not being claimed**                    | While unknown, `supports_account_holder_lookup: false` and the port's `Unsupported` is correct — this is the shape `refund` had until 2026-09-15 and **the refund correction must not be carried across to it**. One live consequence since 2026-09-16: `vpay_api::v1::refunds` skips `verify_registered_holder` on this rail, so an Orange refund destination is accepted **unverified** (RFC-0003 § 1). If the answer is "yes, here", the flag becomes `true`, the adapter overrides `account_holder_name` with its **own `NotImplemented` token** until it is written, and `docs/status.md` grows a row |
 | 9   | **How long the real hosted page gives a payer**, and what `transactionstatus` answers while they are on it                                                                                                                                         | Nothing is blocked: `INITIATED` and `PENDING` both map to `Pending` and the poll ladder is indifferent to how many rungs it spends there. It is written down because the _stub_ now has an answer and a reader must not mistake it for a measurement of Orange                                   |
 | 10  | **Whether `FAILED` carries a sub-reason under any field name**                                                                                                                                                                                     | Item 2 restated from the other side. MTN's equivalent question has a published answer — a seventeen-value `ErrorReason.code` enum — and comparing the adapter against it is what closed `payer_declined` on that rail                                                                            |
 
@@ -124,3 +161,11 @@ seeded with `payer_ref`. The adapter's behaviour did not change: a
 > Orange's redirect rail has never been called. This change is proven against
 > a WireMock host answering the way a reconstructed flow doc says Orange
 > answers.
+
+For anything touching refunds, that sentence is not enough and the second one
+is the load-bearing half:
+
+> There is no Orange transfer specification in this repository at all, so
+> `orange_money::refund` stays a `NotImplemented` token rather than a guessed
+> endpoint. `supports_refunds: true` is a claim about the rail; the token is
+> the admission about us.
