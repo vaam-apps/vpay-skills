@@ -32,8 +32,8 @@ the decision."
 | 0016 engineering-standards                     | Six engineering standards, three machine-checked. See the table in `SKILL.md`.                                                                                                                                                                                                                                                                                                                                                |
 | 0017 staff-authentication                      | How a staff member signs in to `/dash/v1`: argon2id with a deployment pepper, RFC 6238 TOTP with a sealed secret, a strictly-increasing replay guard, mandatory enrolment, a one-time password. **Supersedes the audience half of 0009** — the literal `vpay:dash/v1` is retired.                                                                                                                                             |
 | 0018 cross-tenant-admin-reads                  | A cross-tenant **read-only** admin role for `/dash/v1` (`is_admin` on `staff_members`). `/dash/v1` still answers `403` to every non-`GET`. Extends 0017.                                                                                                                                                                                                                                                                      |
-| 0018 privacy-controls-and-evidence             | Six GDPR workstreams share **one** personal-data inventory and one evidence architecture (actor / tenant / target / outcome / time / correlation). ⚠ duplicate number — see below.                                                                                                                                                                                                                                            |
 | 0019 credential-model                          | Credentials become their own object, generic over kind and subject. Amends 0017's decision 1 about _where the material lives_, not about how a staff member proves identity. Does not touch 0018.                                                                                                                                                                                                                             |
+| 0020 privacy-controls-and-evidence             | Six GDPR workstreams share **one** personal-data inventory and one evidence architecture (actor / tenant / target / outcome / time / correlation). ⚠ duplicate number — see below.                                                                                                                                                                                                                                            |
 | 0021 flutter-checkout-plugin                   | A Flutter checkout plugin as a payer surface — a native Activity / UIViewController calling the hosted page, **polling, never a URL**.                                                                                                                                                                                                                                                                                        |
 | 0022 surface-isolation-and-independent-scaling | **Proposed, not Accepted.** One image, two tiers: `deployment.surfaces` selects which surfaces a process mounts (absent = all, so existing deployments upgrade unchanged). Autoscaled `-server`; `-management` and `-dashboard` fixed. `/v1/oauth/token` is business-only. The binding constraint is `MAX_CONNECTIONS` (10/process), not CPU — see the `connection-budget` guard. Three decisions are left to the maintainer. |
 
@@ -76,11 +76,22 @@ These are live open questions sitting inside Accepted documents. An agent that
 | `docs/flows/hosted-checkout.md`                                       | Why `checkout_not_configured` answers `500` rather than `503`. Recorded as a maintainer's decision, not an oversight.                                                                                                                                             |
 | `docs/flows/deployment.md`                                            | Deleting or archiving the retired `ghcr.io/vaam-apps/vpay-worker` GHCR package — "written here as a task with an owner rather than as a fact". Nobody holds the `delete:packages` scope.                                                                          |
 
-## The duplicate ADR number
+## The duplicate ADR number — resolved 2026-09-16
 
-**Two files are both numbered `0018`**:
+~~**Two files are both numbered `0018`**:
 `docs/adr/0018-cross-tenant-admin-reads.md` and
-`docs/adr/0018-privacy-controls-and-evidence.md`. They are unrelated decisions.
+`docs/adr/0018-privacy-controls-and-evidence.md`. They are unrelated
+decisions.~~
+
+**Resolved by [#172](https://github.com/vaam-apps/vpay/pull/172), 2026-09-16.**
+The second file is now `docs/adr/0020-privacy-controls-and-evidence.md`, and
+`docs/adr/` runs `0001`–`0022` with **no gap and no duplicate**. `0018` means
+_cross-tenant admin reads_ and nothing else.
+
+The section is kept because the **method** below is what a reader needs, and
+because a six-week-old checkout still has the duplicate — on such a tree,
+`0018` is ambiguous and this paragraph is how you tell which document someone
+meant.
 
 ADR-0021's own header records how it was resolved, and the method is worth
 copying: the author ran `git ls-tree origin/master docs/adr/` (20 entries for
@@ -90,15 +101,23 @@ found that PR #172 already renumbers the second `0018` to
 free of both the tree and every open PR's diff". The header is titled
 **"Number checked at branch time, not assumed."**
 
-So: **before you write a new ADR, check the tree _and_ every open PR.** As of
-2026-09-16 `0020` is reserved on a branch and not on `master`.
+So: **before you write a new ADR, check the tree _and_ every open PR.**
+~~As of 2026-09-16 `0020` is reserved on a branch and not on `master`.~~
 
-**ADR-0022 followed exactly that method and is the worked example.** Its author
-found `0020` still an unused gap in the tree, and took `0022` anyway —
-monotonic above `0021` — precisely because the plan page
+**ADR-0022 is the worked example, and the method was vindicated within hours.**
+Its author found `0020` still an unused gap in the tree and took `0022` anyway
+— monotonic above `0021` — precisely because the plan page
 `docs/plans/2026-09-13-flutter-plugin.md:419` calls a future decision
 "ADR-0020 shaped", and reusing the number would have made that sentence point
-at the wrong document. The gap is a reservation, not an opening. ADR-0022's own
-header also records that **`0018` is still used twice** on `master`
-(`0018-cross-tenant-admin-reads.md` and `0018-privacy-controls-and-evidence.md`)
-— PR #172 renumbers the second one and had not landed.
+at the wrong document.
+
+**Then [#172](https://github.com/vaam-apps/vpay/pull/172) landed** (after
+ADR-0022 merged as `9653ee94`, the same day) and claimed `0020` for
+`0020-privacy-controls-and-evidence.md` — the document that had been waiting
+for it — which also retired the duplicate `0018`. Had ADR-0022 filled the gap,
+#172 would have had to renumber twice.
+
+**Current state of `docs/adr/` as of 2026-09-16: `0001`–`0022`, no gap, no
+duplicate.** The lesson stands and is now demonstrated rather than asserted:
+**a gap in the numbering is a reservation, not an opening.** Check the tree
+_and_ every open PR before you take a number.
