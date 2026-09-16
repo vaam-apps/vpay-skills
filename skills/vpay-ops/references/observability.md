@@ -52,8 +52,10 @@ each.
 | `vpay_account_holder_lookups_total`                                      | once per `GET /v1/account_holders`, on **every** path including refusals. Its `outcome` label is the only thing that tells `found` from `not_found`, which are both `200` — and **no label on it carries the number looked up or the name returned**                         |
 
 That last constraint generalises: if you add a metric on a path that touches
-personal data, the label set is part of the privacy review (ADR-0018,
-privacy-controls-and-evidence).
+personal data, the label set is part of the privacy review
+(**ADR-0020**, privacy-controls-and-evidence — that document was a second
+`0018` until vpay#172 renumbered it on 2026-09-16; `0018` now means
+cross-tenant admin reads and nothing else).
 
 ## Three things to know before trusting a dashboard
 
