@@ -1,6 +1,6 @@
 ---
 name: vpay
-description: Orientation for working in the vpay repository — a Rust + TypeScript payment orchestrator for Cameroon mobile money rails (MTN MoMo, Orange Money). Load this before any task in vpay: it carries the two machine-enforced rules, what is actually built versus scaffold, the repository map, and which of the other vpay-* skills to load for the work at hand. Use when reading, planning, reviewing or changing anything in vpay.
+description: "Orientation for working in the vpay repository — a Rust + TypeScript payment orchestrator for Cameroon mobile money rails (MTN MoMo, Orange Money). Load this before any task in vpay: it carries the two machine-enforced rules, what is actually built versus scaffold, the repository map, and which of the other vpay-* skills to load for the work at hand. Use when reading, planning, reviewing or changing anything in vpay."
 ---
 
 # vpay

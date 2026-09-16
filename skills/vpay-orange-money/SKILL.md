@@ -1,6 +1,6 @@
 ---
 name: vpay-orange-money
-description: The Orange Money Cameroun adapter (`vpay-adapter-orange-money`) — the Web Payment redirect rail, and the loudest caveat in the repository: it has never been called. Covers the token endpoint living at the host root while payments carry the environment in the path, why `submit` sends the same value as `return_url` and `cancel_url`, the `payment_url` validation, why a missing `pay_token` is `Config` and never `NotFound`, the fail-closed callback nobody verifies, and why `refund` is `Unsupported` rather than unbuilt. Load before changing anything under `backends/crates/vpay-adapter-orange-money` or its WireMock mappings.
+description: "The Orange Money Cameroun adapter (`vpay-adapter-orange-money`) — the Web Payment redirect rail, and the loudest caveat in the repository: it has never been called. Covers the token endpoint living at the host root while payments carry the environment in the path, why `submit` sends the same value as `return_url` and `cancel_url`, the `payment_url` validation, why a missing `pay_token` is `Config` and never `NotFound`, the fail-closed callback nobody verifies, and why `refund` is `Unsupported` rather than unbuilt. Load before changing anything under `backends/crates/vpay-adapter-orange-money` or its WireMock mappings."
 ---
 
 # Orange Money — the redirect rail

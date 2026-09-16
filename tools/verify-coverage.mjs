@@ -41,6 +41,45 @@ const coverage = JSON.parse(readFileSync(join(REPO, "coverage.json"), "utf8"));
 const failures = [];
 const note = (s) => failures.push(s);
 
+// A deliberately strict, dependency-free reader for the tiny subset of YAML a
+// SKILL.md frontmatter is allowed to be: top-level `key: value` scalars only.
+// It REJECTS what a real YAML parser rejects — chiefly an unquoted value
+// containing ": ", which YAML reads as a nested mapping and which makes
+// `npx skills add` skip the skill. Being stricter than the installer is safe;
+// being looser is what shipped two uninstallable skills.
+function parseFrontmatter(text) {
+  const value = {};
+  for (const [i, raw] of text.split("\n").entries()) {
+    if (!raw.trim() || raw.trimStart().startsWith("#")) continue;
+    if (/^\s/.test(raw)) {
+      return { error: `line ${i + 1}: unexpected indentation (nested YAML)` };
+    }
+    const m = /^([A-Za-z0-9_-]+):(.*)$/.exec(raw);
+    if (!m) return { error: `line ${i + 1}: not a "key: value" pair` };
+    const key = m[1];
+    let v = m[2].trim();
+    if (
+      (v.startsWith('"') && v.endsWith('"') && v.length > 1) ||
+      (v.startsWith("'") && v.endsWith("'") && v.length > 1)
+    ) {
+      value[key] = v.slice(1, -1).replace(/\\"/g, '"');
+      continue;
+    }
+    if (v.includes(": ") || v.endsWith(":")) {
+      return {
+        error:
+          `line ${i + 1}: "${key}" has an unquoted value containing ": ", ` +
+          `which YAML reads as a nested mapping. Wrap the value in double quotes.`,
+      };
+    }
+    if (/^[[{>|&*!%@`]/.test(v)) {
+      return { error: `line ${i + 1}: "${key}" starts with a YAML indicator` };
+    }
+    value[key] = v;
+  }
+  return { value };
+}
+
 // ------------------------------------------------------------------- baseline
 //
 // A skill is true of *a* vpay, not of vpay. vpay publishes no release tags and
@@ -126,10 +165,24 @@ for (const dir of skillDirs) {
     note(`skills/${dir}/SKILL.md has no YAML frontmatter`);
     continue;
   }
-  const name = /^name:\s*(.+)$/m.exec(fm[1])?.[1]?.trim();
-  const description = /^description:\s*([\s\S]+?)(?=\n\w+:|$)/m
-    .exec(fm[1])?.[1]
-    ?.trim();
+  // Parse the frontmatter the way the INSTALLER does, not the way a regex
+  // would. `npx skills add` runs it through a real YAML parser, and an
+  // unquoted description containing ": " is a nested mapping to YAML — the
+  // installer skips the skill outright with a parse error. Two skills shipped
+  // that way and the regex this replaced saw nothing wrong with either.
+  // A gate that validates a different grammar from the consumer is not a gate.
+  const yaml = parseFrontmatter(fm[1]);
+  if (yaml.error) {
+    note(
+      `skills/${dir}/SKILL.md frontmatter is not valid YAML: ${yaml.error}\n` +
+        `      \`npx skills add\` runs a real YAML parser and SKIPS a skill it ` +
+        `cannot parse, so this skill does not install at all. A description ` +
+        `containing ": " must be quoted.`,
+    );
+    continue;
+  }
+  const name = yaml.value.name;
+  const description = yaml.value.description;
 
   if (name !== dir) {
     note(
