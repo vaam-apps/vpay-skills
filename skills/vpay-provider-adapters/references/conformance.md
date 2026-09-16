@@ -4,8 +4,9 @@ _Verified against vpay `93c6dfd0` (2026-09-16). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 `backends/tests/conformance/` — package `vpay-tests-conformance`, one test
-file (`tests/adapter_conformance.rs`, ~2 400 lines) and one mappings
-directory per rail under `wiremock/`.
+file (`tests/adapter_conformance.rs`, ~3 250 lines as of 2026-09-16 — it was
+~2 400 before the refund family landed) and one mappings directory per rail
+under `wiremock/`.
 
 ## The rule
 
@@ -18,7 +19,9 @@ file was the specification the MTN and Orange implementers coded against.
 
 Nothing in it is `#[ignore]`d. `just verify-ignored` holds the count at
 **zero** for this suite, so an ignored test here would be hiding a regression
-rather than declaring an absence. As of 2026-09-15 the suite is 54/54.
+rather than declaring an absence. **67 tests, 67 passed, 0 skipped as of
+2026-09-16** (`docs/status/verification/2026-09-16-w3-merge.md`); it was 54 on
+2026-09-15, before the refund-destination and refund-wire families.
 
 ## No `if rail == …` in a test body
 
@@ -29,9 +32,12 @@ table data. From the file's own header:
 > If a case ever needs `if rail == MtnMomo` to pass, **the port has leaked
 > and that is the finding, not the fix.**
 
-The rail's name appears in exactly seven places, all of them table functions:
-`mappings_dir`, `start`, `documented_declines`, `declared_failure_codes`,
-`documented_callback_body`, `callback_url_pattern`, `return_url_pattern`.
+The rail's name appears in **eight** table functions — seven until
+`refund_body_pattern` joined them on 2026-09-15 — `mappings_dir`, `start`,
+`documented_declines`, `declared_failure_codes`, `documented_callback_body`,
+`callback_url_pattern`, `refund_body_pattern`, `return_url_pattern`; plus the
+two places that construct **every** adapter rather than selecting one,
+`adapters()` and `a_required_rail_parses_its_own_destination`.
 `declared_failure_codes` reads the adapter's own `PRODUCED_FAILURE_CODES` —
 the suite keeping its own copy of that list would be the failure mode the
 list exists against.
@@ -78,6 +84,77 @@ followed redirect then fails `redirects_are_refused_and_never_followed`
 twice over — once because `submit` would return `Ok`, and once because the
 request would appear in the stub's journal.
 
+## The refund family — new on 2026-09-15, and what it does not prove
+
+Five wire cases plus two container-free ones, all steered by **the refund's
+own reference**, never the charge's:
+
+| constant                    | value           | what your mappings must do                                                    |
+| --------------------------- | --------------- | ----------------------------------------------------------------------------- |
+| `REF_REFUND_ACCEPTED`       | `…0d02`         | accept the transfer (MTN: `202` with an empty body)                           |
+| `REFUND_PAYEE`              | `+237600000200` | the payee, as a merchant sends it — the registered-holder number reused       |
+| `REFUND_PAYEE_CANONICAL`    | `237600000200`  | the same payee in the shape `RefundTarget::mobile_money` hands the rail       |
+| `REFUND_PAYEE_UNREGISTERED` | `+237600000404` | a payee the rail refuses — asserted a **decline**, never an accepted transfer |
+
+`REF_REFUND_ACCEPTED` is deliberately **not** `REF_ACCEPTED`: the refund
+path's reference is the refund's own, and a suite reusing the charge's would
+model the very confusion that makes a second partial refund of one charge come
+back `409 RESOURCE_ALREADY_EXIST` and be reported as _accepted_.
+
+The payee is built by calling the adapter's **own** `parse_destination` (the
+suite's `refund_destination()` helper), not by this file constructing a
+`RefundTarget` — so every case exercises the wire key the adapter owns as well
+as the transfer it produces.
+
+**`claims_refunds` gates the wire cases on three states, not two.** It tested
+only `supports_refunds` until 2026-09-15; both halves moved that day and left
+a pair it could not express:
+
+| Rail           | `supports_refunds` | `refund`                                 | the wire cases                    |
+| -------------- | ------------------ | ---------------------------------------- | --------------------------------- |
+| `mtn_momo`     | `true`             | written — MTN's Disbursements `transfer` | run                               |
+| `orange_money` | `true`             | `NotImplemented("orange_money::refund")` | assert the token, then return     |
+| _(none today)_ | `false`            | the port's default                       | assert `Unsupported`, then return |
+
+The middle state is **not a silent skip**: a rail that declares the capability
+and has not built the call owes a `NotImplemented` token naming _itself_, and
+that is asserted through the same container the wire cases use, so the
+`orange_money` parameterisation of every refund case still proves something.
+Gating on the capability alone made
+`a_duplicate_refund_reference_is_accepted_and_never_paid_twice` fail on Orange
+the moment the two branches met.
+
+**What `a_refund_on_a_rail_that_refunds_reaches_the_rail_and_is_accepted`
+proves, and what it does not.** MTN's stub answers `202` **only** for a
+request carrying the bearer minted from `/disbursement/token/` _and_ the
+per-product `Ocp-Apim-Subscription-Key`; anything else — the Collections
+bearer already in the adapter's cache, the Collections key, a plural path
+segment — matches no mapping and becomes `ProviderError::Config`. The `submit`
+before it is not decoration: it puts a Collections bearer in that cache first,
+so the case fails if the refund reuses it. What none of it proves is that
+**MTN behaves this way** — nothing in this repository has ever called MTN's
+Disbursements product, in sandbox or anywhere else, and a stub faithful to the
+documentation but not to the rail would pass every assertion.
+
+Two cases run with **no container at all**, because parsing a merchant's
+parameters is pure: `a_destination_is_offered_exactly_when_the_capability_demands_one`
+pins the suite's own helper (measured 2026-09-15: with its `Required` arm
+returning `None`, all 54 cases then in the suite still passed), and
+`a_required_rail_parses_its_own_destination` asserts the property no adapter
+can assert about itself — that a rail declaring `Required` has actually
+**overridden** `parse_destination` rather than inheriting the port's
+`Unsupported`, canonicalises the payee, and refuses `600000200`,
+`not a phone number`, `+0600000200`, `+1234567` and an **empty sub-map** as
+`Malformed` without any refusal naming the value it refused.
+
+`no_shipping_rail_returns_a_refund_to_the_paying_instrument` is the premise
+guard: both rails declare `RefundDestination::Required`, so every `Origin` arm
+in the suite has no live example. Its failure message lists the three things
+owed before it may be relaxed — an integration case sending `destination` to
+an `Origin` rail through `POST /v1/refunds` and asserting the `400`, a case
+that a refund **without** one succeeds there, and RFC-0003 § 1 updated.
+**Do not simply widen that assertion.**
+
 ## The account-holder family — and the digits-only rule
 
 These steer on a **payer reference** rather than a charge reference, because
@@ -97,6 +174,13 @@ number.
 steering number of the kind `requesttopay.json` uses could never reach this
 port method from the API. A suite that steered on one would be exercising a
 path no caller has.
+
+The refund family reuses two of these numbers deliberately, so one table
+answers both questions — but spelled **with a leading `+`**, because
+`RefundTarget::mobile_money` requires one where `GET /v1/account_holders` does
+not. That asymmetry is the maintainer's decision of 2026-09-15, and the two
+spellings are two constants on purpose: a test using one string for both would
+not notice if the canonicalisation stopped happening.
 
 **A rail declaring `supports_account_holder_lookup: false` stubs none of
 them.** `claims_account_holder_lookup` asserts
@@ -170,8 +254,16 @@ included.
 
 Capability-level (no rail, no container — these cover a rail added tomorrow
 without anyone touching the file): `every_adapter_declares_coherent_capabilities`,
-`adapter_codes_are_unique`, `refund_is_refused_when_the_capability_is_absent`,
-`unimplemented_operations_never_fabricate_success`.
+`adapter_codes_are_unique`, `unimplemented_operations_never_fabricate_success`,
+`a_destination_is_offered_exactly_when_the_capability_demands_one`, and
+`no_shipping_rail_returns_a_refund_to_the_paying_instrument` — the last two
+added 2026-09-15 and 2026-09-16.
+~~`refund_is_refused_when_the_capability_is_absent`~~ **no longer exists under
+that name**; its subject is `a_rail_without_the_refund_capability_answers_unsupported`
+below.
+
+Per rail but container-free: `a_required_rail_parses_its_own_destination`
+(2026-09-15).
 
 Wire-level, once per rail: `the_submit_tells_the_rail_where_to_send_the_payer_back`,
 `the_submit_tells_the_rail_where_to_call_back`,
@@ -186,8 +278,24 @@ Wire-level, once per rail: `the_submit_tells_the_rail_where_to_send_the_payer_ba
 `a_rail_without_the_refund_capability_answers_unsupported`,
 `pending_then_successful_walks_the_scenario`,
 `redirects_are_refused_and_never_followed`,
-`an_oversized_rail_body_is_refused_at_the_cap`, and the five account-holder
-cases.
+`an_oversized_rail_body_is_refused_at_the_cap`, the five refund wire cases
+(`a_refund_on_a_rail_that_refunds_reaches_the_rail_and_is_accepted`,
+`the_refund_is_addressed_to_the_payee_the_merchant_nominated`,
+`a_refund_to_a_payee_the_rail_rejects_is_a_decline_and_never_an_accepted_transfer`,
+`a_duplicate_refund_reference_is_accepted_and_never_paid_twice`,
+`a_refund_never_puts_the_payees_number_in_a_log_line`), and the five
+account-holder cases.
+
+**`a_rail_without_the_refund_capability_answers_unsupported`'s name now
+describes the arm that does not run**, and it is kept rather than renamed
+because live pages and a dated verification record cite it. No rail declares
+`supports_refunds: false` since 2026-09-15, so what runs is the other arm: a
+rail advertising refunds must not answer `Unsupported`, and when it answers a
+token the token must name **that** rail. The property the dead arm exercised —
+that the port's `refund` default is `Unsupported` — moved to
+`a_rail_with_no_refund_api_takes_the_default_and_answers_unsupported` in
+`vpay-provider`, on a stub that overrides nothing. Keeping a case is not the
+same as still proving it.
 
 Orange-only, and **about the stub rather than about the adapter**: the four
 hosted-page payer-window cases, plus
