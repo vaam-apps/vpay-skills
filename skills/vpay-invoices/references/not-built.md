@@ -1,6 +1,6 @@
 # What is not built — the list this resource exists to keep honest
 
-_Verified against vpay `7a79684e` (2026-09-16). Version-sensitive claims
+_Verified against vpay `d3a8810b` (2026-09-16). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 `docs/flows/invoices.md`'s opening paragraph says why this list exists: _"a

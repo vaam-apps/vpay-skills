@@ -25,9 +25,15 @@ jobs:
         with:
           repository: vaam-apps/vpay
           path: vpay
-          # The gate reads docs/ and tests that claimed paths exist. It never
-          # builds vpay, so a shallow clone of the default branch is enough.
-          fetch-depth: 1
+          # FULL history, not a shallow clone. This said `fetch-depth: 1` with
+          # "the gate reads docs/ and tests that claimed paths exist, so a
+          # shallow clone is enough" until 2026-09-16, and that stopped being
+          # true when the gate learned to ask WHEN a page was added. With
+          # depth 1 the baseline commit is absent from the clone the moment
+          # vpay's master moves one commit past it, so every covered page
+          # looks "added AFTER the baseline" and the gate fails with 21 gaps
+          # that are not gaps. Measured after vaam-apps/vpay#182 merged.
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:

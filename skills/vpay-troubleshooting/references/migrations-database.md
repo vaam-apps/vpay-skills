@@ -1,6 +1,6 @@
 # Migrations and the database
 
-_Verified against vpay `7a79684e` (2026-09-16). Version-sensitive claims
+_Verified against vpay `d3a8810b` (2026-09-16). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 ## The rule that will bite you: a shipped migration is never edited

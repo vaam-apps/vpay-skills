@@ -1,6 +1,6 @@
 # Every mounted route, and the middleware around them
 
-_Verified against vpay `7a79684e` (2026-09-16). Version-sensitive claims
+_Verified against vpay `d3a8810b` (2026-09-16). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 Assembled in `vpay_api::router` (`backends/crates/vpay-api/src/lib.rs`).
