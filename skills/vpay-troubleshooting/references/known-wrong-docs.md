@@ -1,6 +1,6 @@
 # Known-wrong documentation, and which source wins
 
-_Verified against vpay `f063ee96` (2026-09-15). Version-sensitive claims
+_Verified against vpay `93c6dfd0` (2026-09-16). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 vpay documents itself exhaustively. The prose drifts faster than anything else
@@ -87,11 +87,14 @@ gives double digits on `docs/status/backend.md`, `docs/status/merchant-sdks.md`,
 `docs/status/infrastructure.md`, `docs/flows/deployment.md` and
 `docs/adr/0017-staff-authentication.md`.
 
-**A live one, measured 2026-09-16 by the agent that read the recipes:**
-`AGENTS.md` and `audit-web`'s own comment both say `audit-web` is **not** in
-`just ci` and that `just ci` works offline; the `ci:` recipe lists it. See
-**vpay-tooling**, which owns that surface. It is the current best example of the
-rule at the top of this page.
+**The best worked example, and it is now closed.** `AGENTS.md` and
+`audit-web`'s own comment both said `audit-web` was **not** in `just ci` and
+that `just ci` worked offline, while the `ci:` recipe listed it — wrong since
+2026-09-11, found 2026-09-16 by reading the recipe, fixed the same day. The
+prose was wrong in five places at once (two `justfile` comments, the `ci`
+recipe's coverage list, `package.json`'s `//pnpm` block, and `AGENTS.md`),
+which is the shape to expect: one recipe change, several descriptions of it,
+and no gate that reads any of them. See **vpay-tooling** for what is true now.
 
 ## Two kinds of number you must not read as current
 

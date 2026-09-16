@@ -1,6 +1,6 @@
 # Deployment: images, the chart, and what it deliberately does not do
 
-_Verified against vpay `f063ee96` (2026-09-15). Version-sensitive claims
+_Verified against vpay `93c6dfd0` (2026-09-16). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 Everything here renders and validates. **Nothing here has run.** See the

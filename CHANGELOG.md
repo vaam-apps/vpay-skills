@@ -8,6 +8,39 @@ Releases are named for the date of verification and the vpay commit verified
 against, because vpay publishes no release tags and its workspace version has
 never moved off `0.1.0`. See [VERSIONING.md](VERSIONING.md).
 
+## v2026-09-16-93c6dfd0
+
+Re-verified against vpay [`93c6dfd0`](https://github.com/vaam-apps/vpay/commit/93c6dfd0cba6237bf581c6d68d40a8b70f003d65)
+(2026-09-16), which is `f063ee96` plus
+[vpay#179](https://github.com/vaam-apps/vpay/pull/179) (the docs↔skills parity
+rule) and [vpay#180](https://github.com/vaam-apps/vpay/pull/180) (audit-web's
+prose).
+
+**The baseline moved for all twenty skills, and here is the basis for that.**
+Both merged PRs are documentation-only — verified, not assumed: the `justfile`
+diff between `f063ee96` and `93c6dfd0` contains zero non-comment lines, and
+`package.json` is byte-identical once its `//pnpm` prose array is excluded. No
+behaviour any skill describes changed, so the nineteen skills untouched by this
+release remain accurate at the new baseline. The one that did change is
+`vpay-tooling`, below.
+
+### Claims that stopped being true
+
+> `vpay-tooling` and `vpay-troubleshooting` said `just audit-web` was **not** in
+> `just ci` and that `just ci` ran offline, and that the audit ceiling was
+> `--audit-level=high`. Those were accurate readings of vpay's prose and wrong
+> about vpay's behaviour — the recipe had said otherwise since 2026-09-11
+> (issue #103). vpay#180 fixed the prose; these skills now say `audit-web` is in
+> `just ci`, that moderates fail, and that **`just ci` needs the network**.
+
+The two discrepancies were `vpay-tooling`'s headline evidence for its authority
+rule ("the recipe body wins over its own comment"). They are recorded as spent
+rather than deleted, because finding them is what the rule was worth.
+
+Newly carried: issue #103's allowlist for an accepted advisory is **not built**,
+so a moderate advisory in a transitive dev dependency blocks every merge with no
+sanctioned way to accept it.
+
 ## v2026-09-16-f063ee96 — first release
 
 Verified against vpay [`f063ee96`](https://github.com/vaam-apps/vpay/commit/f063ee9647867699f3b12622a62ac0004609373b)

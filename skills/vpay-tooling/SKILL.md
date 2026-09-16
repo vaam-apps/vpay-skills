@@ -5,7 +5,7 @@ description: How to build, test, lint and gate vpay — the just recipes that ma
 
 # vpay tooling and gates
 
-> **Verified against vpay `f063ee96` (2026-09-15).** Version-sensitive claims below
+> **Verified against vpay `93c6dfd0` (2026-09-16).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -28,16 +28,26 @@ exhaustively and the prose drifts faster than anything else in it. Always
 confirm with `just --show <recipe>` or `just --evaluate` before you act on a
 sentence.
 
-Three live examples, measured 2026-09-16 on `master`:
+A live example, measured 2026-09-16 on `master`:
 
-| The prose says                                                                                                    | The recipe does                                                                                       |
-| ----------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| `audit-web`'s own comment and `AGENTS.md` both say it is **not** in `just ci`, and that `just ci` runs offline    | the `ci:` line lists `audit-web`. `just ci` hits the npm registry today and does **not** work offline |
-| `audit-web`'s comment and `package.json`'s `//pnpm` block both say `--audit-level=high`, "moderate does not fail" | the body runs `pnpm audit --audit-level=moderate`. **Moderates fail**                                 |
-| the `expected_suites` comment block discusses 42 test binaries in several places                                  | `just --evaluate` says `expected_suites := "48"`                                                      |
+| The prose says                                                                   | The recipe does                                  |
+| -------------------------------------------------------------------------------- | ------------------------------------------------ |
+| the `expected_suites` comment block discusses 42 test binaries in several places | `just --evaluate` says `expected_suites := "48"` |
 
-None of these is a bug to fix in passing — they are three separate branches'
-comments that never got re-read. Treat them as a warning about the fourth one
+**Two more sat here until 2026-09-16 and have been fixed** — `audit-web`'s
+comment and `AGENTS.md` said it was not in `just ci` and that `just ci` ran
+offline, and `audit-web`'s comment and `package.json` said `--audit-level=high`.
+Both had been wrong since 2026-09-11, when issue #103 changed the recipe and
+nobody re-read the prose around it. They are named here rather than deleted
+because they are what this rule was worth: reading the recipe found two false
+statements about what CI runs, five days after the change that falsified them.
+
+What is true now: `audit-web` **is** in `just ci`, it runs at
+`--audit-level=moderate` so moderates fail, and **`just ci` therefore needs the
+network.**
+
+A stale comment is not a bug to fix in passing — these are separate branches'
+comments that never got re-read. Treat them as a warning about the next one
 you have not found yet.
 
 The inverse habit is also house style here and worth copying: when you correct
@@ -124,9 +134,11 @@ Subsets: `cargo nextest run -p <crate>`, `cargo nextest run -E 'test(name)'`,
 | **A real Postgres you manage** | nothing. Tests bring their own container; `just up` brings up the dev one on `:5432`                                                                                                                                                                                                      |
 | **Extra binaries on PATH**     | `cratestack` (`check-schema`), `helm` + `kubeconform` (`helm-check`), `jq` (`verify-ignored`), `openssl` (`gen-e2e-signing-key`)                                                                                                                                                          |
 
-Gates outside `just verify` and (on paper) outside `just ci`: `audit-web`,
-`test-storybook`, `helm-check`, `docs-check-citations`. CI runs all four on
-every PR, so a green local run does not predict them.
+Gates outside `just verify` **and** outside `just ci`: `test-storybook`,
+`helm-check`, `docs-check-citations`. CI runs all three on every PR, so a green
+local run does not predict them. `audit-web` is outside `just verify` but
+**inside `just ci`** (since 2026-09-11, issue #103) — which is why `just ci`
+needs the network.
 
 ## Lockstep bumps
 

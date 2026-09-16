@@ -1,6 +1,6 @@
 # CI, and the flakiness that was engineered out
 
-_Verified against vpay `f063ee96` (2026-09-15). Version-sensitive claims
+_Verified against vpay `93c6dfd0` (2026-09-16). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 Three workflows in `.github/workflows/`: `ci.yml`, `docs.yml`, `release.yml`.
@@ -141,10 +141,17 @@ Every one of those runs printed `ERR_SOCKET_TIMEOUT`; none printed a finding.
 **What the loop deliberately does not do is pass when the registry is down.** An
 unreachable audit is an audit that did not run, and this is a payment system.
 
-Two things to correct if you read the prose around it: the recipe runs
-`--audit-level=moderate`, not `high` (so moderates fail), and `audit-web` **is**
-in the `ci:` recipe today despite its own comment and `AGENTS.md` saying it is
-not.
+The recipe runs `--audit-level=moderate`, so moderate advisories fail, and
+`audit-web` **is** in the `ci:` recipe — which is why **`just ci` needs the
+network**. Both have been true since 2026-09-11 (issue #103); the prose around
+them said the opposite until 2026-09-16.
+
+One thing #103 asked for is **not built**: a documented allowlist for an
+accepted advisory. `pnpm.auditConfig.ignoreCves` is absent from `package.json`
+and nothing is suppressed (checked 2026-09-16). So a moderate advisory in a
+transitive dev dependency blocks every merge with no sanctioned way to accept
+it — if you hit one, that is the state of things, not something you have
+misconfigured.
 
 Nothing in `ci.yml` itself retries anything.
 
