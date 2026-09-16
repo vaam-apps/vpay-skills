@@ -1,0 +1,181 @@
+#!/usr/bin/env node
+// verify-coverage — the parity gate for this repository.
+//
+// It fails in BOTH directions, deliberately, the way vpay's own
+// `cargo xtask verify-status` does:
+//
+//   docs -> skills   a vpay feature page that no skill claims fails the gate.
+//                    That is the half that catches "a feature shipped and
+//                    nobody taught the agents about it".
+//
+//   skills -> docs   a path claimed in coverage.json that does not exist in
+//                    the vpay checkout fails the gate. That is the half that
+//                    catches a skill still describing something that moved,
+//                    was renamed, or was deleted.
+//
+// A one-directional gate would let the map rot in the direction nobody looks.
+//
+// Usage:  node tools/verify-coverage.mjs [path-to-vpay-checkout]
+//         VPAY_REPO=/path/to/vpay node tools/verify-coverage.mjs
+//
+// Exit 0 = parity. Exit 1 = a gap, named, with the file that closes it.
+
+import { readFileSync, existsSync, readdirSync, statSync } from "node:fs";
+import { join, resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const vpay = resolve(process.argv[2] ?? process.env.VPAY_REPO ?? "../vpay");
+
+if (!existsSync(join(vpay, "AGENTS.md"))) {
+  console.error(
+    `verify-coverage: ${vpay} does not look like a vpay checkout ` +
+      `(no AGENTS.md).\n` +
+      `Pass the path: node tools/verify-coverage.mjs /path/to/vpay`,
+  );
+  process.exit(2);
+}
+
+const coverage = JSON.parse(readFileSync(join(REPO, "coverage.json"), "utf8"));
+const failures = [];
+const note = (s) => failures.push(s);
+
+// ---------------------------------------------------------------- skills side
+
+const skillDirs = readdirSync(join(REPO, "skills")).filter((d) =>
+  statSync(join(REPO, "skills", d)).isDirectory(),
+);
+
+for (const dir of skillDirs) {
+  const skillMd = join(REPO, "skills", dir, "SKILL.md");
+  if (!existsSync(skillMd)) {
+    note(`skills/${dir}/ has no SKILL.md`);
+    continue;
+  }
+  const src = readFileSync(skillMd, "utf8");
+  const fm = /^---\n([\s\S]*?)\n---/.exec(src);
+  if (!fm) {
+    note(`skills/${dir}/SKILL.md has no YAML frontmatter`);
+    continue;
+  }
+  const name = /^name:\s*(.+)$/m.exec(fm[1])?.[1]?.trim();
+  const description = /^description:\s*([\s\S]+?)(?=\n\w+:|$)/m
+    .exec(fm[1])?.[1]
+    ?.trim();
+
+  if (name !== dir) {
+    note(
+      `skills/${dir}/SKILL.md declares name "${name}" — it must equal the ` +
+        `directory name, because that is what \`--skill\` resolves.`,
+    );
+  }
+  if (!description) {
+    note(`skills/${dir}/SKILL.md has no description — it will never trigger.`);
+  } else if (description.length < 80) {
+    note(
+      `skills/${dir}/SKILL.md description is ${description.length} chars. ` +
+        `A description is the ONLY thing an agent reads when deciding whether ` +
+        `to load the skill; say what it covers AND when to reach for it.`,
+    );
+  }
+
+  if (!(dir in coverage.skills)) {
+    note(`skills/${dir}/ has no entry in coverage.json`);
+  }
+
+  // Every reference/*.md the SKILL.md points at must exist, and every file
+  // under references/ must be reachable from SKILL.md. An unreferenced
+  // reference page is a page no agent will ever open.
+  const refDir = join(REPO, "skills", dir, "references");
+  if (existsSync(refDir)) {
+    const onDisk = readdirSync(refDir).filter((f) => f.endsWith(".md"));
+    const linked = new Set(
+      [...src.matchAll(/references\/([A-Za-z0-9._-]+\.md)/g)].map((m) => m[1]),
+    );
+    for (const f of onDisk) {
+      if (!linked.has(f)) {
+        note(`skills/${dir}/references/${f} is not linked from SKILL.md`);
+      }
+    }
+    for (const f of linked) {
+      if (!onDisk.includes(f)) {
+        note(`skills/${dir}/SKILL.md links references/${f}, which is missing`);
+      }
+    }
+  }
+}
+
+for (const skill of Object.keys(coverage.skills)) {
+  if (!skillDirs.includes(skill)) {
+    note(`coverage.json names skill "${skill}", which has no skills/ directory`);
+  }
+}
+
+// ------------------------------------------------- skills -> vpay (paths live)
+
+for (const [skill, entry] of Object.entries(coverage.skills)) {
+  for (const p of entry.covers ?? []) {
+    if (!existsSync(join(vpay, p))) {
+      note(
+        `coverage.json: skill "${skill}" claims ${p}, which does not exist in ` +
+          `${vpay}. Either the path moved (update the claim AND the skill ` +
+          `prose that cites it) or the feature was deleted (drop both).`,
+      );
+    }
+  }
+}
+
+// ------------------------------------------- vpay -> skills (features covered)
+
+// docs/flows/ is vpay's own feature index: one page per thing the system does.
+// It is the closest machine-readable answer to "what are the features", which
+// is exactly the list a skills repo has to keep up with.
+const claimed = new Set(
+  Object.values(coverage.skills).flatMap((e) => e.covers ?? []),
+);
+
+const flowsDir = join(vpay, "docs", "flows");
+const flows = readdirSync(flowsDir)
+  .filter((f) => f.endsWith(".md") && f !== "README.md")
+  .map((f) => `docs/flows/${f}`);
+
+const exempt = new Set(coverage.exempt ?? []);
+
+for (const flow of flows) {
+  if (!claimed.has(flow) && !exempt.has(flow)) {
+    note(
+      `${flow} is a vpay feature page that no skill covers.\n` +
+        `      Add it to a skill's "covers" in coverage.json — and write the ` +
+        `prose that earns the claim — or, if it genuinely needs no skill, ` +
+        `list it under "exempt" with a reason in "exemptReasons".`,
+    );
+  }
+}
+
+for (const e of exempt) {
+  if (!flows.includes(e) && !existsSync(join(vpay, e))) {
+    note(`coverage.json exempts ${e}, which no longer exists in vpay`);
+  }
+  if (!coverage.exemptReasons?.[e]) {
+    note(`coverage.json exempts ${e} with no reason in "exemptReasons"`);
+  }
+}
+
+// ------------------------------------------------------------------ the report
+
+if (failures.length > 0) {
+  console.error(`\nverify-coverage: ${failures.length} gap(s)\n`);
+  for (const f of failures) console.error(`  ✗ ${f}`);
+  console.error(
+    `\nThis gate is the docs↔skills parity rule. A vpay feature that ships ` +
+      `without a skill is a feature every agent will get wrong.\n`,
+  );
+  process.exit(1);
+}
+
+console.log(
+  `verify-coverage: ${skillDirs.length} skills, ` +
+    `${claimed.size} vpay paths claimed, ` +
+    `${flows.length} feature pages, ` +
+    `${exempt.size} exempt — parity against ${vpay}`,
+);

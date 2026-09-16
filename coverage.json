@@ -1,0 +1,27 @@
+{
+  "//": "The docs<->skills parity map. See README.md. Checked in both directions by tools/verify-coverage.mjs.",
+  "skills": {
+    "vpay": { "covers": ["AGENTS.md", "CLAUDE.md", "README.md", "docs/README.md", "docs/status.md", "docs/status", "docs/adr", "docs/reference", "docs/rfc", "docs/plans"] },
+    "vpay-docs-status": { "covers": ["docs/status/README.md", "docs/status/verification", "docs/runbooks"] },
+    "vpay-reconciler": { "covers": ["docs/flows/reconciler.md", "docs/flows/crash-safety.md", "backends/crates/vpay-worker", "backends/apps/vpay-server/src/worker.rs", "backends/crates/vpay-config/src/signal.rs", "backends/tests/integration/tests/worker_recovery.rs", "backends/tests/integration/tests/worker_kill9.rs", "docs/runbooks/demo/known-flake.md"] },
+    "vpay-tooling": { "covers": ["justfile", ".xtask", ".xtask/src/main.rs", "rust-toolchain.toml", "clippy.toml", "deny.toml", ".cargo/config.toml", ".config/nextest.toml", ".nvmrc", ".npmrc", "package.json", "pnpm-workspace.yaml", "flutter-toolchain.toml", ".prettierrc.json", ".prettierignore", "compose.yml", "compose.e2e.yml", "compose.demo.yml", ".env.example", ".env.live.example", ".github/workflows/ci.yml", ".github/workflows/docs.yml", ".github/workflows/release.yml", "backends/migrations/MANIFEST.sha256", "docs/runbooks/migrations.md"] },
+    "vpay-merchant-api": { "covers": ["docs/flows/merchant-auth.md", "docs/flows/errors.md", "docs/api/README.md", "backends/crates/vpay-api/src/lib.rs", "backends/crates/vpay-api/src/v1", "backends/crates/vpay-api/src/op", "backends/crates/vpay-api/src/error.rs", "backends/crates/vpay-api/src/idempotency.rs", "backends/crates/vpay-api/src/model.rs", "backends/crates/vpay-api/src/form.rs", "backends/crates/vpay-api/src/resource_auth.rs", "backends/crates/vpay-api/src/provider_callback.rs"] },
+    "vpay-webhooks": { "covers": ["docs/flows/webhooks.md", "backends/crates/vpay-worker/src/webhooks.rs", "backends/crates/vpay-worker/src/signing.rs", "backends/crates/vpay-worker/src/ssrf.rs", "backends/crates/vpay-api/src/v1/events.rs"] },
+    "vpay-payments": { "covers": ["docs/flows/payment-lifecycle.md", "docs/flows/money.md", "docs/flows/failures.md", "docs/flows/ledger.md", "backends/crates/vpay-core/src/state.rs", "backends/crates/vpay-core/src/money.rs"] },
+    "vpay-provider-adapters": { "covers": ["docs/flows/provider-port.md", "backends/crates/vpay-provider", "backends/tests/conformance"] },
+    "vpay-mtn-momo": { "covers": ["docs/flows/adapter-mtn-momo.md", "backends/crates/vpay-adapter-mtn-momo"] },
+    "vpay-orange-money": { "covers": ["docs/flows/adapter-orange-money.md", "backends/crates/vpay-adapter-orange-money"] },
+    "vpay-data-layer": { "covers": ["schemas/vpay.cstack", "backends/crates/vpay-db", "backends/migrations", "docs/reference/vpay-db"] },
+    "vpay-conventions": { "covers": ["docs/adr/0016-engineering-standards.md", "docs/adr/0011-error-modelling.md", "docs/adr/0007-lint-policy.md"] },
+    "vpay-troubleshooting": { "covers": ["docs/runbooks/demo"] },
+    "vpay-ops": { "covers": ["docs/flows/configuration.md", "docs/flows/deployment.md", "config", "deploy", "backends/Dockerfile"] },
+    "vpay-frontend": { "covers": ["frontends", "frontends/packages"] },
+    "vpay-checkout": { "covers": ["docs/flows/hosted-checkout.md", "docs/flows/browser-checkout.md", "frontends/apps/checkout"] },
+    "vpay-dashboard": { "covers": ["docs/flows/dashboard.md", "docs/flows/dashboard-auth.md", "frontends/apps/dashboard"] },
+    "vpay-sdks": { "covers": ["docs/sdks/parity.md", "docs/flows/stripe-sdk-compat.md", "docs/flows/mobile-checkout.md", "sdks"] },
+    "vpay-customers": { "covers": ["docs/flows/customers.md", "docs/flows/account-holder-lookup.md", "backends/crates/vpay-api/src/v1/customers.rs"] },
+    "vpay-invoices": { "covers": ["docs/flows/invoices.md", "backends/crates/vpay-api/src/v1/invoices.rs"] }
+  },
+  "exempt": [],
+  "exemptReasons": {}
+}
