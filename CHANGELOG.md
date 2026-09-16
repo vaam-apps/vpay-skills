@@ -8,12 +8,21 @@ Releases are named for the date of verification and the vpay commit verified
 against, because vpay publishes no release tags and its workspace version has
 never moved off `0.1.0`. See [VERSIONING.md](VERSIONING.md).
 
-## Unreleased — pending [vaam-apps/vpay#180](https://github.com/vaam-apps/vpay/pull/180)
+## v2026-09-16-93c6dfd0
 
-**Do not merge before that PR does, and bump `coverage.json`'s `baseline` to its
-merge commit in the same change.** Until then these skills describe a state that
-exists only on a branch, which is the exact failure this repository's versioning
-policy exists to prevent.
+Re-verified against vpay [`93c6dfd0`](https://github.com/vaam-apps/vpay/commit/93c6dfd0cba6237bf581c6d68d40a8b70f003d65)
+(2026-09-16), which is `f063ee96` plus
+[vpay#179](https://github.com/vaam-apps/vpay/pull/179) (the docs↔skills parity
+rule) and [vpay#180](https://github.com/vaam-apps/vpay/pull/180) (audit-web's
+prose).
+
+**The baseline moved for all twenty skills, and here is the basis for that.**
+Both merged PRs are documentation-only — verified, not assumed: the `justfile`
+diff between `f063ee96` and `93c6dfd0` contains zero non-comment lines, and
+`package.json` is byte-identical once its `//pnpm` prose array is excluded. No
+behaviour any skill describes changed, so the nineteen skills untouched by this
+release remain accurate at the new baseline. The one that did change is
+`vpay-tooling`, below.
 
 ### Claims that stopped being true
 
