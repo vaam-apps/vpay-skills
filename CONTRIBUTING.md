@@ -32,6 +32,37 @@ Those pull in different directions, and when they do, the briefing wins:
    `references/*.md`, and every reference page must be linked from `SKILL.md`
    (the gate refuses orphans, because a page nothing links is a page no agent
    opens).
+
+   **Four pages knowingly exceed this, decided 2026-09-16 and recorded rather
+   than quietly normalised:** `vpay-mtn-momo` (356), `vpay-orange-money` (312),
+   `vpay-provider-adapters` (278) and `vpay-payments` (267). Each is long
+   because of a **negative** claim — no rail in this repository has ever
+   returned money to anyone; nothing settles a pending refund; MTN's
+   Disbursements product has never been called outside WireMock; Orange's
+   `refund` is work vpay owes, not a fact about the rail.
+
+   The reason they were not split is the sentence in the parenthesis above,
+   taken seriously. A page nothing links is a page no agent opens — so a page
+   that *is* linked is a page an agent *may* open. That is an acceptable bet
+   for depth and a bad one for a warning: splitting moves a certainty into a
+   probability, and the thing on the other side of the bet is an agent writing
+   code that assumes a refund moved money. This repository's whole purpose is
+   that nothing look more finished than it is, and the budget is a heuristic in
+   service of the briefing test, not above it — the top of this file says so:
+   when the two pull apart, **the briefing wins**.
+
+   Two things stop this being a licence. It is an exception with a stated
+   reason, not a raised ceiling: the number above has not moved, and a page
+   long for any other reason is still over budget. And it is **temporary by
+   construction** — when a refund poll ladder exists and these warnings shrink
+   to a sentence each, the four pages should come back under the line. Whether
+   the budget itself should move is a **maintainer decision** and is not taken
+   here; the fourteen-of-twenty overrun noted below is the evidence for it.
+
+   _As of 2026-09-16, fourteen of the twenty `SKILL.md` files are already over
+   150 lines and the median is 170 — so the stated budget and the practised one
+   have differed for some time. That is recorded as a fact about the corpus, not
+   as permission._
 3. Add or update the entry in [`coverage.json`](coverage.json).
 4. Run the gate:
 

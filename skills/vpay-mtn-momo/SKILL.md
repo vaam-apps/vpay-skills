@@ -253,6 +253,18 @@ Writing "MTN refunds work" is this repository's cardinal sin;
 `docs/status.md` § "`mtn_momo::refund` is written, WireMock-proven and
 rail-unproven" is the long form.
 
+**One of those seven is weaker than its name.**
+`a_rail_without_the_refund_capability_answers_unsupported` describes an arm
+that **no longer runs on any rail** — since 2026-09-15 no rail declares
+`supports_refunds: false`. On MTN what is left is the weak half: whatever a
+refunding rail answers, it is not "this rail cannot refund". The name is kept
+on purpose, because live pages and a dated verification record cite it and
+renaming would orphan a record that must not be rewritten. Do not cite it as
+evidence that a refund works; the case that carries that weight is
+`a_refund_on_a_rail_that_refunds_reaches_the_rail_and_is_accepted`, and it
+reaches a WireMock container, not MTN. The `vpay-provider-adapters` skill's
+conformance page has the full accounting of which case proves what.
+
 Those three keys are also **three new `${VAR}` names** every environment
 loading `config/application.yml` must define — the list went seven to ten on
 2026-09-15. Empty is fine; **absent is an unresolved placeholder and exit 78
