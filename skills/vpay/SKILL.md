@@ -8,7 +8,7 @@ description: Orientation for working in the vpay repository — a Rust + TypeScr
 > **Verified against vpay `f063ee96` (2026-09-15).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
-> repository over this page. See VERSIONING.md.
+> repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
 
 A payment orchestrator for Cameroon mobile money. Rust backend, TypeScript
 frontends, merchant SDKs in Rust, Node and Flutter.
@@ -62,9 +62,14 @@ implementation or a `cfg` variant. (`cargo xtask verify-no-mocks`)
 `ProviderError::NotImplemented`, never a plausible success, an empty list or a
 zero. Every such token must be declared in `docs/status.md`, and the gate fails
 in **both** directions — an undeclared token fails, and so does a declaration
-naming code that no longer carries one. Tests for unbuilt behaviour are
-`#[ignore = "not implemented: … — see docs/status.md"]`.
-(`cargo xtask verify-status`)
+naming code that no longer carries one. (`cargo xtask verify-status`)
+
+**Do not reach for `#[ignore]`.** AGENTS.md still prescribes
+`#[ignore = "not implemented: …"]`, but `just verify-ignored` pins
+`expected_ignored := "0"` and is step 7 of `just ci`, so adding one fails the
+build. The sanctioned way to mark a test that needs a running stack is a Cargo
+feature (`required-features = ["live-stack"]`). This is the authority rule in
+miniature: the recipe wins over the prose.
 
 ## Before you start, and when you finish
 
@@ -82,19 +87,19 @@ Then state explicitly, in your summary, what you did _not_ do.
 
 ## Repository map
 
-| Path                   | What is in it                                                                             |
-| ---------------------- | ----------------------------------------------------------------------------------------- |
-| `backends/crates/`     | The Rust workspace: `vpay-core`, `vpay-api`, `vpay-db`, `vpay-provider`, adapters         |
-| `backends/apps/`       | `vpay-server` — the one shipping binary, three modes                                      |
-| `backends/migrations/` | SQL migrations + `MANIFEST.sha256` (their bytes are pinned)                               |
-| `frontends/apps/`      | `checkout` (the payer page), the dashboard, the demo shop                                 |
-| `sdks/`                | Merchant SDKs — Rust, Node, Flutter                                                       |
-| `schemas/vpay.cstack`  | The CrateStack schema. **It compiles into `vpay-db`** — a syntax error is a build failure |
-| `docs/flows/`          | One page per process: what happens, what can go wrong, what invariant holds               |
-| `docs/status/`         | What is actually built, by area, with dated evidence                                      |
-| `docs/adr/`            | Decisions. Immutable — superseded, never edited                                           |
-| `docs/reference/`      | Why the code is shaped the way it is, per crate                                           |
-| `justfile`             | ~270 000 lines. The recipes are the source of truth for every command                     |
+| Path                   | What is in it                                                                                                                    |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `backends/crates/`     | The Rust workspace: `vpay-core`, `vpay-api`, `vpay-db`, `vpay-provider`, adapters                                                |
+| `backends/apps/`       | `vpay-server` — the one shipping binary, three modes                                                                             |
+| `backends/migrations/` | SQL migrations + `MANIFEST.sha256` (their bytes are pinned)                                                                      |
+| `frontends/apps/`      | `checkout` (the payer page) and the dashboard. The demo shop is `examples/shop`                                                  |
+| `sdks/`                | Merchant SDKs — Rust, Node, Flutter                                                                                              |
+| `schemas/vpay.cstack`  | The CrateStack schema. **It compiles into `vpay-db`** — a syntax error is a build failure                                        |
+| `docs/flows/`          | One page per process: what happens, what can go wrong, what invariant holds                                                      |
+| `docs/status/`         | What is actually built, by area, with dated evidence                                                                             |
+| `docs/adr/`            | Decisions. Immutable — superseded, never edited                                                                                  |
+| `docs/reference/`      | Why the code is shaped the way it is, per crate                                                                                  |
+| `justfile`             | 4 704 lines, ~95% comment (268 KB). **The recipe body is the source of truth** — it wins over its own comment and over AGENTS.md |
 
 ## Architecture rules you will trip over
 
@@ -128,13 +133,14 @@ Then state explicitly, in your summary, what you did _not_ do.
 | MTN MoMo specifics                                         | `vpay-mtn-momo`          |
 | Orange Money specifics                                     | `vpay-orange-money`      |
 | The web workspace, Tailwind/daisyUI, the `verify-ui` gate  | `vpay-frontend`          |
-| The payer-facing surfaces — hosted, browser, mobile        | `vpay-checkout`          |
+| The payer page — hosted and embedded checkout, the popup   | `vpay-checkout`          |
+| Mobile checkout — the Flutter plugin                       | `vpay-sdks`              |
 | The dashboard, `/dash/v1`, staff auth, the BFF             | `vpay-dashboard`         |
 | Customers, addresses, erasure, retention, name lookup      | `vpay-customers`         |
 | Invoices                                                   | `vpay-invoices`          |
 | CrateStack, migrations, repositories, sqlx, Postgres tests | `vpay-data-layer`        |
 | The merchant SDKs and the parity rule                      | `vpay-sdks`              |
-| Config, deployment, the reconciler, observability          | `vpay-ops`               |
+| Config, deployment, images, Helm, observability            | `vpay-ops`               |
 
 See also `references/reading-the-docs.md` — this repository's documentation has
 conventions that will mislead you if you do not know them, in particular why a

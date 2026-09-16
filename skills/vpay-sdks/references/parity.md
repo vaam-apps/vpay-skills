@@ -1,5 +1,8 @@
 # `docs/sdks/parity.md` and `cargo xtask verify-sdk-parity`
 
+_Verified against vpay `f063ee96` (2026-09-15). Version-sensitive claims
+carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
+
 The record ADR-0015 requires: one row per capability, one column per SDK, and a
 cell that is either a `✅` naming the proving test(s) **in that SDK** or a `⛔`
 with a date, a reason and an owner.

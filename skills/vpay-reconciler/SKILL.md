@@ -8,7 +8,7 @@ description: The vpay worker — the job loop, the poll and delivery ladders, le
 > **Verified against vpay `f063ee96` (2026-09-15).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
-> repository over this page. See VERSIONING.md.
+> repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
 
 `vpay-server worker` runs the job loop. It is what actually moves money: the
 API's confirm submits a charge and queues a job; **the worker's authenticated

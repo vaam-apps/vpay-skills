@@ -1,5 +1,8 @@
 # What a dashboard screen may and may not show
 
+_Verified against vpay `f063ee96` (2026-09-15). Version-sensitive claims
+carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
+
 vpay's cardinal rule — nothing may look more finished than it is — has a
 specific shape on an operator console, because the failure mode is not a lie in
 prose: it is a **populated-looking row**. Every rule below is a case where the

@@ -1,5 +1,8 @@
 # MTN's three failure vocabularies
 
+_Verified against vpay `f063ee96` (2026-09-15). Version-sensitive claims
+carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
+
 All of this lives in `backends/crates/vpay-adapter-mtn-momo/src/mapping.rs`,
 kept in one module away from the transport, because **this is the part that
 drifts**: MTN grows a `reason` string and the only visible symptom is a

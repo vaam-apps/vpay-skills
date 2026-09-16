@@ -1,5 +1,8 @@
 # Using the official Stripe SDKs against vpay
 
+_Verified against vpay `f063ee96` (2026-09-15). Version-sensitive claims
+carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
+
 Source of record: `docs/flows/stripe-sdk-compat.md`. Evidence:
 `sdks/stripe-compat`.
 

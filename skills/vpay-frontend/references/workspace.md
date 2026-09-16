@@ -1,5 +1,8 @@
 # The workspace, package by package
 
+_Verified against vpay `f063ee96` (2026-09-15). Version-sensitive claims
+carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
+
 Everything below verified 2026-09-16 against `frontends/`, `examples/shop` and
 the root `package.json` / `justfile`.
 

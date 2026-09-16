@@ -1,5 +1,8 @@
 # What is still unverified about Orange, and what each item blocks
 
+_Verified against vpay `f063ee96` (2026-09-15). Version-sensitive claims
+carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
+
 **As of 2026-09-16, no request from this repository has ever reached Orange
 Money.** This page is the list of assumptions that sit underneath
 `vpay-adapter-orange-money`, taken from

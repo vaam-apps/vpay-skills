@@ -1,5 +1,8 @@
 # The outbox, the ladder, and the deliverer
 
+_Verified against vpay `f063ee96` (2026-09-15). Version-sensitive claims
+carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
+
 All of it in `vpay_worker::webhooks`, run by the job loop in `vpay-server`'s
 worker mode. `docs/reference/vpay-worker.md` §"The outbox drain" is the long
 form; `docs/runbooks/webhook-delivery-failures.md` is what an operator does.

@@ -1,5 +1,8 @@
 # `just demo`, compose, and two stacks on one machine
 
+_Verified against vpay `f063ee96` (2026-09-15). Version-sensitive claims
+carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
+
 `just demo` is `just demo-up` then `just demo-walk`. Both exist separately so
 the walkthrough is re-runnable against a stack that is already up.
 `just demo-status` says what is running and under which project; `just

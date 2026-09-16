@@ -1,5 +1,8 @@
 # `just verify-ui` — the class-string gate
 
+_Verified against vpay `f063ee96` (2026-09-15). Version-sensitive claims
+carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
+
 `justfile`'s `verify-ui` recipe. It is part of `just verify`, which is part of
 `just ci`. It is the only gate on `docs/status/gates.md` that is a `just`
 recipe of `git grep`s rather than a `cargo xtask` — deliberately: "a `git grep`

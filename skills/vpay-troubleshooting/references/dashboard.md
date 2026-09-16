@@ -1,5 +1,8 @@
 # The dashboard: what looks wrong and is not
 
+_Verified against vpay `f063ee96` (2026-09-15). Version-sensitive claims
+carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
+
 Source: `docs/runbooks/demo/dashboard-sign-in.md`. These are the things a new
 agent "fixes" and should not.
 

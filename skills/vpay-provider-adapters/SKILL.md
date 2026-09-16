@@ -8,7 +8,7 @@ description: The vpay provider port (`vpay-provider`) and how to add a payment r
 > **Verified against vpay `f063ee96` (2026-09-15).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
-> repository over this page. See VERSIONING.md.
+> repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
 
 One trait, `vpay_provider::ProviderAdapter`, in
 `backends/crates/vpay-provider/src/lib.rs`. The core owns the payment

@@ -1,5 +1,8 @@
 # The conformance suite
 
+_Verified against vpay `f063ee96` (2026-09-15). Version-sensitive claims
+carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
+
 `backends/tests/conformance/` — package `vpay-tests-conformance`, one test
 file (`tests/adapter_conformance.rs`, ~2 400 lines) and one mappings
 directory per rail under `wiremock/`.

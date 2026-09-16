@@ -1,5 +1,8 @@
 # Adding a rail
 
+_Verified against vpay `f063ee96` (2026-09-15). Version-sensitive claims
+carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
+
 The canonical checklist is `docs/flows/provider-port.md` § "Adding a rail".
 **Two of its steps are wrong and are corrected in place there** — the
 corrections are dated 2026-09-06 and are reproduced below, because the wrong

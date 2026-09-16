@@ -8,7 +8,7 @@ description: The vpay pnpm workspace under frontends/ — the seven packages and
 > **Verified against vpay `f063ee96` (2026-09-15).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
-> repository over this page. See VERSIONING.md.
+> repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
 
 Node 22.23.2 (`.nvmrc`), pnpm 9.15.0, TypeScript strict everywhere
 (`tsconfig.base.json` — `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`,

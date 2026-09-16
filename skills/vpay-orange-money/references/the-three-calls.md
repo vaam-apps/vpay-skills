@@ -1,5 +1,8 @@
 # The three wire calls, in full
 
+_Verified against vpay `f063ee96` (2026-09-15). Version-sensitive claims
+carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
+
 `submit`, `query_status` and `parse_callback` are implemented; `refund` and
 `account_holder_name` are the port's `Unsupported` default. Everything below
 is proven against a WireMock container **only** — see

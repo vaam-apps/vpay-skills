@@ -1,5 +1,8 @@
 # Observability: two ports, thirteen names, and no scraper
 
+_Verified against vpay `f063ee96` (2026-09-15). Version-sensitive claims
+carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
+
 **Nothing has ever scraped any of this.** The series exist; the alerts on them
 have never been evaluated. Every claim below is about what a scrape _would_
 find.

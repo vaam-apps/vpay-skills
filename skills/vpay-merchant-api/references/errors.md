@@ -1,5 +1,8 @@
 # The error model
 
+_Verified against vpay `f063ee96` (2026-09-15). Version-sensitive claims
+carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
+
 ADR-0011. Two tiers, and one rule that holds them together: **a boundary
 derives its answer from `Classify`; it never decides one.**
 

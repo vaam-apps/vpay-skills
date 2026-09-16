@@ -8,7 +8,7 @@ description: How to finish a change in vpay — which status page takes your row
 > **Verified against vpay `f063ee96` (2026-09-15).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
-> repository over this page. See VERSIONING.md.
+> repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
 
 Most repositories treat documentation as the thing you do after the work. Here
 it is part of the work, two of the gates read it, and the review question that

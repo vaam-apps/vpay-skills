@@ -1,5 +1,8 @@
 # serde: `rename_all` is for _our_ wire, never a rail's
 
+_Verified against vpay `f063ee96` (2026-09-15). Version-sensitive claims
+carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
+
 ADR-0016 standard 3. Gate: `cargo xtask verify-serde`, in `just verify` and in
 CI's `self-checks` job.
 

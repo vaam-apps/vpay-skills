@@ -1,5 +1,8 @@
 # The checkout state machine
 
+_Verified against vpay `f063ee96` (2026-09-15). Version-sensitive claims
+carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
+
 `frontends/apps/checkout/src/lib/machine.ts` — a **pure reducer**. No `fetch`,
 no timer, no DOM. `src/lib/controller.ts` is the impure half: it turns network
 answers into the events below and does nothing else.

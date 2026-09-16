@@ -1,5 +1,8 @@
 # Known-wrong documentation, and which source wins
 
+_Verified against vpay `f063ee96` (2026-09-15). Version-sensitive claims
+carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
+
 vpay documents itself exhaustively. The prose drifts faster than anything else
 in it, and **the repository knows this and records it in place.** Learning to
 read those records is the difference between an agent that trusts a stale

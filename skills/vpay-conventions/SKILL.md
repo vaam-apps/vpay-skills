@@ -8,7 +8,7 @@ description: How to write Rust and TypeScript in vpay — the two machine-enforc
 > **Verified against vpay `f063ee96` (2026-09-15).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
-> repository over this page. See VERSIONING.md.
+> repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
 
 Source of truth is `AGENTS.md`. This page is the operative subset plus the
 things that bite. For the recipes and gates themselves see **vpay-tooling**;

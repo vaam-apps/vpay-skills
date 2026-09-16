@@ -1,5 +1,8 @@
 # The event vocabulary and its writers
 
+_Verified against vpay `f063ee96` (2026-09-15). Version-sensitive claims
+carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
+
 Verified against the code on **2026-09-16**.
 
 ## Where the vocabulary lives

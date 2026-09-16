@@ -1,5 +1,8 @@
 # `GET /v1/account_holders` — the three-way answer and three unbuilt controls
 
+_Verified against vpay `f063ee96` (2026-09-15). Version-sensitive claims
+carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
+
 "Whose mobile-money account is this number?" Built for issue #47: an integrator
 whose refund flow lets a buyer nominate a _different_ number must match the
 nominated account's registered name against the buyer's verified one.

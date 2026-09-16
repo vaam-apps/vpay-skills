@@ -1,5 +1,8 @@
 # `account_holder_name` — real code, never called against the real rail
 
+_Verified against vpay `f063ee96` (2026-09-15). Version-sensitive claims
+carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
+
 `ProviderAdapter::account_holder_name(msisdn, config) ->
 Result<Option<AccountHolder>, ProviderError>`. MTN implements it; Orange
 does not (see the `vpay-orange-money` skill). Issue #47. Policy:

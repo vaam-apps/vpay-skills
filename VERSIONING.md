@@ -47,6 +47,18 @@ Directly under the title:
 form, and `tools/verify-coverage.mjs` prints how far the checkout you gave it
 has drifted from that baseline.
 
+**A stamp may be newer than the baseline; it may never be older.** Re-verifying
+one skill against a later vpay and stamping just that one is correct and
+expected — the gate checks only that the stamped commit _contains_ the baseline.
+Requiring all twenty stamps to move together would make a one-skill correction
+cost a full re-verification pass, which is how you get twenty rubber-stamps.
+
+The baseline also governs coverage. Six flows are an overview plus a directory,
+and a claim on the overview covers the detail pages **that existed when the
+claim was made**. A page added under a claimed directory _since_ the baseline
+fails the gate by name, because inheriting the parent's claim would hide exactly
+the case the gate exists to catch: a feature shipped with no briefing.
+
 ### 2. A version-sensitive claim carries the date it became true
 
 Not "there is one shipping binary" but "**one shipping binary since 2026-09-07

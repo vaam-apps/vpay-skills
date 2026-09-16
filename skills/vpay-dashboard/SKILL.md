@@ -8,7 +8,7 @@ description: The staff operator console at frontends/apps/dashboard — it is th
 > **Verified against vpay `f063ee96` (2026-09-15).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
-> repository over this page. See VERSIONING.md.
+> repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
 
 `frontends/apps/dashboard` (`@vpay/dashboard`). Next 15.5.25 App Router, React
 19, Refine 5. Its own `README.md` is the best in-repo companion; the flow docs

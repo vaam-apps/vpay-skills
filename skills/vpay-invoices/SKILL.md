@@ -8,7 +8,7 @@ description: vpay's Invoice and invoice-line objects — the nineteen-key wire s
 > **Verified against vpay `f063ee96` (2026-09-15).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
-> repository over this page. See VERSIONING.md.
+> repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
 
 A merchant's bill to one customer, S4b of the data-layer work, built on the
 Customer (see the `vpay-customers` skill). Flow page: `docs/flows/invoices.md`.

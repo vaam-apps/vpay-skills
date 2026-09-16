@@ -8,7 +8,7 @@ description: vpay's payment domain model — the PaymentIntent lifecycle (which 
 > **Verified against vpay `f063ee96` (2026-09-15).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
-> repository over this page. See VERSIONING.md.
+> repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
 
 The types live in `vpay-core` — `state.rs`, `money.rs`, `failure.rs`,
 `settlement.rs`, `ids.rs` — and that crate deliberately knows nothing about
@@ -177,7 +177,10 @@ persistence would actually involve: [references/ledger.md](references/ledger.md)
 
 ## Invoices
 
-`draft → open → paid | void | uncollectible`, plus `draft → void` and a
+`draft → open → paid | void | uncollectible`. **There is no `draft → void`** —
+`void_in_tx`'s `WHERE` names `status = 'open'` alone, and a draft is deleted
+rather than voided. Two doc comments in vpay say otherwise and are stale; see
+`vpay-invoices`. Plus a
 `DELETE` that removes a draft entirely. `paid` is only reachable with
 `amount_remaining = 0` (`paid_means_nothing_remaining`, migration `0036`).
 

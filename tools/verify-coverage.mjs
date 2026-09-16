@@ -166,12 +166,32 @@ for (const dir of skillDirs) {
         "        > **Verified against vpay `<sha>` (<YYYY-MM-DD>).** …  — see VERSIONING.md",
     );
   } else if (baseline.vpayRef && !baseline.vpayRef.startsWith(stamp[1])) {
-    note(
-      `skills/${dir}/SKILL.md is stamped vpay ${stamp[1]}, but coverage.json's ` +
-        `baseline is ${baseline.vpayRef.slice(0, 8)}. Either re-verify this skill ` +
-        `against the baseline and restamp it, or move the baseline — but the two ` +
-        `must not disagree, because the stamp is what a reader trusts.`,
-    );
+    // A stamp NEWER than the baseline is correct and expected: it means this
+    // one skill was re-verified against a later vpay without re-verifying the
+    // other nineteen. Requiring every stamp to equal the baseline would make a
+    // one-skill correction cost a full re-verification pass — which is how you
+    // get twenty rubber-stamps. So the rule is "at least the baseline": the
+    // stamped commit must contain it.
+    let descendant = false;
+    try {
+      execFileSync(
+        "git",
+        ["-C", vpay, "merge-base", "--is-ancestor", baseline.vpayRef, stamp[1]],
+        { stdio: "ignore" },
+      );
+      descendant = true;
+    } catch {
+      descendant = false;
+    }
+    if (!descendant) {
+      note(
+        `skills/${dir}/SKILL.md is stamped vpay ${stamp[1]}, which is not the ` +
+          `baseline (${baseline.vpayRef.slice(0, 8)}) and does not contain it. ` +
+          `A stamp may be newer than the baseline — that is a skill re-verified ` +
+          `on its own — but it may never be older or unrelated, because then the ` +
+          `page makes claims about a tree nobody here has checked.`,
+      );
+    }
   }
 
   // Every reference/*.md the SKILL.md points at must exist, and every file
@@ -227,20 +247,78 @@ const claimed = new Set(
   Object.values(coverage.skills).flatMap((e) => e.covers ?? []),
 );
 
+// RECURSIVE, and that is load-bearing. Since 2026-09-11 six of these flows are
+// "an overview plus a directory" — the page keeps its path and indexes pages
+// carrying what was moved there. Enumerating one level saw 23 pages out of 46
+// and reported success, which is exactly the "gate whose green means less than
+// it looks" this repository warns about. Every page counts now.
 const flowsDir = join(vpay, "docs", "flows");
-const flows = readdirSync(flowsDir)
-  .filter((f) => f.endsWith(".md") && f !== "README.md")
-  .map((f) => `docs/flows/${f}`);
+
+const walk = (dir, prefix) =>
+  readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
+    e.isDirectory()
+      ? walk(join(dir, e.name), `${prefix}/${e.name}`)
+      : e.name.endsWith(".md") && e.name !== "README.md"
+        ? [`${prefix}/${e.name}`]
+        : [],
+  );
+
+const flows = walk(flowsDir, "docs/flows");
 
 const exempt = new Set(coverage.exempt ?? []);
 
+// A detail page under an overview's directory is covered when the skill claims
+// the page itself, the directory, or the overview page it was split out of —
+// `docs/flows/webhooks/delivery.md` is covered by a claim on any of those. The
+// split was a documentation refactor, not twenty-two new features, and a gate
+// that demanded a separate claim per page would push authors to list paths they
+// have not read.
+// …but the fallback only extends to pages that existed when the skills were
+// verified. A page added under a claimed directory SINCE the baseline is a
+// feature nobody wrote a briefing for, and inheriting the parent's claim would
+// hide exactly the case this gate exists to catch. So: covered by the parent
+// only if it existed at the baseline commit.
+const existedAtBaseline = (path) => {
+  if (!baseline.vpayRef) return true; // no baseline: the gate already said so
+  try {
+    execFileSync(
+      "git",
+      ["-C", vpay, "cat-file", "-e", `${baseline.vpayRef}:${path}`],
+      {
+        stdio: "ignore",
+      },
+    );
+    return true;
+  } catch {
+    return false; // absent at baseline, or the commit is not in this checkout
+  }
+};
+
+const covers = (flow) => {
+  if (claimed.has(flow) || exempt.has(flow)) return true;
+  const dir = flow.slice(0, flow.lastIndexOf("/")); // docs/flows/webhooks
+  if (dir === "docs/flows") return false;
+  if (!claimed.has(dir) && !claimed.has(`${dir}.md`)) return false;
+  return existedAtBaseline(flow);
+};
+
 for (const flow of flows) {
-  if (!claimed.has(flow) && !exempt.has(flow)) {
+  if (!covers(flow)) {
+    const inherited =
+      flow.lastIndexOf("/") > "docs/flows".length &&
+      (claimed.has(flow.slice(0, flow.lastIndexOf("/"))) ||
+        claimed.has(`${flow.slice(0, flow.lastIndexOf("/"))}.md`));
     note(
-      `${flow} is a vpay feature page that no skill covers.\n` +
-        `      Add it to a skill's "covers" in coverage.json — and write the ` +
-        `prose that earns the claim — or, if it genuinely needs no skill, ` +
-        `list it under "exempt" with a reason in "exemptReasons".`,
+      inherited
+        ? `${flow} was added to vpay AFTER the baseline (${baseline.vpayRefShort ?? baseline.vpayRef?.slice(0, 8)}).\n` +
+            `      Its directory is claimed, but that claim was earned against a tree ` +
+            `that did not contain this page. Read it, fold it into the owning skill, ` +
+            `and claim the page explicitly — or exempt it with a reason.`
+        : `${flow} is a vpay feature page that no skill covers.\n` +
+            `      Add it — or its directory, or the overview it was split from — ` +
+            `to a skill's "covers" in coverage.json, and write the prose that earns ` +
+            `the claim. If it genuinely needs no skill, list it under "exempt" with ` +
+            `a reason in "exemptReasons".`,
     );
   }
 }

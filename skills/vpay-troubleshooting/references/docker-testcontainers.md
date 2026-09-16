@@ -1,5 +1,8 @@
 # Docker and testcontainers
 
+_Verified against vpay `f063ee96` (2026-09-15). Version-sensitive claims
+carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
+
 Everything Postgres-backed in this workspace starts a real container. Nothing
 skips when Docker is absent — `README.md`: the suites "**fail loudly** without a
 reachable daemon — they never skip, so a green run is a real one." The adapter

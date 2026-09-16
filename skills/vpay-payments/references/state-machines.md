@@ -1,5 +1,8 @@
 # The state machines
 
+_Verified against vpay `f063ee96` (2026-09-15). Version-sensitive claims
+carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
+
 Every enum below is in `backends/crates/vpay-core/src/state.rs` except
 `FailureCode`, which is `failure.rs`. Verified **2026-09-16**.
 

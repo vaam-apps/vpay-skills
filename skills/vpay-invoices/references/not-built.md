@@ -1,5 +1,8 @@
 # What is not built — the list this resource exists to keep honest
 
+_Verified against vpay `f063ee96` (2026-09-15). Version-sensitive claims
+carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
+
 `docs/flows/invoices.md`'s opening paragraph says why this list exists: _"a
 document that lists only what exists is how somebody comes to believe an
 invoice gets sent."_ Every entry below is a **gap**, dated, not a decision

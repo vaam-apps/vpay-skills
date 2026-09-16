@@ -1,5 +1,8 @@
 # Deployment failures
 
+_Verified against vpay `f063ee96` (2026-09-15). Version-sensitive claims
+carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
+
 **No pod has ever run this chart.** Everything on this page is reasoned from the
 templates, the binaries' own boot code and their tests — not observed in a
 cluster. `deploy/helm/vpay/README.md`'s Status section is the authority and says

@@ -1,5 +1,8 @@
 # Reading vpay's documentation
 
+_Verified against vpay `f063ee96` (2026-09-15). Version-sensitive claims
+carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
+
 vpay's documentation has conventions that will mislead you if you do not know
 them. Three in particular.
 

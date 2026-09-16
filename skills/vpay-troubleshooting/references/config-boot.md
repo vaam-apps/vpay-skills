@@ -1,5 +1,8 @@
 # Boot failures, exit codes, and configuration refusals
 
+_Verified against vpay `f063ee96` (2026-09-15). Version-sensitive claims
+carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
+
 For the configuration model itself see **vpay-ops**. This page is the lookup:
 the process will not start, or a request is refused, and you need the cause.
 

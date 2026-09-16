@@ -1,5 +1,8 @@
 # The confirm/poll race
 
+_Verified against vpay `f063ee96` (2026-09-15). Version-sensitive claims
+carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
+
 A defect worth knowing in full, because the shape of it recurs: **a recovery
 path whose precondition ("the process died") was never actually checked.**
 

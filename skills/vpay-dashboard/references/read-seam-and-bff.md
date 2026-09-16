@@ -1,5 +1,8 @@
 # The `/dash/v1` read seam, the token lifecycle, and the BFF
 
+_Verified against vpay `f063ee96` (2026-09-15). Version-sensitive claims
+carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
+
 ## Two transports, one seam
 
 `/dash/v1` serves `payment_intents` as a **cursor-paged REST route** shared

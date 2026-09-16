@@ -1,5 +1,8 @@
 # Migrations and the database
 
+_Verified against vpay `f063ee96` (2026-09-15). Version-sensitive claims
+carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
+
 ## The rule that will bite you: a shipped migration is never edited
 
 `sqlx::migrate!` stores a **SHA-384 of each migration file's whole bytes,

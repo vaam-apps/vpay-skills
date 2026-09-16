@@ -1,5 +1,8 @@
 # CI, and the flakiness that was engineered out
 
+_Verified against vpay `f063ee96` (2026-09-15). Version-sensitive claims
+carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
+
 Three workflows in `.github/workflows/`: `ci.yml`, `docs.yml`, `release.yml`.
 Re-read 2026-09-16.
 

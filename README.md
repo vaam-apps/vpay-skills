@@ -50,7 +50,7 @@ Two reasons, and the second is the load-bearing one.
 A skill is installed, not cloned. `npx skills add` fetches one directory into
 `.agents/skills/` and pins its hash in `skills-lock.json`. That works for any
 project that talks to vpay — a merchant integrating the Node SDK gets
-`vpay-merchant-api` without vendoring a 300 000-line `justfile`.
+`vpay-merchant-api` without vendoring vpay's whole tree.
 
 And skills must be able to move at a different speed from the code. A skill is
 not documentation-of-record; it is a briefing, and a briefing that has to clear

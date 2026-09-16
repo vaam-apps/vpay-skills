@@ -1,5 +1,8 @@
 # `sdks/flutter/vpay_checkout_flutter`
 
+_Verified against vpay `f063ee96` (2026-09-15). Version-sensitive claims
+carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
+
 A **payer** surface, like `@vaam-apps/vpay-stripe-js` — not a third merchant
 SDK. It authenticates a payer's _device_ with a publishable key and a
 per-session / per-intent `client_secret`, speaks the same `/v1/browser` routes,

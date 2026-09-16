@@ -1,5 +1,8 @@
 # Configuration: the CLI layer, the YAML, and what refuses to boot
 
+_Verified against vpay `f063ee96` (2026-09-15). Version-sensitive claims
+carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
+
 ADR-0003. Flow doc `docs/flows/configuration.md`; crate reference
 `docs/reference/vpay-config.md`.
 

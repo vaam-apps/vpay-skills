@@ -1,5 +1,8 @@
 # Erasure — the six tables, the marker CHECK, and the closed race
 
+_Verified against vpay `f063ee96` (2026-09-15). Version-sensitive claims
+carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
+
 `vpay_db::customers::erase_in_tx` is the whole of it. Migration
 `0041_customers-address-and-anonymisation.sql` is the schema half. The flow
 page is `docs/flows/customers/privacy-and-erasure.md`.

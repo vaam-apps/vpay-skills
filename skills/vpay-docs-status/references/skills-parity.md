@@ -1,5 +1,8 @@
 # The docs↔skills parity rule
 
+_Verified against vpay `f063ee96` (2026-09-15). Version-sensitive claims
+carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
+
 > **A feature lands in three places or it has not landed: the code, the docs,
 > and the skills.**
 

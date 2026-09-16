@@ -1,5 +1,8 @@
 # Idempotency
 
+_Verified against vpay `f063ee96` (2026-09-15). Version-sensitive claims
+carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
+
 Two halves: the header and fingerprint in `vpay_api::idempotency`, the storage
 and comparison in `vpay_db::idempotency`, and the sequence that joins them in
 `PostRequest` (`vpay_api::v1::payment_intents`).

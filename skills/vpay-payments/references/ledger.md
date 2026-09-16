@@ -1,5 +1,8 @@
 # The ledger
 
+_Verified against vpay `f063ee96` (2026-09-15). Version-sensitive claims
+carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
+
 Read the status line before anything else.
 
 > **Nothing in vpay writes a ledger posting.** `ledger_transactions` and

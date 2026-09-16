@@ -1,5 +1,8 @@
 # Wire objects
 
+_Verified against vpay `f063ee96` (2026-09-15). Version-sensitive claims
+carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
+
 Every wire DTO lives in one module: `vpay_api::model`
 (`backends/crates/vpay-api/src/model.rs`). They are rendered, never returned as
 errors, and never deserialised from a merchant's request — request shapes are
