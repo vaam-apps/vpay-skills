@@ -72,9 +72,16 @@ with a backtick but names no shipping token fails the docs→code half. So open
 every bullet with a noun:
 
 ```markdown
-- `mtn_momo::refund` — MTN refunds are a different product…     ← a declaration
+- `orange_money::refund` — vpay has not written the transfer…   ← a declaration
 - the column `refunds.fee` (migration `0031`), nullable…        ← prose, not a declaration
 ```
+
+_This example named `mtn_momo::refund` until 2026-09-16. That token was
+**retired** on 2026-09-15 when the Disbursements `transfer` call was written,
+so copying it would have declared a token no shipping code carries — which
+fails the gate's docs→code half. `orange_money::refund` is the live one:
+**there is exactly one declared token as of 2026-09-16**, down from eight on
+2026-09-03 and from two partway through 2026-09-15._
 
 That is the gate working, not a trap. It is how `docs/status.md` can discuss
 unpopulated fields in the same section without declaring them unbuilt.

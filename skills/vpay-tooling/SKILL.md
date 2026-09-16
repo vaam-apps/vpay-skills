@@ -89,7 +89,7 @@ when a gate is added.
 | Gate                  | Refuses                                                                                                                                              |
 | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `verify-no-mocks`     | a test double reachable from a shipping binary through non-dev edges of the resolved cargo graph                                                     |
-| `verify-status`       | a `NotImplemented` token not declared in `docs/status.md`, **or** a declaration whose token is gone — both directions                                |
+| `verify-status`       | a `NotImplemented` token not declared in `docs/status.md`, **or** a declaration whose token is gone, **or** (since 2026-09-16) a `<rail>::…` token carried outside that rail's adapter crate — three directions      |
 | `verify-errors`       | a `pub` error type in `backends/crates` not implementing `Classify`; `anyhow` outside `backends/apps` (ADR-0011)                                     |
 | `verify-sdk-parity`   | a parity-matrix claim naming a test that does not exist, a gap without a date and owner, or a row/method mismatch in **either** direction (ADR-0015) |
 | `verify-links`        | a relative link in a tracked `*.md` that does not resolve to a **git-tracked** path                                                                  |

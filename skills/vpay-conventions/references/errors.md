@@ -206,8 +206,18 @@ port's own rustdoc, and `#![warn(clippy::missing_errors_doc)]` on
   credentials. A declined charge is `Ok(ChargeStatus::Failed)` and a rail with
   no record is `Ok(ChargeStatus::NotFound)` — neither is an error.
 - `submit` never raises `Unsupported`: a rail that cannot take a payment is not
-  a rail. `Unsupported` belongs to `refund` alone, where it is a permanent
-  capability answer rather than unbuilt work.
+  a rail. ~~`Unsupported` belongs to `refund` alone, where it is a permanent
+  capability answer rather than unbuilt work.~~ **Corrected 2026-09-16:** the
+  port's table gives `Unsupported` to **three** operations — `refund`,
+  `parse_destination` and `account_holder_name` — and **no shipping rail
+  answers it for `refund` any more.** Orange flipped `supports_refunds` to
+  `true` on 2026-09-15 (RFC-0003 § 5: an Orange refund is an outbound transfer,
+  so the refusal stopped being a fact about the rail) and now answers a declared
+  `NotImplemented("orange_money::refund")`; MTN's Disbursements call is written.
+  The distinction the old sentence was teaching is still the right one —
+  `Unsupported` is a permanent capability answer, `NotImplemented` is work vpay
+  owes — it just no longer has a live example on `refund`. The remaining live
+  `Unsupported` is on `account_holder_name`, which Orange inherits.
 
 `ProviderError::Rejected` is the seam between system errors and business
 outcomes. A rail declining a charge is not a system failure.

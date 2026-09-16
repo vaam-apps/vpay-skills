@@ -31,7 +31,10 @@ Four gates fail in **both** directions, and that is the property to remember,
 because the intuitive half is the one that never bites you:
 
 - **`verify-status`** — a token in code with no declaration fails, _and_ a
-  declaration whose token no longer exists fails.
+  declaration whose token no longer exists fails, _and_ (since 2026-09-16) a
+  `<rail>::…` token carried outside that rail's adapter crate fails. **Three**
+  directions now, not two — see [§ 2](#2-verify-status) for the measured hole
+  the third one closes.
 - **`verify-sdk-parity`** — a claim naming a missing test fails, _and_ a method
   either SDK declares with no matrix row fails, _and_ a row whose method is
   gone fails. Two-directional since 2026-09-06; before that, deleting a whole
@@ -41,6 +44,37 @@ because the intuitive half is the one that never bites you:
   exemption is a decision the code already reversed, described as current.
 - **`verify-migrations`** — an edited file fails, _and_ a manifest line whose
   file is gone fails.
+
+## What the gates last printed
+
+vpay's own `docs/status.md` carries this table and re-runs it; these are its
+figures **as re-run on 2026-09-16**, on `888b00c3` — the last commit before
+the table was filled in, which is **not** the merge commit `7a79684e`, so a
+number that counts documents or links can legitimately be a few higher on the
+merged tree. Re-run the gate rather than quoting this page if a count is
+load-bearing for you.
+
+| Gate                  | Last printed (2026-09-16)                             |
+| --------------------- | ----------------------------------------------------- |
+| `verify-status`       | 1 unimplemented item                                  |
+| `verify-errors`       | 20 error types, 17 `#[from]` variants                 |
+| `verify-sdk-parity`   | 603 proving tests, 36 dated gaps, 35 methods, 39 rows |
+| `verify-links`        | 1 731 links in 375 files                              |
+| `check-schema`        | 27 declarations                                       |
+| `verify-serde`        | 96 types, 17 exemptions                               |
+| `verify-repositories` | 4 implementations, 83 source files outside            |
+| `verify-migrations`   | 48 files                                              |
+
+Six of these moved between 2026-09-11 and 2026-09-16 — `verify-errors` 19→20,
+`verify-sdk-parity` 550/35/32→603/36/35, `verify-links` 1 600/352→1 731/375,
+`check-schema` 26→27, `verify-serde` 90→96, `verify-migrations` 42→48. That
+rate is the reason every count on these pages carries a date.
+
+**`verify-status` moved twice in one day and came back.** It printed **2**
+partway through 2026-09-15, when RFC-0003 § 5 gave `orange_money` a `refund`
+token, and **1** again by 2026-09-16, because the same day's MTN work retired
+`NotImplemented("mtn_momo::refund")` by writing the Disbursements `transfer`
+call. Same number, different token, different reason.
 
 ## 1. `verify-no-mocks`
 
@@ -60,14 +94,46 @@ reached over HTTP via configuration**, never a code path inside the app.
 ## 2. `verify-status`
 
 **Refuses:** a `ProviderError::NotImplemented("…")` token in shipping code that
-is not declared in `docs/status.md`, and a token declared there that shipping
-code no longer carries.
+is not declared in `docs/status.md`; a token declared there that shipping code
+no longer carries; and — **the third direction, since 2026-09-16** — a token
+whose prefix names a rail this workspace ships an adapter for, carried by any
+file outside that rail's crate.
+
+**It reports ONE token as of 2026-09-16** (`orange_money::refund`) — down from
+eight on 2026-09-03 and from two partway through 2026-09-15, when
+`mtn_momo::refund` was retired by a real Disbursements `transfer` call. The
+list has moved in **both** directions, which is the distinction it exists to
+keep visible: `orange_money::refund` left on 2026-09-03 and came back on
+2026-09-15 meaning something different (not "Orange has no refund API" but
+"vpay has not written Orange's transfer").
 
 **Implements:** `cargo xtask verify-status`, `verify_status` /
 `declared_tokens` / `scan_not_implemented` in `.xtask/src/main.rs`.
 
 **How you trip it:** leaving a `NotImplemented` without adding the bullet; or
-retiring one and forgetting to remove the bullet.
+retiring one and forgetting to remove the bullet; or copy-pasting a `refund`
+body between adapters and shipping `NotImplemented("mtn_momo::refund")` inside
+`vpay-adapter-orange-money`.
+
+**Why the third direction exists, measured.** The first two directions compare
+*sets of strings* and neither knows which file a token came from, so one
+adapter answering another rail's token is invisible to both as long as the two
+sets still match. Measured on 2026-09-15: with Orange's token replaced by
+MTN's, the gate first failed with _"`docs/status.md` declares
+`orange_money::refund` and no shipping code carries it"_ — a message that
+invites exactly the wrong repair. Delete that bullet as invited and
+`verify-status` printed **"ok — 1 unimplemented item(s)"**, with a whole rail's
+gap gone from the status page and an adapter blaming MTN for it.
+`a_rail_without_the_refund_capability_answers_unsupported` also catches that
+mutation and was written for it, but it needs Docker, covers only `refund` on
+the two configured rails, and is not what `AGENTS.md` points at. This check
+covers every token on every rail and runs in `just verify`.
+
+**What it deliberately does not constrain:** only prefixes that *are* a
+shipping rail code. A token named `worker::poll` or `ledger::post` is
+unconstrained — the repository has no convention about where such a token may
+live, and inventing one in a gate would be a rule about characters rather than
+about a rail.
 
 **The subtlety worth knowing:** since 2026-09-05 the scanner **lexes** rather
 than greps. A token mentioned in a `//`, `///`, `//!` or `/* */` comment, in a

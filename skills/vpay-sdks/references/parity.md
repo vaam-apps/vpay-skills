@@ -188,9 +188,15 @@ When you **rename** a test, edit the cell in the same commit. When you
 - Not that a capability works against a deployed vpay. Both merchant SDKs test
   against in-process stubs; `docs/status.md` is where "has this ever run" is
   answered.
-- Not that the server offers every capability. `refunds.create` and
+- Not that the server offers every capability. ~~`refunds.create` and
   `balance.retrieve` are SDK methods with no route — they reach the nest's
-  `404`. That is a **server** gap tracked in `docs/status.md`, not a parity gap.
+  `404`.~~ **Corrected 2026-09-16:** `refunds.create` **is routed** since
+  2026-09-16 (RFC-0003 § 2, vpay#178), along with update, list and cancel.
+  `balance.retrieve` is the only one left with no route — a ledger read path
+  exists (`vpay_db::Ledger::merchant_payable_balance`) and nothing mounts it.
+  That remains a **server** gap tracked in `docs/status.md`, not a parity gap.
+  A routed `refunds.create` still settles nothing: the refund it creates stays
+  `pending` forever, and no rail has ever returned money.
 
 ## The gap ledger
 

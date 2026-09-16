@@ -15,7 +15,11 @@ workspace may name a `PgPool`, a `sqlx::Transaction`, or a CrateStack handle.
 
 ## Two schemas, one of them authoritative
 
-**`backends/migrations/*.sql` is the schema.** 44 files as of 2026-09-16,
+**`backends/migrations/*.sql` is the schema.** 48 files as of 2026-09-16 —
+this page said **44** until `0045`–`0048` landed the same day (RFC-0003,
+vpay#178); `0045` adds `ledger_entries.merchant_id`, `0046` widens the ledger
+id, and `0047`–`0048` are comment-only corrections to `refunds`. Counted
+off the directory, which is the only authority: they are
 applied in filename order by `sqlx::migrate!("../../migrations")` from
 `vpay_db::migrations::Migrations::run_migrations`, which both binaries call
 at boot and every container-backed suite runs.
