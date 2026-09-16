@@ -121,10 +121,18 @@ and the reachability of each value is uneven in a way worth spelling out:
 
 | Value       | Reached by                                                                                                |
 | ----------- | ---------------------------------------------------------------------------------------------------------- |
-| `pending`   | `POST /v1/refunds` — and **every refund ends here and stays**                                              |
+| `pending`   | `POST /v1/refunds` — and **nothing moves a refund out of it except a refusal**, the row below              |
 | `failed`    | the rail declining, or a `Config`/`NotImplemented` on the way to it (`fail_with_event`)                    |
 | `canceled`  | `POST /v1/refunds/{id}/cancel`, which **refuses every refund whose transfer was already instructed**       |
 | `succeeded` | `Settlement::apply_refund_succeeded` only — **reached by nothing a merchant can cause**                    |
+
+Read those four rows together: a refund the rail **accepted**, and a refund
+whose outcome is **unknown** (`Transport`/`Malformed` — the handler returns
+`201` with the pending row and logs that nothing will move it), both stay
+`pending` indefinitely. Only a refusal moves a refund, and it moves it to
+`failed`. "Nothing settles a pending refund" is the exact claim; "every refund
+stays pending" is the loose one, and it is wrong about Orange, where a refund
+create fails on `NotImplemented("orange_money::refund")`.
 
 **There is still no transition function for this enum, and none should be
 invented.** Every move is a compare-and-swap in the statement — the cancel

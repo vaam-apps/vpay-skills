@@ -158,6 +158,19 @@ answer `501`, and it does **not** mean money came back — see
 [references/objects.md](references/objects.md) § Refund and the `vpay-payments`
 skill before writing anything that implies it did.
 
+**The operational consequence, because it will cost you a day otherwise:**
+there is **no refund poll ladder** (RFC-0003 open question 8), so a refund the
+rail accepts stays `pending` indefinitely. Only a *refusal* moves a refund, to
+`failed`; `succeeded` is written by `Settlement::apply_refund_succeeded` alone
+and **nothing a merchant can cause reaches it.** An integration that creates a refund and
+waits for `succeeded` waits forever. `charge.refund.updated` does **not**
+rescue it: that event is emitted on a failure, on a metadata `update` and on a
+`cancel` — three places, all in `vpay_api::v1::refunds` — and **never on a
+settlement**, because nothing settles. And no rail in this repository has
+ever returned money to anyone: on Orange the create fails outright
+(`NotImplemented("orange_money::refund")`), and on MTN it reaches the
+Disbursements `transfer`, which has never been called outside WireMock.
+
 Both SDKs can call `GET /v1/balance`, and it gets the honest envelope.
 
 ## Where this repository's docs are wrong

@@ -195,8 +195,9 @@ When you **rename** a test, edit the cell in the same commit. When you
   `balance.retrieve` is the only one left with no route — a ledger read path
   exists (`vpay_db::Ledger::merchant_payable_balance`) and nothing mounts it.
   That remains a **server** gap tracked in `docs/status.md`, not a parity gap.
-  A routed `refunds.create` still settles nothing: the refund it creates stays
-  `pending` forever, and no rail has ever returned money.
+  A routed `refunds.create` still settles nothing: an accepted refund stays
+  `pending` indefinitely — only a refusal moves it, to `failed` — and no rail
+  has ever returned money.
 
 ## The gap ledger
 

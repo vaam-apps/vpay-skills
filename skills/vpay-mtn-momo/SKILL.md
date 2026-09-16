@@ -350,10 +350,12 @@ the exact defect issue #46 was filed about, and whether Disbursements reports
 a fee at all is unverified, because the product has never been called.
 
 It could not be written down anyway: there is **no refund poll ladder**
-(RFC-0003 open question 8), so every refund `POST /v1/refunds` creates stays
-`pending` forever — `invoices.amount_refunded` never moves and `refunds.fee`
-is written by nothing. **Do not write a page that narrates a refund reaching a
-payee.**
+(RFC-0003 open question 8), so a transfer this rail **accepts** leaves the
+refund `pending` indefinitely — `invoices.amount_refunded` never moves and
+`refunds.fee` is written by nothing. Only a refusal moves a refund, and it
+moves it to `failed`; `succeeded` is reached by
+`Settlement::apply_refund_succeeded` alone and nothing a merchant can do
+reaches it. **Do not write a page that narrates a refund reaching a payee.**
 
 ## See also
 
