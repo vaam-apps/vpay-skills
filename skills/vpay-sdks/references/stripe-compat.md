@@ -146,11 +146,42 @@ prevent.
   from a proxy's HTML 502** — the only thing that survives is `err.requestId`.
   A `method_not_allowed` renderer and an envelope for the body limit would fix
   both; neither exists.
-- **`search`, `POST /v1/refunds` and `/v1/balance`** are not routed and answer
-  the honest `404 unknown_route`. `GET /v1/refunds/{id}` **is** routed, but
-  nothing drives it through stripe-node's `refunds` resource — so
-  `stripe.refunds.retrieve()` working is **untested rather than known**, and
-  the same is true of `stripe.events.list()`.
+- **`search` and `/v1/balance`** are not routed and answer the honest
+  `404 unknown_route`. ~~`POST /v1/refunds` is in that list.~~ **Corrected
+  2026-09-16:** RFC-0003 § 2 mounted it along with `POST /v1/refunds/{id}`,
+  `GET /v1/refunds` and `POST /v1/refunds/{id}/cancel`; `GET /v1/refunds/{id}`
+  has been routed since 2026-09-05 (issue #45). All five answer Stripe-shaped
+  bodies, but **nothing in `sdks/stripe-compat` drives any of them through
+  stripe-node's `refunds` resource** — that package has no refund case at all
+  as of 2026-09-16 — so `stripe.refunds.create()` and
+  `stripe.refunds.retrieve()` working is **untested rather than known**,
+  exactly as `stripe.events.list()` is.
+
+### Refunds: two divergences a Stripe-shaped client meets, and one it cannot
+
+Neither divergence is Stripe's and both are deliberate.
+
+- **`destination[<payment_method_type>][msisdn]` is required on every rail
+  vpay carries**, because a mobile-money refund is an outbound transfer and
+  needs a payee (RFC-0003 § 1). Stripe has no such parameter, so a copied
+  `stripe.refunds.create({ payment_intent })` is a `400` naming `destination`.
+  The rail code is the **outer key** and must be the one the charge was
+  confirmed on — the server reads that off the charge and refuses any other.
+  The `msisdn` **must start with `+`**: `+237600000200` is a payee and the
+  bare national `600000200` is a `400`, even though `GET /v1/account_holders`
+  takes the bare form. Do not normalise it on the client; the rule is the
+  server's and it may widen.
+- **`POST /v1/refunds/{id}` takes `metadata` and nothing else**, which _is_
+  Stripe's contract. vpay diverges on the refusal: Stripe answers an
+  unaccepted parameter with `parameter_unknown`, vpay answers a `400` naming
+  the parameter it will not take (`amount`, `reason`, `payment_intent` or
+  `destination`) and says to cancel and re-create instead.
+
+And the one no compatibility note can carry: **a `201` does not mean money
+came back.** The refund is `pending`, no rail in this repository has ever
+returned money, and nothing settles a `pending` refund (RFC-0003 open question
+8). A `charge.refunded` arrives — first emission in this repository's history,
+2026-09-16 — carrying `status: "pending"`, and no second event follows.
 
 ## Webhooks
 
@@ -184,7 +215,7 @@ in the gap ledger cover it.
 **Built and proven against a real stack, 2026-09-03**: the real
 `stripe@22.6.1` driven through `createStripeAuthenticator` against a real
 `vpay-server` + Postgres + WireMock rails + worker + WireMock receiver, out of
-process over TCP. **25 cases, 0 skipped**, via `just demo_port=18080
+process over TCP. **25 cases as of 2026-09-16, 0 skipped**, via `just demo_port=18080
 stripe-compat`; CI runs it in the `e2e (compose)` job. The suite **cannot
 skip** — `src/preflight.ts` fails the run when no stack answers.
 
@@ -201,6 +232,10 @@ Not proven:
   forever" rule and comes back a `409`. That is the correct thing to want and
   it is not what happens — stated because it is the predictable consequence of
   the header, not because anything observed it.
+- **Nothing here touches refunds.** The suite gained no refund case when the
+  five routes were mounted on 2026-09-16, so every sentence above about
+  `stripe.refunds.*` against vpay is reasoning from the shapes, not a
+  measurement.
 - **The rail is a WireMock host.** MTN has never been called through this
   suite. No money has moved. The `succeeded` it polls to is a stub mapping
   driven through the real worker, the real settlement transaction and the real

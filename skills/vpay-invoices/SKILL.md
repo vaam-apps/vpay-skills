@@ -28,8 +28,20 @@ read it before assuming anything:
 [references/not-built.md](references/not-built.md). Short version: no PDF, no
 e-mail, no hosted invoice page, no tax, no discount, no credit note, no
 dunning, no subscription, no partial payment, no dashboard screen, and
-`amount_refunded` is `0` in every deployment because **no vpay rail can
-refund**.
+`amount_refunded` is `0` on every invoice in every deployment.
+
+> **The reason `amount_refunded` is `0` changed on 2026-09-16, and the new one
+> is narrower.** ~~No vpay rail can refund, and `POST /v1/refunds` is
+> unrouted.~~ All five `/v1/refunds` routes are mounted now (RFC-0003 § 2),
+> `vpay_db::Refunds::create` writes rows, and
+> `Settlement::apply_refund_succeeded` — which is the only statement that
+> moves `invoices.amount_refunded` — is implemented, tested and **called by
+> nothing**. The gap is that **nothing settles a pending refund**: there is no
+> refund poll ladder (RFC-0003 open question 8), so no code path moves a
+> refund out of `pending` and the statement never runs. Getting this
+> distinction right matters, because "the route does not exist" and "the route
+> exists and its output never reaches the column" send an agent to completely
+> different files.
 
 ## The two objects
 

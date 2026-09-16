@@ -1,6 +1,6 @@
 ---
 name: vpay-webhooks
-description: vpay's outbound webhooks — the fifteen-type event vocabulary closed by a database CHECK, which four types nothing ever emits, the Vpay-Signature and Stripe-Signature HMAC scheme, the two-step outbox, the seven-rung delivery ladder, and the fact that webhook endpoints come only from YAML because there is no endpoint CRUD API. Load this before adding an event type, emitting an event, touching the outbox or the deliverer, or changing anything a merchant verifies.
+description: vpay's outbound webhooks — the fifteen-type event vocabulary closed by a database CHECK, which two types nothing ever emits, the two refund types that started being emitted on 2026-09-16, the Vpay-Signature and Stripe-Signature HMAC scheme, the two-step outbox, the seven-rung delivery ladder, and the fact that webhook endpoints come only from YAML because there is no endpoint CRUD API. Load this before adding an event type, emitting an event, touching the outbox or the deliverer, or changing anything a merchant verifies.
 ---
 
 # Outbound webhooks
@@ -32,11 +32,14 @@ Fifteen types, and the closed set is a Postgres CHECK constraint:
 carries a `String`, not an enum.
 
 **Adding a type is a migration**, and the lockstep rule (migration `0023`) is
-that the writer lands with it. The one type that was ever in the vocabulary
-with nothing writing it — `payment_intent.canceled` — sat there for a week of
-releases while `POST /v1/payment_intents/{id}/cancel` moved the row and told
-nobody, and a merchant who settles from signed events could not reach a
-cancelled state at all.
+that the writer lands with it. ~~The one type that was ever in the vocabulary
+with nothing writing it is `payment_intent.canceled`.~~ **Corrected
+2026-09-16: there were three**, and `payment_intent.canceled` was the
+shortest-lived of them. It sat for a week of releases while
+`POST /v1/payment_intents/{id}/cancel` moved the row and told nobody, and a
+merchant who settles from signed events could not reach a cancelled state at
+all; `charge.refunded` and `charge.refund.updated` sat the same way from
+`0018` until 2026-09-16.
 
 **Only real Stripe event types go in this list.** A custom type is silently
 dropped by any merchant using `stripe-node`'s typed event union or an
@@ -44,17 +47,30 @@ exhaustive `switch`. That constraint is why a _late_ success emits a plain
 `payment_intent.succeeded`: an event merchants structurally tend to ignore is
 the worst possible carrier for "money actually arrived".
 
-**Eleven of the fifteen have a writer. Four never do:**
+**Thirteen of the fifteen have a writer since 2026-09-16. Two never do:**
 
 | Type                        | Why nothing emits it                                            |
 | --------------------------- | --------------------------------------------------------------- |
 | `payment_intent.created`    | events are written for _terminal_ transitions; this is progress |
 | `payment_intent.processing` | same                                                            |
-| `charge.refunded`           | no rail in this repository can refund anything                  |
-| `charge.refund.updated`     | same — and nothing writes a `refunds` row at all                |
 
-Do not write code that waits for one of those four. Full writer table:
+Do not write code that waits for either of those two. Full writer table:
 [references/events.md](references/events.md).
+
+> ~~`charge.refunded` and `charge.refund.updated` have no writer — no rail in
+> this repository can refund anything, and nothing writes a `refunds` row at
+> all.~~ **Corrected 2026-09-16:** both are **emitted**, by
+> `vpay_api::v1::refunds` (RFC-0003 § 2). They were in the original seven of
+> `0018` and stayed documented-but-never-emitted until that date — far longer
+> than `payment_intent.canceled`'s week.
+>
+> **A `charge.refunded` does not mean money came back.** It is written in the
+> transaction that creates a `pending` refund and carries `status: "pending"`.
+> Nothing settles a pending refund (RFC-0003 open question 8), so a handler
+> waiting for a `charge.refund.updated` saying `succeeded` waits for ever.
+> The three `charge.refund.updated` writers, and the one create path that
+> emits both types for one refund inside one HTTP request, are in
+> [references/events.md](references/events.md).
 
 ## The event row goes in the same transaction as the transition
 
@@ -63,10 +79,17 @@ moves the charge to `succeeded`, moves the intent, writes the
 `payment_intent.succeeded` row and — if the intent pays one — the invoice and
 its `invoice.paid`, all in **one** transaction; the customer erasure writes the
 anonymisation and the `customer.deleted` in one; the checkout sweep flips
-`status` and writes `checkout.session.expired` in one.
+`status` and writes `checkout.session.expired` in one. The two refund types
+follow the same shape since 2026-09-16: `POST /v1/refunds` writes the `refunds`
+row, its reservation against the intent and `charge.refunded` in one
+transaction, and the cancel writes the compare-and-swap, the released
+reservation and `charge.refund.updated` in one.
 
-(It writes **no ledger entries**. Nothing in this repository does — see
-`vpay-payments`.)
+~~(It writes **no ledger entries**. Nothing in this repository does.)~~
+**Corrected 2026-09-16:** `Settlement::apply_succeeded` posts a CAPTURE to
+`ledger_transactions`/`ledger_entries` in that same transaction. See the
+`vpay-payments` skill for the ledger; the refund posting
+(`apply_refund_succeeded`) exists and is reached by nothing.
 
 If you emit an event from outside the transaction that made it true, a crash
 between the two either tells a merchant about something that did not happen or
@@ -159,6 +182,16 @@ Ladders, timeouts, abandonment and the runbooks:
   a decline at submit and a decline at a later poll are one thing to a
   merchant. A merchant cannot receive both for one intent, because there is one
   charge per intent forever.
+- **A `charge.refunded` reports a `pending` refund and there is no second
+  event coming.** An event held back until `succeeded` would be one that never
+  arrives. Both refund types render the same ten-key `RefundObject` the API
+  returns.
+- **The payee's number is on no event body and in no response.** A refund's
+  `destination` is persisted in no column at all (RFC-0003 open question 3,
+  undecided), so `charge.refunded` cannot carry it even in principle. A
+  merchant reconciling who was paid uses the rail's records, by
+  `provider_reference_id`. Do not add it: events are stored for ever, which is
+  `customer.deleted`'s redaction argument.
 - **Delivery is at-least-once, unordered, and can be at-most-zero.** A merchant
   who missed one is pointed at `GET /v1/events`, which renders through the
   **same** `EventObject` the deliverer signs. Two renderers would let the
