@@ -58,7 +58,7 @@ Do not write code that waits for one of those four. Full writer table:
 
 ## The event row goes in the same transaction as the transition
 
-There is no other shape in this repository. `vpay_db::settlement::apply_succeeded`
+There is no other shape in this repository. `Settlement::apply_succeeded` (in `vpay-db`'s `settlement` module)
 moves the charge to `succeeded`, moves the intent, writes the
 `payment_intent.succeeded` row and — if the intent pays one — the invoice and
 its `invoice.paid`, all in **one** transaction; the customer erasure writes the

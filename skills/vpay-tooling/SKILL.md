@@ -11,7 +11,8 @@ description: How to build, test, lint and gate vpay — the just recipes that ma
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
 
 `just` is the entry point for everything. `justfile` is ~4700 lines and about
-95% comment — roughly 90 recipes buried in prose. Do not read it top to bottom.
+two-thirds comment (2026-09-16) — the recipes are buried in prose. Do not read
+it top to bottom; `just --list` counts them for you.
 
 ```bash
 just --list                 # every recipe, with its last comment line
@@ -150,7 +151,8 @@ five jobs, so reformatting that line breaks CI.
 ## Further reading
 
 - [references/gates.md](references/gates.md) — the twelve gates in depth,
-  including `verify-ui`'s eleven numbered checks and the both-directions gates.
+  including every `verify-ui` check (its numbering is non-contiguous, so count
+  the recipe's greps rather than trusting its header) and the both-directions gates.
 - [references/recipes.md](references/recipes.md) — the full recipe inventory,
   the compose layering and ports, the demo-stack traps, and the `.env` rules.
 - [references/ci.md](references/ci.md) — the three workflows, `changes` path

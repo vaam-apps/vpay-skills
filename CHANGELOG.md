@@ -16,6 +16,22 @@ MTN sandbox.
 
 Twenty skills, covering all 23 pages in vpay's `docs/flows/`.
 
+### Reviewed
+
+Two adversarial review passes before first publication, with distinct lenses:
+factual accuracy against the tree, and fitness for purpose. Both were run
+against vpay `f063ee96`.
+
+The factual sweep mechanically extracted and grepped every backticked identifier
+across all twenty skills — 339 file paths, 429 snake_case names, 146 constants,
+351 CamelCase names, 26 env vars, 11 metric names — and every one resolves,
+except two whose absence _is_ the claim (`SQLX_OFFLINE`, `ChargeObject`). All 35
+route claims are mounted.
+
+Nine factual defects and six fitness defects were found and fixed before this
+release. The worst was in the gate itself: `verify-coverage` enumerated
+`docs/flows` one level deep, seeing 23 pages of 45, while reporting success.
+
 ### Claims that stopped being true
 
 Nothing yet — this is the first release. Future entries go here, in the shape:

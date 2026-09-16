@@ -122,7 +122,7 @@ Acceptable — prettier normalises the second to the first.
 `enforce-consistent-line-wrapping`'s own `printWidth` (100) minus
 `className=""`. The decisive negative control is that a real primitive the apps
 replaced fits under it — `@vpay/ui`'s deleted `PageShell` string,
-`"mx-auto flex max-w-md flex-col gap-6 p-6"`, is 46 characters.
+`"mx-auto flex max-w-md flex-col gap-6 p-6"`, is 40 characters.
 
 ### 7b — two greps, and one token dropped outright
 

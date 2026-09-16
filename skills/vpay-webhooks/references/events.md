@@ -8,15 +8,16 @@ Verified against the code on **2026-09-16**.
 ## Where the vocabulary lives
 
 The closed set is a **database CHECK**, `type_is_a_documented_event` on
-`events.type`. It has been rewritten four times, each by the migration that
+`events.type`. It has been rewritten by each migration that
 added a type:
 
-| Migration                                         | Added                                                        |
-| ------------------------------------------------- | ------------------------------------------------------------ |
-| `0018_create-events.sql`                          | the original seven                                           |
-| `0028`/`0029_events-checkout-session-expired.sql` | `checkout.session.expired`                                   |
-| `0034_create-customers.sql`                       | `customer.deleted`                                           |
-| `0039_events-customer-created-updated.sql`        | `customer.created`, `customer.updated`, the four `invoice.*` |
+| Migration                                         | Added                                  |
+| ------------------------------------------------- | -------------------------------------- |
+| `0018_create-events.sql`                          | the original seven                     |
+| `0028`/`0029_events-checkout-session-expired.sql` | `checkout.session.expired`             |
+| `0034_create-customers.sql`                       | `customer.deleted`                     |
+| `0036_create-invoices.sql`                        | the four `invoice.*` types             |
+| `0039_events-customer-created-updated.sql`        | `customer.created`, `customer.updated` |
 
 `0039` is the current one. There is no Rust enum: `vpay_db::EventRow::r#type`
 and `vpay_api::model::EventObject::kind` are both `String`. The SDKs carry a
@@ -34,7 +35,7 @@ rule exists.
 | ------------------------------- | ------------------------------------------------------------------------------------------------- | ----------------------- |
 | `payment_intent.created`        | **— nothing**                                                                                     | —                       |
 | `payment_intent.processing`     | **— nothing**                                                                                     | —                       |
-| `payment_intent.succeeded`      | `vpay_db::settlement::apply_succeeded`                                                            | 2026-09-03              |
+| `payment_intent.succeeded`      | `Settlement::apply_succeeded`                                                                     | 2026-09-03              |
 | `payment_intent.payment_failed` | `vpay_db::settlement::apply_failed` **and** `vpay_api::v1::payment_intents::persist_decline`      | 2026-09-03 / 2026-09-10 |
 | `payment_intent.canceled`       | `vpay_api::v1::payment_intents::cancel_with_event`                                                | 2026-09-10              |
 | `charge.refunded`               | **— nothing**                                                                                     | —                       |
@@ -45,7 +46,7 @@ rule exists.
 | `customer.deleted`              | `vpay_db::customers::erase_idle` (retention sweep) **and** `vpay_api::v1::customers::delete_once` | 2026-09-06 / 2026-09-10 |
 | `invoice.created`               | `vpay_api::v1::invoices::write_with_event`                                                        | 2026-09-07              |
 | `invoice.finalized`             | `vpay_api::v1::invoices::write_with_event`                                                        | 2026-09-07              |
-| `invoice.paid`                  | `vpay_db::settlement::apply_succeeded`                                                            | 2026-09-07              |
+| `invoice.paid`                  | `Settlement::apply_succeeded`                                                                     | 2026-09-07              |
 | `invoice.voided`                | `vpay_api::v1::invoices::write_with_event`                                                        | 2026-09-07              |
 
 ### The four with no writer

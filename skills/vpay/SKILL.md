@@ -87,19 +87,19 @@ Then state explicitly, in your summary, what you did _not_ do.
 
 ## Repository map
 
-| Path                   | What is in it                                                                                                                    |
-| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `backends/crates/`     | The Rust workspace: `vpay-core`, `vpay-api`, `vpay-db`, `vpay-provider`, adapters                                                |
-| `backends/apps/`       | `vpay-server` — the one shipping binary, three modes                                                                             |
-| `backends/migrations/` | SQL migrations + `MANIFEST.sha256` (their bytes are pinned)                                                                      |
-| `frontends/apps/`      | `checkout` (the payer page) and the dashboard. The demo shop is `examples/shop`                                                  |
-| `sdks/`                | Merchant SDKs — Rust, Node, Flutter                                                                                              |
-| `schemas/vpay.cstack`  | The CrateStack schema. **It compiles into `vpay-db`** — a syntax error is a build failure                                        |
-| `docs/flows/`          | One page per process: what happens, what can go wrong, what invariant holds                                                      |
-| `docs/status/`         | What is actually built, by area, with dated evidence                                                                             |
-| `docs/adr/`            | Decisions. Immutable — superseded, never edited                                                                                  |
-| `docs/reference/`      | Why the code is shaped the way it is, per crate                                                                                  |
-| `justfile`             | 4 704 lines, ~95% comment (268 KB). **The recipe body is the source of truth** — it wins over its own comment and over AGENTS.md |
+| Path                   | What is in it                                                                                                                                              |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `backends/crates/`     | The Rust workspace: `vpay-core`, `vpay-api`, `vpay-db`, `vpay-provider`, adapters                                                                          |
+| `backends/apps/`       | `vpay-server` — the one shipping binary, three modes                                                                                                       |
+| `backends/migrations/` | SQL migrations + `MANIFEST.sha256` (their bytes are pinned)                                                                                                |
+| `frontends/apps/`      | `checkout` (the payer page) and the dashboard. The demo shop is `examples/shop`                                                                            |
+| `sdks/`                | Merchant SDKs — Rust, Node, Flutter                                                                                                                        |
+| `schemas/vpay.cstack`  | The CrateStack schema. **It compiles into `vpay-db`** — a syntax error is a build failure                                                                  |
+| `docs/flows/`          | One page per process: what happens, what can go wrong, what invariant holds                                                                                |
+| `docs/status/`         | What is actually built, by area, with dated evidence                                                                                                       |
+| `docs/adr/`            | Decisions. Immutable — superseded, never edited                                                                                                            |
+| `docs/reference/`      | Why the code is shaped the way it is, per crate                                                                                                            |
+| `justfile`             | 4 704 lines, two-thirds of them comment (268 KB, 2026-09-16). **The recipe body is the source of truth** — it wins over its own comment and over AGENTS.md |
 
 ## Architecture rules you will trip over
 

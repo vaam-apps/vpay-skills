@@ -3,7 +3,8 @@
 _Verified against vpay `f063ee96` (2026-09-15). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
-`justfile` is ~4700 lines and about 95% comment. `just --list` is the index,
+`justfile` is 4 704 lines, two-thirds of them comment (2026-09-16).
+`just --list` is the index,
 `just --show <recipe>` is the authority, `just --evaluate` prints every
 variable (ports, pinned versions, expected counts). Recipe bodies win over
 their own comments — see the skill's authority rule.
