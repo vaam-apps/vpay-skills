@@ -166,9 +166,9 @@ mobile-money rail is an **outbound transfer**, so it needs a payee; a refund
 on a card or wallet goes back to the instrument that paid. The port carries
 that difference as a capability, never as a rail code.
 
-| `refund_destination` | The core, before it calls `refund`                       | `destination` argument |
-| -------------------- | -------------------------------------------------------- | ---------------------- |
-| `Required`           | refuses a request **without** a payee                    | always `Some`          |
+| `refund_destination` | The core, before it calls `refund`                                                                                           | `destination` argument |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------- | ---------------------- |
+| `Required`           | refuses a request **without** a payee                                                                                        | always `Some`          |
 | `Origin`             | refuses a request **carrying** one (accepting and dropping it would tell a merchant their nominated payee had been honoured) | always `None`          |
 
 Both rails vpay carries declare `Required` as of 2026-09-16, so the `Origin`

@@ -11,7 +11,7 @@ What did change on 2026-09-15: ~~`refund` and `account_holder_name` are the
 port's `Unsupported` default~~ — `account_holder_name` still is;
 **`refund` is now an override answering
 `NotImplemented("orange_money::refund")`**, because RFC-0003 § 5 decided an
-Orange refund *is* an outbound transfer and `supports_refunds` flipped to
+Orange refund _is_ an outbound transfer and `supports_refunds` flipped to
 `true`. It makes no wire call, so there is nothing for this page to describe:
 the reason, and item 5 of the flow doc's "to confirm" list that unblocks it,
 are in the SKILL.md and in [unverified.md](unverified.md).

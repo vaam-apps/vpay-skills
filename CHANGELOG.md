@@ -44,7 +44,7 @@ sets (`vpay-provider-adapters`, `vpay-payments`, `vpay-merchant-api`;
 > **Neither rail answers `Unsupported` for `refund` any more.** Orange's
 > `supports_refunds` is `true` and its `refund` is a declared
 > `NotImplemented("orange_money::refund")`. Every "Unsupported on Orange" is
-> false, and the *reason* changed as well as the value: an Orange refund is a
+> false, and the _reason_ changed as well as the value: an Orange refund is a
 > transfer back, so its absence is work vpay owes rather than a fact about the
 > rail.
 
@@ -85,7 +85,7 @@ unchanged. Specifically:
   budget: `vpay-mtn-momo` (370), `vpay-orange-money` (312),
   `vpay-provider-adapters` (278), `vpay-payments` (267). They were **not**
   split. The reasoning is recorded in CONTRIBUTING.md item 2; in short, each is
-  long because of a negative claim, and a reference page is one an agent *may*
+  long because of a negative claim, and a reference page is one an agent _may_
   open. The budget was not raised, and whether it should move is left to the
   maintainer.
 - **A test name that misleads.**

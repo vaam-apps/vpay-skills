@@ -35,7 +35,7 @@ Two consequences:
   docs or commit messages. Say what the stub does, and say what is assumed.
   The existing comments do; keep it that way.
 - **Refunds are a third case and the sharpest one**: the rail has never been
-  called *and* the transfer it would be called with has no specification here
+  called _and_ the transfer it would be called with has no specification here
   at all. See `refund` below before writing a line of it.
 
 The full "still unverified" list is in
@@ -49,7 +49,7 @@ anything in this crate.
 `requires_ip_allowlist: false`, `supports_account_holder_lookup: false`,
 **`refund_destination: RefundDestination::Required`**.
 
-`supports_partial_refunds: false` is *decided*, not left over from the flip.
+`supports_partial_refunds: false` is _decided_, not left over from the flip.
 `Capabilities::is_coherent` and migration `0002`'s
 `partial_refunds_imply_refunds` both permit `true` now, and permitted is not
 decided: `supports_refunds` rests on one known thing — that an Orange refund
@@ -185,17 +185,17 @@ Err(ProviderError::NotImplemented("orange_money::refund"))
 `Err(ProviderError::Unsupported)`, the permanent answer for a rail with no
 refund API. `supports_refunds: false`. There is no `orange_money::*` token in
 `docs/status.md` and there must not be one.~~ **Corrected 2026-09-15 (RFC-0003
-§ 5).** Every clause of that is now false, and the *reason* inverted rather
+§ 5).** Every clause of that is now false, and the _reason_ inverted rather
 than the value alone:
 
-| until 2026-09-15                               | since 2026-09-15                                            |
-| ---------------------------------------------- | ----------------------------------------------------------- |
-| `supports_refunds: false`                      | **`true`**                                                   |
-| the port's default, `Unsupported`              | an override answering `NotImplemented("orange_money::refund")` |
-| a fact about **Orange** — "this rail has no refund API" | an admission about **vpay** — work someone owes       |
-| no `orange_money::*` token in `docs/status.md` | **the one token `verify-status` counts**                     |
+| until 2026-09-15                                        | since 2026-09-15                                               |
+| ------------------------------------------------------- | -------------------------------------------------------------- |
+| `supports_refunds: false`                               | **`true`**                                                     |
+| the port's default, `Unsupported`                       | an override answering `NotImplemented("orange_money::refund")` |
+| a fact about **Orange** — "this rail has no refund API" | an admission about **vpay** — work someone owes                |
+| no `orange_money::*` token in `docs/status.md`          | **the one token `verify-status` counts**                       |
 
-The maintainer decided what an Orange refund *is*: an outbound **transfer**
+The maintainer decided what an Orange refund _is_: an outbound **transfer**
 back to a payee. Orange makes transfers, so the rail can refund and
 `Unsupported` — which the core branches on as a permanent capability answer —
 would now be a lie about Orange rather than an admission about us. A rail that
@@ -215,7 +215,7 @@ workspace ships an adapter for must be carried by that rail's crate.
 reconstructed — and none was invented.** The three calls the adapter does make
 came from Orange Developer's public overview plus community SDKs that agree
 with each other; for transfers no such source exists here, so an endpoint path
-and a request body would be *invented*, in the money path, on a rail nobody
+and a request body would be _invented_, in the money path, on a rail nobody
 has ever called. That is the failure mode `CLAUDE.md` names first.
 
 **What unblocks the token is item 5 of
@@ -223,7 +223,7 @@ has ever called. That is the failure mode `CLAUDE.md` names first.
 list** — rewritten 2026-09-15 from "Refund/disbursement availability" to "the
 transfer product: which one, on what endpoint, with what request body, under
 which credential, and with what amount rules". RFC-0003 § 5 settled the
-*availability*; what is open is the **specification**, and it is now the one
+_availability_; what is open is the **specification**, and it is now the one
 item on that list that blocks a shipping token. It is not answerable from
 anything in this repository, which is the point of leaving it there rather
 than guessing. More reading does not close it.
@@ -236,16 +236,16 @@ would be the first half of a pretence.
 
 `destination[orange_money][msisdn]`, parsed by this adapter — `POST /v1/refunds`
 calls it since 2026-09-16 and then answers the merchant the token. The two
-answer different questions and only one needs Orange's transfer spec: *who* a
+answer different questions and only one needs Orange's transfer spec: _who_ a
 refund is addressed to is vpay's own merchant-facing parameter (RFC-0003 § 1)
-and is fully known; *how* an Orange transfer body would carry that payee is
+and is fully known; _how_ an Orange transfer body would carry that payee is
 not known here at all.
 
 `DESTINATION_MSISDN_KEY` is the only place in the crate that spells the key,
 and it is **not** a field of Orange's API — there is no documented Orange
 transfer body here to have taken a name from. A missing key, a non-string
 value and a blank string are `Malformed` (blank is absent: a blank value is a
-lost one, not a choice). The *number* is validated by
+lost one, not a choice). The _number_ is validated by
 `RefundTarget::mobile_money`, not here — the adapter owns the key, the port
 owns the number — so a bare `600000200` is refused here while
 `GET /v1/account_holders` accepts it, and **no message ever contains the
@@ -254,7 +254,7 @@ value**.
 `Required` rests on the same sentence `supports_refunds` is true by: there is
 no "back the way it came" on a redirect rail where `payer_ref` is `None` and
 vpay never learns who paid, so a refund here is addressed or it is nowhere.
-It was declared `Required` *while* `supports_refunds` was still `false`, on
+It was declared `Required` _while_ `supports_refunds` was still `false`, on
 purpose, so the flip would be one line about refunds and not also a fresh
 guess about destinations.
 
@@ -281,7 +281,7 @@ property it exercised moved to
 `vpay-provider`, on a stub that overrides nothing. **The name now describes
 the dead arm.**
 
-Live on `orange_money` is the *token* arm of `claims_refunds`: an unbuilt
+Live on `orange_money` is the _token_ arm of `claims_refunds`: an unbuilt
 refund on a rail advertising refunds must answer
 `NotImplemented("<its own code>::refund")` — never `Unsupported`, never `Ok`,
 and never a copy-pasted token naming another rail, since `verify-status`

@@ -97,7 +97,7 @@ assume the empty state is the only state — but every row it shows will read
 `pending`, because **nothing settles a refund** (no poll ladder, RFC-0003 open
 question 8) and **no rail has ever returned money to anyone.** A row on this
 screen is an instruction recorded, never a payout. The dashboard still cannot
-*create* one: `/dash/v1` refuses every non-`GET` at the boundary.
+_create_ one: `/dash/v1` refuses every non-`GET` at the boundary.
 
 `/login/password` is a step, not a nag: `vpay-server staff add` sets
 `password_change_required`, and ADR-0017 decision 1 refuses **every**

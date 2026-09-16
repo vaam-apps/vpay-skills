@@ -35,10 +35,10 @@ gone. **Do not reintroduce a public posting entry point.**_
 
 ## The two call sites, and which one actually runs
 
-| Posting     | Written by                             | `Transaction` builder                | Reached in a shipping binary?                                     |
-| ----------- | -------------------------------------- | ------------------------------------ | ----------------------------------------------------------------- |
-| **CAPTURE** | `Settlement::apply_succeeded`          | `Transaction::capture(merchant, gross, fee)` | **yes** — `vpay_worker`'s settle path calls it       |
-| **REFUND**  | `Settlement::apply_refund_succeeded`   | `Transaction::refund(merchant, amount)`      | **no** — nothing settles a refund, so nothing calls it |
+| Posting     | Written by                           | `Transaction` builder                        | Reached in a shipping binary?                          |
+| ----------- | ------------------------------------ | -------------------------------------------- | ------------------------------------------------------ |
+| **CAPTURE** | `Settlement::apply_succeeded`        | `Transaction::capture(merchant, gross, fee)` | **yes** — `vpay_worker`'s settle path calls it         |
+| **REFUND**  | `Settlement::apply_refund_succeeded` | `Transaction::refund(merchant, amount)`      | **no** — nothing settles a refund, so nothing calls it |
 
 Those two, and nothing else, which is what makes every sentence about "the
 caller's transaction" checkable by reading one file. The refund half is real,
@@ -170,8 +170,7 @@ ways worth knowing about**:
   because the index is decimal and decimal contains no `_`
   (`the_entry_id_derivation_is_injective`).
 
-  **A minted id does not make `ledger_transactions_pkey` a guard of invariant
-  4.** A random id cannot be. What stops a charge growing a second capture
+  **A minted id does not make `ledger_transactions_pkey` a guard of invariant 4.** A random id cannot be. What stops a charge growing a second capture
   transaction is `apply_succeeded`'s compare-and-swap on the charge still being
   live, which stops the settlement running twice at all. A second, independent
   guard needs a schema change, and that is a maintainer's decision.
@@ -185,12 +184,12 @@ does not carry a currency; each leg does, which is why invariant 1 is stated
 
 `docs/flows/ledger.md` names four.
 
-| #   | Invariant                                                                   | Status as of 2026-09-16                                                                         |
-| --- | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| 1   | per transaction: `SUM(debit) = SUM(credit)`, **per currency**               | **Enforced on every write** — `Transaction::validate()`, called by `post_in_tx` before any statement |
+| #   | Invariant                                                                   | Status as of 2026-09-16                                                                               |
+| --- | --------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| 1   | per transaction: `SUM(debit) = SUM(credit)`, **per currency**               | **Enforced on every write** — `Transaction::validate()`, called by `post_in_tx` before any statement  |
 | 2   | per merchant: `balance(merchant_payable) = Σ captures − Σ fees − Σ refunds` | **Computable since 2026-09-15, asserted by nothing** — `Ledger::merchant_payable_balance` is the read |
-| 3   | `amount_refunded` equals the sum of succeeded refunds for that intent       | **Asserted by nothing**                                                                          |
-| 4   | every succeeded charge has exactly one capture transaction                  | **Asserted by nothing** — `apply_succeeded`'s CAS is what makes it hold, not a check              |
+| 3   | `amount_refunded` equals the sum of succeeded refunds for that intent       | **Asserted by nothing**                                                                               |
+| 4   | every succeeded charge has exactly one capture transaction                  | **Asserted by nothing** — `apply_succeeded`'s CAS is what makes it hold, not a check                  |
 
 > The flow doc says they are "asserted nightly". **There is no nightly
 > assertion.** Nothing schedules an invariant check on any of 2, 3 or 4; that

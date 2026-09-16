@@ -35,10 +35,10 @@ convention. It has been in `docs/flows/adapter-mtn-momo.md` § "Credential
 hierarchy" since Step 3 and **nothing acted on it until Disbursements was
 built on 2026-09-15**.
 
-| `Product`       | path segment    | `credentials.*` / `settings.*`                                                                | what it serves                                    |
-| --------------- | --------------- | --------------------------------------------------------------------------------------------- | ------------------------------------------------- |
-| `Collections`   | `collection`    | `subscription_key`, `api_key`, `api_user`                                                     | `requesttopay`, the status read, `basicuserinfo`  |
-| `Disbursements` | `disbursement`  | `disbursement_subscription_key`, `disbursement_api_key`, `disbursement_api_user`              | `transfer` — the refund, the only money-out call  |
+| `Product`       | path segment   | `credentials.*` / `settings.*`                                                   | what it serves                                   |
+| --------------- | -------------- | -------------------------------------------------------------------------------- | ------------------------------------------------ |
+| `Collections`   | `collection`   | `subscription_key`, `api_key`, `api_user`                                        | `requesttopay`, the status read, `basicuserinfo` |
+| `Disbursements` | `disbursement` | `disbursement_subscription_key`, `disbursement_api_key`, `disbursement_api_user` | `transfer` — the refund, the only money-out call |
 
 **Both path segments are singular and neither matches the product's English
 name**; a plural in either is a 404 from the gateway. `target_environment` is
@@ -92,7 +92,7 @@ tested and disproven; the ALPN change made under it was reverted.)
 `"bodyPatterns": [{ "contains": "client_credentials" }]`, so a bodyless or
 form-encoded mint cannot match the stub.~~ **Corrected 2026-09-16: that
 matcher did not hold it.** `grant_type=client_credentials` — the exact
-form-encoded spelling PR #177 fixed — *also* contains the substring, so the
+form-encoded spelling PR #177 fixed — _also_ contains the substring, so the
 regression would have gone green. Since 2026-09-15 the mapping is
 
 ```json
@@ -234,7 +234,7 @@ bearer from `POST /disbursement/token/`, `X-Reference-Id` and the body's
 a separate struct on purpose: one struct with a runtime `#[serde(rename)]`
 would put the two products' bodies one boolean apart, and a `payer` on a
 transfer is money leaving to the wrong party. `amount` is a decimal string on
-both products. **No `X-Callback-Url`** — `parse_callback` reads a *charge*
+both products. **No `X-Callback-Url`** — `parse_callback` reads a _charge_
 reference, so a Disbursements notification would find no charge and be
 `Malformed` on every delivery; the header goes in when a refund poll job
 exists to pull forward.
@@ -275,15 +275,15 @@ on both binaries**, before any key check runs.
 Pure, like `submit_outcome`. Put new behaviour here, not in the request
 builder.
 
-| status        | outcome                                                                      |
-| ------------- | ---------------------------------------------------------------------------- |
-| `202`         | `Ok(Refunded { ref_extra: empty, fee: None })` — **accepted, not settled**   |
-| **`409`**     | **`Ok`**, same value — the rail already has this reference                   |
-| `400`         | `Rejected` with `mapping::failure_code(code)` — Collections' vocabulary      |
-| `401` / `403` | `Rejected{ProviderAccountBlocked}` — the **Disbursements** credentials       |
-| `500`         | `mapping::internal_error(..)` — the same `CONFIGURATION_CODES` table         |
-| other `5xx`   | `Transport`                                                                  |
-| `404`         | `Config` — likeliest symptom of a base URL with no Disbursements product     |
+| status        | outcome                                                                                     |
+| ------------- | ------------------------------------------------------------------------------------------- |
+| `202`         | `Ok(Refunded { ref_extra: empty, fee: None })` — **accepted, not settled**                  |
+| **`409`**     | **`Ok`**, same value — the rail already has this reference                                  |
+| `400`         | `Rejected` with `mapping::failure_code(code)` — Collections' vocabulary                     |
+| `401` / `403` | `Rejected{ProviderAccountBlocked}` — the **Disbursements** credentials                      |
+| `500`         | `mapping::internal_error(..)` — the same `CONFIGURATION_CODES` table                        |
+| other `5xx`   | `Transport`                                                                                 |
+| `404`         | `Config` — likeliest symptom of a base URL with no Disbursements product                    |
 | `3xx`         | `Malformed` — never followed; a hop would replay the key, bearer **and the payee's number** |
 
 Three things about that table are worth not re-deriving.
@@ -311,7 +311,7 @@ is only correct if the core hands this method the refund's own
 `provider_reference_id`** (RFC-0003 § 3 step 2; `refunds.provider_reference_id`,
 migration `0017`). The port cannot express the difference — `refund` takes a
 `ChargeRef`, which carries one reference — so one of the two has to be the
-refund's, and it is this one. Hand it the *charge's* reference instead and the
+refund's, and it is this one. Hand it the _charge's_ reference instead and the
 failure is silent: a second partial refund reuses a reference MTN has seen,
 gets `409 RESOURCE_ALREADY_EXIST`, and is reported **accepted** — a refund the
 merchant is told happened and for which no money moved.
@@ -330,7 +330,7 @@ key** — `DESTINATION_MSISDN_KEY`, the one place in the workspace that spells
 it. It is vpay's merchant-facing parameter (RFC-0003 § 1), not a field of
 MTN's API, which is why it need not match `payee.partyId`. A missing key, a
 non-string value (a JSON number is **refused, not coerced** — a leading `+` or
-`0` does not survive one) and a blank string are each `Malformed`. The *number*
+`0` does not survive one) and a blank string are each `Malformed`. The _number_
 is validated by `RefundTarget::mobile_money`, not here: the adapter owns the
 key, the port owns the number, and an adapter cannot construct an invalid
 `RefundTarget` at all. So a bare `600000200` is refused here while

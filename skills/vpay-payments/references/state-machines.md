@@ -119,12 +119,12 @@ because anything reaches it, and nothing writes a refund at all.~~
 **Corrected 2026-09-16 (RFC-0003 §§ 2-3).** A merchant creates refunds now,
 and the reachability of each value is uneven in a way worth spelling out:
 
-| Value       | Reached by                                                                                                |
-| ----------- | ---------------------------------------------------------------------------------------------------------- |
-| `pending`   | `POST /v1/refunds` — and **nothing moves a refund out of it except a refusal**, the row below              |
-| `failed`    | the rail declining, or a `Config`/`NotImplemented` on the way to it (`fail_with_event`)                    |
-| `canceled`  | `POST /v1/refunds/{id}/cancel`, which **refuses every refund whose transfer was already instructed**       |
-| `succeeded` | `Settlement::apply_refund_succeeded` only — **reached by nothing a merchant can cause**                    |
+| Value       | Reached by                                                                                           |
+| ----------- | ---------------------------------------------------------------------------------------------------- |
+| `pending`   | `POST /v1/refunds` — and **nothing moves a refund out of it except a refusal**, the row below        |
+| `failed`    | the rail declining, or a `Config`/`NotImplemented` on the way to it (`fail_with_event`)              |
+| `canceled`  | `POST /v1/refunds/{id}/cancel`, which **refuses every refund whose transfer was already instructed** |
+| `succeeded` | `Settlement::apply_refund_succeeded` only — **reached by nothing a merchant can cause**              |
 
 Read those four rows together: a refund the rail **accepted**, and a refund
 whose outcome is **unknown** (`Transport`/`Malformed` — the handler returns
@@ -236,19 +236,19 @@ this build cannot name never turns a merchant's `GET` into a `500`.
 
 ## Where the state lives, versus where it is enforced
 
-| Invariant                                     | Enforced by                                                                                          |
-| --------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| legal intent transition                       | `next_status` **and** a compare-and-swap `UPDATE ... WHERE status = …`                               |
-| one charge per intent                         | `CREATE UNIQUE INDEX one_charge_per_intent` (migration `0004`)                                       |
-| one invoice per intent                        | the same device, migration `0036`                                                                    |
-| `paid` implies nothing remaining              | `paid_means_nothing_remaining` CHECK (migration `0036`)                                              |
-| no over-refund                                | `no_over_refund` CHECK (migration `0003`) — reachable from `POST /v1/refunds` since 2026-09-16       |
-| a refund the rail already has is not cancellable | `NOT EXISTS (… provider_requests … 'refund')` in the cancel statement (2026-09-16)                 |
-| a ledger transaction balances, per currency   | `vpay_ledger::Transaction::validate()`, called by `vpay_db::ledger::post_in_tx` before any statement  |
-| a `merchant_id` iff `merchant_payable`        | `ledger_entries_merchant_id_iff_merchant_payable` CHECK (migration `0045`) **and** `AccountKind`'s sum type |
-| non-negative amounts                          | four CHECKs on `payment_intents`, plus `Money::new`                                                  |
-| `supports_partial_refunds ⇒ supports_refunds` | `Capabilities::is_coherent` in Rust **and** `partial_refunds_imply_refunds` CHECK (migration `0002`) |
-| event type is in the vocabulary               | `type_is_a_documented_event` CHECK (migration `0039`)                                                |
+| Invariant                                        | Enforced by                                                                                                 |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
+| legal intent transition                          | `next_status` **and** a compare-and-swap `UPDATE ... WHERE status = …`                                      |
+| one charge per intent                            | `CREATE UNIQUE INDEX one_charge_per_intent` (migration `0004`)                                              |
+| one invoice per intent                           | the same device, migration `0036`                                                                           |
+| `paid` implies nothing remaining                 | `paid_means_nothing_remaining` CHECK (migration `0036`)                                                     |
+| no over-refund                                   | `no_over_refund` CHECK (migration `0003`) — reachable from `POST /v1/refunds` since 2026-09-16              |
+| a refund the rail already has is not cancellable | `NOT EXISTS (… provider_requests … 'refund')` in the cancel statement (2026-09-16)                          |
+| a ledger transaction balances, per currency      | `vpay_ledger::Transaction::validate()`, called by `vpay_db::ledger::post_in_tx` before any statement        |
+| a `merchant_id` iff `merchant_payable`           | `ledger_entries_merchant_id_iff_merchant_payable` CHECK (migration `0045`) **and** `AccountKind`'s sum type |
+| non-negative amounts                             | four CHECKs on `payment_intents`, plus `Money::new`                                                         |
+| `supports_partial_refunds ⇒ supports_refunds`    | `Capabilities::is_coherent` in Rust **and** `partial_refunds_imply_refunds` CHECK (migration `0002`)        |
+| event type is in the vocabulary                  | `type_is_a_documented_event` CHECK (migration `0039`)                                                       |
 
 The pattern: a rule that a concurrent writer could violate lives in the
 **statement or the index**, and a Rust guard beside it is at best a nicer error

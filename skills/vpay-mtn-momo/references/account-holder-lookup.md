@@ -35,21 +35,21 @@ it restored are the reason to keep it that way:
   — and a caller missing from the series makes that alarm read a fraction of
   the traffic;
 - a refund refused for an unregistered payee is refused **before any row, any
-  attempt and any rail instruction**, so without `ask_rail`'s line it left *no
-  trace at all*: a third party looked up by phone number with nothing written
+  attempt and any rail instruction**, so without `ask_rail`'s line it left _no
+  trace at all_: a third party looked up by phone number with nothing written
   anywhere in vpay.
 
 Two consequences follow for this method, and they are the sharp ones:
 
 1. **A `payments:write` credential can now probe registration and read the
    answer off a `400`.** The reserved rate-limit decision in issue #47 § 3 is
-   therefore about *lookups*, not about a route — a limit that covered only
+   therefore about _lookups_, not about a route — a limit that covered only
    `GET /v1/account_holders` would not be the control it reads as.
 2. **The refund caller never compares a name.** It branches on
    `Some`/`None` only: `Some(_)` means the number is a registered account and
    the transfer may be attempted, `None` is a `400` naming `destination`, and
    an `Err` keeps its own `502`/`500`. vpay holds no verified buyer name to
-   compare against, so matching the holder's name is the *merchant's* job —
+   compare against, so matching the holder's name is the _merchant's_ job —
    which is what the route exists for. The name is not stored, not logged and
    not compared.
 

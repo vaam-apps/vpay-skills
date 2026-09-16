@@ -119,9 +119,10 @@ landed has no `shop` database.
   Nothing settles a pending refund (there is no refund poll ladder, RFC-0003
   open question 8), so a refund the rail accepted — or one whose outcome is
   unknown — stays `pending` indefinitely, `invoices.amount_refunded` never
-  moves, and `refunds.fee` is written by nothing. Only a *refusal* moves a
+  moves, and `refunds.fee` is written by nothing. Only a _refusal_ moves a
   refund, to `failed`; nothing reaches `succeeded` that a merchant can cause. If you are looking at a stuck `pending` refund, that is the designed
   state, not your bug.
+
 - **`refunds.fee` is nullable with no `DEFAULT` on purpose.** `None` means "the
   rail did not report a fee" and `Some(0)` means "the rail said it was free";
   collapsing them is the defect the integrator issue reported. An adapter must

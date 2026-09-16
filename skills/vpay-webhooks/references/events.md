@@ -108,6 +108,7 @@ a merchant handler has to know:
    `pending` with its reservation held, and the merchant is answered `201`
    with that pending refund. Reconcile it against the rail by its
    `provider_reference_id` — **nothing in this repository will move it.**
+
 4. **`apply_refund_succeeded` deliberately emits neither**, and that is not an
    oversight to fix by adding an `INSERT` there. Emitting one needs the wire
    object `vpay-api` shapes, which is the caller's to supply; a caller that

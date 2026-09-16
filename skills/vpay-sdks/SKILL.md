@@ -51,13 +51,13 @@ gate refuses: `references/parity.md`. Read it before editing
 
 ## The packages
 
-| Path                                 | Name                            | What it is                                                                                                                                                                                                                                   | Published                                                                                                                                            |
-| ------------------------------------ | ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Path                                 | Name                            | What it is                                                                                                                                                                                                                                  | Published                                                                                                                                            |
+| ------------------------------------ | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `sdks/nodejs`                        | `@vaam-apps/vpay-sdk`           | **Merchant** SDK for `/v1`. `private_key_jwt` auth, the single-401 re-auth, the form encoder, `verifyWebhook`, and nine resources. Second entry point `./stripe` exports `createStripeAuthenticator`, with `stripe` as an **optional** peer | yes, public                                                                                                                                          |
 | `sdks/rust`                          | `vpay-sdk`                      | The Rust twin. Same nine resources, same wire                                                                                                                                                                                               | **`publish = false`, deliberately** — "publishing a client for an API nobody can reach would be actively misleading". Flip it once `/v1` is deployed |
-| `sdks/stripe-js`                     | `@vaam-apps/vpay-stripe-js`     | The browser **payer** surface, Stripe.js-shaped. `loadStripe`, `initEmbeddedCheckout`, `openCheckoutPopup`, `notifyCheckoutOpener`. **Zero runtime dependencies**                                                                            | yes, public                                                                                                                                          |
-| `sdks/flutter/vpay_checkout_flutter` | `vpay_checkout_flutter`         | The mobile **payer** surface. Opens the hosted page in a native window and reports a typed result once the intent actually settles                                                                                                           | **`publish_to: none`** (2026-09-13)                                                                                                                  |
-| `sdks/stripe-compat`                 | `@vaam-apps/vpay-stripe-compat` | **Evidence, not an SDK.** Drives the real `stripe@22.6.1` package against a live compose stack. `private: true`, ships nothing, and **gets no rows in the parity matrix** — "the compat suite proves claims rather than making them"         | never                                                                                                                                                |
+| `sdks/stripe-js`                     | `@vaam-apps/vpay-stripe-js`     | The browser **payer** surface, Stripe.js-shaped. `loadStripe`, `initEmbeddedCheckout`, `openCheckoutPopup`, `notifyCheckoutOpener`. **Zero runtime dependencies**                                                                           | yes, public                                                                                                                                          |
+| `sdks/flutter/vpay_checkout_flutter` | `vpay_checkout_flutter`         | The mobile **payer** surface. Opens the hosted page in a native window and reports a typed result once the intent actually settles                                                                                                          | **`publish_to: none`** (2026-09-13)                                                                                                                  |
+| `sdks/stripe-compat`                 | `@vaam-apps/vpay-stripe-compat` | **Evidence, not an SDK.** Drives the real `stripe@22.6.1` package against a live compose stack. `private: true`, ships nothing, and **gets no rows in the parity matrix** — "the compat suite proves claims rather than making them"        | never                                                                                                                                                |
 
 The two payer surfaces are **not** a third and fourth merchant SDK. They
 authenticate a payer's _device_ with a publishable key and a per-session
@@ -84,7 +84,7 @@ rail the charge was made on, the server reads that off the charge, and a
 `destination` naming any other rail is a `400` naming `destination`.
 
 > **The trap.** The server's validator — `vpay_provider::RefundTarget::
-> mobile_money`, which is fallible and canonicalising — **requires a leading
+mobile_money`, which is fallible and canonicalising — **requires a leading
 > `+`**. `+237600000200` is a payee; the bare national `600000200` is a `400`
 > naming `destination`, even though `GET /v1/account_holders` accepts the bare
 > form on the same server. The asymmetry is deliberate and runs in the safe
@@ -97,7 +97,7 @@ rail the charge was made on, the server reads that off the charge, and a
 > own fixtures and fail against the real server the moment the server's rule
 > widened, because the fixtures would be asserting the SDK's rule back to
 > itself. `the_sdk_never_normalises_a_payees_number` and `refunds.create never
-> normalises a payee's number on its way to the wire` are the cases; deleting
+normalises a payee's number on its way to the wire` are the cases; deleting
 > either is how this regresses.
 
 `destination` is optional in both param types **only** because the port allows

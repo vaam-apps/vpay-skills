@@ -200,10 +200,10 @@ and it is `pub(crate)` with no entry on any public trait — so a consumer names
 the business operation, never the raw double entry. Two call sites, both in
 `vpay_db::settlement`:
 
-| Posting     | Written by                            | Reached in a shipping binary?                              |
-| ----------- | ------------------------------------- | ---------------------------------------------------------- |
-| **CAPTURE** | `Settlement::apply_succeeded`         | **yes** — `vpay_worker`'s settle path                      |
-| **REFUND**  | `Settlement::apply_refund_succeeded`  | **no** — nothing settles a refund, so nothing calls it     |
+| Posting     | Written by                           | Reached in a shipping binary?                          |
+| ----------- | ------------------------------------ | ------------------------------------------------------ |
+| **CAPTURE** | `Settlement::apply_succeeded`        | **yes** — `vpay_worker`'s settle path                  |
+| **REFUND**  | `Settlement::apply_refund_succeeded` | **no** — nothing settles a refund, so nothing calls it |
 
 Two more things moved the same day: `AccountKind::MerchantPayable` gained
 `merchant_id` as a **variant payload** (mirrored by

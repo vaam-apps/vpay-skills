@@ -116,7 +116,7 @@ body between adapters and shipping `NotImplemented("mtn_momo::refund")` inside
 `vpay-adapter-orange-money`.
 
 **Why the third direction exists, measured.** The first two directions compare
-*sets of strings* and neither knows which file a token came from, so one
+_sets of strings_ and neither knows which file a token came from, so one
 adapter answering another rail's token is invisible to both as long as the two
 sets still match. Measured on 2026-09-15: with Orange's token replaced by
 MTN's, the gate first failed with _"`docs/status.md` declares
@@ -129,7 +129,7 @@ mutation and was written for it, but it needs Docker, covers only `refund` on
 the two configured rails, and is not what `AGENTS.md` points at. This check
 covers every token on every rail and runs in `just verify`.
 
-**What it deliberately does not constrain:** only prefixes that *are* a
+**What it deliberately does not constrain:** only prefixes that _are_ a
 shipping rail code. A token named `worker::poll` or `ledger::post` is
 unconstrained — the repository has no convention about where such a token may
 live, and inventing one in a gate would be a rule about characters rather than

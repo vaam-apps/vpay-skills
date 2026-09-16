@@ -33,18 +33,18 @@ breaks its tripwire test on purpose** — update the count and the SDKs together
 `vpay_core::ids` owns all of them, with `is_well_formed(prefix, id)` and a
 minting function per type.
 
-| Prefix  | Object                                |
-| ------- | ------------------------------------- |
-| `pi_`   | PaymentIntent                         |
-| `ch_`   | Charge (internal — never on the wire) |
-| `re_`   | Refund                                |
-| `evt_`  | Event                                 |
-| `cs_`   | CheckoutSession                       |
-| `cus_`  | Customer                              |
-| `in_`   | Invoice                               |
-| `ii_`   | InvoiceItem                           |
-| `stf_`  | Staff member                          |
-| `cred_` | Credential                            |
+| Prefix  | Object                                                              |
+| ------- | ------------------------------------------------------------------- |
+| `pi_`   | PaymentIntent                                                       |
+| `ch_`   | Charge (internal — never on the wire)                               |
+| `re_`   | Refund                                                              |
+| `evt_`  | Event                                                               |
+| `cs_`   | CheckoutSession                                                     |
+| `cus_`  | Customer                                                            |
+| `in_`   | Invoice                                                             |
+| `ii_`   | InvoiceItem                                                         |
+| `stf_`  | Staff member                                                        |
+| `cred_` | Credential                                                          |
 | `lt_`   | Ledger transaction (internal — never on the wire; added 2026-09-15) |
 
 Also in `ids`: `CLIENT_SECRET_INFIX` (`_secret_`), `client_secret_suffix()`
@@ -104,13 +104,13 @@ writes it, and nothing settles a `pending` refund.
 `POST /v1/refunds` does (RFC-0003 § 2).** What the create accepts, which is
 _not_ the object's key set:
 
-| Param            | Notes                                                                                                   |
-| ---------------- | ------------------------------------------------------------------------------------------------------- |
-| `payment_intent` | required; must be this merchant's `succeeded` intent, else a `404`                                       |
+| Param            | Notes                                                                                                                                                               |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `payment_intent` | required; must be this merchant's `succeeded` intent, else a `404`                                                                                                  |
 | `amount`         | **a string on the wire** — the body is form-encoded, and typing it here would hand "not a number" to serde, which answers `param: "body"`. Defaults to what remains |
-| `reason`         | optional                                                                                                |
-| `destination`    | a nested map — see below                                                                                 |
-| `metadata`       | the usual bounds                                                                                        |
+| `reason`         | optional                                                                                                                                                            |
+| `destination`    | a nested map — see below                                                                                                                                            |
+| `metadata`       | the usual bounds                                                                                                                                                    |
 
 **`destination` is the eleventh key that is deliberately not on the object.**
 The wire shape is `destination[<rail_code>][msisdn]` — nested under the rail's

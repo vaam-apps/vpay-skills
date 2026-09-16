@@ -24,7 +24,7 @@ RFC-0003 § 1 accepts the destination unverified.
 **It goes through `account_holders::ask_rail`, not through the adapter.** It
 reached the adapter directly until review on 2026-09-16, which broke two
 stated properties at once: `vpay_account_holder_lookups_total` stopped being
-*every* lookup vpay makes — under the very alarm the flow doc asks an operator
+_every_ lookup vpay makes — under the very alarm the flow doc asks an operator
 to set on a sustained `not_found` rate — and a refused payee left **no trace
 at all**, because the refusal happens before any row, any attempt and any rail
 instruction. `ask_rail` is now the single place that can break rules 3 and 4
@@ -224,7 +224,7 @@ sees the gap.
 owes", and has been too broad since 2026-09-15.** Orange's `refund` is exactly
 such work: `supports_refunds` flipped `false → true` and the adapter now
 answers a declared `NotImplemented("orange_money::refund")` rather than
-`Unsupported`, because RFC-0003 § 5 decided an Orange refund *is* a transfer
+`Unsupported`, because RFC-0003 § 5 decided an Orange refund _is_ a transfer
 back. Two flags on one rail, two different shapes — see the `vpay-orange-money`
 skill, and do not carry either correction across to the other.
 

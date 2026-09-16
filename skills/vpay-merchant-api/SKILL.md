@@ -142,10 +142,10 @@ There is **no OpenAPI or Swagger file in this repository.** The wire contract
 is `docs/flows/merchant-auth/resource-contract.md`, `docs/api/README.md` and
 the two SDKs.
 
-| Declared               | Where                | Reality (2026-09-16)                                                                                                                                                                                       |
-| ---------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Declared               | Where                        | Reality (2026-09-16)                                                                                                                                                                                                          |
+| ---------------------- | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `GET /v1/balance`      | resource-contract; both SDKs | **Unmounted.** A ledger read path exists since 2026-09-16 (`vpay_db::Ledger::merchant_payable_balance`) and **nothing routes it**; the nest's fallback answers the honest `404` rather than a body vpay would have to invent. |
-| `GET /v1/events?type=` | `docs/api/README.md` | Route served, **filter silently ignored** — `ListParams` in `vpay_api::v1::events` has no `type` field, so a filtered call gets an unfiltered page rather than a `400`.                                    |
+| `GET /v1/events?type=` | `docs/api/README.md`         | Route served, **filter silently ignored** — `ListParams` in `vpay_api::v1::events` has no `type` field, so a filtered call gets an unfiltered page rather than a `400`.                                                       |
 
 ~~`POST /v1/refunds` is unmounted, and mounting it would mount a route that
 can only ever answer `501`.~~ **Corrected 2026-09-16 (RFC-0003 § 2): the
@@ -160,7 +160,7 @@ skill before writing anything that implies it did.
 
 **The operational consequence, because it will cost you a day otherwise:**
 there is **no refund poll ladder** (RFC-0003 open question 8), so a refund the
-rail accepts stays `pending` indefinitely. Only a *refusal* moves a refund, to
+rail accepts stays `pending` indefinitely. Only a _refusal_ moves a refund, to
 `failed`; `succeeded` is written by `Settlement::apply_refund_succeeded` alone
 and **nothing a merchant can cause reaches it.** An integration that creates a refund and
 waits for `succeeded` waits forever. `charge.refund.updated` does **not**

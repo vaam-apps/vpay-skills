@@ -43,7 +43,7 @@ Those pull in different directions, and when they do, the briefing wins:
 
    The reason they were not split is the sentence in the parenthesis above,
    taken seriously. A page nothing links is a page no agent opens — so a page
-   that *is* linked is a page an agent *may* open. That is an acceptable bet
+   that _is_ linked is a page an agent _may_ open. That is an acceptable bet
    for depth and a bad one for a warning: splitting moves a certainty into a
    probability, and the thing on the other side of the bet is an agent writing
    code that assumes a refund moved money. This repository's whole purpose is
@@ -64,6 +64,7 @@ Those pull in different directions, and when they do, the briefing wins:
    **sixteen** are, median **179.5**. So the stated budget and the practised one
    have differed for some time, and this release widened the gap. That is
    recorded as a fact about the corpus, not as permission._
+
 3. Add or update the entry in [`coverage.json`](coverage.json).
 4. Run the gate:
 
