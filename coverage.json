@@ -1,26 +1,298 @@
 {
-  "//": "The docs<->skills parity map. See README.md. Checked in both directions by tools/verify-coverage.mjs.",
+  "//": "The docs<->skills parity map. Checked in BOTH directions by tools/verify-coverage.mjs: a docs/flows page no skill claims fails, and a claimed path that no longer exists in vpay fails. See README.md and CONTRIBUTING.md.",
+  "baseline": {
+    "//": "A skill is true of *a* vpay, not of vpay. vpay publishes no release tags and its workspace version has never moved off 0.1.0, so the only honest version identity is a commit and a date. Every SKILL.md is stamped with this same ref and the gate refuses one stamped differently. See VERSIONING.md.",
+    "vpayRef": "f063ee9647867699f3b12622a62ac0004609373b",
+    "vpayRefShort": "f063ee96",
+    "vpayCommitDate": "2026-09-15",
+    "verifiedAt": "2026-09-16"
+  },
   "skills": {
-    "vpay": { "covers": ["AGENTS.md", "CLAUDE.md", "README.md", "docs/README.md", "docs/status.md", "docs/status", "docs/adr", "docs/reference", "docs/rfc", "docs/plans"] },
-    "vpay-docs-status": { "covers": ["docs/status/README.md", "docs/status/verification", "docs/runbooks"] },
-    "vpay-reconciler": { "covers": ["docs/flows/reconciler.md", "docs/flows/crash-safety.md", "backends/crates/vpay-worker", "backends/apps/vpay-server/src/worker.rs", "backends/crates/vpay-config/src/signal.rs", "backends/tests/integration/tests/worker_recovery.rs", "backends/tests/integration/tests/worker_kill9.rs", "docs/runbooks/demo/known-flake.md"] },
-    "vpay-tooling": { "covers": ["justfile", ".xtask", ".xtask/src/main.rs", "rust-toolchain.toml", "clippy.toml", "deny.toml", ".cargo/config.toml", ".config/nextest.toml", ".nvmrc", ".npmrc", "package.json", "pnpm-workspace.yaml", "flutter-toolchain.toml", ".prettierrc.json", ".prettierignore", "compose.yml", "compose.e2e.yml", "compose.demo.yml", ".env.example", ".env.live.example", ".github/workflows/ci.yml", ".github/workflows/docs.yml", ".github/workflows/release.yml", "backends/migrations/MANIFEST.sha256", "docs/runbooks/migrations.md"] },
-    "vpay-merchant-api": { "covers": ["docs/flows/merchant-auth.md", "docs/flows/errors.md", "docs/api/README.md", "backends/crates/vpay-api/src/lib.rs", "backends/crates/vpay-api/src/v1", "backends/crates/vpay-api/src/op", "backends/crates/vpay-api/src/error.rs", "backends/crates/vpay-api/src/idempotency.rs", "backends/crates/vpay-api/src/model.rs", "backends/crates/vpay-api/src/form.rs", "backends/crates/vpay-api/src/resource_auth.rs", "backends/crates/vpay-api/src/provider_callback.rs"] },
-    "vpay-webhooks": { "covers": ["docs/flows/webhooks.md", "backends/crates/vpay-worker/src/webhooks.rs", "backends/crates/vpay-worker/src/signing.rs", "backends/crates/vpay-worker/src/ssrf.rs", "backends/crates/vpay-api/src/v1/events.rs"] },
-    "vpay-payments": { "covers": ["docs/flows/payment-lifecycle.md", "docs/flows/money.md", "docs/flows/failures.md", "docs/flows/ledger.md", "backends/crates/vpay-core/src/state.rs", "backends/crates/vpay-core/src/money.rs"] },
-    "vpay-provider-adapters": { "covers": ["docs/flows/provider-port.md", "backends/crates/vpay-provider", "backends/tests/conformance"] },
-    "vpay-mtn-momo": { "covers": ["docs/flows/adapter-mtn-momo.md", "backends/crates/vpay-adapter-mtn-momo"] },
-    "vpay-orange-money": { "covers": ["docs/flows/adapter-orange-money.md", "backends/crates/vpay-adapter-orange-money"] },
-    "vpay-data-layer": { "covers": ["schemas/vpay.cstack", "backends/crates/vpay-db", "backends/migrations", "docs/reference/vpay-db"] },
-    "vpay-conventions": { "covers": ["docs/adr/0016-engineering-standards.md", "docs/adr/0011-error-modelling.md", "docs/adr/0007-lint-policy.md"] },
-    "vpay-troubleshooting": { "covers": ["docs/runbooks/demo"] },
-    "vpay-ops": { "covers": ["docs/flows/configuration.md", "docs/flows/deployment.md", "config", "deploy", "backends/Dockerfile"] },
-    "vpay-frontend": { "covers": ["frontends", "frontends/packages"] },
-    "vpay-checkout": { "covers": ["docs/flows/hosted-checkout.md", "docs/flows/browser-checkout.md", "frontends/apps/checkout"] },
-    "vpay-dashboard": { "covers": ["docs/flows/dashboard.md", "docs/flows/dashboard-auth.md", "frontends/apps/dashboard"] },
-    "vpay-sdks": { "covers": ["docs/sdks/parity.md", "docs/flows/stripe-sdk-compat.md", "docs/flows/mobile-checkout.md", "sdks"] },
-    "vpay-customers": { "covers": ["docs/flows/customers.md", "docs/flows/account-holder-lookup.md", "backends/crates/vpay-api/src/v1/customers.rs"] },
-    "vpay-invoices": { "covers": ["docs/flows/invoices.md", "backends/crates/vpay-api/src/v1/invoices.rs"] }
+    "vpay": {
+      "covers": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "README.md",
+        "docs/README.md",
+        "docs/status.md",
+        "docs/status",
+        "docs/adr",
+        "docs/reference",
+        "docs/rfc",
+        "docs/plans"
+      ]
+    },
+    "vpay-docs-status": {
+      "covers": [
+        "docs/status/README.md",
+        "docs/status/verification",
+        "docs/status/gates.md",
+        "docs/runbooks"
+      ]
+    },
+    "vpay-conventions": {
+      "covers": [
+        "docs/adr/0016-engineering-standards.md",
+        "docs/adr/0011-error-modelling.md",
+        "docs/adr/0007-lint-policy.md",
+        "docs/adr/0002-provider-port.md",
+        "docs/flows/errors.md",
+        "docs/reference/rails.md",
+        "clippy.toml",
+        "rustfmt.toml",
+        "deny.toml",
+        "backends/crates/vpay-core/src/error.rs",
+        "backends/crates/vpay-worker/src/error.rs",
+        "backends/crates/vpay-api/src/error.rs"
+      ]
+    },
+    "vpay-tooling": {
+      "covers": [
+        "justfile",
+        ".xtask",
+        ".xtask/src/main.rs",
+        "rust-toolchain.toml",
+        ".cargo/config.toml",
+        ".config/nextest.toml",
+        ".nvmrc",
+        ".npmrc",
+        "package.json",
+        "pnpm-workspace.yaml",
+        "flutter-toolchain.toml",
+        "compose.yml",
+        "compose.e2e.yml",
+        "compose.demo.yml",
+        ".env.example",
+        ".env.live.example",
+        ".github/workflows/ci.yml",
+        ".github/workflows/docs.yml",
+        "backends/migrations/MANIFEST.sha256",
+        "deploy/helm/vpay/ci/guards",
+        "deploy/dev/postgres-init/10-shop-database.sql"
+      ]
+    },
+    "vpay-troubleshooting": {
+      "covers": [
+        "docs/runbooks/migrations.md",
+        "docs/runbooks/demo",
+        "docs/runbooks/demo.md",
+        "docs/runbooks/checkout.md",
+        "docs/runbooks/README.md",
+        "backends/migrations/README.md",
+        "frontends/apps/checkout/src/a11y-gate.test.ts",
+        ".prettierrc.json",
+        ".prettierignore"
+      ]
+    },
+    "vpay-payments": {
+      "covers": [
+        "docs/flows/payment-lifecycle.md",
+        "docs/flows/money.md",
+        "docs/flows/failures.md",
+        "docs/flows/ledger.md",
+        "docs/reference/vpay-core.md",
+        "backends/crates/vpay-core/src/state.rs",
+        "backends/crates/vpay-core/src/money.rs",
+        "backends/crates/vpay-core/src/failure.rs",
+        "backends/crates/vpay-core/src/settlement.rs",
+        "backends/crates/vpay-core/src/ids.rs",
+        "backends/crates/vpay-ledger",
+        "backends/crates/vpay-db/src/settlement.rs",
+        "backends/crates/vpay-db/src/refunds.rs",
+        "backends/crates/vpay-api/src/v1/refunds.rs",
+        "backends/crates/vpay-worker/src/recovery.rs",
+        "backends/migrations/0003_create-payment-intents.sql",
+        "backends/migrations/0004_create-charges.sql",
+        "backends/migrations/0005_create-ledger.sql",
+        "backends/migrations/0017_create-refunds.sql",
+        "backends/migrations/0031_refunds-fee.sql"
+      ]
+    },
+    "vpay-merchant-api": {
+      "covers": [
+        "docs/flows/merchant-auth.md",
+        "docs/flows/merchant-auth/resource-contract.md",
+        "docs/api/README.md",
+        "docs/reference/vpay-api.md",
+        "docs/adr/0010-merchant-auth-private-key-jwt.md",
+        "backends/crates/vpay-api/src/lib.rs",
+        "backends/crates/vpay-api/src/v1",
+        "backends/crates/vpay-api/src/op",
+        "backends/crates/vpay-api/src/idempotency.rs",
+        "backends/crates/vpay-api/src/model.rs",
+        "backends/crates/vpay-api/src/form.rs",
+        "backends/crates/vpay-api/src/resource_auth.rs",
+        "backends/crates/vpay-api/src/provider_callback.rs",
+        "backends/migrations/0009_drop-merchant-api-keys.sql",
+        "backends/migrations/0015_create-idempotency-keys.sql",
+        "backends/migrations/0025_idempotency-keys-retry-advice.sql",
+        "examples/merchant-curl/README.md"
+      ]
+    },
+    "vpay-webhooks": {
+      "covers": [
+        "docs/flows/webhooks.md",
+        "docs/runbooks/webhook-delivery-failures.md",
+        "backends/crates/vpay-worker/src/webhooks.rs",
+        "backends/crates/vpay-worker/src/signing.rs",
+        "backends/crates/vpay-worker/src/ssrf.rs",
+        "backends/crates/vpay-db/src/events.rs",
+        "backends/crates/vpay-db/src/webhook_deliveries.rs",
+        "backends/crates/vpay-api/src/v1/events.rs",
+        "backends/migrations/0018_create-events.sql",
+        "backends/migrations/0022_create-webhook-deliveries.sql",
+        "examples/webhook-receiver"
+      ]
+    },
+    "vpay-reconciler": {
+      "covers": [
+        "docs/flows/reconciler.md",
+        "docs/flows/crash-safety.md",
+        "docs/runbooks/demo/known-flake.md",
+        "backends/crates/vpay-worker",
+        "backends/apps/vpay-server/src/worker.rs",
+        "backends/crates/vpay-config/src/signal.rs",
+        "backends/tests/integration/tests/worker_recovery.rs",
+        "backends/tests/integration/tests/worker_kill9.rs"
+      ]
+    },
+    "vpay-provider-adapters": {
+      "covers": [
+        "docs/flows/provider-port.md",
+        "docs/adr/0006-no-mocks-in-main-processes.md",
+        "backends/crates/vpay-provider",
+        "backends/tests/conformance",
+        "backends/crates/vpay-api/src/v1/boot.rs",
+        "backends/apps/vpay-server/src/lib.rs"
+      ]
+    },
+    "vpay-mtn-momo": {
+      "covers": [
+        "docs/flows/adapter-mtn-momo.md",
+        "docs/status/verification/2026-09-15.md",
+        "docs/runbooks/live-sandbox-test.md",
+        "backends/crates/vpay-adapter-mtn-momo",
+        "backends/tests/conformance/wiremock/mtn",
+        "config/application-live.yml"
+      ]
+    },
+    "vpay-orange-money": {
+      "covers": [
+        "docs/flows/adapter-orange-money.md",
+        "backends/crates/vpay-adapter-orange-money",
+        "backends/tests/conformance/wiremock/orange"
+      ]
+    },
+    "vpay-data-layer": {
+      "covers": [
+        "schemas/vpay.cstack",
+        "backends/crates/vpay-db",
+        "backends/crates/vpay-testkit",
+        "backends/migrations",
+        "backends/tests/integration/tests/postgres_smoke.rs",
+        "docs/reference/vpay-db.md",
+        "docs/reference/vpay-db/cratestack.md",
+        "docs/status/cratestack.md"
+      ]
+    },
+    "vpay-customers": {
+      "covers": [
+        "docs/flows/customers.md",
+        "docs/flows/customers",
+        "docs/flows/account-holder-lookup.md",
+        "backends/crates/vpay-api/src/v1/customers.rs",
+        "backends/crates/vpay-api/src/v1/account_holders.rs",
+        "backends/crates/vpay-db/src/customers.rs",
+        "backends/migrations/0034_create-customers.sql",
+        "backends/migrations/0039_events-customer-created-updated.sql",
+        "backends/migrations/0041_customers-address-and-anonymisation.sql",
+        "backends/tests/integration/tests/customers.rs",
+        "backends/tests/integration/tests/account_holders.rs"
+      ]
+    },
+    "vpay-invoices": {
+      "covers": [
+        "docs/flows/invoices.md",
+        "backends/crates/vpay-api/src/v1/invoices.rs",
+        "backends/crates/vpay-api/src/v1/invoice_items.rs",
+        "backends/crates/vpay-db/src/invoices.rs",
+        "backends/migrations/0036_create-invoices.sql",
+        "backends/migrations/0042_invoices-amount-refunded.sql",
+        "backends/tests/integration/tests/invoices.rs"
+      ]
+    },
+    "vpay-frontend": {
+      "covers": [
+        "frontends",
+        "frontends/packages/config",
+        "frontends/packages/tokens",
+        "frontends/packages/api-client",
+        "frontends/tests/e2e",
+        "frontends/Dockerfile",
+        "examples/shop",
+        "tsconfig.base.json",
+        "docs/status/frontend.md"
+      ]
+    },
+    "vpay-checkout": {
+      "covers": [
+        "docs/flows/hosted-checkout.md",
+        "docs/flows/hosted-checkout",
+        "docs/flows/browser-checkout.md",
+        "frontends/apps/checkout",
+        "examples/checkout-browser"
+      ]
+    },
+    "vpay-dashboard": {
+      "covers": [
+        "docs/flows/dashboard.md",
+        "docs/flows/dashboard",
+        "docs/flows/dashboard-auth.md",
+        "docs/flows/dashboard-auth",
+        "docs/adr/0008-dashboard-scope.md",
+        "docs/adr/0017-staff-authentication.md",
+        "frontends/apps/dashboard"
+      ]
+    },
+    "vpay-sdks": {
+      "covers": [
+        "docs/sdks",
+        "docs/sdks/parity.md",
+        "docs/sdks/README.md",
+        "docs/flows/stripe-sdk-compat.md",
+        "docs/flows/mobile-checkout.md",
+        "docs/adr/0015-sdk-parity.md",
+        "docs/adr/0021-flutter-checkout-plugin.md",
+        "docs/status/merchant-sdks.md",
+        "sdks",
+        "sdks/nodejs",
+        "sdks/rust",
+        "sdks/stripe-js",
+        "sdks/stripe-compat",
+        "sdks/flutter/vpay_checkout_flutter"
+      ]
+    },
+    "vpay-ops": {
+      "covers": [
+        "docs/flows/configuration.md",
+        "docs/flows/deployment.md",
+        "docs/reference/vpay-config.md",
+        "docs/runbooks/deploy-and-rollback.md",
+        "docs/runbooks/rotate-signing-key.md",
+        "docs/runbooks/rotate-rail-credentials.md",
+        "docs/runbooks/provider-error-rate.md",
+        "docs/runbooks/restore-from-backup.md",
+        "config",
+        "config/application.yml",
+        "config/application-sandbox.yml",
+        "deploy",
+        "deploy/helm/vpay",
+        "backends/Dockerfile",
+        "backends/crates/vpay-config",
+        "backends/apps/vpay-server",
+        ".github/workflows/release.yml"
+      ]
+    }
   },
   "exempt": [],
   "exemptReasons": {}

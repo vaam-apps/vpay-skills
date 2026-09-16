@@ -3,11 +3,11 @@
 Source: `docs/runbooks/demo/dashboard-sign-in.md`. These are the things a new
 agent "fixes" and should not.
 
-| What you see | Why it is correct |
-| --- | --- |
-| **The payer column is an em dash** | `charges.payer_ref_masked` is never written by anything. The detail page renders the column as null rather than deriving a mask from the payer's unmasked number. **The day the column is written, the value appears.** Do not derive a mask at render time. |
-| **The list has a "Methods" column and no "Rail" column** | `GET /dash/v1/payment_intents` returns no charge, so the only rail-shaped value there is the set of rails the intent *may* be confirmed against. The rail that actually took it is on the detail page. |
-| **There is no page count** | The API serves cursors and a `has_more`, and no count anywhere. |
+| What you see                                             | Why it is correct                                                                                                                                                                                                                                            |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **The payer column is an em dash**                       | `charges.payer_ref_masked` is never written by anything. The detail page renders the column as null rather than deriving a mask from the payer's unmasked number. **The day the column is written, the value appears.** Do not derive a mask at render time. |
+| **The list has a "Methods" column and no "Rail" column** | `GET /dash/v1/payment_intents` returns no charge, so the only rail-shaped value there is the set of rails the intent _may_ be confirmed against. The rail that actually took it is on the detail page.                                                       |
+| **There is no page count**                               | The API serves cursors and a `has_more`, and no count anywhere.                                                                                                                                                                                              |
 
 ## Two things it cannot do, by design
 
@@ -49,6 +49,6 @@ vpay-server staff add --config … --database-url … --merchant … --email …
 
 Staff authentication is ADR-0017: argon2id with a deployment pepper, RFC 6238
 TOTP with a sealed secret, a strictly-increasing replay guard, mandatory
-enrolment and a one-time password. ADR-0019 moved *where the credential material
-lives* without changing any of that. ADR-0018 adds a cross-tenant **read-only**
+enrolment and a one-time password. ADR-0019 moved _where the credential material
+lives_ without changing any of that. ADR-0018 adds a cross-tenant **read-only**
 admin role.

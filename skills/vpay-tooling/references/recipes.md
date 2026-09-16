@@ -9,11 +9,11 @@ Counts and versions below were re-measured 2026-09-16.
 
 ## Setup
 
-| Recipe | Does | Needs |
-| --- | --- | --- |
-| `just install` | `install-rust` then `install-node` | network |
-| `just install-rust` | `rustup show`; `cargo install cargo-nextest --locked \|\| true`; `cargo install cargo-deny --locked \|\| true` | network. The `\|\| true` means a **failed install is silent** — check the tools are actually there |
-| `just install-node` | `corepack enable`; `pnpm install` | network. `.npmrc` sets `engine-strict=true`, so Node below `engines.node` fails here rather than mysteriously later |
+| Recipe              | Does                                                                                                           | Needs                                                                                                               |
+| ------------------- | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `just install`      | `install-rust` then `install-node`                                                                             | network                                                                                                             |
+| `just install-rust` | `rustup show`; `cargo install cargo-nextest --locked \|\| true`; `cargo install cargo-deny --locked \|\| true` | network. The `\|\| true` means a **failed install is silent** — check the tools are actually there                  |
+| `just install-node` | `corepack enable`; `pnpm install`                                                                              | network. `.npmrc` sets `engine-strict=true`, so Node below `engines.node` fails here rather than mysteriously later |
 
 `.npmrc` also sets `node-linker=isolated` and `shamefully-hoist=false`:
 undeclared imports fail loudly rather than working by accident through
@@ -22,13 +22,13 @@ workspace and not in a hoisted one.
 
 ## Build
 
-| Recipe | Does | Needs |
-| --- | --- | --- |
-| `just build` | `build-rust` + `build-web` | |
-| `just build-rust` | `cargo build --workspace` | |
-| `just build-web` | `pnpm -r build` | `node_modules` |
-| `just build-dist` | `cargo build --profile dist --target x86_64-unknown-linux-musl -p vpay-server` | `rustup target add x86_64-unknown-linux-musl` |
-| `just build-storybook` | builds both apps' Storybooks, then greps the built stylesheet asserting `--color-base-100` is **defined**, not merely referenced | `node_modules` |
+| Recipe                 | Does                                                                                                                                                      | Needs                                          |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| `just build`           | `build-rust` + `build-web`                                                                                                                                |                                                |
+| `just build-rust`      | `cargo build --workspace`                                                                                                                                 |                                                |
+| `just build-web`       | `pnpm -r build`                                                                                                                                           | `node_modules`                                 |
+| `just build-dist`      | `cargo build --profile dist --target x86_64-unknown-linux-musl -p vpay-server`                                                                            | `rustup target add x86_64-unknown-linux-musl`  |
+| `just build-storybook` | builds both apps' Storybooks, then greps the built stylesheet asserting `--color-base-100` is **defined**, not merely referenced                          | `node_modules`                                 |
 | `just release-dry-run` | builds the three release images for the **host arch only** (`vpay-server`, `vpay-dashboard`, `vpay-checkout`) with `--push=false`, then `just helm-check` | docker + buildx + helm + kubeconform + network |
 
 The `build-storybook` grep is not tidiness. PR #135 produced a build that
@@ -43,16 +43,16 @@ so a grep for the triple finds the flag that applies to it (ADR-0014).
 
 ## Test
 
-| Recipe | Does | Needs |
-| --- | --- | --- |
-| `just test` | `test-rust` + `test-doc` + `test-web` | |
-| `just test-rust` | `cargo nextest run --workspace` | **Docker** |
-| `just test-rust-all` | `cargo nextest run --workspace --run-ignored all` — "expect failures; this is for seeing what is NOT covered, not for CI" | Docker |
-| `just test-doc` | `cargo test --doc --workspace` | |
-| `just test-web` | `pnpm -r test` | `node_modules` |
-| `just verify-ignored` | `cargo nextest list` + `jq`, three assertions | `jq` |
-| `just test-storybook` | clears three Vite caches, then both apps' `vitest run --config vitest.storybook.config.ts` | Playwright Chromium (≈115 MB, network on first run) |
-| `just playwright-browser` | `playwright install chromium` (no `--with-deps`; it needs root and CI's image already has the libraries) | network |
+| Recipe                    | Does                                                                                                                      | Needs                                               |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| `just test`               | `test-rust` + `test-doc` + `test-web`                                                                                     |                                                     |
+| `just test-rust`          | `cargo nextest run --workspace`                                                                                           | **Docker**                                          |
+| `just test-rust-all`      | `cargo nextest run --workspace --run-ignored all` — "expect failures; this is for seeing what is NOT covered, not for CI" | Docker                                              |
+| `just test-doc`           | `cargo test --doc --workspace`                                                                                            |                                                     |
+| `just test-web`           | `pnpm -r test`                                                                                                            | `node_modules`                                      |
+| `just verify-ignored`     | `cargo nextest list` + `jq`, three assertions                                                                             | `jq`                                                |
+| `just test-storybook`     | clears three Vite caches, then both apps' `vitest run --config vitest.storybook.config.ts`                                | Playwright Chromium (≈115 MB, network on first run) |
+| `just playwright-browser` | `playwright install chromium` (no `--with-deps`; it needs root and CI's image already has the libraries)                  | network                                             |
 
 **Docker is required for the Rust suite**, not optional.
 `vpay-tests-integration`, `vpay-tests-conformance`, `vpay-db`, `vpay-server`
@@ -88,18 +88,18 @@ Subsets: `cargo nextest run -p <crate>`, `cargo nextest run -E 'test(name)'`,
 
 ## Verify, lint and format
 
-| Recipe | Does |
-| --- | --- |
-| `just verify` | the twelve gates + the `verify-docs` report — see [gates.md](gates.md) |
-| `just lint` | `fmt-check` `clippy` `lint-web` |
-| `just fmt` | `cargo fmt --all`; `pnpm exec prettier --write .` |
-| `just fmt-check` | `fmt-check-rust` + `fmt-check-web` |
-| `just fmt-check-rust` | `cargo fmt --all -- --check` |
-| `just fmt-check-web` | `pnpm exec prettier --check .` |
-| `just clippy` | `cargo clippy --workspace --all-targets -- -D warnings` |
-| `just lint-web` | depends on `build-sdk-node`; `pnpm -r typecheck` then `pnpm -r lint` |
-| `just deny` | `cargo deny check` |
-| `just audit-web` | two `pnpm audit` runs, `--prod` first then the whole workspace |
+| Recipe                | Does                                                                   |
+| --------------------- | ---------------------------------------------------------------------- |
+| `just verify`         | the twelve gates + the `verify-docs` report — see [gates.md](gates.md) |
+| `just lint`           | `fmt-check` `clippy` `lint-web`                                        |
+| `just fmt`            | `cargo fmt --all`; `pnpm exec prettier --write .`                      |
+| `just fmt-check`      | `fmt-check-rust` + `fmt-check-web`                                     |
+| `just fmt-check-rust` | `cargo fmt --all -- --check`                                           |
+| `just fmt-check-web`  | `pnpm exec prettier --check .`                                         |
+| `just clippy`         | `cargo clippy --workspace --all-targets -- -D warnings`                |
+| `just lint-web`       | depends on `build-sdk-node`; `pnpm -r typecheck` then `pnpm -r lint`   |
+| `just deny`           | `cargo deny check`                                                     |
+| `just audit-web`      | two `pnpm audit` runs, `--prod` first then the whole workspace         |
 
 **`fmt-check-web` walks the working tree, not the index.** An untracked scratch
 `.ts`, `.md` or `.json` left lying about fails it. `.gitignore` it or delete it
@@ -141,14 +141,14 @@ test-storybook` are what fail when the config breaks.
 
 ## End to end
 
-| Recipe | Does | Needs |
-| --- | --- | --- |
-| `just test-e2e` | tears the stack down, `up -d --build --wait`, polls `/healthz` for 120 s, runs the specs, tears down | Docker, network, two image builds |
-| `just e2e-specs` | the Cypress half only, against a stack that is **already up** | a running demo stack |
-| `just stripe-compat` | brings up `compat_services` only, runs the stripe-node conformance suite | Docker |
-| `just sdk-live` | brings up `compat_services`, runs the Rust `live_invoices` suite **and** `pnpm --filter @vaam-apps/vpay-sdk test:live`; **leaves the stack up** | Docker |
-| `just test-flutter-e2e` | real stack, real `private_key_jwt`, real `cs_…` sessions | `curl docker jq node pnpm`, and `just demo-up` first |
-| `just test-flutter-emulator` | drives the real page's confirm UI on an Android emulator | `adb`, an AVD named `vpay_e2e_avd`, a running stack |
+| Recipe                       | Does                                                                                                                                            | Needs                                                |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| `just test-e2e`              | tears the stack down, `up -d --build --wait`, polls `/healthz` for 120 s, runs the specs, tears down                                            | Docker, network, two image builds                    |
+| `just e2e-specs`             | the Cypress half only, against a stack that is **already up**                                                                                   | a running demo stack                                 |
+| `just stripe-compat`         | brings up `compat_services` only, runs the stripe-node conformance suite                                                                        | Docker                                               |
+| `just sdk-live`              | brings up `compat_services`, runs the Rust `live_invoices` suite **and** `pnpm --filter @vaam-apps/vpay-sdk test:live`; **leaves the stack up** | Docker                                               |
+| `just test-flutter-e2e`      | real stack, real `private_key_jwt`, real `cs_…` sessions                                                                                        | `curl docker jq node pnpm`, and `just demo-up` first |
+| `just test-flutter-emulator` | drives the real page's confirm UI on an Android emulator                                                                                        | `adb`, an AVD named `vpay_e2e_avd`, a running stack  |
 
 Cypress lives in `frontends/tests/e2e` (`@vpay/e2e`). Four specs:
 `checkout.cy.ts`, `dashboard.cy.ts`, `shop-embedded.cy.ts`,
@@ -169,19 +169,19 @@ clean channel pin and the file says so.
 
 ## Docs
 
-| Recipe | Does | Needs |
-| --- | --- | --- |
-| `just docs-check` | `verify-status` + `verify-links` — the short loop while editing docs | nothing |
-| `just docs-check-citations` | `cargo xtask verify-citations` | network + authenticated `gh`. **Fails**, never skips, without them |
-| `just verify-docs` | `cargo xtask verify-docs` — a report, exits 0 always | |
+| Recipe                      | Does                                                                 | Needs                                                              |
+| --------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| `just docs-check`           | `verify-status` + `verify-links` — the short loop while editing docs | nothing                                                            |
+| `just docs-check-citations` | `cargo xtask verify-citations`                                       | network + authenticated `gh`. **Fails**, never skips, without them |
+| `just verify-docs`          | `cargo xtask verify-docs` — a report, exits 0 always                 |                                                                    |
 
 ## Database and migrations
 
 There is **no** `just migrate`. `sqlx::migrate!` runs at server boot.
 
-| Recipe | Does |
-| --- | --- |
-| `just verify-migrations` | `cargo xtask verify-migrations` |
+| Recipe                     | Does                                                                                               |
+| -------------------------- | -------------------------------------------------------------------------------------------------- |
+| `just verify-migrations`   | `cargo xtask verify-migrations`                                                                    |
 | `just migrations-manifest` | **appends** SHA-256 lines for `backends/migrations/*.sql` to `backends/migrations/MANIFEST.sha256` |
 
 `migrations-manifest` is append-only and refuses to rewrite an existing line
@@ -196,17 +196,17 @@ The three compose files **layer**. `demo_compose` is
 
 ### `compose.yml` — the base (`just up` / `just down`)
 
-| Service | Image | Host port |
-| --- | --- | --- |
-| `postgres` | `postgres:16-alpine` | `5432` |
-| `wiremock-mtn` | `wiremock/wiremock:3.9.2` | `8081` |
-| `wiremock-orange` | `wiremock/wiremock:3.9.2` | `8082` |
+| Service           | Image                     | Host port |
+| ----------------- | ------------------------- | --------- |
+| `postgres`        | `postgres:16-alpine`      | `5432`    |
+| `wiremock-mtn`    | `wiremock/wiremock:3.9.2` | `8081`    |
+| `wiremock-orange` | `wiremock/wiremock:3.9.2` | `8082`    |
 
 Credentials are `vpay`/`vpay`/`vpay`. The WireMock stubs mount
 `backends/tests/conformance/wiremock/{mtn,orange}` read-only.
 
 **The stub rail is a separate process, on purpose** (ADR-0006). WireMock is a
-*host* the app reaches over HTTP through configuration — the same mechanism as
+_host_ the app reaches over HTTP through configuration — the same mechanism as
 production. Nothing in the application knows it is talking to a stub, and
 `verify-no-mocks` keeps it that way. Do not "simplify" this into an in-process
 mock adapter.
@@ -219,14 +219,14 @@ loaded".
 
 Adds, on top of the base:
 
-| Service | Host port | Note |
-| --- | --- | --- |
-| `vpay-server` | `8080` | `backends/Dockerfile` |
-| `vpay-worker` | — | same image, `command: ["worker"]` |
-| `wiremock-webhook` | `8083` | the receiver; `/__admin/requests` is the journal |
-| `dashboard` | `3000` | `frontends/Dockerfile` |
-| `vpay-checkout` | `3080` | vpay's own payer page |
-| `vpay-shop` | `3001` | `examples/shop` |
+| Service            | Host port | Note                                             |
+| ------------------ | --------- | ------------------------------------------------ |
+| `vpay-server`      | `8080`    | `backends/Dockerfile`                            |
+| `vpay-worker`      | —         | same image, `command: ["worker"]`                |
+| `wiremock-webhook` | `8083`    | the receiver; `/__admin/requests` is the journal |
+| `dashboard`        | `3000`    | `frontends/Dockerfile`                           |
+| `vpay-checkout`    | `3080`    | vpay's own payer page                            |
+| `vpay-shop`        | `3001`    | `examples/shop`                                  |
 
 It also mounts `deploy/dev/postgres-init/10-shop-database.sql` into
 `/docker-entrypoint-initdb.d`. **Postgres runs init scripts exactly once, on an
@@ -248,15 +248,15 @@ and are not exposed at all.
 
 Ports (`just --evaluate`, all overridable):
 
-| Variable | Default |
-| --- | --- |
-| `demo_port` | 8080 |
-| `demo_receiver_port` | 8083 |
-| `demo_orange_port` | 8082 |
-| `demo_checkout_port` | 3080 |
-| `demo_shop_port` | 3001 |
-| `demo_dashboard_port` | 3000 |
-| `demo_fixture_port` | 4180 (and 4181 for the frame fixture) — host-side only |
+| Variable              | Default                                                |
+| --------------------- | ------------------------------------------------------ |
+| `demo_port`           | 8080                                                   |
+| `demo_receiver_port`  | 8083                                                   |
+| `demo_orange_port`    | 8082                                                   |
+| `demo_checkout_port`  | 3080                                                   |
+| `demo_shop_port`      | 3001                                                   |
+| `demo_dashboard_port` | 3000                                                   |
+| `demo_fixture_port`   | 4180 (and 4181 for the frame fixture) — host-side only |
 
 `demo_project` is `vpay-demo`. `demo_services` is the nine-service set;
 `compat_services` is the six-service set without the web apps.
@@ -272,7 +272,7 @@ what makes `just gen-demo-keys` load-bearing rather than convenient, and why
 `just demo` runs it first.
 
 **The overlay replaces `merchant_clients` wholesale.** figment deep-merges maps
-but a *list* in an overlay replaces the base list entirely, so while the demo
+but a _list_ in an overlay replaces the base list entirely, so while the demo
 stack is up the base file's `acme-cameroon` is gone. That is correct — nobody
 holds its private key — but it means you cannot authenticate as it against a
 demo stack. Everything the overlay does not mention (`providers`,
@@ -289,16 +289,16 @@ account.
 
 ### The demo recipes
 
-| Recipe | Does |
-| --- | --- |
-| `just demo` | `demo-up` + `demo-walk` |
-| `just demo-up` | `gen-demo-keys`, then `up -d --build --wait`, then polls `/healthz` for 120 s |
-| `just demo-walk` | `cargo run -q -p merchant-demo` against the running stack, then prints every useful URL |
-| `just demo-status` | `docker compose ... ps` plus every `vpay`-named container on the machine |
-| `just demo-down` | `down -v` — containers **and volumes** |
-| `just demo-shop` / `demo-checkout` / `demo-dashboard` | echo the URL |
-| `just gen-demo-keys` | `cargo xtask gen-signing-key` for `demo-merchant` and `shop-merchant`, extracts the public JWKs, writes the overlay. Idempotent |
-| `just gen-e2e-signing-key` | `openssl genpkey` RSA 3072 PKCS#8 → `.e2e/oauth-signing-key.pem`. Idempotent |
+| Recipe                                                | Does                                                                                                                            |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `just demo`                                           | `demo-up` + `demo-walk`                                                                                                         |
+| `just demo-up`                                        | `gen-demo-keys`, then `up -d --build --wait`, then polls `/healthz` for 120 s                                                   |
+| `just demo-walk`                                      | `cargo run -q -p merchant-demo` against the running stack, then prints every useful URL                                         |
+| `just demo-status`                                    | `docker compose ... ps` plus every `vpay`-named container on the machine                                                        |
+| `just demo-down`                                      | `down -v` — containers **and volumes**                                                                                          |
+| `just demo-shop` / `demo-checkout` / `demo-dashboard` | echo the URL                                                                                                                    |
+| `just gen-demo-keys`                                  | `cargo xtask gen-signing-key` for `demo-merchant` and `shop-merchant`, extracts the public JWKs, writes the overlay. Idempotent |
+| `just gen-e2e-signing-key`                            | `openssl genpkey` RSA 3072 PKCS#8 → `.e2e/oauth-signing-key.pem`. Idempotent                                                    |
 
 When `/healthz` does not answer, `demo-up` dumps `ps` and the last 80 log
 lines, and reminds you that **exit 78 in that log means a config or CLI
@@ -349,26 +349,26 @@ Gateway API one needs `--api-versions gateway.networking.k8s.io/v1`, without
 which the `HTTPRoute` templates render **nothing** and every check below would
 pass over an empty file); the **22 named guards** under
 `deploy/helm/vpay/ci/guards/` are exactly the 22 the recipe lists and each
-fires *by name* with a non-zero exit; the default render templates no checkout
+fires _by name_ with a non-zero exit; the default render templates no checkout
 page and `ci/values-full.yaml`'s does; the Ingress carries `limit-rps` and the
 token Ingress is **tighter** than `/v1`'s; both mechanisms route `/provider`;
 and every rendered object validates against upstream schemas.
 
 The guard set is written out rather than counted, because "22 files found, 22
-fired" is also what deleting a guard *and* its values file looks like.
+fired" is also what deleting a guard _and_ its values file looks like.
 
 **What it proves about a cluster: nothing. Nothing here has ever been applied
 to one.**
 
 ## SDK
 
-| Recipe | Does |
-| --- | --- |
-| `just build-sdk-node` / `test-sdk-node` | `@vaam-apps/vpay-sdk` |
-| `just build-sdk-browser` / `test-sdk-browser` | `@vaam-apps/vpay-stripe-js` |
-| `just test-sdk-rust` | `cargo nextest run -p vpay-sdk` (scoping only — `test-rust` already covers it) |
-| `just build-checkout-browser` | vendors `sdks/stripe-js/dist/` into `examples/checkout-browser/dist/stripe-js/` |
-| `just sdk-conformance-node` | mints an assertion with `sdks/nodejs/scripts/mint-assertion.mjs` and verifies it with the Rust `verify_assertion` example |
+| Recipe                                        | Does                                                                                                                      |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `just build-sdk-node` / `test-sdk-node`       | `@vaam-apps/vpay-sdk`                                                                                                     |
+| `just build-sdk-browser` / `test-sdk-browser` | `@vaam-apps/vpay-stripe-js`                                                                                               |
+| `just test-sdk-rust`                          | `cargo nextest run -p vpay-sdk` (scoping only — `test-rust` already covers it)                                            |
+| `just build-checkout-browser`                 | vendors `sdks/stripe-js/dist/` into `examples/checkout-browser/dist/stripe-js/`                                           |
+| `just sdk-conformance-node`                   | mints an assertion with `sdks/nodejs/scripts/mint-assertion.mjs` and verifies it with the Rust `verify_assertion` example |
 
 Adding an SDK method means adding its row in `docs/sdks/parity.md` in the same
 commit — `verify-sdk-parity` fails in both directions.

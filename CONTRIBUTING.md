@@ -26,7 +26,7 @@ Those pull in different directions, and when they do, the briefing wins:
 
 1. `skills/<name>/SKILL.md` — frontmatter `name` (must equal the directory
    name) and `description`. The description is the **only** thing an agent
-   reads when deciding whether to load the skill: say what it covers *and* when
+   reads when deciding whether to load the skill: say what it covers _and_ when
    to reach for it. Under 80 characters fails the gate.
 2. Keep `SKILL.md` to roughly one sitting — about 100–150 lines. Depth goes in
    `references/*.md`, and every reference page must be linked from `SKILL.md`
@@ -53,6 +53,14 @@ Two habits carried over from vpay, both worth keeping:
 rail ever called against a real sandbox" ages honestly. "`mtn_momo` is the only
 rail ever called" does not.
 
+This is not a nicety — it is the only thing standing between a reader on an
+older vpay and a confidently wrong answer. A claim is version-sensitive if
+someone on a six-week-old checkout would be misled by it, which in practice
+means most claims about routes, gates, pins, deleted packages, retired
+`NotImplemented` tokens, and **every count of anything**. Write "N as of
+`<date>`", never a bare N. [VERSIONING.md](VERSIONING.md) has the full table and
+the release policy.
+
 **When you correct something, say what it said before.** vpay's documents are
 full of "this said X until date Y and was wrong", and that is not
 self-flagellation — it is the only signal a reader has about which sentences on
@@ -63,14 +71,14 @@ a page have been checked recently. A silent correction teaches nobody.
 The parity rule in [README.md](README.md) is the contract: code, docs, skills,
 or it has not landed. In practice:
 
-| The vpay change                    | What has to happen here                                                              |
-| ---------------------------------- | ------------------------------------------------------------------------------------ |
-| A new `docs/flows/` page           | A skill claims it in `coverage.json`, with prose that covers it                      |
-| A route mounted or unmounted       | `vpay-merchant-api` or `vpay-dashboard`, whichever owns the surface                  |
-| A `NotImplemented` token retired   | Every skill that described it as unbuilt — grep for it                               |
-| A new gate, or a gate that changed | `vpay-tooling`, and `vpay-troubleshooting` if it has a non-obvious failure mode      |
-| A toolchain pin bumped             | `vpay-tooling`                                                                        |
-| An SDK capability added            | `vpay-sdks`, and the parity row in vpay itself                                       |
+| The vpay change                    | What has to happen here                                                                |
+| ---------------------------------- | -------------------------------------------------------------------------------------- |
+| A new `docs/flows/` page           | A skill claims it in `coverage.json`, with prose that covers it                        |
+| A route mounted or unmounted       | `vpay-merchant-api` or `vpay-dashboard`, whichever owns the surface                    |
+| A `NotImplemented` token retired   | Every skill that described it as unbuilt — grep for it                                 |
+| A new gate, or a gate that changed | `vpay-tooling`, and `vpay-troubleshooting` if it has a non-obvious failure mode        |
+| A toolchain pin bumped             | `vpay-tooling`                                                                         |
+| An SDK capability added            | `vpay-sdks`, and the parity row in vpay itself                                         |
 | A path renamed or moved            | Whatever `verify-coverage` says — that is exactly the half of the gate that catches it |
 
 ## Reviewing

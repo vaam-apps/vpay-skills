@@ -5,28 +5,28 @@ the root `package.json` / `justfile`.
 
 ## Scripts per package
 
-| Package | Scripts worth knowing |
-| --- | --- |
-| `@vpay/checkout` | `deps` (builds `@vaam-apps/vpay-stripe-js` first — `dev`, `build`, `typecheck`, `test` and `lint` all chain it), `dev -p 3001`, `storybook -p 6006`, `build-storybook`, `test-storybook` (separate vitest config) |
-| `@vpay/dashboard` | same shape, `dev -p 3000`, `storybook -p 6007`. `test` is `vitest run --passWithNoTests` |
-| `@vpay/tokens`, `@vpay/config`, `@vpay/api-client` | `typecheck` / `test` / `lint`. `build` where present is `tsc --noEmit` — these ship raw source |
-| `@vpay/e2e` | `e2e` = `e2e:default` then `e2e:framed` (`VPAY_E2E_FRAMED=1`). `deps` builds `@vaam-apps/vpay-sdk` |
-| `@vpay-examples/shop` | `generate` (= `DO_NOT_TRACK=1 zen generate`, also `postinstall`), `build:deps` (builds **both** SDKs), `lint` runs eslint **and** `prettier --check` over its own tree |
+| Package                                            | Scripts worth knowing                                                                                                                                                                                             |
+| -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@vpay/checkout`                                   | `deps` (builds `@vaam-apps/vpay-stripe-js` first — `dev`, `build`, `typecheck`, `test` and `lint` all chain it), `dev -p 3001`, `storybook -p 6006`, `build-storybook`, `test-storybook` (separate vitest config) |
+| `@vpay/dashboard`                                  | same shape, `dev -p 3000`, `storybook -p 6007`. `test` is `vitest run --passWithNoTests`                                                                                                                          |
+| `@vpay/tokens`, `@vpay/config`, `@vpay/api-client` | `typecheck` / `test` / `lint`. `build` where present is `tsc --noEmit` — these ship raw source                                                                                                                    |
+| `@vpay/e2e`                                        | `e2e` = `e2e:default` then `e2e:framed` (`VPAY_E2E_FRAMED=1`). `deps` builds `@vaam-apps/vpay-sdk`                                                                                                                |
+| `@vpay-examples/shop`                              | `generate` (= `DO_NOT_TRACK=1 zen generate`, also `postinstall`), `build:deps` (builds **both** SDKs), `lint` runs eslint **and** `prettier --check` over its own tree                                            |
 
 Root `package.json`: `pnpm -r build|lint|test|typecheck`, `test:e2e` →
 `@vpay/e2e`, `storybook`/`test-storybook` → `@vpay/checkout` only.
 
 ## Which gate runs where
 
-| Gate | Command | In `just ci`? |
-| --- | --- | --- |
-| Prettier, repo-wide, working tree | `just fmt-check-web` | yes, **first** |
-| Typecheck + ESLint, 15 packages / 214 files | `just lint-web` | yes |
-| jsdom/node suites (`a11y-gate`, `styling-gate`, `layout.test`, `bff.test`) | `just test-web` (= `pnpm -r test`) | yes |
-| Class-string rules | `just verify-ui` | yes, via `just verify` |
-| Storybook build **and** the theme-defined assertion | `just build-storybook` | **no** — CI `web` job |
-| Storybook + axe in real Chromium | `just test-storybook` | **no** — needs a ~115 MB Playwright Chromium and `just ci` must pass offline |
-| Cypress against the compose stack | `just test-e2e` / `just e2e-specs` | no — CI `e2e (compose)` |
+| Gate                                                                       | Command                            | In `just ci`?                                                                |
+| -------------------------------------------------------------------------- | ---------------------------------- | ---------------------------------------------------------------------------- |
+| Prettier, repo-wide, working tree                                          | `just fmt-check-web`               | yes, **first**                                                               |
+| Typecheck + ESLint, 15 packages / 214 files                                | `just lint-web`                    | yes                                                                          |
+| jsdom/node suites (`a11y-gate`, `styling-gate`, `layout.test`, `bff.test`) | `just test-web` (= `pnpm -r test`) | yes                                                                          |
+| Class-string rules                                                         | `just verify-ui`                   | yes, via `just verify`                                                       |
+| Storybook build **and** the theme-defined assertion                        | `just build-storybook`             | **no** — CI `web` job                                                        |
+| Storybook + axe in real Chromium                                           | `just test-storybook`              | **no** — needs a ~115 MB Playwright Chromium and `just ci` must pass offline |
+| Cypress against the compose stack                                          | `just test-e2e` / `just e2e-specs` | no — CI `e2e (compose)`                                                      |
 
 CI's `web` job calls **these recipes**, not copies of their commands, so the
 gate and the local check cannot drift.
@@ -36,7 +36,7 @@ gate and the local check cannot drift.
 It builds both apps' Storybooks and then, for each, counts occurrences of
 `--color-base-100:` and of `var(--color-base-100` in the emitted stylesheet and
 fails when the first is zero. `grep -o | wc -l` counts occurrences; `grep -c`
-counts matching *lines*, and a minified stylesheet is one line — it would
+counts matching _lines_, and a minified stylesheet is one line — it would
 answer 1 whether the variable were defined once or thirty times.
 
 This lives in the recipe rather than only in the test because CI's `web` job
@@ -55,7 +55,7 @@ Each was a measured false green. None of them fails loudly.
 `"jsx": "preserve"` because Next requires it, and Vite's esbuild reads the
 nearest tsconfig — so it emits classic `React.createElement` for stories that
 import no React, and every one dies with `ReferenceError: React is not
-defined`. `main.ts` is read by `build-storybook` *and* by `addon-vitest`
+defined`. `main.ts` is read by `build-storybook` _and_ by `addon-vitest`
 through `configDir`, so one setting covers both. It was duplicated in the
 vitest config for one revision: the vitest suite passed all 22 stories while
 `just build-storybook` produced a Storybook where every story rendered the red
@@ -97,7 +97,7 @@ in it at all.
 **The dashboard's `.storybook/preview.ts` writes `@vaam-apps/ui`'s own
 storage key and dispatches a synthetic `StorageEvent`** before the decorator
 runs, because `ThemeSwitcher` overwrites `data-theme` on mount from its own
-store. Three stories rendered in whatever theme the *runner's*
+store. Three stories rendered in whatever theme the _runner's_
 `prefers-color-scheme` said until this landed.
 
 ## `pnpm.overrides` — read the prose first

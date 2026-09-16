@@ -9,16 +9,16 @@ procedure**, reached at `POST /dash/v1/$procs/<name>`.
 resource whose procedure name is guessed at the call site is a 404 nobody
 notices until a screen is empty":
 
-| Resource constant | Served by |
-| --- | --- |
-| `PAYMENT_INTENTS` | `GET /dash/v1/payment_intents` (REST, cursor) |
-| `REFUNDS` | `procedure searchRefunds` |
-| `WEBHOOK_DELIVERIES` | `procedure searchWebhookDeliveries` |
-| `CUSTOMERS` | `procedure searchCustomers` |
-| `CHECKOUT_SESSIONS` | `procedure searchCheckoutSessions` |
+| Resource constant    | Served by                                     |
+| -------------------- | --------------------------------------------- |
+| `PAYMENT_INTENTS`    | `GET /dash/v1/payment_intents` (REST, cursor) |
+| `REFUNDS`            | `procedure searchRefunds`                     |
+| `WEBHOOK_DELIVERIES` | `procedure searchWebhookDeliveries`           |
+| `CUSTOMERS`          | `procedure searchCustomers`                   |
+| `CHECKOUT_SESSIONS`  | `procedure searchCheckoutSessions`            |
 
 **`payment_intents` is deliberately absent from `PROCEDURE_OF`.** It is a
-*partial* map, not a total one: a lookup that misses means "this resource is
+_partial_ map, not a total one: a lookup that misses means "this resource is
 not a procedure", which is a different thing from "unknown resource". Do not
 "fix" it by adding an entry.
 
@@ -52,7 +52,7 @@ Three places still describe a single procedure, and all three are stale — they
 were true for Lane C and went stale when the four later procedure bodies
 landed:
 
-- `backends/crates/vpay-db/src/schema.rs`'s test is *named*
+- `backends/crates/vpay-db/src/schema.rs`'s test is _named_
   `no_generated_model_route_is_mounted_only_the_one_procedure_is`, and its
   assertion message says "the one procedure this transport mounts".
 - `backends/crates/vpay-api/src/lib.rs` describes the boundary as "mounted in
@@ -88,8 +88,7 @@ name while you are there.
 `src/format.ts`'s `formatInstant` takes **unix seconds** (the REST list
 serialises an integer). `src/dash/procedure-list.ts`'s `formatIsoInstant`
 takes an **RFC 3339 string** (a CrateStack procedure serialises a `DateTime`).
-Passing one to the other yields `Invalid Date` or, worse, a plausible date in
-1970. An unparseable value is returned **verbatim** rather than replaced: if
+Passing one to the other yields `Invalid Date` or, worse, a plausible date in 1970. An unparseable value is returned **verbatim** rather than replaced: if
 vpay answers something this cannot read, an operator should see what it said.
 
 ## The token lifecycle
@@ -120,7 +119,7 @@ Three rules now:
    and not allowed (wrong scope, wrong merchant claim), which a new token from
    the same registration would answer identically.
 
-Re-minting is *more* checking than carrying one token, not less:
+Re-minting is _more_ checking than carrying one token, not less:
 `vpay_api::staff::oauth::authorize` re-reads the staff row and re-checks that
 the account is active, that `merchant_id` is still the dashboard client's
 binding, and that `password_change_required` is not set, **on every mint**.
@@ -171,8 +170,8 @@ Every property is written as a mutation in `src/server/bff.test.ts`:
 
 - A request with **no session cookie** is refused and reaches vpay **not at
   all** — the test asserts the stub `fetch` was never called, because a `401`
-  answered *after* an upstream round trip is a surface anyone can use to make
-  this server open connections. (Reading the cookie *after* the upstream read
+  answered _after_ an upstream round trip is a surface anyone can use to make
+  this server open connections. (Reading the cookie _after_ the upstream read
   fails this twice.)
 - A request this dashboard did not issue is refused by `csrf.ts`'s
   `originIsAllowed`, **plus** `Sec-Fetch-Site: same-origin` — which is what a
@@ -204,12 +203,12 @@ auto-implements two methods:
 `Allow` header** to every method that is not `GET` or `HEAD`, before the route
 module is reached. Measured against a real `next start`:
 
-| Probe | Before | After |
-| --- | --- | --- |
-| `OPTIONS /api/dash/payment_intents` | `204` + `Allow` | `405` |
-| `OPTIONS /api/dash/nope` | `404` | `405` |
-| `POST /api/dash/payment_intents` | `405` (Next's) | `405` (this one's) |
-| `GET /api/dash/nope` | `404` | `404` |
+| Probe                               | Before          | After              |
+| ----------------------------------- | --------------- | ------------------ |
+| `OPTIONS /api/dash/payment_intents` | `204` + `Allow` | `405`              |
+| `OPTIONS /api/dash/nope`            | `404`           | `405`              |
+| `POST /api/dash/payment_intents`    | `405` (Next's)  | `405` (this one's) |
+| `GET /api/dash/nope`                | `404`           | `404`              |
 
 **For `OPTIONS`, route existence really is unanswerable now. For `GET` it is
 not**, and this must not be read as saying otherwise: an unauthenticated `GET`
@@ -261,4 +260,4 @@ says the BFF is "**Two** `GET` route handlers" and quotes a suite of "22 files,
 (`payment_intents`, `payment_intents/[id]`, `checkouts`, `customers`,
 `deliveries`, `refunds`) and the suite is **311 cases in 30 files, 0 skipped**
 per `docs/flows/dashboard/status-built-and-not-built.md`. The README's
-*properties* are all still right; only its counts lag.
+_properties_ are all still right; only its counts lag.

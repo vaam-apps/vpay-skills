@@ -31,15 +31,15 @@ comment; first-party `actions/*` use tags.
 
 ### The jobs
 
-| Job | Gated by | Runs |
-| --- | --- | --- |
-| `changes` | — | `dorny/paths-filter` with `fetch-depth: 0`. Outputs `rust`, `deny`, `web`, `e2e`, `deploy` |
-| `verify` — *self-checks* | **nothing. Always runs** | the twelve gates in `just verify`'s exact order, then `cargo xtask verify-docs` |
-| `rust` | `changes.rust` | `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo nextest run --workspace`, `just test-doc`, `just verify-ignored` |
-| `deny` — *supply chain* | `changes.deny` | `EmbarkStudios/cargo-deny-action@v2`, `command: check` |
-| `web` | `changes.web` | `just audit-web`, `just fmt-check-web`, `just lint-web`, `pnpm -r test`, `just build-storybook`, `just test-storybook` |
-| `e2e` — *e2e (compose)* | `changes.e2e` | Cypress install + verify, `just build-checkout-browser`, `just gen-demo-keys`, `docker compose up -d --build`, three readiness polls, `just demo-staff`, `just e2e-specs`, then the stripe-compat, Rust and Node live suites |
-| `deploy` — *deploy (helm chart)* | `changes.deploy` | `just helm-check` |
+| Job                              | Gated by                 | Runs                                                                                                                                                                                                                         |
+| -------------------------------- | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `changes`                        | —                        | `dorny/paths-filter` with `fetch-depth: 0`. Outputs `rust`, `deny`, `web`, `e2e`, `deploy`                                                                                                                                   |
+| `verify` — _self-checks_         | **nothing. Always runs** | the twelve gates in `just verify`'s exact order, then `cargo xtask verify-docs`                                                                                                                                              |
+| `rust`                           | `changes.rust`           | `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo nextest run --workspace`, `just test-doc`, `just verify-ignored`                                                               |
+| `deny` — _supply chain_          | `changes.deny`           | `EmbarkStudios/cargo-deny-action@v2`, `command: check`                                                                                                                                                                       |
+| `web`                            | `changes.web`            | `just audit-web`, `just fmt-check-web`, `just lint-web`, `pnpm -r test`, `just build-storybook`, `just test-storybook`                                                                                                       |
+| `e2e` — _e2e (compose)_          | `changes.e2e`            | Cypress install + verify, `just build-checkout-browser`, `just gen-demo-keys`, `docker compose up -d --build`, three readiness polls, `just demo-staff`, `just e2e-specs`, then the stripe-compat, Rust and Node live suites |
+| `deploy` — _deploy (helm chart)_ | `changes.deploy`         | `just helm-check`                                                                                                                                                                                                            |
 
 **The `verify` job has no `needs` and no `if`.** Every other job can be skipped
 by the path filter; the self-checks cannot. If you are wondering why a
@@ -188,7 +188,7 @@ per test and contends for the same random host ports.
   OOM-killed an unrelated container.
 
 The cost of `max-threads = 1` is wall-clock, not correctness: each test keeps
-its own container and its already-correct `Drop` cleanup; only the *starts* are
+its own container and its already-correct `Drop` cleanup; only the _starts_ are
 serialised.
 
 A `package(...)` naming a package that does not exist is a **hard nextest

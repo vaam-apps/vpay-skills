@@ -25,21 +25,21 @@ merchant key pair**:
 gen-demo-keys: .e2e/application-demo.yml was generated for a different demo_port than 18088 — regenerating the pair
 ```
 
-The first stack's server still holds the *old* public JWK in memory, so its
+The first stack's server still holds the _old_ public JWK in memory, so its
 walkthrough then fails with `{"error":"invalid_client"}`.
 
 **The rule, stated exactly:** two demos brought up in sequence coexist and both
 serve; **the older one's `demo-walk` stops working from the moment the newer
-one's `demo-up` runs**, and the older one's *shop* stops authenticating too.
+one's `demo-up` runs**, and the older one's _shop_ stops authenticating too.
 
-**Fix:** bring the second stack up *before* you start walking the first, or
+**Fix:** bring the second stack up _before_ you start walking the first, or
 accept that only the most recently generated key pair authenticates.
 
 **Why it has not been fixed:** `.e2e/demo-merchant/oauth-signing-key.pem` is a
 literal in `.github/workflows/ci.yml` (twice), in `just stripe-compat`, in
 `examples/merchant-stripe-node/index.mjs`, in `sdks/stripe-compat`, and as the
 default of `examples/merchant-demo`'s `VPAY_PRIVATE_KEY_FILE` — "**and a mistake
-there fails *silently* as `invalid_client`.**"
+there fails _silently_ as `invalid_client`.**"
 
 ## The same error from a port mismatch
 
@@ -58,7 +58,7 @@ at:** the Orange stub's `payment_url` comes from a WireMock mapping that
 templates a literal `http://localhost:8082`. WireMock renders a response from
 the current request alone, and vpay's submit arrives over the compose network as
 `wiremock-orange:8080`, so **the stub cannot learn what the host published it
-on**. `gen-demo-keys` therefore used to *check* the pair and refuse any
+on**. `gen-demo-keys` therefore used to _check_ the pair and refuse any
 `demo_orange_port` but 8082 — correct, and it meant two demos collided with no
 way out but editing a committed file.
 
@@ -125,7 +125,7 @@ request is still in flight".** See `docs/flows/crash-safety.md`.
 
 **Not the race.** Recorded cause: the VM's Postgres answering single statements
 in 14–36 s while host I/O pressure was above 50 %, with the worker's log showing
-the settlement and the webhook landing *after* the demo's 120 s / 30 s budgets.
+the settlement and the webhook landing _after_ the demo's 120 s / 30 s budgets.
 `write_matched_no_row` appeared in no such run. Reduce host load and re-run.
 
 ## `ClientBuilder::build()` panics on a missing rustls `CryptoProvider`

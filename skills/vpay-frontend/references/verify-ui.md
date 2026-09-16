@@ -14,20 +14,20 @@ disagree, **the recipe is right** — that instruction is in the recipe's header
 
 ## The checks
 
-| # | What it refuses | Pathspec | Refusal message |
-| --- | --- | --- | --- |
-| 1 | A raw Tailwind **palette colour**: `(bg\|text\|border\|ring\|fill\|stroke\|from\|via\|to\|decoration\|outline\|shadow\|accent\|caret\|divide\|placeholder)-(<hue>-NNN\|black\|white)(/NN)?` | `frontends/apps`, `examples/shop` | a palette colour outside a theme token — use a daisyUI theme token |
-| 1b | An **arbitrary colour value**: the same prefixes followed by `-[#`, `-[rgb`, `-[hsl`, `-[oklch`, `-[color-mix` | same | a hard-coded colour value — use a daisyUI theme token |
-| 2 | **daisyUI 4 classes daisyUI 5 removed**: `form-control`, `label-text`, `label-text-alt`, `btn-group`, `input-group`, `card-compact`, `input-bordered`, `select-bordered`, `textarea-bordered`, `tabs-bordered`, `tabs-lifted`, `tabs-boxed` | `frontends`, `examples`, minus `docs` | a daisyUI 4 class removed in daisyUI 5 |
-| 3 | `!important`, with three named exemptions | `frontends`, `examples` | !important outside the documented exemptions |
-| 4 | `cva(` — one variant map, not one per app | `frontends/apps`, `examples` | a cva variant map in an app |
-| 5 | Any **import of the deleted `@vpay/ui`**, four spellings | `frontends`, `examples`, `sdks`, minus `*.md` | @vpay/ui was deleted on 2026-09-12 — nothing may import it |
-| 5b | Any **filesystem path into `frontends/packages/ui`** | `frontends`, `examples`, `sdks`, `justfile`, `.github`, minus `*.md` | a path into the deleted frontends/packages/ui |
-| 7a-i | A **computed `className`** — `className=` followed by `{` | `frontends/apps`, minus tests and stories | a computed className in an app — a class string assembled at runtime is a variant map; put the variants in a component |
-| 7a-ii | A raw **status-colour theme token** — `…-state-<hue>-(fg\|bg\|border)` or `…-destructive(-foreground)?` | `frontends/apps`, minus tests and stories | a status colour written in an app — use a status system or an InlineBanner variant |
-| 7a-iii | A **class attribute over 60 characters** | `frontends/apps`, minus tests and stories | a className over 60 characters in an app — compose a @vaam-apps/ui component instead of a longer string |
-| 7b | A **daisyUI component class** in an app, in any quoting | `frontends/apps` | a daisyUI component class in an app — compose a @vaam-apps/ui primitive instead |
-| 7b-ii | `table` / `select` / `mask` when they **are** the daisyUI component | `frontends/apps`, minus one file | same message |
+| #      | What it refuses                                                                                                                                                                                                                             | Pathspec                                                             | Refusal message                                                                                                        |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| 1      | A raw Tailwind **palette colour**: `(bg\|text\|border\|ring\|fill\|stroke\|from\|via\|to\|decoration\|outline\|shadow\|accent\|caret\|divide\|placeholder)-(<hue>-NNN\|black\|white)(/NN)?`                                                 | `frontends/apps`, `examples/shop`                                    | a palette colour outside a theme token — use a daisyUI theme token                                                     |
+| 1b     | An **arbitrary colour value**: the same prefixes followed by `-[#`, `-[rgb`, `-[hsl`, `-[oklch`, `-[color-mix`                                                                                                                              | same                                                                 | a hard-coded colour value — use a daisyUI theme token                                                                  |
+| 2      | **daisyUI 4 classes daisyUI 5 removed**: `form-control`, `label-text`, `label-text-alt`, `btn-group`, `input-group`, `card-compact`, `input-bordered`, `select-bordered`, `textarea-bordered`, `tabs-bordered`, `tabs-lifted`, `tabs-boxed` | `frontends`, `examples`, minus `docs`                                | a daisyUI 4 class removed in daisyUI 5                                                                                 |
+| 3      | `!important`, with three named exemptions                                                                                                                                                                                                   | `frontends`, `examples`                                              | !important outside the documented exemptions                                                                           |
+| 4      | `cva(` — one variant map, not one per app                                                                                                                                                                                                   | `frontends/apps`, `examples`                                         | a cva variant map in an app                                                                                            |
+| 5      | Any **import of the deleted `@vpay/ui`**, four spellings                                                                                                                                                                                    | `frontends`, `examples`, `sdks`, minus `*.md`                        | @vpay/ui was deleted on 2026-09-12 — nothing may import it                                                             |
+| 5b     | Any **filesystem path into `frontends/packages/ui`**                                                                                                                                                                                        | `frontends`, `examples`, `sdks`, `justfile`, `.github`, minus `*.md` | a path into the deleted frontends/packages/ui                                                                          |
+| 7a-i   | A **computed `className`** — `className=` followed by `{`                                                                                                                                                                                   | `frontends/apps`, minus tests and stories                            | a computed className in an app — a class string assembled at runtime is a variant map; put the variants in a component |
+| 7a-ii  | A raw **status-colour theme token** — `…-state-<hue>-(fg\|bg\|border)` or `…-destructive(-foreground)?`                                                                                                                                     | `frontends/apps`, minus tests and stories                            | a status colour written in an app — use a status system or an InlineBanner variant                                     |
+| 7a-iii | A **class attribute over 60 characters**                                                                                                                                                                                                    | `frontends/apps`, minus tests and stories                            | a className over 60 characters in an app — compose a @vaam-apps/ui component instead of a longer string                |
+| 7b     | A **daisyUI component class** in an app, in any quoting                                                                                                                                                                                     | `frontends/apps`                                                     | a daisyUI component class in an app — compose a @vaam-apps/ui primitive instead                                        |
+| 7b-ii  | `table` / `select` / `mask` when they **are** the daisyUI component                                                                                                                                                                         | `frontends/apps`, minus one file                                     | same message                                                                                                           |
 
 ### Check 1 — why the `className=` prefix is gone
 
@@ -60,7 +60,7 @@ confirmed it — **no `-bordered` class exists** in `select.css`, `input.css` or
 - `frontends/apps/checkout/app/globals.css` — the `prefers-reduced-motion`
   block. Load-bearing: daisyUI's `.loading` sets `animation` in the same layer
   and this rule has to beat it whatever order the layers land in.
-- `frontends/apps/checkout/src/config/theme.ts` — a doc comment that *uses* the
+- `frontends/apps/checkout/src/config/theme.ts` — a doc comment that _uses_ the
   word to explain the code avoids needing one. Prose, not CSS.
 - `examples/checkout-browser/index.html` — `[hidden]{display:none !important}`
   in a plain-HTML demo with no framework and no Tailwind.
@@ -78,7 +78,7 @@ resolved a `new URL(…)` whose first argument was the deleted package's
 class-universe entry point for three packages — including `examples/shop`,
 which never depended on `@vpay/ui` at all. **No grep for the package name would
 ever have found it.** That file now resolves the entry point from the
-*consumer's* own `tsconfigRootDir` (`resolveTailwindEntryPoint`, trying
+_consumer's_ own `tsconfigRootDir` (`resolveTailwindEntryPoint`, trying
 `app/globals.css` then `src/app/globals.css`).
 
 5b requires the path to sit **right after a quote** — a real string literal.
@@ -88,7 +88,7 @@ comment), which would have made the check impossible to ship.
 `frontends/packages/config/src/eslint.test.js` is exempted by path for a
 measured false positive: it names a file in the deleted package as a
 double-quoted string in a table asserting which ESLint rules apply where, and
-ESLint's `calculateConfigForFile` matches the path *string* against each
+ESLint's `calculateConfigForFile` matches the path _string_ against each
 block's glob — it never reads the file from disk.
 
 ### 7a — why the blanket rule had to go
@@ -103,13 +103,13 @@ faithful, visually unstyled screens.
 
 So layout classes are now legal and these three are not:
 
-| 7a was written to ban | now covered by |
-| --- | --- |
-| a raw palette colour | checks 1 + 1b |
-| a status colour as a theme token | 7a-ii |
-| a hand-rolled variant system | check 4 (`cva`) + 7a-i |
-| a re-implemented primitive | 7b + 7a-iii's budget |
-| a layout class | **not banned, on purpose** |
+| 7a was written to ban            | now covered by             |
+| -------------------------------- | -------------------------- |
+| a raw palette colour             | checks 1 + 1b              |
+| a status colour as a theme token | 7a-ii                      |
+| a hand-rolled variant system     | check 4 (`cva`) + 7a-i     |
+| a re-implemented primitive       | 7b + 7a-iii's budget       |
+| a layout class                   | **not banned, on purpose** |
 
 7a-i's known limit, stated openly: it permits `className="flex items-center"`
 and forbids `className={"flex items-center"}`, which are the same thing.
@@ -176,26 +176,26 @@ nothing greps for it.
 ## The residual hole, stated rather than hidden
 
 > A re-implemented primitive assembled from **several short literal
-> `className` attributes across one file** passes 7a-i, 7a-ii, 7a-iii *and* 7b.
+> `className` attributes across one file** passes 7a-i, 7a-ii, 7a-iii _and_ 7b.
 
 There is no grep for that. The mitigation is review and the 60-character
 budget, not a claim that the gate is complete. The recipe says so itself.
 
 ## How contributors trip it
 
-| You wrote | Trips | Do instead |
-| --- | --- | --- |
-| `className={cn("card", loud && "text-state-danger-fg")}` | 7a-i, 7a-ii, 7b | Compose a `@vaam-apps/ui` component and pass a variant prop |
-| `className={busy ? "opacity-50" : "opacity-100"}` | 7a-i | The component takes the boolean |
-| `className={STYLE.row}` or a template literal | 7a-i | Inline the literal, or move the variants into a component |
-| `className="btn btn-primary"` copied from daisyUI docs | 7b | `<Button>` from `@vaam-apps/ui` |
-| `className="select select-bordered"` | 7b-ii **and** 2 | `-bordered` no longer exists in daisyUI 5 |
-| `className="text-state-danger-fg"` for a failed status | 7a-ii | `defineStatusSystem` / `createStatusPill`, or an `InlineBanner` variant |
-| `className="bg-red-500"` | 1 | A daisyUI theme token |
-| `className="bg-[#0a0b0d]"` | 1b | A theme token |
-| A layout string that grew past 60 chars | 7a-iii | Split it, or compose a component |
-| A one-off `!important` | 3 | Raise specificity, or argue for a fourth exemption in review |
-| Anything still naming `@vpay/ui`, including a CSS `@import` | 5 / 5b | It is gone; use `@vaam-apps/ui` |
+| You wrote                                                   | Trips           | Do instead                                                              |
+| ----------------------------------------------------------- | --------------- | ----------------------------------------------------------------------- |
+| `className={cn("card", loud && "text-state-danger-fg")}`    | 7a-i, 7a-ii, 7b | Compose a `@vaam-apps/ui` component and pass a variant prop             |
+| `className={busy ? "opacity-50" : "opacity-100"}`           | 7a-i            | The component takes the boolean                                         |
+| `className={STYLE.row}` or a template literal               | 7a-i            | Inline the literal, or move the variants into a component               |
+| `className="btn btn-primary"` copied from daisyUI docs      | 7b              | `<Button>` from `@vaam-apps/ui`                                         |
+| `className="select select-bordered"`                        | 7b-ii **and** 2 | `-bordered` no longer exists in daisyUI 5                               |
+| `className="text-state-danger-fg"` for a failed status      | 7a-ii           | `defineStatusSystem` / `createStatusPill`, or an `InlineBanner` variant |
+| `className="bg-red-500"`                                    | 1               | A daisyUI theme token                                                   |
+| `className="bg-[#0a0b0d]"`                                  | 1b              | A theme token                                                           |
+| A layout string that grew past 60 chars                     | 7a-iii          | Split it, or compose a component                                        |
+| A one-off `!important`                                      | 3               | Raise specificity, or argue for a fourth exemption in review            |
+| Anything still naming `@vpay/ui`, including a CSS `@import` | 5 / 5b          | It is gone; use `@vaam-apps/ui`                                         |
 
 The underlying rule, from `AGENTS.md`: **never inline a status colour in a
 component — a status must not be green in one view and grey in another.**

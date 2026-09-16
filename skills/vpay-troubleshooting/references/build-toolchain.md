@@ -4,11 +4,11 @@
 
 Getting these confused is the most common toolchain mistake here.
 
-| Where | Value (2026-09-16) | What it is |
-| --- | --- | --- |
-| `rust-toolchain.toml` `channel` | `1.98.0` | the compiler this workspace is built and tested with. CI reads the pin **from the file**, never `@stable` |
-| `backends/Dockerfile` `FROM rust:` | `1.98.0-alpine3.22` | the one place that **cannot** read the file |
-| `Cargo.toml` `rust-version` | `1.88` | `cargo metadata`'s max `rust_version` across the *resolved dependency graph* — "a theoretical floor nobody has actually compiled this workspace with" |
+| Where                              | Value (2026-09-16)  | What it is                                                                                                                                            |
+| ---------------------------------- | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `rust-toolchain.toml` `channel`    | `1.98.0`            | the compiler this workspace is built and tested with. CI reads the pin **from the file**, never `@stable`                                             |
+| `backends/Dockerfile` `FROM rust:` | `1.98.0-alpine3.22` | the one place that **cannot** read the file                                                                                                           |
+| `Cargo.toml` `rust-version`        | `1.88`              | `cargo metadata`'s max `rust_version` across the _resolved dependency graph_ — "a theoretical floor nobody has actually compiled this workspace with" |
 
 `rust-toolchain.toml` was `1.95.0` until 2026-09-05. `CLAUDE.md` said `1.95.0`
 for a while after it moved, and a review finding exists whose entire content is
@@ -36,7 +36,7 @@ construction. **Do not turn that into three literals.**"
 
 **Cause:** `.cargo/config.toml` sets `-C target-feature=+crt-static` for
 `x86_64-unknown-linux-musl`. When host and target are the same triple and **no
-`--target` is given**, cargo applies target rustflags to *host* artifacts too —
+`--target` is given**, cargo applies target rustflags to _host_ artifacts too —
 build scripts and proc-macros — and a proc-macro cannot be a static executable.
 
 **Fix:** always pass an explicit `--target`. `just build-dist` does;
@@ -96,7 +96,7 @@ declaration floor itself, next to the claim it protects.
 the opposite — "not wired into the build, its syntax is unverified, do not try
 to make it compile" — and had been wrong **in two stages**: `just check-schema`
 began verifying the syntax 2026-09-05, and `vpay-db`'s private `mod schema`
-began *compiling* the file 2026-09-06. A syntax error in it is now a
+began _compiling_ the file 2026-09-06. A syntax error in it is now a
 `cargo build` failure.
 
 Three consequences:
@@ -128,7 +128,7 @@ with its reasoning in full, accepted deliberately by the maintainer on
   `authkestra-engine`, which vpay uses to run its own OpenID Provider. It
   cannot be feature-gated away, and `authkestra-op` signs RS256 only.
 - The exposure is on-topic, not incidental — it is the crate that signs every
-  token vpay issues. What limits it is that the attack needs a *decryption*
+  token vpay issues. What limits it is that the attack needs a _decryption_
   oracle and vpay's use is signing and verification.
 - The entry genuinely fires: `cargo deny -L info check advisories` reports
   `note[advisory-ignored]` against `rsa v0.9.10`.
@@ -139,7 +139,7 @@ the Keycloak/ZITADEL comparison ADR-0009 leaves open is carried out.
 ## Adding a dependency that needs OpenSSL
 
 **It will fail `cargo deny`, and that is the intended friction.** `openssl`,
-`openssl-sys` and `native-tls` are banned outright (ADR-0005) so a *transitive*
+`openssl-sys` and `native-tls` are banned outright (ADR-0005) so a _transitive_
 dependency that pulls one in fails CI rather than silently linking and
 defeating the static-musl goal. Adopting one needs a new ADR.
 

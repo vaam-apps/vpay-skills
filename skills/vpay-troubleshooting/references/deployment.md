@@ -50,8 +50,8 @@ image.
 is what makes it work. The step-6 design document says `0400`; the chart is a
 deliberate departure from it.
 
-*Reasoned from Kubernetes' documented ownership rule for projected Secret
-volumes. It has not been observed in a running pod, because no pod has run.*
+_Reasoned from Kubernetes' documented ownership rule for projected Secret
+volumes. It has not been observed in a running pod, because no pod has run._
 
 ## A server crash-loops with exit 78 after a rollback
 
@@ -78,17 +78,17 @@ catch it.**
 
 Three facts, none of which lives in the same crate as the others:
 
-| Fact | Where |
-| --- | --- |
-| The route is mounted at the **root**, beside `/v1` and not inside it | `vpay-api/src/provider_callback.rs` — `PROVIDER_NEST = "/provider"` |
-| The URL each rail is handed is `{deployment.public_base_url}/provider/{code}/callback` | `vpay_config::ProviderHost::effective_callback_url` |
-| The chart's `ingress.api.path` / `route.api.path` are `/v1` | `deploy/helm/vpay/values.yaml` |
+| Fact                                                                                   | Where                                                               |
+| -------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| The route is mounted at the **root**, beside `/v1` and not inside it                   | `vpay-api/src/provider_callback.rs` — `PROVIDER_NEST = "/provider"` |
+| The URL each rail is handed is `{deployment.public_base_url}/provider/{code}/callback` | `vpay_config::ProviderHost::effective_callback_url`                 |
+| The chart's `ingress.api.path` / `route.api.path` are `/v1`                            | `deploy/helm/vpay/values.yaml`                                      |
 
 **Nothing compiles those against each other.** Together they meant a deployment
 that enabled the chart's routing and nothing else answered every rail callback
 with the ingress controller's 404: **vpay never received the request, wrote no
 log line, and settlement degraded to the poll ladder while every object reported
-healthy.** `docs/reference/rails.md` already recorded that the callback *path*
+healthy.** `docs/reference/rails.md` already recorded that the callback _path_
 is the half that drifts silently, "because the route lives in `vpay-api` and the
 derivation in `vpay-config`, and neither crate compiles against the other".
 
@@ -113,7 +113,7 @@ The worker Deployment runs the server image with `args: ["worker"]`.
 
 Argument-passing differs by platform and both spellings matter: compose's
 `command:` **is** the Docker CMD, so `command: ["worker"]`; Kubernetes `args`
-**is** the CMD, so `args: ["worker"]` — Kubernetes' `command` would *replace*
+**is** the CMD, so `args: ["worker"]` — Kubernetes' `command` would _replace_
 the entrypoint, "so the chart must not use it and does not."
 
 ## `just helm-check` reports that a guard "did not fire"
@@ -122,7 +122,7 @@ the entrypoint, "so the chart must not use it and does not."
 a way that stopped a guard refusing its own values file. The recipe renders
 every guard file and **requires each to fail with its own guard name in the
 message**, and separately checks that the twenty-two names it expects are
-exactly the files on disk — so deleting a guard *and* its values file fails
+exactly the files on disk — so deleting a guard _and_ its values file fails
 rather than passing quietly.
 
 `just helm-check` is **not** part of `just ci`: kubeconform downloads its

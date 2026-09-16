@@ -10,18 +10,18 @@ auto-resolves from an environment variable, **with an explicit flag beating its
 env var**. The modes share one `CommonArgs` via `#[command(flatten)]`, "so they
 cannot drift on a flag's name, env var, or default."
 
-| Flag | Env var | Default |
-| --- | --- | --- |
-| `--bind` *(serve only)* | `VPAY_BIND` | `0.0.0.0:8080` |
-| `--database-url` | `DATABASE_URL` | none |
-| `--profile` | `VPAY_PROFILE` | `sandbox` |
-| `--config` | `VPAY_CONFIG` | none |
-| `--observability-bind` | `VPAY_OBSERVABILITY_BIND` | `0.0.0.0:9090` |
-| `--oauth-signing-key-file` *(serve only)* | `VPAY_OAUTH_SIGNING_KEY_FILE` | none |
-| `--log-filter` | `RUST_LOG` | `info` |
-| `--log-format` (`json`\|`text`) | `VPAY_LOG_FORMAT` | `json` |
-| `--shutdown-grace-seconds` | `VPAY_SHUTDOWN_GRACE_SECONDS` | `25` |
-| `--worker-concurrency` *(worker only)* | `VPAY_WORKER_CONCURRENCY` | `4` |
+| Flag                                      | Env var                       | Default        |
+| ----------------------------------------- | ----------------------------- | -------------- |
+| `--bind` _(serve only)_                   | `VPAY_BIND`                   | `0.0.0.0:8080` |
+| `--database-url`                          | `DATABASE_URL`                | none           |
+| `--profile`                               | `VPAY_PROFILE`                | `sandbox`      |
+| `--config`                                | `VPAY_CONFIG`                 | none           |
+| `--observability-bind`                    | `VPAY_OBSERVABILITY_BIND`     | `0.0.0.0:9090` |
+| `--oauth-signing-key-file` _(serve only)_ | `VPAY_OAUTH_SIGNING_KEY_FILE` | none           |
+| `--log-filter`                            | `RUST_LOG`                    | `info`         |
+| `--log-format` (`json`\|`text`)           | `VPAY_LOG_FORMAT`             | `json`         |
+| `--shutdown-grace-seconds`                | `VPAY_SHUTDOWN_GRACE_SECONDS` | `25`           |
+| `--worker-concurrency` _(worker only)_    | `VPAY_WORKER_CONCURRENCY`     | `4`            |
 
 `--version` reports the workspace version. **Run `--help` on the binary** if
 this table and the binary ever disagree — the flow doc says so of itself.
@@ -47,7 +47,7 @@ reaches a pod". Generate one offline:
 cargo xtask gen-signing-key --out ./secrets   # writes oauth-signing-key.pem
 ```
 
-The *path* is deliberately visible in `Debug` output
+The _path_ is deliberately visible in `Debug` output
 (`the_signing_key_path_stays_visible_in_debug_output`) — "a path is not a
 secret, and 'which file did it try' is the first thing an operator needs" —
 while the file's contents never enter the CLI types at all. Nothing prints,
@@ -56,7 +56,7 @@ logs or stores the private key.
 `--shutdown-grace-seconds` is honoured by `serve` only: it races the in-flight
 drain against a clock of that length via `serve_with_bounded_drain` and exits
 non-zero if the clock wins. The worker accepts and logs it and does nothing with
-it. **Neither mode's handling of the *timeout* case is covered by a test.**
+it. **Neither mode's handling of the _timeout_ case is covered by a test.**
 
 ## The boot sequence, cheapest hard failure first
 
@@ -135,19 +135,19 @@ budget and **a knob nobody sets is a knob nobody has tested**."
 
 ## Rules that refuse to boot
 
-| Rule | Why |
-| --- | --- |
-| Every merchant's rail host appears in that rail's allowlist | the host allowlist, checked before the FK |
-| Every referenced provider exists and is enabled | a typo fails at boot, not at first payment |
-| Every merchant registration carries a unique `merchant_id` | the `/v1` tenancy boundary has no foreign key behind it |
-| Currency exponent matches the canonical table | **a 100× amount bug is otherwise silent** |
-| `livemode` ⇒ every host is `https://` | |
-| **`livemode` ⇒ no host labelled `wiremock`/`stub`/`mock`/`localhost`** | see below |
-| `livemode` ⇒ secrets come from `${}`, not literals | stops a real key reaching git |
-| `checkout.public_base_url` is a well-formed origin, `https://` under livemode | every payer link vpay mints is built on it |
+| Rule                                                                                                   | Why                                                                                           |
+| ------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------- |
+| Every merchant's rail host appears in that rail's allowlist                                            | the host allowlist, checked before the FK                                                     |
+| Every referenced provider exists and is enabled                                                        | a typo fails at boot, not at first payment                                                    |
+| Every merchant registration carries a unique `merchant_id`                                             | the `/v1` tenancy boundary has no foreign key behind it                                       |
+| Currency exponent matches the canonical table                                                          | **a 100× amount bug is otherwise silent**                                                     |
+| `livemode` ⇒ every host is `https://`                                                                  |                                                                                               |
+| **`livemode` ⇒ no host labelled `wiremock`/`stub`/`mock`/`localhost`**                                 | see below                                                                                     |
+| `livemode` ⇒ secrets come from `${}`, not literals                                                     | stops a real key reaching git                                                                 |
+| `checkout.public_base_url` is a well-formed origin, `https://` under livemode                          | every payer link vpay mints is built on it                                                    |
 | every `checkout_origins` entry is an `https://` origin, no path, no duplicate, **spelled canonically** | it becomes `frame-ancestors`; a non-canonical spelling is dropped **silently** by the browser |
-| `checkout_origins` without a `checkout.public_base_url` | there is no page for those origins to frame |
-| `merchant_clients[].display_name` non-blank, ≤ 80 chars | it is painted into a heading on a phone-sized page |
+| `checkout_origins` without a `checkout.public_base_url`                                                | there is no page for those origins to frame                                                   |
+| `merchant_clients[].display_name` non-blank, ≤ 80 chars                                                | it is painted into a heading on a phone-sized page                                            |
 
 ### The livemode stub-host rule is the load-bearing one
 

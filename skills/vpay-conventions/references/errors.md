@@ -57,20 +57,20 @@ library crate that lists `anyhow` under `[dependencies]` fails the gate.
 `vpay_core::error::Category`. Everything else is derived from it unless a leaf
 overrides one column **with a comment saying why**.
 
-| Category | Whose problem | HTTP | Stripe `type` | default `code` | Retry | Severity | Exit |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| `InvalidRequest` | caller | 400 | `invalid_request_error` | `invalid_request` | never | info | 64 |
-| `Authentication` | caller | 401 | `authentication_error` | `invalid_token` | never | info | 77 |
-| `Forbidden` | caller | 403 | `invalid_request_error` | `forbidden` | never | info | 77 |
-| `NotFound` | caller | 404 | `invalid_request_error` | `resource_missing` | never | info | 1 |
-| `Conflict` | caller (state) | 409 | `invalid_request_error` | `invalid_state` | never | info | 1 |
-| `Idempotency` | caller | 400 | `idempotency_error` | `idempotency_key_in_use` | never | info | 64 |
-| `RateLimited` | caller (pace) | 429 | `rate_limit_error` | `rate_limit` | after backoff | warn | 1 |
-| `Rail` | the rail | 502 | `api_error` | `provider_unavailable` | after backoff | warn | 69 |
-| `Storage` | us (Postgres) | 503 | `api_error` | `service_unavailable` | after backoff | error | 69 |
-| `Configuration` | operator | 500 | `api_error` | `misconfigured` | never | error | 78 |
-| `NotImplemented` | us (honest stub) | 501 | `api_error` | `not_implemented` | never | error | 1 |
-| `Internal` | us (a bug) | 500 | `api_error` | `internal_error` | never | **page** | 1 |
+| Category         | Whose problem    | HTTP | Stripe `type`           | default `code`           | Retry         | Severity | Exit |
+| ---------------- | ---------------- | ---- | ----------------------- | ------------------------ | ------------- | -------- | ---- |
+| `InvalidRequest` | caller           | 400  | `invalid_request_error` | `invalid_request`        | never         | info     | 64   |
+| `Authentication` | caller           | 401  | `authentication_error`  | `invalid_token`          | never         | info     | 77   |
+| `Forbidden`      | caller           | 403  | `invalid_request_error` | `forbidden`              | never         | info     | 77   |
+| `NotFound`       | caller           | 404  | `invalid_request_error` | `resource_missing`       | never         | info     | 1    |
+| `Conflict`       | caller (state)   | 409  | `invalid_request_error` | `invalid_state`          | never         | info     | 1    |
+| `Idempotency`    | caller           | 400  | `idempotency_error`     | `idempotency_key_in_use` | never         | info     | 64   |
+| `RateLimited`    | caller (pace)    | 429  | `rate_limit_error`      | `rate_limit`             | after backoff | warn     | 1    |
+| `Rail`           | the rail         | 502  | `api_error`             | `provider_unavailable`   | after backoff | warn     | 69   |
+| `Storage`        | us (Postgres)    | 503  | `api_error`             | `service_unavailable`    | after backoff | error    | 69   |
+| `Configuration`  | operator         | 500  | `api_error`             | `misconfigured`          | never         | error    | 78   |
+| `NotImplemented` | us (honest stub) | 501  | `api_error`             | `not_implemented`        | never         | error    | 1    |
+| `Internal`       | us (a bug)       | 500  | `api_error`             | `internal_error`         | never         | **page** | 1    |
 
 **Do not edit that table in `docs/flows/errors.md`.** It is transcribed
 literally into a `vpay-core` test, so the document and the code fail together.
@@ -137,7 +137,7 @@ the whole pattern.
 2. A library crate listing `anyhow` under `[dependencies]`.
 3. **A `#[from]` variant a composite answers for with a wildcard instead of
    naming.** For every `#[from]` variant, each `Classify` method that
-   *discriminates* on `self` must name `Self::<Variant>` explicitly.
+   _discriminates_ on `self` must name `Self::<Variant>` explicitly.
 
 **Five spellings count as discriminating** — `match self`, `match *self`,
 `match &self`, `if let Self::`, `matches!(self`. All five are checked because
@@ -152,8 +152,8 @@ anyone narrows the list back.
 
 Before Step 7, `ProviderError::Transport` and `Malformed` were
 `Transport(String)`, so every adapter flattened `reqwest`'s error with
-`format!`. `reqwest`'s own `Display` for a timeout is *"error sending request
-for url (…)"* — **the word *timeout* is one link further down the chain** — so
+`format!`. `reqwest`'s own `Display` for a timeout is _"error sending request
+for url (…)"_ — **the word _timeout_ is one link further down the chain** — so
 MTN's log line named the URL and not the fault. Orange had noticed and
 hand-walked `Error::source()` into a `String`, which is the same information
 rebuilt by hand in one of the two adapters.
@@ -177,10 +177,10 @@ timed out`.
 
 Four constructors, and choosing between them is the whole decision:
 
-| | the rail answered (badly), no library error to attach | there is a library error |
-| --- | --- | --- |
-| transport | `transport` | `transport_from` |
-| malformed | `malformed` | `malformed_from` |
+|           | the rail answered (badly), no library error to attach | there is a library error |
+| --------- | ----------------------------------------------------- | ------------------------ |
+| transport | `transport`                                           | `transport_from`         |
+| malformed | `malformed`                                           | `malformed_from`         |
 
 All four carry a doctest asserting `Display` renders `context` alone while the
 cause stays reachable through `Error::source()` — the property that would
@@ -199,7 +199,7 @@ port's own rustdoc, and `#![warn(clippy::missing_errors_doc)]` on
 
 - `parse_callback` raises `Malformed` and nothing else. It touches no network,
   holds no credential and reads no configuration.
-- `query_status` raises `Rejected` **only** when the rail refuses *our* partner
+- `query_status` raises `Rejected` **only** when the rail refuses _our_ partner
   credentials. A declined charge is `Ok(ChargeStatus::Failed)` and a rail with
   no record is `Ok(ChargeStatus::NotFound)` — neither is an error.
 - `submit` never raises `Unsupported`: a rail that cannot take a payment is not
@@ -214,7 +214,7 @@ outcomes. A rail declining a charge is not a system failure.
 **HTTP.** Handlers return `Result<_, ApiError>` and use `?`. They never
 construct an envelope, choose a status, or format a message for a merchant.
 The two envelope renderers are `pub(crate)` to `vpay-api`, so a handler
-*cannot* build one by hand — one renderer is structural here, not a
+_cannot_ build one by hand — one renderer is structural here, not a
 convention. The full `Display` + source chain goes to the log; only
 `public_message()` goes to the merchant.
 

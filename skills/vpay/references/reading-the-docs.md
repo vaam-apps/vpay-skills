@@ -17,14 +17,14 @@ paragraph in the same commit.
 Generalise it. When a document and a machine-checked artefact disagree, the
 artefact wins:
 
-| Question                              | The authority                                          |
-| ------------------------------------- | ------------------------------------------------------ |
-| What gates are there?                 | the `verify` recipe in `justfile`                      |
-| What is unimplemented?                | `cargo xtask verify-status`, whose output is the list  |
-| Do the SDKs agree?                    | `docs/sdks/parity.md`, which is a gate                 |
-| What does the schema declare?         | `schemas/vpay.cstack`, which now compiles              |
-| Which toolchain?                      | `rust-toolchain.toml`, `.nvmrc`, `flutter-toolchain.toml` |
-| What routes exist?                    | the router construction code, not the flow docs        |
+| Question                      | The authority                                             |
+| ----------------------------- | --------------------------------------------------------- |
+| What gates are there?         | the `verify` recipe in `justfile`                         |
+| What is unimplemented?        | `cargo xtask verify-status`, whose output is the list     |
+| Do the SDKs agree?            | `docs/sdks/parity.md`, which is a gate                    |
+| What does the schema declare? | `schemas/vpay.cstack`, which now compiles                 |
+| Which toolchain?              | `rust-toolchain.toml`, `.nvmrc`, `flutter-toolchain.toml` |
+| What routes exist?            | the router construction code, not the flow docs           |
 
 Flow documents describe what is **designed**. `docs/status.md` describes what
 is **built**. A flow page can be entirely accurate and describe nothing that
@@ -74,18 +74,18 @@ do not replace it with an id you have not checked.
 
 Putting a document in the wrong tier is a real review comment here.
 
-| Tier                    | Holds                                                     | Mutability                      |
-| ----------------------- | --------------------------------------------------------- | ------------------------------- |
-| `docs/adr/`             | A decision that has been taken                             | **Immutable** — supersede, never edit |
-| `docs/flows/`           | A process: what happens, in what order, what can go wrong | Edited as the process changes   |
-| `docs/reference/<crate>.md` | Why the *code* is shaped the way it is                | Edited as the code changes      |
-| `docs/rfc/`             | A proposal under discussion                                | Until decided                   |
-| `docs/runbooks/`        | Something an on-call person must do                        | Edited freely                   |
-| `docs/status/`          | What is actually built, with dated evidence                | Append; nothing is deleted      |
-| `docs/plans/`           | Per-change working notes, including review findings        | Historical                      |
+| Tier                        | Holds                                                     | Mutability                            |
+| --------------------------- | --------------------------------------------------------- | ------------------------------------- |
+| `docs/adr/`                 | A decision that has been taken                            | **Immutable** — supersede, never edit |
+| `docs/flows/`               | A process: what happens, in what order, what can go wrong | Edited as the process changes         |
+| `docs/reference/<crate>.md` | Why the _code_ is shaped the way it is                    | Edited as the code changes            |
+| `docs/rfc/`                 | A proposal under discussion                               | Until decided                         |
+| `docs/runbooks/`            | Something an on-call person must do                       | Edited freely                         |
+| `docs/status/`              | What is actually built, with dated evidence               | Append; nothing is deleted            |
+| `docs/plans/`               | Per-change working notes, including review findings       | Historical                            |
 
-A change to a *process* belongs in `flows/`. A change to how the *code
-expresses* it belongs in `reference/`. Long reasoning does **not** belong in an
+A change to a _process_ belongs in `flows/`. A change to how the _code
+expresses_ it belongs in `reference/`. Long reasoning does **not** belong in an
 80-line module header — it belongs in `docs/reference/<crate>.md`, with the
 module carrying one paragraph and a link.
 

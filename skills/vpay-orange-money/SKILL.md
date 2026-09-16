@@ -5,6 +5,11 @@ description: The Orange Money Cameroun adapter (`vpay-adapter-orange-money`) —
 
 # Orange Money — the redirect rail
 
+> **Verified against vpay `f063ee96` (2026-09-15).** Version-sensitive claims below
+> carry the date they became true — a feature in vpay's `master` may be absent
+> from the tree you are editing. On an older or newer vpay, trust the
+> repository over this page. See VERSIONING.md.
+
 `backends/crates/vpay-adapter-orange-money/` — `lib.rs`, `token.rs`,
 `wire.rs`, `mapping.rs`.
 

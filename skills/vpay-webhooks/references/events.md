@@ -8,12 +8,12 @@ The closed set is a **database CHECK**, `type_is_a_documented_event` on
 `events.type`. It has been rewritten four times, each by the migration that
 added a type:
 
-| Migration                                      | Added                                                    |
-| ---------------------------------------------- | -------------------------------------------------------- |
-| `0018_create-events.sql`                       | the original seven                                        |
-| `0028`/`0029_events-checkout-session-expired.sql` | `checkout.session.expired`                             |
-| `0034_create-customers.sql`                    | `customer.deleted`                                        |
-| `0039_events-customer-created-updated.sql`     | `customer.created`, `customer.updated`, the four `invoice.*` |
+| Migration                                         | Added                                                        |
+| ------------------------------------------------- | ------------------------------------------------------------ |
+| `0018_create-events.sql`                          | the original seven                                           |
+| `0028`/`0029_events-checkout-session-expired.sql` | `checkout.session.expired`                                   |
+| `0034_create-customers.sql`                       | `customer.deleted`                                           |
+| `0039_events-customer-created-updated.sql`        | `customer.created`, `customer.updated`, the four `invoice.*` |
 
 `0039` is the current one. There is no Rust enum: `vpay_db::EventRow::r#type`
 and `vpay_api::model::EventObject::kind` are both `String`. The SDKs carry a
@@ -27,23 +27,23 @@ rule exists.
 
 ## Who writes what
 
-| Type                            | Written by                                                                          | Since      |
-| ------------------------------- | ------------------------------------------------------------------------------------ | ---------- |
-| `payment_intent.created`        | **— nothing**                                                                        | —          |
-| `payment_intent.processing`     | **— nothing**                                                                        | —          |
-| `payment_intent.succeeded`      | `vpay_db::settlement::apply_succeeded`                                               | 2026-09-03 |
-| `payment_intent.payment_failed` | `vpay_db::settlement::apply_failed` **and** `vpay_api::v1::payment_intents::persist_decline` | 2026-09-03 / 2026-09-10 |
-| `payment_intent.canceled`       | `vpay_api::v1::payment_intents::cancel_with_event`                                   | 2026-09-10 |
-| `charge.refunded`               | **— nothing**                                                                        | —          |
-| `charge.refund.updated`         | **— nothing**                                                                        | —          |
-| `checkout.session.expired`      | `vpay_db::checkout_sessions::expire_due` (the hourly sweep only)                     | 2026-09-04 |
-| `customer.created`              | `vpay_api::v1::customers::create_with_event`                                         | 2026-09-10 |
-| `customer.updated`              | `vpay_api::v1::customers::update_once`, under the row's lock                         | 2026-09-10 |
+| Type                            | Written by                                                                                        | Since                   |
+| ------------------------------- | ------------------------------------------------------------------------------------------------- | ----------------------- |
+| `payment_intent.created`        | **— nothing**                                                                                     | —                       |
+| `payment_intent.processing`     | **— nothing**                                                                                     | —                       |
+| `payment_intent.succeeded`      | `vpay_db::settlement::apply_succeeded`                                                            | 2026-09-03              |
+| `payment_intent.payment_failed` | `vpay_db::settlement::apply_failed` **and** `vpay_api::v1::payment_intents::persist_decline`      | 2026-09-03 / 2026-09-10 |
+| `payment_intent.canceled`       | `vpay_api::v1::payment_intents::cancel_with_event`                                                | 2026-09-10              |
+| `charge.refunded`               | **— nothing**                                                                                     | —                       |
+| `charge.refund.updated`         | **— nothing**                                                                                     | —                       |
+| `checkout.session.expired`      | `vpay_db::checkout_sessions::expire_due` (the hourly sweep only)                                  | 2026-09-04              |
+| `customer.created`              | `vpay_api::v1::customers::create_with_event`                                                      | 2026-09-10              |
+| `customer.updated`              | `vpay_api::v1::customers::update_once`, under the row's lock                                      | 2026-09-10              |
 | `customer.deleted`              | `vpay_db::customers::erase_idle` (retention sweep) **and** `vpay_api::v1::customers::delete_once` | 2026-09-06 / 2026-09-10 |
-| `invoice.created`               | `vpay_api::v1::invoices::write_with_event`                                           | 2026-09-07 |
-| `invoice.finalized`             | `vpay_api::v1::invoices::write_with_event`                                           | 2026-09-07 |
-| `invoice.paid`                  | `vpay_db::settlement::apply_succeeded`                                               | 2026-09-07 |
-| `invoice.voided`                | `vpay_api::v1::invoices::write_with_event`                                           | 2026-09-07 |
+| `invoice.created`               | `vpay_api::v1::invoices::write_with_event`                                                        | 2026-09-07              |
+| `invoice.finalized`             | `vpay_api::v1::invoices::write_with_event`                                                        | 2026-09-07              |
+| `invoice.paid`                  | `vpay_db::settlement::apply_succeeded`                                                            | 2026-09-07              |
+| `invoice.voided`                | `vpay_api::v1::invoices::write_with_event`                                                        | 2026-09-07              |
 
 ### The four with no writer
 
@@ -57,7 +57,7 @@ all, so its adapter inherits the port's `Unsupported`.
 
 The knock-on: nothing writes a `refunds` row, `POST /v1/refunds` is unrouted,
 and `vpay_db::Refunds` is two reads and no write. So what the event tests prove
-about the refund types is that the *contract* holds, not that a refund event
+about the refund types is that the _contract_ holds, not that a refund event
 works.
 
 ### Two Stripe invoice types deliberately absent from the list
@@ -152,12 +152,12 @@ merchant's id is the same 404 a nonexistent one gets, byte for byte.
 
 **`?type=` is documented in `docs/api/README.md` and deliberately not
 implemented.** A filter interacts with the cursor — `has_more` and the `seq`
-window both have to be computed over the *filtered* set or paging silently
+window both have to be computed over the _filtered_ set or paging silently
 skips rows — and half of that is worse than none. Unknown query parameters are
 ignored everywhere on this surface, so `?type=…` returns an **unfiltered page**
 rather than a `400`. Do not assume a filtered read.
 
 There is no `POST /v1/events` and there will not be one: an event is a record
 of something vpay did, and a merchant who could create one could forge their
-own history. Retrying a *delivery* is an operator action against
+own history. Retrying a _delivery_ is an operator action against
 `webhook_deliveries` (`docs/runbooks/webhook-delivery-failures.md`).

@@ -41,7 +41,7 @@ become a reflection channel.
 - **`stripe-should-retry: true|false`** — derived from `Classify::retry()`,
   asked of the same classification the status came from. It is **not** derived
   from the status, so a `409` refusal and a `409` that heals answer
-  differently. stripe-node reads this header *above* its own status-code rules.
+  differently. stripe-node reads this header _above_ its own status-code rules.
 - **`request-id`** — Stripe's spelling, mirrored from `x-request-id` by
   middleware. `vpay_api::error` deliberately has no `request_id` field: a
   second id generated here would appear in the log and in no response header,
@@ -73,8 +73,8 @@ Stripe's `type` vocabulary is closed (five strings), so several categories share
 one and are told apart by `code` and the status.
 
 Only `Rail`, `Storage` and `RateLimited` are retryable as-is. `Retry` has three
-values, and the third matters: `NewAttempt` means *do not repeat this operation
-— start over with a new one* (a new PaymentIntent, per
+values, and the third matters: `NewAttempt` means _do not repeat this operation
+— start over with a new one_ (a new PaymentIntent, per
 `docs/flows/payment-lifecycle.md`). `stripe-should-retry` renders `false` for
 both `Never` and `NewAttempt`, because neither means "send the same request
 again".
@@ -86,7 +86,7 @@ alert's label and the JSON log line that produced it are joinable by eye.
 
 ### Two category boundaries that get confused
 
-- **A rail *rejecting* a charge is not `Category::Rail`.** That is a business
+- **A rail _rejecting_ a charge is not `Category::Rail`.** That is a business
   outcome — a `vpay_core::FailureCode` on the charge. `Category::Rail` is "the
   rail could not be reached or answered incoherently".
 - **`Conflict` is "the object's state forbids it"**, not "you sent something
@@ -108,7 +108,7 @@ alert's label and the JSON log line that produced it are joinable by eye.
 Forwarding the category alone silently discards a leaf's deliberate override.
 `ProviderError::Rejected` overrides `code()` to `charge_declined`, `retry()` to
 `Retry::NewAttempt` and `severity()` to whatever the `FailureCode` deserves (a
-blocked *partner* account pages), while its category `Conflict` defaults to
+blocked _partner_ account pages), while its category `Conflict` defaults to
 `invalid_state` / `Never` / `Info`. A category-only delegation would answer a
 declined charge with the wrong code and log a blocked partner account as one
 more merchant typo — and `vpay_worker::JobError` would answer the identical
@@ -119,12 +119,12 @@ error differently, which is exactly the drift ADR-0011 exists to stop.
 Everything else uses its category's default. These four exist because an SDK
 has to branch on the difference:
 
-| Variant                  | Code                                            | Why the default is not enough                                                          |
-| ------------------------ | ----------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| `UnknownRoute`           | `unknown_route`                                 | "you called an endpoint vpay does not implement" ≠ "that payment intent does not exist" |
-| `IdempotencyKeyInFlight` | `idempotency_key_in_flight`                     | "your own earlier request is still running" (wait) ≠ `idempotency_key_in_use`, "you changed the body" (fix your bug) |
-| `CheckoutNotConfigured`  | `checkout_not_configured`                       | "this deployment has no checkout page" (a permanent capability answer) ≠ `misconfigured`, an outage |
-| `CheckoutSessionNotOpen` | `checkout_session_expired` / `checkout_session_complete` | "your payer abandoned this checkout" ≠ "this intent is already processing"       |
+| Variant                  | Code                                                     | Why the default is not enough                                                                                        |
+| ------------------------ | -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `UnknownRoute`           | `unknown_route`                                          | "you called an endpoint vpay does not implement" ≠ "that payment intent does not exist"                              |
+| `IdempotencyKeyInFlight` | `idempotency_key_in_flight`                              | "your own earlier request is still running" (wait) ≠ `idempotency_key_in_use`, "you changed the body" (fix your bug) |
+| `CheckoutNotConfigured`  | `checkout_not_configured`                                | "this deployment has no checkout page" (a permanent capability answer) ≠ `misconfigured`, an outage                  |
+| `CheckoutSessionNotOpen` | `checkout_session_expired` / `checkout_session_complete` | "your payer abandoned this checkout" ≠ "this intent is already processing"                                           |
 
 The last is two codes from one variant, chosen by a two-variant `ClosedSession`
 enum so the match stays total. It is a `code` and **not** a `param`, because

@@ -5,6 +5,11 @@ description: The vpay Customer object and the account-holder lookup — phone-fi
 
 # Customers, addresses, erasure, and the account-holder lookup
 
+> **Verified against vpay `f063ee96` (2026-09-15).** Version-sensitive claims below
+> carry the date they became true — a feature in vpay's `master` may be absent
+> from the tree you are editing. On an older or newer vpay, trust the
+> repository over this page. See VERSIONING.md.
+
 This is the only table in vpay whose entire content is **another person's
 personal data**, and `GET /v1/account_holders` is the only route on `/v1` that
 returns information about a person who is not the caller. Almost everything

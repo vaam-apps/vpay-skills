@@ -5,8 +5,12 @@ description: The payer-facing checkout page at frontends/apps/checkout — the t
 
 # vpay checkout page
 
-`frontends/apps/checkout` (`@vpay/checkout`). Next 15.5.25 App Router, React
-19. Process doc: `docs/flows/hosted-checkout.md` plus the four pages under
+> **Verified against vpay `f063ee96` (2026-09-15).** Version-sensitive claims below
+> carry the date they became true — a feature in vpay's `master` may be absent
+> from the tree you are editing. On an older or newer vpay, trust the
+> repository over this page. See VERSIONING.md.
+
+`frontends/apps/checkout` (`@vpay/checkout`). Next 15.5.25 App Router, React 19. Process doc: `docs/flows/hosted-checkout.md` plus the four pages under
 `docs/flows/hosted-checkout/`. The surface underneath it is
 `docs/flows/browser-checkout.md`.
 
@@ -20,12 +24,12 @@ expires. No bearer token, no cookie, no server-side session beyond the row.
 
 ## Routes
 
-| Route | Mode | CSP |
-| --- | --- | --- |
-| `/c/{cs_id}?key={pk}#{client_secret}` | hosted — a full navigation, or a popup the merchant opened | `frame-ancestors 'none'` |
-| `/e/{cs_id}?key={pk}#{client_secret}` | embedded — framed by `initEmbeddedCheckout` | `frame-ancestors <the merchant's registered origins>` |
-| `/c/{cs_id}/return?t={return_token}` | where a redirect rail sends the payer back | `frame-ancestors 'none'` |
-| `/config/v1` | an **operator** verification surface. Not an API a browser uses — every page already receives its branding as props | — |
+| Route                                 | Mode                                                                                                                | CSP                                                   |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| `/c/{cs_id}?key={pk}#{client_secret}` | hosted — a full navigation, or a popup the merchant opened                                                          | `frame-ancestors 'none'`                              |
+| `/e/{cs_id}?key={pk}#{client_secret}` | embedded — framed by `initEmbeddedCheckout`                                                                         | `frame-ancestors <the merchant's registered origins>` |
+| `/c/{cs_id}/return?t={return_token}`  | where a redirect rail sends the payer back                                                                          | `frame-ancestors 'none'`                              |
+| `/config/v1`                          | an **operator** verification surface. Not an API a browser uses — every page already receives its branding as props | —                                                     |
 
 Both modes render the same screens from the same state machine. The mode is a
 property of the session and the page refuses the wrong one: `/c/{id}` refuses
@@ -41,7 +45,7 @@ reach a `Referer`. `src/lib/link.ts` enforces two consequences:
 1. **A `client_secret` in the query string is ignored, not used.** Reading one
    would make the safe shape and the unsafe shape work equally well — and the
    unsafe one is what a copy-pasted URL turns into.
-2. The publishable key *is* read from the query, because it is not a secret: it
+2. The publishable key _is_ read from the query, because it is not a secret: it
    is rendered into the merchant's public page by construction.
 
 A fragment value without `_secret_` in it is refused and **never echoed
@@ -68,17 +72,17 @@ protocol silently once: **inside a popup `window.parent === window`**, so
 merchant's page when the payment finished. The channel now takes a `peer`,
 `parent` or `opener`.
 
-| | Framed `/e/{id}` | Popup `/c/{id}` | Top-level `/c/{id}` |
-| --- | --- | --- | --- |
-| Peer | `window.parent` | `window.opener` | none |
-| An unresolvable peer | **refused** | renders, no channel | normal |
-| `vpay:resize` | yes | **no** — a popup sizes itself | n/a |
-| `vpay:redirect` | yes | **no** | n/a |
-| `vpay:complete` | yes | yes | n/a |
+|                      | Framed `/e/{id}` | Popup `/c/{id}`               | Top-level `/c/{id}` |
+| -------------------- | ---------------- | ----------------------------- | ------------------- |
+| Peer                 | `window.parent`  | `window.opener`               | none                |
+| An unresolvable peer | **refused**      | renders, no channel           | normal              |
+| `vpay:resize`        | yes              | **no** — a popup sizes itself | n/a                 |
+| `vpay:redirect`      | yes              | **no**                        | n/a                 |
+| `vpay:complete`      | yes              | yes                           | n/a                 |
 
 Three deliberate departures, each a decision and not an omission:
 
-- **No `vpay:redirect` to an opener.** A popup *is* a top-level browsing
+- **No `vpay:redirect` to an opener.** A popup _is_ a top-level browsing
   context and may navigate itself. Asking the opener to navigate would send
   **the merchant's own page** to Orange Money out from under the payer, losing
   the page they expect to come back to.
@@ -87,7 +91,7 @@ Three deliberate departures, each a decision and not an omission:
   copy fires a merchant's `onComplete` twice, and a merchant who treats that as
   a cue to create an order creates two.
 - **An unresolvable opener is not a refusal.** A hosted page is complete on its
-  own; it loses only the ability to *tell* the opener. The embedded case still
+  own; it loses only the ability to _tell_ the opener. The embedded case still
   refuses, because a framed page with no parent has no way to finish at all.
 
 `'*'` appears **nowhere** as a `postMessage` target, and the parent posts
@@ -96,7 +100,7 @@ CSP vpay served it, not from a message. The strongest form of "never
 `postMessage(…, '*')`" is "never `postMessage`".
 
 The **return** page resolves its opener by a different rule and has to:
-a payer arriving there came from the *rail*, so `document.referrer` names
+a payer arriving there came from the _rail_, so `document.referrer` names
 Orange, not the merchant. It uses `soleOrigin` — exactly one registered
 `checkout_origins` entry is the target; with none or with several, **there is
 no channel**.

@@ -5,6 +5,11 @@ description: vpay's persistence layer — `backends/migrations/*.sql` as the aut
 
 # The data layer
 
+> **Verified against vpay `f063ee96` (2026-09-15).** Version-sensitive claims below
+> carry the date they became true — a feature in vpay's `master` may be absent
+> from the tree you are editing. On an older or newer vpay, trust the
+> repository over this page. See VERSIONING.md.
+
 Postgres. One crate owns it: `backends/crates/vpay-db`. Nothing else in the
 workspace may name a `PgPool`, a `sqlx::Transaction`, or a CrateStack handle.
 

@@ -5,6 +5,11 @@ description: Orientation for working in the vpay repository — a Rust + TypeScr
 
 # vpay
 
+> **Verified against vpay `f063ee96` (2026-09-15).** Version-sensitive claims below
+> carry the date they became true — a feature in vpay's `master` may be absent
+> from the tree you are editing. On an older or newer vpay, trust the
+> repository over this page. See VERSIONING.md.
+
 A payment orchestrator for Cameroon mobile money. Rust backend, TypeScript
 frontends, merchant SDKs in Rust, Node and Flutter.
 
@@ -70,38 +75,38 @@ cat docs/status.md
 
 When you finish: `just ci`, then update the status page your change belongs to
 **in the same commit**, then the relevant `docs/flows/*.md` **Status** section.
-Then state explicitly, in your summary, what you did *not* do.
+Then state explicitly, in your summary, what you did _not_ do.
 
 `docs/status.md` § "Where a new row goes" is the map. Details:
 `vpay-docs-status`.
 
 ## Repository map
 
-| Path                     | What is in it                                                                 |
-| ------------------------ | ----------------------------------------------------------------------------- |
-| `backends/crates/`       | The Rust workspace: `vpay-core`, `vpay-api`, `vpay-db`, `vpay-provider`, adapters |
-| `backends/apps/`         | `vpay-server` — the one shipping binary, three modes                          |
-| `backends/migrations/`   | SQL migrations + `MANIFEST.sha256` (their bytes are pinned)                    |
-| `frontends/apps/`        | `checkout` (the payer page), the dashboard, the demo shop                      |
-| `sdks/`                  | Merchant SDKs — Rust, Node, Flutter                                           |
-| `schemas/vpay.cstack`    | The CrateStack schema. **It compiles into `vpay-db`** — a syntax error is a build failure |
-| `docs/flows/`            | One page per process: what happens, what can go wrong, what invariant holds    |
-| `docs/status/`           | What is actually built, by area, with dated evidence                          |
-| `docs/adr/`              | Decisions. Immutable — superseded, never edited                                |
-| `docs/reference/`        | Why the code is shaped the way it is, per crate                                |
-| `justfile`               | ~270 000 lines. The recipes are the source of truth for every command          |
+| Path                   | What is in it                                                                             |
+| ---------------------- | ----------------------------------------------------------------------------------------- |
+| `backends/crates/`     | The Rust workspace: `vpay-core`, `vpay-api`, `vpay-db`, `vpay-provider`, adapters         |
+| `backends/apps/`       | `vpay-server` — the one shipping binary, three modes                                      |
+| `backends/migrations/` | SQL migrations + `MANIFEST.sha256` (their bytes are pinned)                               |
+| `frontends/apps/`      | `checkout` (the payer page), the dashboard, the demo shop                                 |
+| `sdks/`                | Merchant SDKs — Rust, Node, Flutter                                                       |
+| `schemas/vpay.cstack`  | The CrateStack schema. **It compiles into `vpay-db`** — a syntax error is a build failure |
+| `docs/flows/`          | One page per process: what happens, what can go wrong, what invariant holds               |
+| `docs/status/`         | What is actually built, by area, with dated evidence                                      |
+| `docs/adr/`            | Decisions. Immutable — superseded, never edited                                           |
+| `docs/reference/`      | Why the code is shaped the way it is, per crate                                           |
+| `justfile`             | ~270 000 lines. The recipes are the source of truth for every command                     |
 
 ## Architecture rules you will trip over
 
 - **Rails live behind the port.** `if provider == "mtn_momo"` outside
-  `backends/crates/vpay-adapter-*` is a defect. Branch on capability *values*
+  `backends/crates/vpay-adapter-*` is a defect. Branch on capability _values_
   (`flow`, `supports_refunds`), never on a provider code. (ADR-0002)
 - **No environment branching.** No `if (sandbox)`, no `NODE_ENV` check. A
-  profile selects a *config file*, never a *code path*. (ADR-0003)
+  profile selects a _config file_, never a _code path_. (ADR-0003)
 - **Money is integer minor units.** XAF is zero-decimal: `5000` means 5 000
   FCFA. Float arithmetic is denied workspace-wide.
 - **Never let a payer act on a transaction you cannot name.** Persist the
-  reference *before* submitting (push) or redirecting (redirect).
+  reference _before_ submitting (push) or redirecting (redirect).
 - **One charge per intent, forever.** A unique index enforces it. Retry means a
   new PaymentIntent.
 - **Callbacks are hints.** `parse_callback` returns identifiers only, never a
@@ -114,19 +119,21 @@ Then state explicitly, in your summary, what you did *not* do.
 | Writing Rust or TS here — errors, serde, lints, structure  | `vpay-conventions`       |
 | Running anything — `just`, gates, xtask, CI, toolchain     | `vpay-tooling`           |
 | Something broke and the message is not the cause           | `vpay-troubleshooting`   |
-| Finishing a change — status, flows, ADRs                    | `vpay-docs-status`       |
+| Finishing a change — status, flows, ADRs                   | `vpay-docs-status`       |
 | PaymentIntent states, money, ledger, crash safety          | `vpay-payments`          |
+| The worker — job loop, ladders, leases, crash recovery     | `vpay-reconciler`        |
 | The `/v1` wire contract, merchant auth, idempotency        | `vpay-merchant-api`      |
-| Events, the outbox, signatures, delivery                    | `vpay-webhooks`          |
+| Events, the outbox, signatures, delivery                   | `vpay-webhooks`          |
 | The port, failure taxonomy, conformance, adding a rail     | `vpay-provider-adapters` |
-| MTN MoMo specifics                                          | `vpay-mtn-momo`          |
-| Orange Money specifics                                      | `vpay-orange-money`      |
+| MTN MoMo specifics                                         | `vpay-mtn-momo`          |
+| Orange Money specifics                                     | `vpay-orange-money`      |
+| The web workspace, Tailwind/daisyUI, the `verify-ui` gate  | `vpay-frontend`          |
 | The payer-facing surfaces — hosted, browser, mobile        | `vpay-checkout`          |
 | The dashboard, `/dash/v1`, staff auth, the BFF             | `vpay-dashboard`         |
 | Customers, addresses, erasure, retention, name lookup      | `vpay-customers`         |
-| Invoices                                                    | `vpay-invoices`          |
+| Invoices                                                   | `vpay-invoices`          |
 | CrateStack, migrations, repositories, sqlx, Postgres tests | `vpay-data-layer`        |
-| The merchant SDKs and the parity rule                       | `vpay-sdks`              |
+| The merchant SDKs and the parity rule                      | `vpay-sdks`              |
 | Config, deployment, the reconciler, observability          | `vpay-ops`               |
 
 See also `references/reading-the-docs.md` — this repository's documentation has

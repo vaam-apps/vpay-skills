@@ -5,13 +5,13 @@ the process will not start, or a request is refused, and you need the cause.
 
 ## Read the exit code first
 
-| Exit | `sysexits.h` | Means |
-| --- | --- | --- |
-| `78` | `EX_CONFIG` | **fix your configuration / your deploy.** Not transient. |
+| Exit | `sysexits.h`     | Means                                                               |
+| ---- | ---------------- | ------------------------------------------------------------------- |
+| `78` | `EX_CONFIG`      | **fix your configuration / your deploy.** Not transient.            |
 | `69` | `EX_UNAVAILABLE` | **wait for Postgres.** A rail or storage dependency is unreachable. |
-| `64` | `EX_USAGE` | a caller-shaped problem (`InvalidRequest`, `Idempotency`). |
-| `77` | `EX_NOPERM` | `Authentication` / `Forbidden`. |
-| `1` | — | anything the chain gave nothing classifiable for. |
+| `64` | `EX_USAGE`       | a caller-shaped problem (`InvalidRequest`, `Idempotency`).          |
+| `77` | `EX_NOPERM`      | `Authentication` / `Forbidden`.                                     |
+| `1`  | —                | anything the chain gave nothing classifiable for.                   |
 
 That split is a contract an operator and a supervisor can hold: "`78` means the
 operator forgot something, `69` means wait for Postgres." Preserve it. A
@@ -19,7 +19,7 @@ operator forgot something, `69` means wait for Postgres." Preserve it. A
 to exit `1` — `main` raised a bare `anyhow` error there and the exit-code
 classifier had nothing to read. It now raises
 `StartupError::MissingDatabaseUrl` **at both call sites**, and there are two
-subprocess tests, one per mode, each of which fails if *its* site reverts.
+subprocess tests, one per mode, each of which fails if _its_ site reverts.
 
 ## `78` — which of the six?
 
@@ -116,7 +116,7 @@ spelling that ever worked.
 
 Same shape: `VPAY_OAUTH_SIGNING_KEY_FILE` in the environment is **ignored rather
 than refused** on the worker, deliberately — "a shared env block must not
-`CrashLoopBackOff` a worker". Both *flag* spellings are refused (clap does not
+`CrashLoopBackOff` a worker". Both _flag_ spellings are refused (clap does not
 declare it on the `worker` subcommand; `vpay_config::cli`'s `SERVE_ONLY_FLAGS`
 catches `vpay-server --oauth-signing-key-file … worker`, which clap's derive
 cannot express and which "parsed and was read by nothing for the length of one
@@ -128,16 +128,16 @@ with it.
 
 ## Checkout and origin refusals
 
-| Symptom | Cause |
-| --- | --- |
-| `POST /v1/checkout/sessions` answers `checkout_not_configured` | The deployment has no `checkout.public_base_url`. It answers **500**, not 503 — recorded as a maintainer's decision, not an oversight. |
-| `create` is a `400` naming `payment_intent` | The intent must be `requires_payment_method`, have no charge, and have no other open session. **One open session per intent is a database index**, not just a check. |
-| The payer's page says "invalid link" | The `url` lost its `#fragment` — something copied it through a redirect, a logger, or a link with a `?query` and no fragment. |
-| The embedded iframe is an empty box | The page never painted, so no `vpay:resize` arrived. **Browser console, not server log.** |
-| The framed page says "This page will not load here" | The framing origin is not in that merchant's `checkout_origins`. |
-| `session.url` resolves to nothing | `checkout.public_base_url` and the page's actual origin disagree. **Nothing logs a port; compare the two by hand.** |
-| The order never turns `paid` although vpay says `succeeded` | Your webhook endpoint. Check the signing secret on both sides, and that you are verifying the **raw** bytes. |
-| Every token request is `invalid_client` and everything else is right | Your assertion's `aud`. It must be **vpay's own token endpoint**, not the URL you POST to, if your server reaches vpay by an internal name. |
+| Symptom                                                              | Cause                                                                                                                                                                |
+| -------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST /v1/checkout/sessions` answers `checkout_not_configured`       | The deployment has no `checkout.public_base_url`. It answers **500**, not 503 — recorded as a maintainer's decision, not an oversight.                               |
+| `create` is a `400` naming `payment_intent`                          | The intent must be `requires_payment_method`, have no charge, and have no other open session. **One open session per intent is a database index**, not just a check. |
+| The payer's page says "invalid link"                                 | The `url` lost its `#fragment` — something copied it through a redirect, a logger, or a link with a `?query` and no fragment.                                        |
+| The embedded iframe is an empty box                                  | The page never painted, so no `vpay:resize` arrived. **Browser console, not server log.**                                                                            |
+| The framed page says "This page will not load here"                  | The framing origin is not in that merchant's `checkout_origins`.                                                                                                     |
+| `session.url` resolves to nothing                                    | `checkout.public_base_url` and the page's actual origin disagree. **Nothing logs a port; compare the two by hand.**                                                  |
+| The order never turns `paid` although vpay says `succeeded`          | Your webhook endpoint. Check the signing secret on both sides, and that you are verifying the **raw** bytes.                                                         |
+| Every token request is `invalid_client` and everything else is right | Your assertion's `aud`. It must be **vpay's own token endpoint**, not the URL you POST to, if your server reaches vpay by an internal name.                          |
 
 ### `checkout_origins` must be spelled canonically
 

@@ -9,7 +9,7 @@
 `^22.13.0` and `.nvmrc` (which CI reads) is below it. Re-check when `.nvmrc`
 moves.
 
-## A **Rust** test fails with `` "`pnpm --filter @vpay/sdk build` failed:\nsh: 1: tsc: not found" ``
+## A **Rust** test fails with ``"`pnpm --filter @vpay/sdk build` failed:\nsh: 1: tsc: not found"``
 
 **Symptom:** the first `just test-rust` in a fresh worktree fails
 `webhooks::the_delivered_signature_verifies_with_the_shipping_node_sdk`. It
@@ -40,7 +40,7 @@ was checked.
 gate notices.**
 
 **Cause:** prettier's default `embeddedLanguageFormatting: "auto"` reformats the
-code *inside* fenced blocks for every language it can parse. This repository's
+code _inside_ fenced blocks for every language it can parse. This repository's
 markdown is largely transcripts, quoted logs and historical notes — "that
 default is not a style choice here — **it edits records**."
 

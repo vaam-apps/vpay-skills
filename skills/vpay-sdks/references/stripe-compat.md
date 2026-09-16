@@ -39,14 +39,14 @@ const stripe = new Stripe("", {
 
 ## Compatible, unchanged
 
-| | Why |
-| --- | --- |
-| The resource paths | `/v1/payment_intents`, `/{id}`, `/{id}/confirm`, `/{id}/cancel` are the four vpay serves and the four stripe-node hardcodes |
-| Form encoding, nested and indexed | stripe-node percent-encodes then decodes brackets back, so a space is `%20` and a literal `+` is `%2B` — what `vpay_api::form` requires. Arrays are **indexed** (`expand[0]=`) |
-| `Idempotency-Key` | stripe-node generates one for **every** v1 POST unconditionally. vpay *requires* one — stricter than Stripe, and free for a stripe-node user |
-| The list envelope and `autoPagingToArray` | Needs only `data[].id` and `has_more`; `ListObject` supplies both plus `url` |
-| The error envelope | `{error: {type, code, message, param?}}`, same closed `type` vocabulary |
-| `webhooks.constructEvent` | vpay's signature construction is **byte-identical** to Stripe's |
+|                                           | Why                                                                                                                                                                            |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| The resource paths                        | `/v1/payment_intents`, `/{id}`, `/{id}/confirm`, `/{id}/cancel` are the four vpay serves and the four stripe-node hardcodes                                                    |
+| Form encoding, nested and indexed         | stripe-node percent-encodes then decodes brackets back, so a space is `%20` and a literal `+` is `%2B` — what `vpay_api::form` requires. Arrays are **indexed** (`expand[0]=`) |
+| `Idempotency-Key`                         | stripe-node generates one for **every** v1 POST unconditionally. vpay _requires_ one — stricter than Stripe, and free for a stripe-node user                                   |
+| The list envelope and `autoPagingToArray` | Needs only `data[].id` and `has_more`; `ListObject` supplies both plus `url`                                                                                                   |
+| The error envelope                        | `{error: {type, code, message, param?}}`, same closed `type` vocabulary                                                                                                        |
+| `webhooks.constructEvent`                 | vpay's signature construction is **byte-identical** to Stripe's                                                                                                                |
 
 ## Error mapping
 
@@ -55,16 +55,16 @@ stripe-node picks the error class from the **status code first** and consults
 classification (ADR-0011), so this is two designs meeting rather than anything
 written to line up.
 
-| vpay answers | You catch |
-| --- | --- |
-| `404 resource_missing` | `StripeInvalidRequestError`, `err.code === "resource_missing"` |
-| `400 invalid_request` | `StripeInvalidRequestError`, `err.param` names the field |
-| `400 idempotency_error` | `StripeIdempotencyError` |
-| `401` | `StripeAuthenticationError` |
-| `403` | `StripePermissionError` — **despite** carrying `type: invalid_request_error`, because stripe-node branches on the status |
-| `409` | `StripeAPIError` — 409 falls through every branch of `generateV1Error` |
-| `502` | `StripeAPIError`, **and stripe-node retries it** |
-| `429` | never emitted — nothing constructs `Category::RateLimited` |
+| vpay answers            | You catch                                                                                                                |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `404 resource_missing`  | `StripeInvalidRequestError`, `err.code === "resource_missing"`                                                           |
+| `400 invalid_request`   | `StripeInvalidRequestError`, `err.param` names the field                                                                 |
+| `400 idempotency_error` | `StripeIdempotencyError`                                                                                                 |
+| `401`                   | `StripeAuthenticationError`                                                                                              |
+| `403`                   | `StripePermissionError` — **despite** carrying `type: invalid_request_error`, because stripe-node branches on the status |
+| `409`                   | `StripeAPIError` — 409 falls through every branch of `generateV1Error`                                                   |
+| `502`                   | `StripeAPIError`, **and stripe-node retries it**                                                                         |
+| `429`                   | never emitted — nothing constructs `Category::RateLimited`                                                               |
 
 `err.requestId` comes from a **`request-id`** response header; stripe-node
 never reads `x-request-id`. vpay emits **both names with one value**.
@@ -81,7 +81,7 @@ key still in flight is the one refusal that clears itself).
 `0025`'s `idempotency_keys.response_retry` stores the header's own text, read
 off the rendered `HeaderMap` at finish and written back at replay. Re-deriving
 it from the stored status at replay time was the fix **deliberately not taken**:
-ADR-0011 makes one classification the source of status *and* retry, and a
+ADR-0011 makes one classification the source of status _and_ retry, and a
 second derivation running the other way is exactly the drift it exists to
 prevent.
 
@@ -89,7 +89,7 @@ prevent.
 
 - **No API keys.** `apiKey`, `stripeAccount` and Connect mean nothing.
   `Stripe-Version`, `Stripe-Account`, `Stripe-Context` and `X-Stripe-Client-*`
-  are **accepted and ignored** — a `Stripe-Account` is deliberately *not* a
+  are **accepted and ignored** — a `Stripe-Account` is deliberately _not_ a
   `400`, because a documented "Connect is not a thing here" is a better
   diagnostic than a refusal.
 - **No dated API version.** vpay advertises none and echoes none, so
@@ -107,7 +107,7 @@ prevent.
   instrument under a key of the same name
   (`payment_method_data[mtn_momo][msisdn]`). TypeScript users need a cast:
   stripe-node's generated types know Stripe's methods, not vpay's rails.
-- **The fields that decide *where* or *when* money moves are refused, not
+- **The fields that decide _where_ or _when_ money moves are refused, not
   ignored**, with a `400` naming the field in `error.param`: `capture_method`
   with any value but `automatic`, `application_fee_amount`, `transfer_data`,
   `on_behalf_of`. Both POST bodies carry the same refusal set. Ignoring any of
@@ -163,7 +163,7 @@ stays the authoritative name in vpay's own documentation.
 argument from the scheme being identical: it makes a payment through the
 official package, waits for the worker to settle it, pulls the delivery out of
 the WireMock receiver's own request journal (`GET /__admin/requests` — what a
-receiver *got*), and passes the recorded bytes and header straight to
+receiver _got_), and passes the recorded bytes and header straight to
 `constructEvent`. **The bytes are never re-serialised**: the signature covers a
 body, and parse-and-reprint is the commonest way a merchant breaks their own
 verification. Both refusals are asserted too.
@@ -192,7 +192,7 @@ Not proven:
   key long enough to collide, and the only slow operation is a confirm whose
   rail-side delay is keyed by a server-minted reference. A deterministic stage
   would need a test double, which ADR-0006 forbids in a shipping process. The
-  *derivation* is unit-tested in `vpay-api`; its effect on stripe-node is not.
+  _derivation_ is unit-tested in `vpay-api`; its effect on stripe-node is not.
 - **The `502` re-POST is reasoning, not a measurement.** A `502` stripe-node
   retries under the same `Idempotency-Key` meets vpay's "one charge per intent,
   forever" rule and comes back a `409`. That is the correct thing to want and

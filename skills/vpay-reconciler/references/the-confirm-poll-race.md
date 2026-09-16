@@ -27,7 +27,7 @@ Four of six demo runs hit it on a loaded machine.
 - its `poll_charge` job, with `run_at = now()`.
 
 The worker's `IDLE_SLEEP` is 1 s. So within about a second of the merchant's
-confirm being *sent*, the worker claims that job, finds a charge in
+confirm being _sent_, the worker claims that job, finds a charge in
 `submitting`, and applies the crash-recovery table — whose precondition is that
 the process handling the confirm **died**.
 
@@ -37,7 +37,7 @@ Measured window: **3.7 seconds** on a loaded machine.
 
 ## Two distinct bad outcomes
 
-On **MTN** (push): the merchant received a `500`, *and* a
+On **MTN** (push): the merchant received a `500`, _and_ a
 `payment_intent.succeeded` webhook was delivered. The two disagreed about the
 same payment.
 
@@ -71,7 +71,7 @@ parties share.
 **Report it.** The tree carries the fix, so an occurrence would be the first
 observation of the defect on a fixed tree — which is a finding, not a flake.
 
-## The neighbouring symptom that is *not* this
+## The neighbouring symptom that is _not_ this
 
 `just demo` can also fail on a slow or loaded host with settlement landing after
 the demo's budget (120 s / 30 s). The tell is the worker log: it shows the

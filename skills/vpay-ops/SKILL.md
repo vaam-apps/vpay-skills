@@ -5,6 +5,11 @@ description: Configuration, deployment and observability for vpay — the YAML l
 
 # vpay ops
 
+> **Verified against vpay `f063ee96` (2026-09-15).** Version-sensitive claims below
+> carry the date they became true — a feature in vpay's `master` may be absent
+> from the tree you are editing. On an older or newer vpay, trust the
+> repository over this page. See VERSIONING.md.
+
 ## Read this before you write a sentence about running vpay
 
 **No pod has ever run this.** Not a real cluster, not kind, not minikube.
@@ -18,14 +23,14 @@ no alert rule in this repository has ever been evaluated against real data.
 
 **No `kubectl` or `helm` command in any runbook has been run against a
 cluster** (`docs/runbooks/README.md`). `docs/runbooks/migrations.md` is the one
-page whose central SQL *is* executed — by the test suite, against a real
+page whose central SQL _is_ executed — by the test suite, against a real
 Postgres — and even its `kubectl` commands have been run nowhere.
 
 **No backup of any vpay database has ever been taken**, no restore has ever
 been performed, and no restore drill has ever run. ADR-0013 is `Proposed` and
 every number in it is proposed, not measured.
 
-What *has* run: compose stacks, CI runners, and — once, on 2026-09-15 — a
+What _has_ run: compose stacks, CI runners, and — once, on 2026-09-15 — a
 single MTN **sandbox** push (`docs/runbooks/live-sandbox-test.md`). Describing
 anything else in the present tense is the most damaging thing you can write
 here.
@@ -46,7 +51,7 @@ Five steps, in order (`docs/flows/configuration.md`):
 3. Validate.
 4. Reconcile `currencies` and `providers` into the database in **one
    transaction**, taking `pg_advisory_xact_lock lock_keys::CONFIG_RECONCILE` so
-   N replicas booting at once cannot interleave. (The *config hash* half of
+   N replicas booting at once cannot interleave. (The _config hash_ half of
    this step is **not implemented** — nothing records or compares one.)
 5. Only then bind the port.
 
@@ -65,20 +70,20 @@ ADR-0003, and it is the rule most likely to be violated by accident:
 Because Spring Boot is the idiom being borrowed, the trap it makes easy is
 named outright: **`@Profile("!prod")`, `@ConditionalOnProperty` on business
 logic and profile-specific bean overrides are all `if (sandbox)` wearing a
-dependency-injection costume.** Profiles may select *values*; never *beans that
-behave differently*.
+dependency-injection costume.** Profiles may select _values_; never _beans that
+behave differently_.
 
 Depth: [references/configuration.md](references/configuration.md) — the env-var
 table, the boot order, `ProviderHost`, and every rule that refuses to boot.
 
 ## The exit-code contract
 
-| Exit | Means |
-| --- | --- |
-| **78** (`EX_CONFIG`) | fix your configuration or your deploy. Not transient. |
-| **69** (`EX_UNAVAILABLE`) | wait for Postgres (or a rail). |
-| **64** (`EX_USAGE`) | a caller-shaped problem. |
-| **77** (`EX_NOPERM`) | authentication / forbidden. |
+| Exit                      | Means                                                 |
+| ------------------------- | ----------------------------------------------------- |
+| **78** (`EX_CONFIG`)      | fix your configuration or your deploy. Not transient. |
+| **69** (`EX_UNAVAILABLE`) | wait for Postgres (or a rail).                        |
+| **64** (`EX_USAGE`)       | a caller-shaped problem.                              |
+| **77** (`EX_NOPERM`)      | authentication / forbidden.                           |
 
 Boot is ordered **cheapest hard failure first**, so the stage tells you the
 cause: YAML → adapter join → signing key → Postgres → reconcile → announce key
@@ -93,11 +98,11 @@ means wait for Postgres" is a rule an operator can hold.
 Since 2026-09-07 (issue #77) there is exactly one shipping binary,
 `vpay-server`. It was two (`vpay-server`, `vpay-worker-bin`).
 
-| Mode | What it does | Signing key |
-| --- | --- | --- |
-| *(no subcommand)* | serves the API on `--bind` | **required** |
-| `worker` | runs `vpay_worker::run_loop` — claims `poll_charge`, polls the rail on a ladder, commits charge + intent + one event in a single transaction, reaps stranded leases at boot and on a timer, prints one `job loop gauge` line a minute | refused, two ways |
-| `staff add` | creates a dashboard account | not used |
+| Mode              | What it does                                                                                                                                                                                                                          | Signing key       |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- |
+| _(no subcommand)_ | serves the API on `--bind`                                                                                                                                                                                                            | **required**      |
+| `worker`          | runs `vpay_worker::run_loop` — claims `poll_charge`, polls the rail on a ladder, commits charge + intent + one event in a single transaction, reaps stranded leases at boot and on a timer, prints one `job loop gauge` line a minute | refused, two ways |
+| `staff add`       | creates a dashboard account                                                                                                                                                                                                           | not used          |
 
 **Both serving modes call a payment rail**: the server when a merchant confirms
 an intent, the worker on the poll ladder. Whether that rail is MTN, Orange or a
@@ -110,11 +115,11 @@ trustworthy than any table if the two disagree.
 
 `ghcr.io/vaam-apps/vpay-{server,dashboard,checkout}`.
 
-| Image | Base | Contents |
-| --- | --- | --- |
-| `vpay-server` | `scratch` | one static musl binary + `config/` baked at `/config`. **Runs both backend workloads.** |
-| `vpay-dashboard` | `node:22-alpine` | the Next standalone server |
-| `vpay-checkout` | `node:22-alpine` | vpay's own hosted/embedded payment page |
+| Image            | Base             | Contents                                                                                |
+| ---------------- | ---------------- | --------------------------------------------------------------------------------------- |
+| `vpay-server`    | `scratch`        | one static musl binary + `config/` baked at `/config`. **Runs both backend workloads.** |
+| `vpay-dashboard` | `node:22-alpine` | the Next standalone server                                                              |
+| `vpay-checkout`  | `node:22-alpine` | vpay's own hosted/embedded payment page                                                 |
 
 **`ghcr.io/vaam-apps/vpay-worker` is retired and has not been deleted.** The
 package is frozen at the last `:edge` and `sha-<40 hex>` `release.yml` pushed
@@ -154,7 +159,7 @@ Traces are deliberately absent. Depth:
 sandbox rejects XAF and accepts EUR only.**
 
 The demo overlay (`.e2e/application-demo.yml`, written by `just gen-demo-keys`)
-puts *both* rails on XAF, because `/v1` refuses a confirm whose intent currency
+puts _both_ rails on XAF, because `/v1` refuses a confirm whose intent currency
 is not the rail's settlement currency and one currency for both rails is what
 makes the demo shop's MTN button payable.
 

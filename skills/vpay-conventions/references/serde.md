@@ -1,4 +1,4 @@
-# serde: `rename_all` is for *our* wire, never a rail's
+# serde: `rename_all` is for _our_ wire, never a rail's
 
 ADR-0016 standard 3. Gate: `cargo xtask verify-serde`, in `just verify` and in
 CI's `self-checks` job.
@@ -46,7 +46,7 @@ be a rule about characters.
 
 **"Already snake_case by coincidence" is the trap, not the excuse.** MTN's
 `TokenResponse` and `BasicUserInfo` are snake_case today. That is precisely
-what makes the attribute a *promise* rather than a no-op: it would do nothing
+what makes the attribute a _promise_ rather than a no-op: it would do nothing
 today and become a silent claim about MTN's wire tomorrow. Both are exempt for
 that reason, and the exemption table says so in those words.
 
@@ -72,7 +72,7 @@ current."
 **The gate cannot judge a reason.** ADR-0016 is explicit: "'models MTN's
 camelCase Collections wire' and 'too many to fix' are both non-empty strings —
 so it only refuses a blank one. The table exists to put the sentence where a
-reviewer will see it." Honesty is the reviewer's job, and it is the *only*
+reviewer will see it." Honesty is the reviewer's job, and it is the _only_
 part of this standard left to a reviewer.
 
 **Why a table in an ADR rather than a constant in `.xtask`**: "a constant in a
@@ -83,18 +83,18 @@ a reason nobody reads is the same as no reason." The same instinct puts
 
 **Editing the table is expected.** ADR-0016 is immutable like every other ADR,
 but it says of itself: "Adding or removing a row is a change to an accepted
-decision's *data*, not to the decision; it is expected, and the gate is what
+decision's _data_, not to the decision; it is expected, and the gate is what
 keeps it honest."
 
 ## The shape of an existing row, to copy
 
-| Type | File | Reason |
-| --- | --- | --- |
-| `RequestToPay` | `backends/crates/vpay-adapter-mtn-momo/src/wire.rs` | Models MTN's camelCase Collections wire (`externalId`); the per-field `rename`s are what make it exact. |
-| `ExpiresIn` | `backends/crates/vpay-adapter-mtn-momo/src/token.rs` | `#[serde(untagged)]` — variant names never reach the wire, so there is nothing for `rename_all` to rename. |
-| `Currency` | `backends/crates/vpay-core/src/money.rs` | `rename_all = "UPPERCASE"`: ISO-4217 codes, not vpay field names. `"XAF"` is the spelling the database, both adapters and `Currency::code` already agree on. |
+| Type           | File                                                 | Reason                                                                                                                                                       |
+| -------------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `RequestToPay` | `backends/crates/vpay-adapter-mtn-momo/src/wire.rs`  | Models MTN's camelCase Collections wire (`externalId`); the per-field `rename`s are what make it exact.                                                      |
+| `ExpiresIn`    | `backends/crates/vpay-adapter-mtn-momo/src/token.rs` | `#[serde(untagged)]` — variant names never reach the wire, so there is nothing for `rename_all` to rename.                                                   |
+| `Currency`     | `backends/crates/vpay-core/src/money.rs`             | `rename_all = "UPPERCASE"`: ISO-4217 codes, not vpay field names. `"XAF"` is the spelling the database, both adapters and `Currency::code` already agree on. |
 
-Three exemption *shapes*, and they are the only three that have ever been
+Three exemption _shapes_, and they are the only three that have ever been
 accepted: **it models a foreign wire**, **it is `untagged` so no variant name
 reaches the wire**, or **it is a non-snake_case vocabulary vpay does not own**
 (ISO-4217).

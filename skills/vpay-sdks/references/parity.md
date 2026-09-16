@@ -32,10 +32,10 @@ the gate fails naming the line.
 A row is a **capability row** when its first cell **opens** with a code span
 holding `<resource>.<method>`, in the SDKs' own spelling:
 
-| Source | Read as |
-| --- | --- |
+| Source                                                                                  | Read as                     |
+| --------------------------------------------------------------------------------------- | --------------------------- |
 | Rust `impl <Resource>Resource { pub async fn <method>(` in `sdks/rust/src/resources.rs` | `<resource_snake>.<method>` |
-| Node exported class methods in `sdks/nodejs/src/resources/<resource>.ts` | `<resource_snake>.<method>` |
+| Node exported class methods in `sdks/nodejs/src/resources/<resource>.ts`                | `<resource_snake>.<method>` |
 
 Resources map by snake_case in both languages: `PaymentIntentsResource` and
 `client.paymentIntents` are both `payment_intents`. The one nested resource
@@ -49,7 +49,7 @@ capabilities.
 - Rows that describe a behaviour spanning several methods carry **no leading
   span** and are checked by the cell rules alone. Most of the document is that
   shape.
-- Rows that *mention* a dotted code span mid-sentence must not be read as
+- Rows that _mention_ a dotted code span mid-sentence must not be read as
   naming a method. The `checkout.session.expired` event-type rows are the
   example: there is no such method and there must not be one.
 
@@ -58,12 +58,12 @@ dotted span first.
 
 ## Cell rules
 
-| Cell | Rule |
-| --- | --- |
-| `✅ …` | Names the test(s) that prove the capability **in that SDK**, each in a code span, and **nothing else** |
-| `⛔ …` | A `YYYY-MM-DD` date, the reason, and who owns closing it |
-| blank | **Always fails.** A blank cell is the only answer that says nothing, and it is what an unfinished row looks like |
-| anything else | Fails — the cell must begin `✅` or `⛔` |
+| Cell          | Rule                                                                                                             |
+| ------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `✅ …`        | Names the test(s) that prove the capability **in that SDK**, each in a code span, and **nothing else**           |
+| `⛔ …`        | A `YYYY-MM-DD` date, the reason, and who owns closing it                                                         |
+| blank         | **Always fails.** A blank cell is the only answer that says nothing, and it is what an unfinished row looks like |
+| anything else | Fails — the cell must begin `✅` or `⛔`                                                                         |
 
 A named test must exist under that column's directory as a live:
 
@@ -105,7 +105,7 @@ from quietly retiring a proof.
   has been ⛔/⛔ since 2026-09-03.) A stale row fails, naming its own line.
 
 **The hole:** until this landed the gate only ever read the file, and could
-therefore only check whether what the file *said* was true. **Deleting a whole
+therefore only check whether what the file _said_ was true. **Deleting a whole
 capability row was measured to pass** — 350 proving tests dropped to 347 and
 `just verify` stayed green — and an SDK method with no row at all was
 invisible. ADR-0015's rule is a claim about the SDKs, and a check that starts
@@ -116,7 +116,7 @@ from the document can only ever verify the document's own footnotes.
 A `✅` on a capability row may only appear in a column whose **own tree**
 declares that method. Checked **before** the test names.
 
-**The hole:** directions 2 are both satisfied by *either* SDK declaring the
+**The hole:** directions 2 are both satisfied by _either_ SDK declaring the
 method. Measured on the exp33 head — deleting `invoices.void` from `sdks/rust`
 alone, leaving `sdks/nodejs` untouched — **`verify-sdk-parity` exited 0** and
 still reported 443 proving tests. doc→code was answered by the Node
@@ -125,9 +125,9 @@ existing whether or not the method it calls does**. What caught it in practice
 was `cargo nextest -p vpay-sdk`, because the test no longer compiled; the gate
 is what is supposed to say so first.
 
-The failure message says it plainly: *a `✅` is a claim about THIS SDK, and the
+The failure message says it plainly: _a `✅` is a claim about THIS SDK, and the
 other column declaring it is what the row's two cells exist to tell apart. Ship
-the method here, or make this cell a dated `⛔`.*
+the method here, or make this cell a dated `⛔`._
 
 Rows that name no `<resource>.<method>` — most of the document — are untouched
 by this rule.
@@ -150,7 +150,7 @@ When you **rename** a test, edit the cell in the same commit. When you
 
 ## When a capability is in neither SDK
 
-> A capability absent from *both* SDKs is still recorded ⛔/⛔ — the SDKs are at
+> A capability absent from _both_ SDKs is still recorded ⛔/⛔ — the SDKs are at
 > parity with each other and both short of the server. That is a different
 > statement from "done", and the rule that keeps this table honest is that
 > neither shape may be silently omitted.
@@ -158,7 +158,7 @@ When you **rename** a test, edit the cell in the same commit. When you
 ## Deliberate non-parity worth knowing before you "fix" it
 
 - **Neither SDK validates an MSISDN or a phone number locally**, identically
-  and on purpose: a phone-number rule is a *market* rule vpay owns and may
+  and on purpose: a phone-number rule is a _market_ rule vpay owns and may
   widen, so an SDK copy would refuse offline a number a later server version
   accepts.
 - **The Node accessor is `client.accountHolders` (camelCase) while its request
@@ -168,7 +168,7 @@ When you **rename** a test, edit the cell in the same commit. When you
   request field in the SDK.
 - **`del`, not `delete`** — in both SDKs, because `delete` is a reserved word
   in older JavaScript object literals and that is why Stripe's own SDKs spell
-  it that way. Rust matches even though `delete` is legal in Rust: the *name*
+  it that way. Rust matches even though `delete` is legal in Rust: the _name_
   is what a merchant looks up when they read one SDK's docs and write against
   the other.
 - **The event union grew by four and deliberately not by six.**

@@ -21,6 +21,7 @@
 // Exit 0 = parity. Exit 1 = a gap, named, with the file that closes it.
 
 import { readFileSync, existsSync, readdirSync, statSync } from "node:fs";
+import { execFileSync } from "node:child_process";
 import { join, resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -39,6 +40,73 @@ if (!existsSync(join(vpay, "AGENTS.md"))) {
 const coverage = JSON.parse(readFileSync(join(REPO, "coverage.json"), "utf8"));
 const failures = [];
 const note = (s) => failures.push(s);
+
+// ------------------------------------------------------------------- baseline
+//
+// A skill is true of *a* vpay, not of vpay. vpay publishes no release tags and
+// its workspace version has never moved off 0.1.0, so the only honest version
+// identity is a commit and a date. These skills were verified against one; say
+// how far the tree in front of us has moved from it.
+//
+// This is REPORTED, never failed. Drift is the normal state between releases —
+// what matters is that whoever reads the output knows it exists. See
+// VERSIONING.md.
+
+const baseline = coverage.baseline ?? {};
+let drift = null;
+
+if (baseline.vpayRef) {
+  try {
+    const git = (...args) =>
+      execFileSync("git", ["-C", vpay, ...args], {
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "ignore"],
+      }).trim();
+
+    const head = git("rev-parse", "HEAD");
+    const headShort = head.slice(0, 8);
+    const headDate = git("log", "-1", "--format=%cs", "HEAD");
+
+    if (
+      head.startsWith(baseline.vpayRef) ||
+      baseline.vpayRef.startsWith(head)
+    ) {
+      drift = `baseline: vpay ${headShort} (${headDate}) — exactly the tree these skills were verified against`;
+    } else {
+      // How many commits separate us, in each direction? `A...B` counts both.
+      let ahead = "?";
+      let behind = "?";
+      try {
+        const counts = git(
+          "rev-list",
+          "--left-right",
+          "--count",
+          `${baseline.vpayRef}...HEAD`,
+        ).split(/\s+/);
+        behind = counts[0];
+        ahead = counts[1];
+      } catch {
+        // The baseline commit is not in this checkout at all — a shallow clone,
+        // or a fork. Saying so is more useful than a wrong number.
+        behind = ahead = "unknown (baseline commit not in this checkout)";
+      }
+      drift =
+        `baseline: these skills were verified against vpay ` +
+        `${baseline.vpayRef.slice(0, 8)} (${baseline.verifiedAt ?? "undated"}); ` +
+        `this checkout is ${headShort} (${headDate}) — ` +
+        `${ahead} commit(s) newer, ${behind} commit(s) it does not have.\n` +
+        `            Version-sensitive claims carry the date they became true. ` +
+        `See VERSIONING.md.`;
+    }
+  } catch {
+    drift = `baseline: ${vpay} is not a git checkout — cannot report drift from ${baseline.vpayRef.slice(0, 8)}`;
+  }
+} else {
+  note(
+    `coverage.json has no "baseline" block. Every published skill set names the ` +
+      `vpay commit it was verified against — see VERSIONING.md.`,
+  );
+}
 
 // ---------------------------------------------------------------- skills side
 
@@ -83,6 +151,29 @@ for (const dir of skillDirs) {
     note(`skills/${dir}/ has no entry in coverage.json`);
   }
 
+  // Rule 1 of VERSIONING.md: every skill names the vpay it was verified
+  // against. A skill is true of *a* vpay, not of vpay — and a reader on an
+  // older checkout has no other way to know how far the page has drifted from
+  // their tree. Enforced rather than asked for, because the whole point is
+  // that it must never be the line someone forgets.
+  const stamp =
+    /Verified against vpay `([0-9a-f]{7,40})` \((\d{4}-\d{2}-\d{2})\)/.exec(
+      src,
+    );
+  if (!stamp) {
+    note(
+      `skills/${dir}/SKILL.md carries no version stamp. Add, under the title:\n` +
+        "        > **Verified against vpay `<sha>` (<YYYY-MM-DD>).** …  — see VERSIONING.md",
+    );
+  } else if (baseline.vpayRef && !baseline.vpayRef.startsWith(stamp[1])) {
+    note(
+      `skills/${dir}/SKILL.md is stamped vpay ${stamp[1]}, but coverage.json's ` +
+        `baseline is ${baseline.vpayRef.slice(0, 8)}. Either re-verify this skill ` +
+        `against the baseline and restamp it, or move the baseline — but the two ` +
+        `must not disagree, because the stamp is what a reader trusts.`,
+    );
+  }
+
   // Every reference/*.md the SKILL.md points at must exist, and every file
   // under references/ must be reachable from SKILL.md. An unreferenced
   // reference page is a page no agent will ever open.
@@ -107,7 +198,9 @@ for (const dir of skillDirs) {
 
 for (const skill of Object.keys(coverage.skills)) {
   if (!skillDirs.includes(skill)) {
-    note(`coverage.json names skill "${skill}", which has no skills/ directory`);
+    note(
+      `coverage.json names skill "${skill}", which has no skills/ directory`,
+    );
   }
 }
 
@@ -166,6 +259,10 @@ for (const e of exempt) {
 if (failures.length > 0) {
   console.error(`\nverify-coverage: ${failures.length} gap(s)\n`);
   for (const f of failures) console.error(`  ✗ ${f}`);
+  // Drift is printed on failure too, and deliberately: "these skills are newer
+  // than the tree you pointed me at" is the explanation for most of the gaps
+  // above when someone runs this against an older vpay.
+  if (drift) console.error(`\n  ${drift}`);
   console.error(
     `\nThis gate is the docs↔skills parity rule. A vpay feature that ships ` +
       `without a skill is a feature every agent will get wrong.\n`,
@@ -179,3 +276,4 @@ console.log(
     `${flows.length} feature pages, ` +
     `${exempt.size} exempt — parity against ${vpay}`,
 );
+if (drift) console.log(`            ${drift}`);

@@ -5,6 +5,11 @@ description: The vpay worker — the job loop, the poll and delivery ladders, le
 
 # The vpay worker
 
+> **Verified against vpay `f063ee96` (2026-09-15).** Version-sensitive claims below
+> carry the date they became true — a feature in vpay's `master` may be absent
+> from the tree you are editing. On an older or newer vpay, trust the
+> repository over this page. See VERSIONING.md.
+
 `vpay-server worker` runs the job loop. It is what actually moves money: the
 API's confirm submits a charge and queues a job; **the worker's authenticated
 status query is the only thing that settles it.**
@@ -17,8 +22,8 @@ Crate: `backends/crates/vpay-worker/`. Binary entry:
 
 > **Never let a payer act on a transaction you cannot name.**
 
-Push rails: persist the reference *before* submitting. Redirect rails: persist
-the rail's token *before* redirecting. A payer who has been debited against a
+Push rails: persist the reference _before_ submitting. Redirect rails: persist
+the rail's token _before_ redirecting. A payer who has been debited against a
 reference we never wrote down is a reconciliation we cannot perform.
 
 And its corollary: **callbacks are hints.** `parse_callback` returns identifiers
@@ -39,16 +44,16 @@ integration suites (`worker_kill9.rs`, `worker_recovery.rs`,
 
 ## Two ladders, and they are not the same ladder
 
-| | `poll_delay` — charge polling | `delivery_delay` — webhook delivery |
-| --- | --- | --- |
+|       | `poll_delay` — charge polling                                                       | `delivery_delay` — webhook delivery   |
+| ----- | ----------------------------------------------------------------------------------- | ------------------------------------- |
 | Shape | 10, 20, 30, 45, 60, 90 s, then 120 s to the 30-minute mark, then **15 min forever** | 10 s, 30 s, 2 m, 10 m, 1 h, 6 h, 24 h |
-| Ends? | **Never runs out** | Seven rungs, then `None` = exhausted |
+| Ends? | **Never runs out**                                                                  | Seven rungs, then `None` = exhausted  |
 
 The asymmetry is the point. A charge's true status is knowable indefinitely and
 giving up on it means losing a payer's money, so polling never stops. A webhook
 has a receiver that may simply be gone, so delivery does. Do not "unify" them.
 
-`UNRESOLVED_POLL_INTERVAL` is 1 h and is deliberately *not* the last rung of
+`UNRESOLVED_POLL_INTERVAL` is 1 h and is deliberately _not_ the last rung of
 `poll_delay`.
 
 Fan-out has its own ceiling: `FANOUT_MAX_ATTEMPTS = 5`, after which the event is
@@ -57,7 +62,7 @@ Fan-out has its own ceiling: `FANOUT_MAX_ATTEMPTS = 5`, after which the event is
 ## Lease discipline — the part that bites
 
 Every write that ends a lease is **guarded on `locked_by`**. A worker whose
-lease was reaped mid-run therefore *discards its answer* rather than stamping it
+lease was reaped mid-run therefore _discards its answer_ rather than stamping it
 over whoever holds the job now.
 
 That outcome has its own name and its own counter: `Disposition::Lost` — "not an
@@ -99,8 +104,8 @@ defect — see `references/the-confirm-poll-race.md`.
 `ShutdownSignals::install()` is **the very first thing in `main`**, right after
 CLI parsing and before subcommand dispatch. This is not tidiness.
 
-`tokio::signal::unix::signal(kind)` registers the OS handler *synchronously
-inside the call*. `tokio::signal::ctrl_c()` is an `async fn` that registers on
+`tokio::signal::unix::signal(kind)` registers the OS handler _synchronously
+inside the call_. `tokio::signal::ctrl_c()` is an `async fn` that registers on
 **first poll**. Both binaries used to build their shutdown future as an argument
 to `with_graceful_shutdown(..)` — so until that future was first polled, SIGTERM
 kept its default disposition: immediate termination, in-flight requests dropped.

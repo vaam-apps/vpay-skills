@@ -5,6 +5,11 @@ description: How to finish a change in vpay — which status page takes your row
 
 # Finishing a change in vpay
 
+> **Verified against vpay `f063ee96` (2026-09-15).** Version-sensitive claims below
+> carry the date they became true — a feature in vpay's `master` may be absent
+> from the tree you are editing. On an older or newer vpay, trust the
+> repository over this page. See VERSIONING.md.
+
 Most repositories treat documentation as the thing you do after the work. Here
 it is part of the work, two of the gates read it, and the review question that
 matters is asked of the prose as much as the code:
@@ -28,7 +33,7 @@ none, because people trust it):
    evidence.
 4. **The skill in [vpay-skills](https://github.com/vaam-apps/vpay-skills)** —
    the parity rule, below.
-5. **In your summary to the user: what you did *not* do.** Explicitly.
+5. **In your summary to the user: what you did _not_ do.** Explicitly.
 
 ## Where a new row goes
 
@@ -38,15 +43,15 @@ the table of areas, the gate table, and the `NotImplemented` declaration — whi
 lives there because `cargo xtask verify-status` reads that file by name.
 Everything else is an archive page under `docs/status/`.
 
-| Your change                                   | The page                                                        |
-| --------------------------------------------- | --------------------------------------------------------------- |
-| A capability, a route, an adapter behaviour   | `docs/status/backend.md`                                        |
-| A browser or dashboard change                 | `docs/status/frontend.md`                                       |
-| An image, chart, compose file, migration      | `docs/status/infrastructure.md`                                 |
-| A schema or CrateStack change                 | `docs/status/cratestack.md` (+ a dated page in `status/cratestack/` if you measured something) |
-| An SDK change                                 | `docs/status/merchant-sdks.md` **and** `docs/sdks/parity.md` (a gate) |
-| A new gate, or a gate that grew a direction   | `docs/status/gates.md`, **and** the gate table in `docs/status.md` |
-| Your `just ci` evidence                       | a dated page under `docs/status/verification/`, newest first    |
+| Your change                                 | The page                                                                                       |
+| ------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| A capability, a route, an adapter behaviour | `docs/status/backend.md`                                                                       |
+| A browser or dashboard change               | `docs/status/frontend.md`                                                                      |
+| An image, chart, compose file, migration    | `docs/status/infrastructure.md`                                                                |
+| A schema or CrateStack change               | `docs/status/cratestack.md` (+ a dated page in `status/cratestack/` if you measured something) |
+| An SDK change                               | `docs/status/merchant-sdks.md` **and** `docs/sdks/parity.md` (a gate)                          |
+| A new gate, or a gate that grew a direction | `docs/status/gates.md`, **and** the gate table in `docs/status.md`                             |
+| Your `just ci` evidence                     | a dated page under `docs/status/verification/`, newest first                                   |
 
 Six flow pages are an overview **plus a directory** since 2026-09-11. The
 **Status** section stayed on the overview in all six. In `webhooks.md` and
@@ -89,19 +94,19 @@ a test that needs a running stack is a **Cargo feature** (`required-features =
 
 Putting a document in the wrong tier is a real review comment here.
 
-| What you have                                  | Where it goes                        | Mutability                  |
-| ---------------------------------------------- | ------------------------------------ | --------------------------- |
-| A decision that has been taken                 | `docs/adr/`                          | **Immutable — supersede, never edit** |
-| A process: what happens, in what order         | `docs/flows/`                        | Edited as the process changes |
-| Why the *code* is shaped the way it is         | `docs/reference/<crate>.md`          | Edited as the code changes  |
-| A proposal under discussion                    | `docs/rfc/`                          | Until decided               |
-| Something an on-call person must do            | `docs/runbooks/`                     | Freely                      |
-| What is actually built, with evidence          | `docs/status/`                       | Append; nothing is deleted  |
-| What an **agent** must know before changing it | a skill in `vaam-apps/vpay-skills`   | Freely                      |
+| What you have                                  | Where it goes                      | Mutability                            |
+| ---------------------------------------------- | ---------------------------------- | ------------------------------------- |
+| A decision that has been taken                 | `docs/adr/`                        | **Immutable — supersede, never edit** |
+| A process: what happens, in what order         | `docs/flows/`                      | Edited as the process changes         |
+| Why the _code_ is shaped the way it is         | `docs/reference/<crate>.md`        | Edited as the code changes            |
+| A proposal under discussion                    | `docs/rfc/`                        | Until decided                         |
+| Something an on-call person must do            | `docs/runbooks/`                   | Freely                                |
+| What is actually built, with evidence          | `docs/status/`                     | Append; nothing is deleted            |
+| What an **agent** must know before changing it | a skill in `vaam-apps/vpay-skills` | Freely                                |
 
 Long reasoning does **not** go in an 80-line module header. It goes in
 `docs/reference/<crate>.md`, with the module carrying one paragraph and a link.
-A module doc that *is* a document uses `#[doc = include_str!("…md")]`.
+A module doc that _is_ a document uses `#[doc = include_str!("…md")]`.
 
 ## Two habits that are not optional here
 

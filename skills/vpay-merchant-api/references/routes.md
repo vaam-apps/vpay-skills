@@ -7,10 +7,10 @@ Nest order in the source is `/v1/oauth`, `/v1/browser`, `/v1`, `/provider`,
 then the two conditional `/dash/v1` mounts. axum's path table is
 order-independent for distinct prefixes — `/v1/browser` and `/v1/browser/{*rest}`
 match more specifically than `/v1/{*rest}` — so the ordering is a reading
-convenience, not a correctness device. What *is* a correctness device is that
+convenience, not a correctness device. What _is_ a correctness device is that
 **every nest carries its own `.fallback(crate::not_found)`**: without one, axum
 flattens the nest into the outer path table and an unmatched `/v1/oauth/…`
-matches the *authenticated* `/v1` wildcard, answering `401` to a caller whose
+matches the _authenticated_ `/v1` wildcard, answering `401` to a caller whose
 whole reason for being there is that it has no token yet.
 `the_oauth_nest_answers_its_own_404` fails with `left: 401, right: 404` if the
 fallback is deleted.
@@ -20,28 +20,28 @@ fallback is deleted.
 Source: `V1_ROUTES` in `backends/crates/vpay-api/src/v1/mod.rs`.
 **21 paths, 33 methods.**
 
-| Method(s)                | Path                                   | Handler                                    |
-| ------------------------ | -------------------------------------- | ------------------------------------------ |
-| POST, GET                | `/v1/payment_intents`                  | `payment_intents::{create, list}`          |
-| GET                      | `/v1/payment_intents/{id}`             | `payment_intents::retrieve`                |
-| POST                     | `/v1/payment_intents/{id}/confirm`     | `payment_intents::confirm`                 |
-| POST                     | `/v1/payment_intents/{id}/cancel`      | `payment_intents::cancel`                  |
-| GET                      | `/v1/events`                           | `events::list`                             |
-| GET                      | `/v1/events/{id}`                      | `events::retrieve`                         |
-| GET                      | `/v1/account_holders`                  | `account_holders::retrieve`                |
-| POST, GET                | `/v1/checkout/sessions`                | `checkout_sessions::{create, list}`        |
-| GET                      | `/v1/checkout/sessions/{id}`           | `checkout_sessions::retrieve`              |
-| POST                     | `/v1/checkout/sessions/{id}/expire`    | `checkout_sessions::expire`                |
-| GET                      | `/v1/refunds/{id}`                     | `refunds::retrieve`                        |
-| POST, GET                | `/v1/customers`                        | `customers::{create, list}`                |
-| GET, POST, DELETE        | `/v1/customers/{id}`                   | `customers::{retrieve, update, delete}`    |
-| POST, GET                | `/v1/invoices`                         | `invoices::{create, list}`                 |
-| GET, POST, PATCH, DELETE | `/v1/invoices/{id}`                    | `invoices::{retrieve, update, update, delete}` |
-| POST                     | `/v1/invoices/{id}/finalize`           | `invoices::finalize`                       |
-| POST                     | `/v1/invoices/{id}/void`               | `invoices::void`                           |
-| POST                     | `/v1/invoices/{id}/mark_uncollectible` | `invoices::mark_uncollectible`             |
-| POST                     | `/v1/invoices/{id}/pay`                | `invoices::pay`                            |
-| POST                     | `/v1/invoice_items`                    | `invoice_items::create`                    |
+| Method(s)                | Path                                   | Handler                                             |
+| ------------------------ | -------------------------------------- | --------------------------------------------------- |
+| POST, GET                | `/v1/payment_intents`                  | `payment_intents::{create, list}`                   |
+| GET                      | `/v1/payment_intents/{id}`             | `payment_intents::retrieve`                         |
+| POST                     | `/v1/payment_intents/{id}/confirm`     | `payment_intents::confirm`                          |
+| POST                     | `/v1/payment_intents/{id}/cancel`      | `payment_intents::cancel`                           |
+| GET                      | `/v1/events`                           | `events::list`                                      |
+| GET                      | `/v1/events/{id}`                      | `events::retrieve`                                  |
+| GET                      | `/v1/account_holders`                  | `account_holders::retrieve`                         |
+| POST, GET                | `/v1/checkout/sessions`                | `checkout_sessions::{create, list}`                 |
+| GET                      | `/v1/checkout/sessions/{id}`           | `checkout_sessions::retrieve`                       |
+| POST                     | `/v1/checkout/sessions/{id}/expire`    | `checkout_sessions::expire`                         |
+| GET                      | `/v1/refunds/{id}`                     | `refunds::retrieve`                                 |
+| POST, GET                | `/v1/customers`                        | `customers::{create, list}`                         |
+| GET, POST, DELETE        | `/v1/customers/{id}`                   | `customers::{retrieve, update, delete}`             |
+| POST, GET                | `/v1/invoices`                         | `invoices::{create, list}`                          |
+| GET, POST, PATCH, DELETE | `/v1/invoices/{id}`                    | `invoices::{retrieve, update, update, delete}`      |
+| POST                     | `/v1/invoices/{id}/finalize`           | `invoices::finalize`                                |
+| POST                     | `/v1/invoices/{id}/void`               | `invoices::void`                                    |
+| POST                     | `/v1/invoices/{id}/mark_uncollectible` | `invoices::mark_uncollectible`                      |
+| POST                     | `/v1/invoices/{id}/pay`                | `invoices::pay`                                     |
+| POST                     | `/v1/invoice_items`                    | `invoice_items::create`                             |
 | GET, POST, PATCH, DELETE | `/v1/invoice_items/{id}`               | `invoice_items::{retrieve, update, update, delete}` |
 
 Things about this table that are decisions rather than accidents:
@@ -68,17 +68,17 @@ Things about this table that are decisions rather than accidents:
 ## `/v1/oauth` — the merchant OP
 
 Built inline in `router`, not from a table. Unauthenticated by necessity: the
-credential *is* the request body (RFC 7523 §2.2), so requiring a bearer token
+credential _is_ the request body (RFC 7523 §2.2), so requiring a bearer token
 here would be circular.
 
-| Method | Path                                             |
-| ------ | ------------------------------------------------ |
-| POST   | `/v1/oauth/token`                                |
-| GET    | `/v1/oauth/.well-known/openid-configuration`     |
-| GET    | `/v1/oauth/jwks.json`                            |
+| Method | Path                                         |
+| ------ | -------------------------------------------- |
+| POST   | `/v1/oauth/token`                            |
+| GET    | `/v1/oauth/.well-known/openid-configuration` |
+| GET    | `/v1/oauth/jwks.json`                        |
 
 `POST /v1/oauth/token` renders **RFC 6749 §5.2's error body**
-(`{"error":…,"error_description":…}`), *not* the Stripe envelope — every OAuth
+(`{"error":…,"error_description":…}`), _not_ the Stripe envelope — every OAuth
 client in existence parses that shape. It is the one place in the crate where
 an error is not an `ApiError`, other than `/healthz`.
 
@@ -93,17 +93,17 @@ Source: `BROWSER_ROUTES` in `backends/crates/vpay-api/src/browser/mod.rs`.
 **Five routes, four of them `GET`.** Pinned at exactly five by
 `every_browser_route_is_reachable_without_a_merchant_token`.
 
-| Method | Path                                          | Credential presented                    |
-| ------ | --------------------------------------------- | --------------------------------------- |
-| GET    | `/v1/browser/payment_intents/{id}`            | publishable key + intent `client_secret` |
-| POST   | `/v1/browser/payment_intents/{id}/confirm`    | publishable key + intent `client_secret` |
-| GET    | `/v1/browser/checkout/sessions/{id}`          | publishable key + session `client_secret` |
-| GET    | `/v1/browser/checkout/sessions/{id}/return`   | publishable key + session `return_token` |
-| GET    | `/v1/browser/checkout/origins`                | publishable key alone                   |
+| Method | Path                                        | Credential presented                      |
+| ------ | ------------------------------------------- | ----------------------------------------- |
+| GET    | `/v1/browser/payment_intents/{id}`          | publishable key + intent `client_secret`  |
+| POST   | `/v1/browser/payment_intents/{id}/confirm`  | publishable key + intent `client_secret`  |
+| GET    | `/v1/browser/checkout/sessions/{id}`        | publishable key + session `client_secret` |
+| GET    | `/v1/browser/checkout/sessions/{id}/return` | publishable key + session `return_token`  |
+| GET    | `/v1/browser/checkout/origins`              | publishable key alone                     |
 
 The credential ladder is the design (`browser::checkout_sessions`' module
 docs). The session secret rides in a **URL fragment**, which never leaves the
-browser, so it may expand the intent *with* its own `client_secret`. The
+browser, so it may expand the intent _with_ its own `client_secret`. The
 `return_token` rides in a **query string** — it must, because a fragment does
 not survive a rail's redirect — so it gets strictly less: enough to render an
 outcome, not enough to confirm. The two are **sibling path patterns read by two
@@ -135,9 +135,9 @@ token in a page.
 
 Source: `vpay_api::provider_callback`. One route.
 
-| Method | Path                         |
-| ------ | ---------------------------- |
-| POST   | `/provider/{code}/callback`  |
+| Method | Path                        |
+| ------ | --------------------------- |
+| POST   | `/provider/{code}/callback` |
 
 The path is not free: `vpay_config::ProviderHost::effective_callback_url`
 derives `{public_base_url}/provider/{code}/callback`, and that is what both
@@ -156,12 +156,12 @@ the poll ladder's fastest rung). `CallbackRef::ref_extra` — Orange's
 material from an unauthenticated request is the one thing this route must not
 do.
 
-| Case                                        | Answer |
-| ------------------------------------------- | ------ |
-| `code` names no adapter this process links  | `404`, byte-identical to the router's fallback |
-| body is not a notification this rail sends  | `400` (plus a `warn` carrying the adapter's reason) |
-| reference names no charge here              | `202` |
-| reference names a charge                    | `202` |
+| Case                                       | Answer                                              |
+| ------------------------------------------ | --------------------------------------------------- |
+| `code` names no adapter this process links | `404`, byte-identical to the router's fallback      |
+| body is not a notification this rail sends | `400` (plus a `warn` carrying the adapter's reason) |
+| reference names no charge here             | `202`                                               |
+| reference names a charge                   | `202`                                               |
 
 The last two are identical on purpose: a non-2xx makes the rail retry forever,
 and a distinct answer would be an oracle for "does this charge exist".
@@ -179,27 +179,27 @@ both a `dashboard_validator` and a `dashboard` binding; a deployment with no
 `dashboard_client` mounts nothing and every `/dash/v1/…` path falls through to
 the outer honest 404.
 
-| Method | Path                                 | Notes                                    |
-| ------ | ------------------------------------ | ---------------------------------------- |
-| GET    | `/dash/v1/payment_intents`           | `DASH_ROUTES`, behind `require_dashboard_token` |
-| GET    | `/dash/v1/payment_intents/{id}`      | same                                     |
-| POST   | `/dash/v1/staff/login`               | `STAFF_ROUTES`, outside the token layer  |
-| POST   | `/dash/v1/staff/totp`                | same                                     |
-| POST   | `/dash/v1/staff/password`            | same                                     |
-| GET    | `/dash/v1/staff/session`             | same                                     |
-| GET    | `/dash/v1/staff/session/stage`       | same                                     |
-| POST   | `/dash/v1/staff/logout`              | same                                     |
-| GET    | `/dash/v1/oauth/authorize`           | same                                     |
-| POST   | `/dash/v1/oauth/token`               | same                                     |
-| POST   | `/dash/v1/$procs/searchPaymentIntents` | CrateStack transport                   |
-| POST   | `/dash/v1/$procs/searchRefunds`      | CrateStack transport                     |
-| POST   | `/dash/v1/$procs/searchWebhookDeliveries` | CrateStack transport                |
-| POST   | `/dash/v1/$procs/searchCustomers`    | CrateStack transport                     |
-| POST   | `/dash/v1/$procs/searchCheckoutSessions` | CrateStack transport                 |
+| Method | Path                                      | Notes                                           |
+| ------ | ----------------------------------------- | ----------------------------------------------- |
+| GET    | `/dash/v1/payment_intents`                | `DASH_ROUTES`, behind `require_dashboard_token` |
+| GET    | `/dash/v1/payment_intents/{id}`           | same                                            |
+| POST   | `/dash/v1/staff/login`                    | `STAFF_ROUTES`, outside the token layer         |
+| POST   | `/dash/v1/staff/totp`                     | same                                            |
+| POST   | `/dash/v1/staff/password`                 | same                                            |
+| GET    | `/dash/v1/staff/session`                  | same                                            |
+| GET    | `/dash/v1/staff/session/stage`            | same                                            |
+| POST   | `/dash/v1/staff/logout`                   | same                                            |
+| GET    | `/dash/v1/oauth/authorize`                | same                                            |
+| POST   | `/dash/v1/oauth/token`                    | same                                            |
+| POST   | `/dash/v1/$procs/searchPaymentIntents`    | CrateStack transport                            |
+| POST   | `/dash/v1/$procs/searchRefunds`           | CrateStack transport                            |
+| POST   | `/dash/v1/$procs/searchWebhookDeliveries` | CrateStack transport                            |
+| POST   | `/dash/v1/$procs/searchCustomers`         | CrateStack transport                            |
+| POST   | `/dash/v1/$procs/searchCheckoutSessions`  | CrateStack transport                            |
 
 `/dash/v1` is **read-only structurally, not by promise**:
 `require_dashboard_token` refuses any method that is not `GET`/`HEAD` with a
-`403` *before* the router matches, so a write mounted here would be a refused
+`403` _before_ the router matches, so a write mounted here would be a refused
 request rather than an unlogged one (ADR-0008 wants an `audit_log` row per
 dashboard write and none exists). The `$procs` transport is POST-only and
 therefore uses a **separate** middleware,
@@ -232,11 +232,11 @@ is worse than none.
 
 Per-nest layers, **inside** each nest:
 
-- `track_http_metrics` on *every* nest individually, and on the outer router
+- `track_http_metrics` on _every_ nest individually, and on the outer router
   **before** the `.nest()` calls. `Router::layer` wraps only the routes that
   exist when it is called, so the outer copy covers `/healthz` and the outer
   404 only. Moving that line below the nests would double every `/v1` count and
-  label half of them `unmatched`. A request's route *pattern* only exists once
+  label half of them `unmatched`. A request's route _pattern_ only exists once
   the nest has matched, which is why the layer cannot live outside.
 - `RequestBodyLimitLayer` **outside** the auth layer on `/v1`, `/dash/v1` and
   the `$procs` transport, so an anonymous caller cannot make the process buffer
@@ -244,6 +244,6 @@ Per-nest layers, **inside** each nest:
 - `CorsLayer` on `/v1/browser` and nowhere else.
 - The `$procs` transport carries its **own** `.fallback(not_found)` added after
   its token layer, and it is not optional: `Router::nest_service` registers a
-  *catch-all* in the outer path table, which beats the fallback router where
+  _catch-all_ in the outer path table, which beats the fallback router where
   `Router::nest` put `dash::routes`' fallback. Without it, `GET
-  /dash/v1/not_a_route` with a valid token answers `403` instead of `404`.
+/dash/v1/not_a_route` with a valid token answers `403` instead of `404`.

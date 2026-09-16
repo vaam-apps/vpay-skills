@@ -23,20 +23,20 @@ status in a component, you are in the wrong layer.
 
 `CheckoutState`, discriminated on `name`:
 
-| State | Carries | Means |
-| --- | --- | --- |
-| `loading` | — | the initial state |
-| `error` | `error: CheckoutError` | a closed-vocabulary refusal, e.g. a missing key |
-| `refused` | `reason`, `context \| null` | `embed_not_allowed` (D4) or `no_supported_rail` (D9) |
-| `expired` | `context` | the session's own `expired`, not a failure |
-| `select_rail` | `context`, `rails` | two or more supported rails on offer |
-| `collect_msisdn` | + `rail`, `problem` | a push rail's number form |
-| `ready_redirect` | + `rail`, `problem` | a redirect rail, before the payer presses go |
-| `confirming` | `context`, `rail` | a confirm is in flight |
-| `waiting` | `context`, `rail \| null`, `notice` | "check your phone". `rail` is `null` after a reload — a confirmed intent does not name the rail it was taken by |
-| `redirecting` | + `rail`, `url` | recorded *before* the navigation happens |
-| `outcome` | `kind`, `failure`, `reason` | terminal: `succeeded` / `failed` / `canceled` |
-| `forwarding` | `kind`, `url` | on the way to the merchant's `success_url` / `cancel_url` |
+| State            | Carries                             | Means                                                                                                           |
+| ---------------- | ----------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `loading`        | —                                   | the initial state                                                                                               |
+| `error`          | `error: CheckoutError`              | a closed-vocabulary refusal, e.g. a missing key                                                                 |
+| `refused`        | `reason`, `context \| null`         | `embed_not_allowed` (D4) or `no_supported_rail` (D9)                                                            |
+| `expired`        | `context`                           | the session's own `expired`, not a failure                                                                      |
+| `select_rail`    | `context`, `rails`                  | two or more supported rails on offer                                                                            |
+| `collect_msisdn` | + `rail`, `problem`                 | a push rail's number form                                                                                       |
+| `ready_redirect` | + `rail`, `problem`                 | a redirect rail, before the payer presses go                                                                    |
+| `confirming`     | `context`, `rail`                   | a confirm is in flight                                                                                          |
+| `waiting`        | `context`, `rail \| null`, `notice` | "check your phone". `rail` is `null` after a reload — a confirmed intent does not name the rail it was taken by |
+| `redirecting`    | + `rail`, `url`                     | recorded _before_ the navigation happens                                                                        |
+| `outcome`        | `kind`, `failure`, `reason`         | terminal: `succeeded` / `failed` / `canceled`                                                                   |
+| `forwarding`     | `kind`, `url`                       | on the way to the merchant's `success_url` / `cancel_url`                                                       |
 
 `INITIAL_STATE` is `{ name: "loading" }`.
 
@@ -75,13 +75,13 @@ missing.
 
 ## `intentOutcome` — and there is no `failed` status
 
-| Intent status | Verdict |
-| --- | --- |
-| `succeeded` | terminal, `succeeded` |
-| `canceled` | terminal, `canceled` |
-| `requires_payment_method` **with** `last_payment_error` | terminal, `failed`, carrying the rail's `code` and a cleaned `message` |
-| `requires_payment_method` with **no** `last_payment_error` | **still in flight** |
-| `processing`, `requires_action` | still in flight |
+| Intent status                                              | Verdict                                                                |
+| ---------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `succeeded`                                                | terminal, `succeeded`                                                  |
+| `canceled`                                                 | terminal, `canceled`                                                   |
+| `requires_payment_method` **with** `last_payment_error`    | terminal, `failed`, carrying the rail's `code` and a cleaned `message` |
+| `requires_payment_method` with **no** `last_payment_error` | **still in flight**                                                    |
+| `processing`, `requires_action`                            | still in flight                                                        |
 
 **vpay has no `failed` PaymentIntent status.** A refused charge returns the
 intent to `requires_payment_method` with `last_payment_error` set. That is why
@@ -156,7 +156,7 @@ mounts; `src/config/runtime.ts` reads them once at startup and memoises.
 Nothing in `settings.ts` touches the filesystem or the environment, so every
 way a file can be wrong is a unit test.
 
-**A bad file never blanks the page.** Every parser answers a *complete*
+**A bad file never blanks the page.** Every parser answers a _complete_
 settings object plus a list of problems: an unreadable file, a malformed
 document, a key of the wrong type and a value that fails its rule each cost
 exactly that key and leave the rest standing. The problems go to the container

@@ -1,16 +1,16 @@
 # Observability: two ports, thirteen names, and no scraper
 
 **Nothing has ever scraped any of this.** The series exist; the alerts on them
-have never been evaluated. Every claim below is about what a scrape *would*
+have never been evaluated. Every claim below is about what a scrape _would_
 find.
 
 ## Two listeners, and why that way round
 
-| Path | Port | Answers | Probe role |
-| --- | --- | --- | --- |
-| `GET /livez` | `--observability-bind`, default `0.0.0.0:9090` | a static `ok` — no state, no database | **liveness**, both modes |
-| `GET /metrics` | same | Prometheus text (`text/plain; version=0.0.4`) | — |
-| `GET /healthz` | `--bind`, 8080 | `SELECT 1` against Postgres | **readiness**, serve mode only |
+| Path           | Port                                           | Answers                                       | Probe role                     |
+| -------------- | ---------------------------------------------- | --------------------------------------------- | ------------------------------ |
+| `GET /livez`   | `--observability-bind`, default `0.0.0.0:9090` | a static `ok` — no state, no database         | **liveness**, both modes       |
+| `GET /metrics` | same                                           | Prometheus text (`text/plain; version=0.0.4`) | —                              |
+| `GET /healthz` | `--bind`, 8080                                 | `SELECT 1` against Postgres                   | **readiness**, serve mode only |
 
 **Why liveness is the stateless one:**
 
@@ -37,16 +37,16 @@ recorder**; each binary installs exactly one recorder, beside its rustls
 provider. All thirteen have a live seam; `docs/status.md` names the seam for
 each.
 
-| Metric | Note |
-| --- | --- |
-| `vpay_build_info` | see the `git_sha` caveat below |
-| `vpay_http_requests_total`, `vpay_http_request_duration_seconds` | labelled by matched route **pattern**, never a concrete path, and by one of nine methods or `other`. **Both label sets are closed, because an unauthenticated caller controls both the path and the method** — an open label set there is a cardinality bomb anyone can fire |
-| `vpay_provider_requests_total`, `vpay_provider_request_duration_seconds` | per **port call**, not per HTTP request |
-| `vpay_charge_transitions_total` | |
-| three `vpay_jobs_*` | including `vpay_jobs_oldest_claimable_age_seconds` — see below |
-| `vpay_error_events_total`, `vpay_alert_events_total` | **incremented in the same statements that write `alert = true` to the log, so the two cannot diverge** |
-| `vpay_webhook_deliveries_total` | emitted at the two points a delivery attempt's outcome becomes durable |
-| `vpay_account_holder_lookups_total` | once per `GET /v1/account_holders`, on **every** path including refusals. Its `outcome` label is the only thing that tells `found` from `not_found`, which are both `200` — and **no label on it carries the number looked up or the name returned** |
+| Metric                                                                   | Note                                                                                                                                                                                                                                                                         |
+| ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `vpay_build_info`                                                        | see the `git_sha` caveat below                                                                                                                                                                                                                                               |
+| `vpay_http_requests_total`, `vpay_http_request_duration_seconds`         | labelled by matched route **pattern**, never a concrete path, and by one of nine methods or `other`. **Both label sets are closed, because an unauthenticated caller controls both the path and the method** — an open label set there is a cardinality bomb anyone can fire |
+| `vpay_provider_requests_total`, `vpay_provider_request_duration_seconds` | per **port call**, not per HTTP request                                                                                                                                                                                                                                      |
+| `vpay_charge_transitions_total`                                          |                                                                                                                                                                                                                                                                              |
+| three `vpay_jobs_*`                                                      | including `vpay_jobs_oldest_claimable_age_seconds` — see below                                                                                                                                                                                                               |
+| `vpay_error_events_total`, `vpay_alert_events_total`                     | **incremented in the same statements that write `alert = true` to the log, so the two cannot diverge**                                                                                                                                                                       |
+| `vpay_webhook_deliveries_total`                                          | emitted at the two points a delivery attempt's outcome becomes durable                                                                                                                                                                                                       |
+| `vpay_account_holder_lookups_total`                                      | once per `GET /v1/account_holders`, on **every** path including refusals. Its `outcome` label is the only thing that tells `found` from `not_found`, which are both `200` — and **no label on it carries the number looked up or the name returned**                         |
 
 That last constraint generalises: if you add a metric on a path that touches
 personal data, the label set is part of the privacy review (ADR-0018,
@@ -90,7 +90,7 @@ its `runbook_url` points at: `VpayUnresolvedChargesRising`,
 `VpayProviderErrorRateHigh`, `VpayJobQueueBehind`, `VpayJobsDeadLettered`.
 
 `VpayPageableErrorEvents` has no runbook of its own: it fires on any error
-ADR-0011 classifies `Severity::Page`, and **the classification *is* the alert —
+ADR-0011 classifies `Severity::Page`, and **the classification _is_ the alert —
 there is no threshold to tune.** That is the design paying off: if you want
 something paged, give its leaf error `Severity::Page`; do not add a rule.
 

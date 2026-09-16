@@ -10,7 +10,7 @@ refused.
 
 **No "Rail" column on the list.** `GET /dash/v1/payment_intents` returns no
 charge, so the only rail-shaped value in that response is
-`payment_method_types` — the rails an intent *may* be confirmed against. The
+`payment_method_types` — the rails an intent _may_ be confirmed against. The
 column is therefore headed **Methods**. A "Rail" heading over it would be wrong
 for every intent that offers two and was taken by one, and wrong **invisibly**.
 The detail page has a real `Rail`, from `charge.provider_code`.
@@ -30,15 +30,15 @@ point: there is no field there to be null.
 
 ## The general rules these are instances of
 
-| Situation | The honest shape |
-| --- | --- |
-| A column nothing writes | Render it from the column, show `ABSENT` (`—`), never derive a substitute |
-| A read that failed | Return the refusal to the screen. `readProcedurePage` returns the refusal rather than an empty page: an empty list and a refused read look identical on screen unless the screen is told which it got |
-| A status this build cannot name | Render it as **text**, not as a coloured pill — "a green badge on an unfamiliar value is a claim" |
-| A value the wire cannot parse | Return it verbatim rather than replacing it (`formatIsoInstant`) |
-| No `total` from the API | No page count, no page numbers. Two cursors and nothing else |
-| A field too large for a list | Omit it and say so. `/refunds` does not show `failure_raw` — up to 2 000 characters of a rail's own prose, belonging to a detail read that does not exist |
-| A slice nobody built | No nav entry. `layout.test.tsx` fails if one appears |
+| Situation                       | The honest shape                                                                                                                                                                                      |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A column nothing writes         | Render it from the column, show `ABSENT` (`—`), never derive a substitute                                                                                                                             |
+| A read that failed              | Return the refusal to the screen. `readProcedurePage` returns the refusal rather than an empty page: an empty list and a refused read look identical on screen unless the screen is told which it got |
+| A status this build cannot name | Render it as **text**, not as a coloured pill — "a green badge on an unfamiliar value is a claim"                                                                                                     |
+| A value the wire cannot parse   | Return it verbatim rather than replacing it (`formatIsoInstant`)                                                                                                                                      |
+| No `total` from the API         | No page count, no page numbers. Two cursors and nothing else                                                                                                                                          |
+| A field too large for a list    | Omit it and say so. `/refunds` does not show `failure_raw` — up to 2 000 characters of a rail's own prose, belonging to a detail read that does not exist                                             |
+| A slice nobody built            | No nav entry. `layout.test.tsx` fails if one appears                                                                                                                                                  |
 
 ## Status colour has exactly one source
 
@@ -76,7 +76,7 @@ shared by the four procedure lists, because they differ only in their columns.
 Its `secondary` flag hides a column below `sm` as a **static class per column,
 never a computed one** — `verify-ui` refuses a computed `className` anywhere in
 an app. `Table` already wraps itself in `w-full overflow-x-auto`, so a wide
-table *can* be swiped on a phone; the flag exists because an operator who does
+table _can_ be swiped on a phone; the flag exists because an operator who does
 not know to swipe reads the first two columns as the whole answer.
 
 ## What this app still cannot do
@@ -130,17 +130,17 @@ story without a test already covering it.
 
 Each was applied to the tree, the suite run, and the mutation reverted:
 
-| Mutation | Fails |
-| --- | --- |
-| `COOKIE_ATTRIBUTES.httpOnly` → `false` | `src/server/cookies.test.ts` |
-| Exchange a *fresh* PKCE verifier rather than the one the challenge came from | `src/server/oauth.test.ts` |
-| A nav entry for a page nobody wrote | `src/layout.test.tsx`, twice |
-| `pageCursors` reads `has_more` the same way in both directions | `src/dash/provider.test.ts`, and `src/payments-query.test.ts` twice |
-| The BFF reads the session cookie **after** the upstream read | `src/server/bff.test.ts`, twice — vpay is contacted for a caller with no cookie |
-| `apiIsSameOrigin` drops its `originIsAllowed` call | `src/server/bff.test.ts`, twice |
-| The BFF serves the parsed upstream document instead of the named fields | `src/server/bff.test.ts` — the **detail** case, plus a second case about the envelope's key names |
-| `middleware` returns `NextResponse.next()` unconditionally | `middleware.test.ts`, three times |
-| `apiIsSameOrigin` drops its `Sec-Fetch-Site` comparison | `dashboard.cy.ts`'s frame case, in a browser |
+| Mutation                                                                     | Fails                                                                                             |
+| ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `COOKIE_ATTRIBUTES.httpOnly` → `false`                                       | `src/server/cookies.test.ts`                                                                      |
+| Exchange a _fresh_ PKCE verifier rather than the one the challenge came from | `src/server/oauth.test.ts`                                                                        |
+| A nav entry for a page nobody wrote                                          | `src/layout.test.tsx`, twice                                                                      |
+| `pageCursors` reads `has_more` the same way in both directions               | `src/dash/provider.test.ts`, and `src/payments-query.test.ts` twice                               |
+| The BFF reads the session cookie **after** the upstream read                 | `src/server/bff.test.ts`, twice — vpay is contacted for a caller with no cookie                   |
+| `apiIsSameOrigin` drops its `originIsAllowed` call                           | `src/server/bff.test.ts`, twice                                                                   |
+| The BFF serves the parsed upstream document instead of the named fields      | `src/server/bff.test.ts` — the **detail** case, plus a second case about the envelope's key names |
+| `middleware` returns `NextResponse.next()` unconditionally                   | `middleware.test.ts`, three times                                                                 |
+| `apiIsSameOrigin` drops its `Sec-Fetch-Site` comparison                      | `dashboard.cy.ts`'s frame case, in a browser                                                      |
 
 `oauth.test.ts`'s stub echoes the challenge into the code it returns, so the
 assertion is that the exchange presents the verifier whose `S256` **is** the

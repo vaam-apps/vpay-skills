@@ -19,16 +19,16 @@ sentence and one that checks.
 
 Which source is "machine-checked" depends on the claim:
 
-| A claim about | The authority |
-| --- | --- |
-| what a recipe does | `just --show <recipe>` / `just --evaluate`, never the comment above it |
-| which gates run | the `verify` recipe's dependency list |
-| what is built | `docs/status.md` — and only because `verify-status` reads it |
-| a flag, its env var, its default | `cargo run -p vpay-server -- --help` on the running binary |
-| a toolchain version | `rust-toolchain.toml`, which CI reads |
-| an exemption | ADR-0016's table, which `verify-serde` reads in both directions |
-| an SDK capability | `docs/sdks/parity.md`, which `verify-sdk-parity` reads |
-| everything else in `docs/` | **prose.** `docs/README.md`: "A document here is prose unless a gate reads it." |
+| A claim about                    | The authority                                                                   |
+| -------------------------------- | ------------------------------------------------------------------------------- |
+| what a recipe does               | `just --show <recipe>` / `just --evaluate`, never the comment above it          |
+| which gates run                  | the `verify` recipe's dependency list                                           |
+| what is built                    | `docs/status.md` — and only because `verify-status` reads it                    |
+| a flag, its env var, its default | `cargo run -p vpay-server -- --help` on the running binary                      |
+| a toolchain version              | `rust-toolchain.toml`, which CI reads                                           |
+| an exemption                     | ADR-0016's table, which `verify-serde` reads in both directions                 |
+| an SDK capability                | `docs/sdks/parity.md`, which `verify-sdk-parity` reads                          |
+| everything else in `docs/`       | **prose.** `docs/README.md`: "A document here is prose unless a gate reads it." |
 
 `README.md` states the binary case explicitly: run `--help`, "that is more
 trustworthy than any doc if the two disagree." `docs/flows/configuration.md`
@@ -44,7 +44,7 @@ Learn to spot these. Each one is a sentence somebody checked on a date.
    whether it was ever real."
 2. **`**Corrected <date>:**`** — the replacement, dated.
 3. **`this said "X" until <date> and had been wrong since <date>`** — two dates,
-   because *when it broke* and *when it was noticed* are different facts.
+   because _when it broke_ and _when it was noticed_ are different facts.
 
 `docs/README.md` defends the habit outright: those paragraphs "are the reason
 the documents are worth trusting", and when the eleven longest documents were
@@ -58,25 +58,25 @@ something, say what it said before… A silent correction teaches nobody."
 ## The census
 
 A non-exhaustive list of sentences this repository has caught being wrong. The
-point is not the individual facts — it is the *rate*.
+point is not the individual facts — it is the _rate_.
 
-| Where | What it said, and for how long |
-| --- | --- |
-| `AGENTS.md`, the gate count | "three gates" until 2026-09-05, wrong since 2026-09-03. Then "five" for a day. Then seven, nine, ten, **twelve** — each correction dated, with the branch that caused the drift named. |
-| `CLAUDE.md`, the same count | "three" until 2026-09-06, wrong since 2026-09-03; "ten" until 2026-09-07. It now defers: "**AGENTS.md carries the count… that is the copy to trust, and this one now agrees with it.**" |
-| `CLAUDE.md`, `schemas/vpay.cstack` | Said "**not** wired into the build, its syntax is unverified, do not try to make it compile". **Wrong in two stages** — syntax checked from 2026-09-05, *compiled* from 2026-09-06. |
-| `AGENTS.md`, TypeScript conventions | Named Headless UI, framer-motion and vaul — "none of which is a dependency of any `package.json` in this repository". Corrected 2026-09-07, **and again 2026-09-12** when `@vpay/ui` was deleted. |
-| `docs/flows/configuration.md` | "said 'neither binary calls it' until 2026-09-02; that had been false since 2026-08-11." |
-| `docs/flows/configuration.md` | A "correction of the correction": an earlier pass said the DB-CHECK claim was false. True of the `.cstack` grammar, not of the raw SQL schema. |
-| `docs/flows/errors.md` | `~~verify-errors counts 14 error types~~` — corrected 2026-09-04 to 15. |
-| `README.md` | `~~a missing --database-url exits 1~~` — corrected 2026-09-10. |
-| `deploy/helm/vpay/README.md` | The guard count "**said 15 until 2026-09-10**" and had been wrong since the sixteenth landed. It is 22. |
-| `deploy/helm/vpay/README.md` | Two `~~struck-through~~` Status bullets ("the liveness probes point at a listener that does not exist", "every PrometheusRule query names a metric no build emits") — both corrected the same day. |
-| `deploy/helm/vpay/README.md` | "an earlier draft of this section claimed [the render] was byte-identical — that claim was true of the Gateway API work alone and stopped being true when the rail callback fix landed." |
-| `docs/runbooks/demo/known-flake.md` | `~~Not fixed in this step.~~` → fixed; then `~~After the fix, just demo ran green~~` — "**Corrected 2026-09-04: no demo run after the fix is recorded.**" |
-| `config/application.yml` | The MTN host "used to say `wiremock`, a host no compose file defines — **never caught because the stack had never been started**." |
-| `docs/status.md` | The load-bearing "no HTTP call to a real rail has ever been made" sentence, narrowed by ten dated addenda and finally retired 2026-09-15 — and **replaced with a narrower one**, not deleted. |
-| `docs/plans/exp11-notes/opus-review.md` | A whole review finding whose content is: `CLAUDE.md`'s "Things that will waste your time" still said the toolchain pin is `1.95.0`. |
+| Where                                   | What it said, and for how long                                                                                                                                                                     |
+| --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AGENTS.md`, the gate count             | "three gates" until 2026-09-05, wrong since 2026-09-03. Then "five" for a day. Then seven, nine, ten, **twelve** — each correction dated, with the branch that caused the drift named.             |
+| `CLAUDE.md`, the same count             | "three" until 2026-09-06, wrong since 2026-09-03; "ten" until 2026-09-07. It now defers: "**AGENTS.md carries the count… that is the copy to trust, and this one now agrees with it.**"            |
+| `CLAUDE.md`, `schemas/vpay.cstack`      | Said "**not** wired into the build, its syntax is unverified, do not try to make it compile". **Wrong in two stages** — syntax checked from 2026-09-05, _compiled_ from 2026-09-06.                |
+| `AGENTS.md`, TypeScript conventions     | Named Headless UI, framer-motion and vaul — "none of which is a dependency of any `package.json` in this repository". Corrected 2026-09-07, **and again 2026-09-12** when `@vpay/ui` was deleted.  |
+| `docs/flows/configuration.md`           | "said 'neither binary calls it' until 2026-09-02; that had been false since 2026-08-11."                                                                                                           |
+| `docs/flows/configuration.md`           | A "correction of the correction": an earlier pass said the DB-CHECK claim was false. True of the `.cstack` grammar, not of the raw SQL schema.                                                     |
+| `docs/flows/errors.md`                  | `~~verify-errors counts 14 error types~~` — corrected 2026-09-04 to 15.                                                                                                                            |
+| `README.md`                             | `~~a missing --database-url exits 1~~` — corrected 2026-09-10.                                                                                                                                     |
+| `deploy/helm/vpay/README.md`            | The guard count "**said 15 until 2026-09-10**" and had been wrong since the sixteenth landed. It is 22.                                                                                            |
+| `deploy/helm/vpay/README.md`            | Two `~~struck-through~~` Status bullets ("the liveness probes point at a listener that does not exist", "every PrometheusRule query names a metric no build emits") — both corrected the same day. |
+| `deploy/helm/vpay/README.md`            | "an earlier draft of this section claimed [the render] was byte-identical — that claim was true of the Gateway API work alone and stopped being true when the rail callback fix landed."           |
+| `docs/runbooks/demo/known-flake.md`     | `~~Not fixed in this step.~~` → fixed; then `~~After the fix, just demo ran green~~` — "**Corrected 2026-09-04: no demo run after the fix is recorded.**"                                          |
+| `config/application.yml`                | The MTN host "used to say `wiremock`, a host no compose file defines — **never caught because the stack had never been started**."                                                                 |
+| `docs/status.md`                        | The load-bearing "no HTTP call to a real rail has ever been made" sentence, narrowed by ten dated addenda and finally retired 2026-09-15 — and **replaced with a narrower one**, not deleted.      |
+| `docs/plans/exp11-notes/opus-review.md` | A whole review finding whose content is: `CLAUDE.md`'s "Things that will waste your time" still said the toolchain pin is `1.95.0`.                                                                |
 
 Repository-wide, `grep -c "and was wrong\|Corrected 2026\|~~"` over `docs/`
 gives double digits on `docs/status/backend.md`, `docs/status/merchant-sdks.md`,

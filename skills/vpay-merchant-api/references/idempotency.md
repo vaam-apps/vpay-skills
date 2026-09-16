@@ -78,7 +78,7 @@ It exists because the fingerprint is taken over the **raw** body while the
 handler needs the **parsed** body, and no two axum extractors can both consume
 a body. `PostRequest::read` takes the whole request, extracts and validates the
 key, reads the bytes once and hashes them; `PostRequest::form::<T>()` then
-hands the *same bytes* back to the ordinary `VpayForm` extractor, so there is
+hands the _same bytes_ back to the ordinary `VpayForm` extractor, so there is
 one decoder for the wire format rather than a second one written for this path.
 
 ```rust
@@ -117,7 +117,7 @@ have nothing to end the claim with — leaving the key stuck.
 
 ## The four outcomes
 
-| `IdempotencyClaim` | What the caller gets                                                                                                   |
+| `IdempotencyClaim` | What the caller gets                                                                                                    |
 | ------------------ | ----------------------------------------------------------------------------------------------------------------------- |
 | `Fresh`            | this process owns the key; do the work                                                                                  |
 | `Replay(record)`   | the **stored response body, byte for byte**, with its original status **and its original `stripe-should-retry` header** |
@@ -148,13 +148,13 @@ possible here and the second is the one that actually happened:
 - freezing the failure for 24 hours, so a merchant retrying after the
   deployment was fixed gets the old outage back; and
 - leaving the key `in_flight` — which is what the code did before. Nothing else
-  moves such a row, so *every* retry under that key was answered "a request
+  moves such a row, so _every_ retry under that key was answered "a request
   with this Idempotency-Key is still in progress" **for the life of the
   deployment**. Before the rails landed, when every `confirm` ended in the
   adapter's `501`, that permanently burned a key on every confirm a merchant
   made.
 
-Every failure path *after* the claim releases first, including the three steps
+Every failure path _after_ the claim releases first, including the three steps
 between "the work is done" and "the response is stored" (reading the body back,
 parsing it as JSON, and the write itself). A failure to release is logged and
 swallowed — the key expires in 24 hours either way, and turning a `501` into a
@@ -169,8 +169,8 @@ index `one_charge_per_intent` on `charges (payment_intent_id)` is. A
 re-executed confirm meets that index and answers `409` rather than charging
 again.
 
-Internalise this before you touch the mechanism: the key makes retries *quiet*;
-the index makes them *safe*.
+Internalise this before you touch the mechanism: the key makes retries _quiet_;
+the index makes them _safe_.
 
 ## Known gaps, as of 2026-09-16
 

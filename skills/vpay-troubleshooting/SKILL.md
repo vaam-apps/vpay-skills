@@ -5,6 +5,11 @@ description: A symptom index for vpay — the exact error text or observed behav
 
 # vpay troubleshooting
 
+> **Verified against vpay `f063ee96` (2026-09-15).** Version-sensitive claims below
+> carry the date they became true — a feature in vpay's `master` may be absent
+> from the tree you are editing. On an older or newer vpay, trust the
+> repository over this page. See VERSIONING.md.
+
 Scan the index. Most entries are a lookup, not a read.
 
 Two habits before anything else:
@@ -18,42 +23,42 @@ Two habits before anything else:
 
 ## Symptom index
 
-| Symptom | Page |
-| --- | --- |
-| clippy rejects `unwrap`/`expect`/`panic`/`dbg!` | inline, below |
-| `verify-toolchain` fails; `FROM rust:` vs `rust-toolchain.toml` | [build-toolchain](references/build-toolchain.md) |
-| `cannot produce proc-macro … target does not support these crate types` | [build-toolchain](references/build-toolchain.md) |
-| `check-schema: FAIL — needs the 'cratestack' CLI on PATH` | [build-toolchain](references/build-toolchain.md) |
-| a `schemas/vpay.cstack` edit breaks `cargo build` | [build-toolchain](references/build-toolchain.md) |
-| `cargo deny` advisory on `rsa` / RUSTSEC-2023-0071 | [build-toolchain](references/build-toolchain.md) |
-| testcontainers cannot reach a Docker daemon | inline, below |
-| `failed to create a container: Timeout error` at ~120 s | inline, below |
-| `RootlessKit PortManager.AddPort(): bind: address already in use` | [docker-testcontainers](references/docker-testcontainers.md) |
-| `OCI runtime exec failed … outside of container mount namespace root` | [docker-testcontainers](references/docker-testcontainers.md) |
-| container reports `unhealthy` while serving correctly | [docker-testcontainers](references/docker-testcontainers.md) |
-| `pnpm install` fails on Node version | [node-web](references/node-web.md) |
-| `sh: 1: tsc: not found` inside a **Rust** test | [node-web](references/node-web.md) |
-| `ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL Command "prettier" not found` | [node-web](references/node-web.md) |
-| prettier rewrote pasted evidence inside a markdown code fence | [node-web](references/node-web.md) |
-| Cypress has no binary / `CYPRESS_INSTALL_BINARY` | [node-web](references/node-web.md) |
-| `EADDRINUSE 127.0.0.1:4181`, or `ECONNREFUSED` on a port no spec chose | [node-web](references/node-web.md) |
-| every Storybook story renders unstyled and every test passes | [node-web](references/node-web.md) |
-| `migration <n> was previously applied but has been modified` | inline, below |
-| `vpay-shop` dies in `zen migrate deploy` | [migrations-database](references/migrations-database.md) |
-| `invalid_client: Client authentication failed` from a demo stack | [demo-compose](references/demo-compose.md) |
-| two demo stacks collide on a port | [demo-compose](references/demo-compose.md) |
-| `500` / `write_matched_no_row` during a confirm | [demo-compose](references/demo-compose.md) |
-| `ClientBuilder::build()` panics on a rustls `CryptoProvider` | [demo-compose](references/demo-compose.md) |
-| a binary exits `78` at boot and you do not know which of six causes | [config-boot](references/config-boot.md) |
-| an unresolved `${VAR}`, or a flag that is silently ignored | [config-boot](references/config-boot.md) |
-| `checkout_not_configured`, a dead `session.url`, "invalid link" | [config-boot](references/config-boot.md) |
-| the embedded iframe is an empty box / "This page will not load here" | [config-boot](references/config-boot.md) |
-| the pod exits 78 naming a file it can see and cannot open | [deployment](references/deployment.md) |
-| every rail callback 404s while every object reports healthy | [deployment](references/deployment.md) |
-| a profile typo boots happily on placeholder credentials | [deployment](references/deployment.md) |
-| a server crash-loops after a signing-key rollback | [deployment](references/deployment.md) |
-| the dashboard shows an em dash, no rail column, no page count | [dashboard](references/dashboard.md) |
-| a document says X and the code/recipe says Y | [known-wrong-docs](references/known-wrong-docs.md) |
+| Symptom                                                                 | Page                                                         |
+| ----------------------------------------------------------------------- | ------------------------------------------------------------ |
+| clippy rejects `unwrap`/`expect`/`panic`/`dbg!`                         | inline, below                                                |
+| `verify-toolchain` fails; `FROM rust:` vs `rust-toolchain.toml`         | [build-toolchain](references/build-toolchain.md)             |
+| `cannot produce proc-macro … target does not support these crate types` | [build-toolchain](references/build-toolchain.md)             |
+| `check-schema: FAIL — needs the 'cratestack' CLI on PATH`               | [build-toolchain](references/build-toolchain.md)             |
+| a `schemas/vpay.cstack` edit breaks `cargo build`                       | [build-toolchain](references/build-toolchain.md)             |
+| `cargo deny` advisory on `rsa` / RUSTSEC-2023-0071                      | [build-toolchain](references/build-toolchain.md)             |
+| testcontainers cannot reach a Docker daemon                             | inline, below                                                |
+| `failed to create a container: Timeout error` at ~120 s                 | inline, below                                                |
+| `RootlessKit PortManager.AddPort(): bind: address already in use`       | [docker-testcontainers](references/docker-testcontainers.md) |
+| `OCI runtime exec failed … outside of container mount namespace root`   | [docker-testcontainers](references/docker-testcontainers.md) |
+| container reports `unhealthy` while serving correctly                   | [docker-testcontainers](references/docker-testcontainers.md) |
+| `pnpm install` fails on Node version                                    | [node-web](references/node-web.md)                           |
+| `sh: 1: tsc: not found` inside a **Rust** test                          | [node-web](references/node-web.md)                           |
+| `ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL Command "prettier" not found`       | [node-web](references/node-web.md)                           |
+| prettier rewrote pasted evidence inside a markdown code fence           | [node-web](references/node-web.md)                           |
+| Cypress has no binary / `CYPRESS_INSTALL_BINARY`                        | [node-web](references/node-web.md)                           |
+| `EADDRINUSE 127.0.0.1:4181`, or `ECONNREFUSED` on a port no spec chose  | [node-web](references/node-web.md)                           |
+| every Storybook story renders unstyled and every test passes            | [node-web](references/node-web.md)                           |
+| `migration <n> was previously applied but has been modified`            | inline, below                                                |
+| `vpay-shop` dies in `zen migrate deploy`                                | [migrations-database](references/migrations-database.md)     |
+| `invalid_client: Client authentication failed` from a demo stack        | [demo-compose](references/demo-compose.md)                   |
+| two demo stacks collide on a port                                       | [demo-compose](references/demo-compose.md)                   |
+| `500` / `write_matched_no_row` during a confirm                         | [demo-compose](references/demo-compose.md)                   |
+| `ClientBuilder::build()` panics on a rustls `CryptoProvider`            | [demo-compose](references/demo-compose.md)                   |
+| a binary exits `78` at boot and you do not know which of six causes     | [config-boot](references/config-boot.md)                     |
+| an unresolved `${VAR}`, or a flag that is silently ignored              | [config-boot](references/config-boot.md)                     |
+| `checkout_not_configured`, a dead `session.url`, "invalid link"         | [config-boot](references/config-boot.md)                     |
+| the embedded iframe is an empty box / "This page will not load here"    | [config-boot](references/config-boot.md)                     |
+| the pod exits 78 naming a file it can see and cannot open               | [deployment](references/deployment.md)                       |
+| every rail callback 404s while every object reports healthy             | [deployment](references/deployment.md)                       |
+| a profile typo boots happily on placeholder credentials                 | [deployment](references/deployment.md)                       |
+| a server crash-loops after a signing-key rollback                       | [deployment](references/deployment.md)                       |
+| the dashboard shows an em dash, no rail column, no page count           | [dashboard](references/dashboard.md)                         |
+| a document says X and the code/recipe says Y                            | [known-wrong-docs](references/known-wrong-docs.md)           |
 
 ## The four you will hit first
 
@@ -88,7 +93,7 @@ run is a real one. There is no "Docker not available, skipping" path to find.
 **This is almost never your change.** It is testcontainers' 120 s create
 deadline losing to host contention, and it is the most-recorded flake in the
 repository — it shows up in a dozen `docs/plans/*/opus-review.md` files, always
-on a *different, untouched* test, never as an assertion failure.
+on a _different, untouched_ test, never as an assertion failure.
 
 **Causes, in the order they actually occur:** another agent or worktree driving
 the same daemon (load average 9–25); dead `Created`-state containers piling up

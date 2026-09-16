@@ -2,17 +2,17 @@
 
 The theme through this whole page: **every one of these checks has, at some
 point, gone green while measuring nothing.** Each fix is a test that asserts the
-*gate* is still a gate. When you add a check here, ask what a vacuous version
+_gate_ is still a gate. When you add a check here, ask what a vacuous version
 of it would report.
 
 ## The suites
 
-| Command | What it is |
-| --- | --- |
-| `pnpm --filter @vpay/checkout test` | The jsdom/node suite. `environment: "node"` by default so tests talking to `src/testing/browser-stub.ts` use the platform `fetch`; rendering tests opt in with a `// @vitest-environment jsdom` docblock. Run by `just test-web` → `just ci` |
-| `pnpm --filter @vpay/checkout test-storybook` | 22 stories in a real headless Chromium with axe over each. **Not** in `just ci` — it needs a ~115 MB Playwright Chromium and `just ci` must pass offline. CI's `web` job runs it |
-| `just build-storybook` | Builds both apps' Storybooks **and asserts the built stylesheet defines `--color-base-100`** |
-| `just test-e2e` | Cypress against the real compose stack |
+| Command                                       | What it is                                                                                                                                                                                                                                   |
+| --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm --filter @vpay/checkout test`           | The jsdom/node suite. `environment: "node"` by default so tests talking to `src/testing/browser-stub.ts` use the platform `fetch`; rendering tests opt in with a `// @vitest-environment jsdom` docblock. Run by `just test-web` → `just ci` |
+| `pnpm --filter @vpay/checkout test-storybook` | 22 stories in a real headless Chromium with axe over each. **Not** in `just ci` — it needs a ~115 MB Playwright Chromium and `just ci` must pass offline. CI's `web` job runs it                                                             |
+| `just build-storybook`                        | Builds both apps' Storybooks **and asserts the built stylesheet defines `--color-base-100`**                                                                                                                                                 |
+| `just test-e2e`                               | Cypress against the real compose stack                                                                                                                                                                                                       |
 
 `vitest.config.ts` sets `esbuild.jsx: "automatic"` for the jsdom suite because
 the app's `tsconfig.json` says `"jsx": "preserve"` for Next.
@@ -80,7 +80,7 @@ never exists when this file runs there. The one check standing behind this
 app's whole styled-or-not claim was green-and-blind on every CI run. Found in
 the dashboard's copy of this file and fixed in both, 2026-09-13.
 
-Its failure message also names the *other* cause: a stale `storybook-static/`.
+Its failure message also names the _other_ cause: a stale `storybook-static/`.
 A `just build-storybook` that fails its own check leaves the theme-less
 artefact on disk on purpose, so it can be inspected — and every later run of
 this test then reads that instead of the source. Re-run
@@ -106,9 +106,9 @@ Two cases, each with a hand-run, reverted mutation:
 Both assert a **non-zero match count first**. The discipline exists because a
 contrast helper ported unchanged once parsed zero colours and still passed.
 
-Note the split of responsibilities: `styling-gate.test.ts` uses the *lenient*
+Note the split of responsibilities: `styling-gate.test.ts` uses the _lenient_
 parser, so it **cannot** catch the `@import` ordering defect and did not.
-`a11y-gate.test.ts` reads the *built* Storybook's stylesheet instead.
+`a11y-gate.test.ts` reads the _built_ Storybook's stylesheet instead.
 
 ## The 22 stories
 

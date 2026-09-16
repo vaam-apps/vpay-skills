@@ -1,7 +1,7 @@
 # `sdks/flutter/vpay_checkout_flutter`
 
 A **payer** surface, like `@vaam-apps/vpay-stripe-js` — not a third merchant
-SDK. It authenticates a payer's *device* with a publishable key and a
+SDK. It authenticates a payer's _device_ with a publishable key and a
 per-session / per-intent `client_secret`, speaks the same `/v1/browser` routes,
 and shares no capability row with the merchant tables. It has its own
 single-column table in `docs/sdks/parity.md`.
@@ -27,8 +27,8 @@ ADR-0021. Process: `docs/flows/mobile-checkout.md`. `publish_to: none`.
 ## The design decisions the tests actually pin
 
 - **D1 — the outcome is never read off a URL.** The proving test names the
-  proof itself: *`resolveAfterStopUrlReached` takes no URL argument at all —
-  the signature itself is the proof.* Reaching `success_url` with an intent
+  proof itself: _`resolveAfterStopUrlReached` takes no URL argument at all —
+  the signature itself is the proof._ Reaching `success_url` with an intent
   that is still `processing` yields **pending**, not succeeded.
 - **D4 — a dismissal polls before it reports.** A dismissed sheet fifteen
   seconds after the payer approved an MTN push is not a cancellation; it is a
@@ -39,10 +39,10 @@ ADR-0021. Process: `docs/flows/mobile-checkout.md`. `publish_to: none`.
   there is nothing there for a host to compare against by mistake.
   `{CHECKOUT_SESSION_ID}` is substituted before a URL becomes a stop rule.
 - **D3 — this package has no `confirm` method, by design.** vpay's own hosted
-  *page* submits the confirm, and no JavaScript bridge exists for the package
+  _page_ submits the confirm, and no JavaScript bridge exists for the package
   to do otherwise.
 - **D6 — the `client_secret` and the session URL stay out of every error,
-  diagnostic and `toString`**, *including the generated channel types*
+  diagnostic and `toString`**, _including the generated channel types_
   ("generated code is how this regresses"). A hosted session's URL carries the
   session secret in its fragment, so it is redacted too, and the redaction is
   asserted to survive string interpolation — which is how it would actually be
@@ -65,8 +65,8 @@ suite (`just test-flutter`, 82 passed / 0 skipped) stays stack-independent and
 must keep passing with the stack down.
 
 The decisive check is first: the recipe curls `/healthz` on both vpay and
-`examples/shop` and prints *"FAIL — nothing answers … this is a REAL end-to-end
-test and refuses to fake one. bring a stack up first: just demo-up"*.
+`examples/shop` and prints _"FAIL — nothing answers … this is a REAL end-to-end
+test and refuses to fake one. bring a stack up first: just demo-up"_.
 
 The fixture is two real Checkout Sessions minted through **`examples/shop`'s
 own running server** — a real `POST /v1/payment_intents` + `POST
@@ -83,7 +83,7 @@ device. The recipe does not bring the stack up or tear it down.
 **It found a real bug no `MockClient` fixture could catch**, which is the whole
 argument for it existing: `GET /v1/browser/checkout/sessions/{id}` never echoes
 the **session's** own `client_secret` back — only the intent's — yet
-`CheckoutSession.fromJson` *required* that field. Every real pre-flight against
+`CheckoutSession.fromJson` _required_ that field. Every real pre-flight against
 a real server failed with `unexpected_response(200)`, and the suite had been
 green only because every `test/` fixture fabricated the key. `clientSecret` is
 now a **caller-supplied parameter** (the value the caller already authenticated
@@ -135,7 +135,7 @@ As of 2026-09-14 it is **wired, not merely designed**:
   `Application.ActivityLifecycleCallbacks`. **No `startActivityForResult`, no
   scheme to call back on**, because the outcome is always polled (D1). It
   degrades correctly with **no merchant deployment work at all**. Proven by
-  *running*, not just compiling: a dedicated headless AVD showed a real
+  _running_, not just compiling: a dedicated headless AVD showed a real
   `CustomTabsIntent` open Chrome and a real hardware back press return control
   to the host `Activity`, reporting a real dismissal over the real channel.
 - **iOS** wraps `SFSafariViewController`; **macOS** opens the default browser
@@ -150,9 +150,9 @@ As of 2026-09-14 it is **wired, not merely designed**:
   switching back manually. It needs a merchant-hosted
   `assetlinks.json` / `apple-app-site-association` deployment this repository
   cannot provide. `ASWebAuthenticationSession` is **deliberately not** an iOS
-  dependency, for the same reason `androidx.browser` was not one before D8: *a
+  dependency, for the same reason `androidx.browser` was not one before D8: _a
   dependency with no code path that could ever run is its own kind of false
-  claim.*
+  claim._
 
 Custom URL scheme returns are recorded as a **decision, not an oversight**:
 `checked_forward_url` accepts only `http(s)` for `success_url`/`cancel_url`, so
@@ -166,13 +166,13 @@ scope. It can itself be the violation.
 
 ## Recipes
 
-| Recipe | What it does |
-| --- | --- |
-| `just install-flutter` | `flutter pub get` |
-| `just analyze-flutter` | `dart analyze --fatal-infos` — the strictest setting, because this package has no `verify-*` gate of its own |
-| `just test-flutter` | Unit only. No emulator, no `adb` — the controller is pure by design |
-| `just test-flutter-e2e` | Above |
-| `just test-flutter-emulator` | Above |
+| Recipe                       | What it does                                                                                                 |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `just install-flutter`       | `flutter pub get`                                                                                            |
+| `just analyze-flutter`       | `dart analyze --fatal-infos` — the strictest setting, because this package has no `verify-*` gate of its own |
+| `just test-flutter`          | Unit only. No emulator, no `adb` — the controller is pure by design                                          |
+| `just test-flutter-e2e`      | Above                                                                                                        |
+| `just test-flutter-emulator` | Above                                                                                                        |
 
 All five go through `_flutter-preflight`, which refuses clearly when the
 package directory or the Flutter SDK is missing and **warns** (does not fail)

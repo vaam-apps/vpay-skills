@@ -5,6 +5,11 @@ description: The vpay pnpm workspace under frontends/ — the seven packages and
 
 # vpay frontends
 
+> **Verified against vpay `f063ee96` (2026-09-15).** Version-sensitive claims below
+> carry the date they became true — a feature in vpay's `master` may be absent
+> from the tree you are editing. On an older or newer vpay, trust the
+> repository over this page. See VERSIONING.md.
+
 Node 22.23.2 (`.nvmrc`), pnpm 9.15.0, TypeScript strict everywhere
 (`tsconfig.base.json` — `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`,
 `verbatimModuleSyntax`). Workspace globs live in `pnpm-workspace.yaml`:
@@ -30,16 +35,16 @@ something is the failure mode that file exists to prevent.
 
 ## The packages
 
-| Package | Path | What it is |
-| --- | --- | --- |
-| `@vpay/checkout` | `frontends/apps/checkout` | The payer page, hosted + embedded + popup. Next 15.5.25, React 19. **REAL.** Load `vpay-checkout` |
-| `@vpay/dashboard` | `frontends/apps/dashboard` | Staff console. Next 15.5.25, React 19, Refine 5. **REAL.** Load `vpay-dashboard` |
-| `@vpay/tokens` | `frontends/packages/tokens` | `PAYMENT_STATUS`, `CHECKOUT_OUTCOME`, `statusLabel`, `checkoutOutcomeTone`. Ships raw `.ts` (`main: ./src/index.ts`), so both apps list it in `transpilePackages` |
-| `@vpay/config` | `frontends/packages/config` | The shared ESLint flat-config factory (`./eslint` export) and `DASH_API_BASE` |
-| `@vpay/api-client` | `frontends/packages/api-client` | **TYPES ONLY — its own header says "No request is issued yet".** Its stub functions throw `NotImplementedError`. Declared as a dependency of `@vpay/dashboard` and named in its `transpilePackages`, and **no file in either app imports it** (verified 2026-09-16). The dashboard's real formatting lives in its own `src/format.ts`. Do not build on this package; do not delete it without checking `docs/status.md` |
-| `@vpay/e2e` | `frontends/tests/e2e` | Cypress 15. `pnpm e2e` runs the suite twice — plain, then `VPAY_E2E_FRAMED=1` |
-| `@vpay-examples/shop` | `examples/shop` | The demo merchant storefront. **Next 16.3.4** (deliberately newer than the two vpay apps' 15.5.25), tRPC, ZenStack. It is a *third party* — it depends on no vpay design-system package |
-| ~~`@vpay/ui`~~ | ~~`frontends/packages/ui`~~ | **DELETED 2026-09-12.** Both apps now compose the published `@vaam-apps/ui`. Two permanent `verify-ui` guards stop it coming back: nothing may import it by any spelling, and nothing may reach into its old directory by path |
+| Package               | Path                            | What it is                                                                                                                                                                                                                                                                                                                                                                                                              |
+| --------------------- | ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@vpay/checkout`      | `frontends/apps/checkout`       | The payer page, hosted + embedded + popup. Next 15.5.25, React 19. **REAL.** Load `vpay-checkout`                                                                                                                                                                                                                                                                                                                       |
+| `@vpay/dashboard`     | `frontends/apps/dashboard`      | Staff console. Next 15.5.25, React 19, Refine 5. **REAL.** Load `vpay-dashboard`                                                                                                                                                                                                                                                                                                                                        |
+| `@vpay/tokens`        | `frontends/packages/tokens`     | `PAYMENT_STATUS`, `CHECKOUT_OUTCOME`, `statusLabel`, `checkoutOutcomeTone`. Ships raw `.ts` (`main: ./src/index.ts`), so both apps list it in `transpilePackages`                                                                                                                                                                                                                                                       |
+| `@vpay/config`        | `frontends/packages/config`     | The shared ESLint flat-config factory (`./eslint` export) and `DASH_API_BASE`                                                                                                                                                                                                                                                                                                                                           |
+| `@vpay/api-client`    | `frontends/packages/api-client` | **TYPES ONLY — its own header says "No request is issued yet".** Its stub functions throw `NotImplementedError`. Declared as a dependency of `@vpay/dashboard` and named in its `transpilePackages`, and **no file in either app imports it** (verified 2026-09-16). The dashboard's real formatting lives in its own `src/format.ts`. Do not build on this package; do not delete it without checking `docs/status.md` |
+| `@vpay/e2e`           | `frontends/tests/e2e`           | Cypress 15. `pnpm e2e` runs the suite twice — plain, then `VPAY_E2E_FRAMED=1`                                                                                                                                                                                                                                                                                                                                           |
+| `@vpay-examples/shop` | `examples/shop`                 | The demo merchant storefront. **Next 16.3.4** (deliberately newer than the two vpay apps' 15.5.25), tRPC, ZenStack. It is a _third party_ — it depends on no vpay design-system package                                                                                                                                                                                                                                 |
+| ~~`@vpay/ui`~~        | ~~`frontends/packages/ui`~~     | **DELETED 2026-09-12.** Both apps now compose the published `@vaam-apps/ui`. Two permanent `verify-ui` guards stop it coming back: nothing may import it by any spelling, and nothing may reach into its old directory by path                                                                                                                                                                                          |
 
 `frontends/Dockerfile` builds **from the repository root** and has two named
 targets: `--target runner` → `vpay-dashboard`, `--target checkout` →
@@ -73,7 +78,7 @@ vpay's design system.
 ### The three lines that fail silently
 
 **`@import` must come before `@plugin`.** CSS drops an `@import` that follows
-another at-rule. The theme import sat *after* `@plugin "daisyui"` until
+another at-rule. The theme import sat _after_ `@plugin "daisyui"` until
 2026-09-12. Tailwind's own parser is lenient, so `next build` inlined the theme
 and passed, and `src/styling-gate.test.ts` — which compiles the same file
 through `@tailwindcss/postcss` directly — inlined it and passed too. Any
@@ -86,7 +91,7 @@ browser's default white while the shipped page is `#0a0b0d`, and axe passed all
 bytes. `src/a11y-gate.test.ts` in both apps now asserts the position.
 
 **`themes: false`** stops daisyUI's built-in `dark` out-specificity-ing
-`@vaam-apps/ui`'s theme, which registers under the *same* name. Remove it and
+`@vaam-apps/ui`'s theme, which registers under the _same_ name. Remove it and
 `--color-base-100` resolves to three different values in one sheet, the last
 being daisyUI's stock `oklch(25.33% 0.016 252.42)`.
 
@@ -109,7 +114,7 @@ out, so an upgrade cannot silently reformat the repository, **except**:
 
 > `"embeddedLanguageFormatting": "off"` — and it must stay off.
 
-With the default `"auto"`, prettier rewrites the *contents* of fenced code
+With the default `"auto"`, prettier rewrites the _contents_ of fenced code
 blocks in markdown. This repository's markdown is largely transcripts. Measured
 2026-09-10: it rewrote **40 fences across 22 files**, pretty-printing a one-line
 `tracing` log line in `docs/runbooks/demo.md` into ten lines of output the

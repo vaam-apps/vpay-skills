@@ -5,6 +5,11 @@ description: How to write Rust and TypeScript in vpay — the two machine-enforc
 
 # vpay conventions
 
+> **Verified against vpay `f063ee96` (2026-09-15).** Version-sensitive claims below
+> carry the date they became true — a feature in vpay's `master` may be absent
+> from the tree you are editing. On an older or newer vpay, trust the
+> repository over this page. See VERSIONING.md.
+
 Source of truth is `AGENTS.md`. This page is the operative subset plus the
 things that bite. For the recipes and gates themselves see **vpay-tooling**;
 for status pages, the `NotImplemented` bullet shape and the finishing sequence
@@ -32,8 +37,8 @@ reachable from `vpay-server` in any of its three modes (`serve`, `worker`,
 `cargo xtask verify-status`). Unwritten code returns
 `ProviderError::NotImplemented("<crate>::<fn>")` — never a plausible success,
 an empty list or a zero. The full declaration mechanics belong to
-**vpay-docs-status**. The test that settles the question: *would a test fail if
-it broke? If no, it is not done.*
+**vpay-docs-status**. The test that settles the question: _would a test fail if
+it broke? If no, it is not done._
 
 ## ADR-0016's six standards
 
@@ -42,24 +47,24 @@ The ADR's own thesis, and the reason to read it once:
 > Three of the six standards below are mechanical enough to check; three are
 > not, and **saying which is which is most of the value of writing them down.**
 
-| # | Standard | Gate | What only a reviewer can judge |
-| --- | --- | --- | --- |
-| 1 | **Errors** — `thiserror` at the leaves, composed per layer, classified once, `anyhow` only at a binary edge | `cargo xtask verify-errors` | whether a leaf's `category()` is the *right* category, and whether an override carries the comment ADR-0011 asks for |
-| 2 | **Adapters** — a rail is reached only through `ProviderAdapter`; its failures are *mapped* into `FailureCode`/`ProviderError` | `verify-errors` + the shared conformance suite + `verify-no-mocks` | that a new rail's failures were mapped rather than flattened, **and that no `if provider == "…"` appeared outside `backends/crates/vpay-adapter-*`** |
-| 3 | **serde** — everything vpay serialises spells the wire convention | `cargo xtask verify-serde` | **whether an exemption's reason is honest** |
-| 4 | **SOLID and DRY** | **none, deliberately** | all of it |
-| 5 | **Repositories** — `vpay-db` exposes traits; implementations are `pub(crate)` | `cargo xtask verify-repositories` | whether a new method belongs on an existing trait or a new one; whether a query behind `op_store_pool` is a repository method nobody wrote |
-| 6 | **Docs** — a doc-comment example is compiled and run | `just test-doc` (+ `verify-docs`, a *report*) | whether a module doc is a paragraph and a link or an 80-line essay |
+| #   | Standard                                                                                                                      | Gate                                                               | What only a reviewer can judge                                                                                                                       |
+| --- | ----------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **Errors** — `thiserror` at the leaves, composed per layer, classified once, `anyhow` only at a binary edge                   | `cargo xtask verify-errors`                                        | whether a leaf's `category()` is the _right_ category, and whether an override carries the comment ADR-0011 asks for                                 |
+| 2   | **Adapters** — a rail is reached only through `ProviderAdapter`; its failures are _mapped_ into `FailureCode`/`ProviderError` | `verify-errors` + the shared conformance suite + `verify-no-mocks` | that a new rail's failures were mapped rather than flattened, **and that no `if provider == "…"` appeared outside `backends/crates/vpay-adapter-*`** |
+| 3   | **serde** — everything vpay serialises spells the wire convention                                                             | `cargo xtask verify-serde`                                         | **whether an exemption's reason is honest**                                                                                                          |
+| 4   | **SOLID and DRY**                                                                                                             | **none, deliberately**                                             | all of it                                                                                                                                            |
+| 5   | **Repositories** — `vpay-db` exposes traits; implementations are `pub(crate)`                                                 | `cargo xtask verify-repositories`                                  | whether a new method belongs on an existing trait or a new one; whether a query behind `op_store_pool` is a repository method nobody wrote           |
+| 6   | **Docs** — a doc-comment example is compiled and run                                                                          | `just test-doc` (+ `verify-docs`, a _report_)                      | whether a module doc is a paragraph and a link or an 80-line essay                                                                                   |
 
 **The two deliberately ungated ones are the ones to watch.**
 
 - **Standard 4 has no gate on purpose.** ADR-0016: "A cyclomatic-complexity or
   duplicate-token gate measures the shape of code rather than whether a
   responsibility is in the right place, and the cheapest way to pass one is a
-  worse design that scores better." `verify-docs` *reports* every production
+  worse design that scores better." `verify-docs` _reports_ every production
   function of 80 lines or more as the closest honest proxy, and is not a gate
-  for the same reason. Ask instead: *what would have to change for this to be
-  wrong, and does that live in one place?*
+  for the same reason. Ask instead: _what would have to change for this to be
+  wrong, and does that live in one place?_
 - **ADR-0002's provider-code rule has no gate either**, and ADR-0016 says so:
   "no gate reads for it today, and that is a known gap". So
   `if provider == "mtn_momo"` outside `backends/crates/vpay-adapter-*` will
@@ -92,14 +97,14 @@ today and an escape hatch nobody needs is the one that gets used."
 
 ## Architecture rules
 
-| Rule | Where it comes from |
-| --- | --- |
-| **Rails live behind the port.** Branch on capability *values* (`flow`, `supports_refunds`), never on a provider code | ADR-0002 — and nothing greps for it |
-| **No environment branching.** No `if (sandbox)`, no `NODE_ENV` check, no profile-selected bean. A profile selects a config *file*, never a code path | ADR-0003, `docs/flows/configuration.md` |
-| **Money is integer minor units.** XAF is zero-decimal: `5000` means 5,000 FCFA. One conversion function, `Money::to_provider_string` | `docs/flows/money.md`; float arithmetic is denied workspace-wide |
-| **Never let a payer act on a transaction you cannot name.** Push rails: persist the reference before submitting. Redirect rails: persist the rail's token before redirecting | `docs/flows/crash-safety.md` |
-| **One charge per intent, forever.** A plain unique index. Retry means a new `PaymentIntent` | `docs/flows/payment-lifecycle.md` |
-| **Callbacks are hints.** `parse_callback` returns identifiers only, never a status. The authenticated status query is the only thing that moves money | `docs/flows/provider-port.md` |
+| Rule                                                                                                                                                                         | Where it comes from                                              |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| **Rails live behind the port.** Branch on capability _values_ (`flow`, `supports_refunds`), never on a provider code                                                         | ADR-0002 — and nothing greps for it                              |
+| **No environment branching.** No `if (sandbox)`, no `NODE_ENV` check, no profile-selected bean. A profile selects a config _file_, never a code path                         | ADR-0003, `docs/flows/configuration.md`                          |
+| **Money is integer minor units.** XAF is zero-decimal: `5000` means 5,000 FCFA. One conversion function, `Money::to_provider_string`                                         | `docs/flows/money.md`; float arithmetic is denied workspace-wide |
+| **Never let a payer act on a transaction you cannot name.** Push rails: persist the reference before submitting. Redirect rails: persist the rail's token before redirecting | `docs/flows/crash-safety.md`                                     |
+| **One charge per intent, forever.** A plain unique index. Retry means a new `PaymentIntent`                                                                                  | `docs/flows/payment-lifecycle.md`                                |
+| **Callbacks are hints.** `parse_callback` returns identifiers only, never a status. The authenticated status query is the only thing that moves money                        | `docs/flows/provider-port.md`                                    |
 
 ## Lints
 

@@ -5,13 +5,18 @@ description: The vpay HTTP surface — the /v1 merchant API, its route tables, O
 
 # The vpay HTTP surface
 
+> **Verified against vpay `f063ee96` (2026-09-15).** Version-sensitive claims below
+> carry the date they became true — a feature in vpay's `master` may be absent
+> from the tree you are editing. On an older or newer vpay, trust the
+> repository over this page. See VERSIONING.md.
+
 Four nests, one router function: `vpay_api::router` in
 `backends/crates/vpay-api/src/lib.rs`.
 
 | Nest          | Who calls it        | Authenticated by                        |
 | ------------- | ------------------- | --------------------------------------- |
 | `/v1`         | a merchant's server | bearer token (`require_merchant_token`) |
-| `/v1/oauth`   | a merchant's server | the request body *is* the credential    |
+| `/v1/oauth`   | a merchant's server | the request body _is_ the credential    |
 | `/v1/browser` | a payer's browser   | publishable key + a `client_secret`     |
 | `/provider`   | a payment rail      | **nothing at all** — by design          |
 | `/dash/v1`    | the staff dashboard | staff session → authorization code      |
@@ -77,13 +82,13 @@ Two strings, defined once in `vpay_api::v1`: `SCOPE_PAYMENTS_WRITE`
 `required_scopes(method)` is **fail-closed** — `GET`/`HEAD` accept either;
 everything else, including verbs no route answers, requires write.
 
-| Situation                                       | Answer                       |
-| ----------------------------------------------- | ---------------------------- |
-| no bearer token                                 | `401` `missing_bearer_token` |
-| valid token, no scope for this method           | `403` `forbidden`            |
-| valid token, `client_id` in no registration     | `403` — the token is genuine, the *registration* is gone |
-| valid token, object belongs to another merchant | `404`, byte-identical to a nonexistent id |
-| authenticated, path has no route                | `404` `unknown_route`        |
+| Situation                                       | Answer                                                   |
+| ----------------------------------------------- | -------------------------------------------------------- |
+| no bearer token                                 | `401` `missing_bearer_token`                             |
+| valid token, no scope for this method           | `403` `forbidden`                                        |
+| valid token, `client_id` in no registration     | `403` — the token is genuine, the _registration_ is gone |
+| valid token, object belongs to another merchant | `404`, byte-identical to a nonexistent id                |
+| authenticated, path has no route                | `404` `unknown_route`                                    |
 
 The rule to internalise: a statement about the **credential** is 403 (the
 caller can inspect their own token); a statement about an **object** is a
@@ -131,11 +136,11 @@ There is **no OpenAPI or Swagger file in this repository.** The wire contract
 is `docs/flows/merchant-auth/resource-contract.md`, `docs/api/README.md` and
 the two SDKs.
 
-| Declared               | Where                             | Reality (2026-09-16)                                                                                                                                                         |
-| ---------------------- | --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `POST /v1/refunds`     | resource-contract; both SDKs      | **Unmounted.** No rail can refund — `mtn_momo::refund` is `NotImplemented`, Orange answers `Unsupported`, and nothing writes a `refunds` row at all. `GET /v1/refunds/{id}` *is* served. |
-| `GET /v1/balance`      | resource-contract; both SDKs      | **Unmounted.** There is no ledger read path.                                                                                                                                 |
-| `GET /v1/events?type=` | `docs/api/README.md`              | Route served, **filter silently ignored** — `ListParams` in `vpay_api::v1::events` has no `type` field, so a filtered call gets an unfiltered page rather than a `400`.        |
+| Declared               | Where                        | Reality (2026-09-16)                                                                                                                                                                     |
+| ---------------------- | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST /v1/refunds`     | resource-contract; both SDKs | **Unmounted.** No rail can refund — `mtn_momo::refund` is `NotImplemented`, Orange answers `Unsupported`, and nothing writes a `refunds` row at all. `GET /v1/refunds/{id}` _is_ served. |
+| `GET /v1/balance`      | resource-contract; both SDKs | **Unmounted.** There is no ledger read path.                                                                                                                                             |
+| `GET /v1/events?type=` | `docs/api/README.md`         | Route served, **filter silently ignored** — `ListParams` in `vpay_api::v1::events` has no `type` field, so a filtered call gets an unfiltered page rather than a `400`.                  |
 
 Both SDKs can call all three, and each gets the honest envelope. **Mounting
 `POST /v1/refunds` would mount a route that can only ever answer `501`** —

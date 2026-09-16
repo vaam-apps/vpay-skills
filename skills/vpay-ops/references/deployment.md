@@ -47,9 +47,9 @@ configuration is two environment variables.
 
 Two platforms, two spellings, and the difference matters:
 
-- **Compose:** `command: ["worker"]`. Compose's `command:` *is* the Docker CMD,
+- **Compose:** `command: ["worker"]`. Compose's `command:` _is_ the Docker CMD,
   and the image's `ENTRYPOINT` is `["/vpay-server"]`.
-- **Kubernetes:** `args: ["worker"]`. Kubernetes `args` *is* the CMD; its
+- **Kubernetes:** `args: ["worker"]`. Kubernetes `args` _is_ the CMD; its
   `command` would **replace** the entrypoint — "so the chart must not use it and
   does not."
 
@@ -58,35 +58,35 @@ Two platforms, two spellings, and the difference matters:
 `deploy/helm/vpay/`. Both backend workloads run **one image**; the worker
 Deployment passes `args: ["worker"]`.
 
-| Object | Notes |
-| --- | --- |
-| `Deployment` server | `server.replicaCount`, 2 by default |
-| `Deployment` worker | 1 replica, `strategy: Recreate`, server image + `args: ["worker"]` |
-| `Deployment` checkout | optional, `checkout.enabled` **false** by default |
-| `Service` | ClusterIP, ports `http` (8080) and `metrics` (9090) |
-| `Service` worker | **headless, `metrics` only** — exists so the worker can be scraped |
-| `ServiceAccount` | `automountServiceAccountToken: false` |
-| `PodDisruptionBudget` | `minAvailable: 1`, **server only** |
-| `ConfigMap` overlay | optional; mounted with `subPath` |
-| `Ingress` ×4 | `-api` (`/v1`), `-token` (`/v1/oauth/token`, tighter `limit-rps`), `-provider` (`/provider`, **on by default**), `-checkout` (optional) |
-| `HTTPRoute` | optional (`route.enabled`); **one** object, **three rules** |
-| `NetworkPolicy` | optional, default-deny both directions |
-| `ServiceMonitor`, `PrometheusRule` | optional; every threshold proposed |
+| Object                             | Notes                                                                                                                                   |
+| ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `Deployment` server                | `server.replicaCount`, 2 by default                                                                                                     |
+| `Deployment` worker                | 1 replica, `strategy: Recreate`, server image + `args: ["worker"]`                                                                      |
+| `Deployment` checkout              | optional, `checkout.enabled` **false** by default                                                                                       |
+| `Service`                          | ClusterIP, ports `http` (8080) and `metrics` (9090)                                                                                     |
+| `Service` worker                   | **headless, `metrics` only** — exists so the worker can be scraped                                                                      |
+| `ServiceAccount`                   | `automountServiceAccountToken: false`                                                                                                   |
+| `PodDisruptionBudget`              | `minAvailable: 1`, **server only**                                                                                                      |
+| `ConfigMap` overlay                | optional; mounted with `subPath`                                                                                                        |
+| `Ingress` ×4                       | `-api` (`/v1`), `-token` (`/v1/oauth/token`, tighter `limit-rps`), `-provider` (`/provider`, **on by default**), `-checkout` (optional) |
+| `HTTPRoute`                        | optional (`route.enabled`); **one** object, **three rules**                                                                             |
+| `NetworkPolicy`                    | optional, default-deny both directions                                                                                                  |
+| `ServiceMonitor`, `PrometheusRule` | optional; every threshold proposed                                                                                                      |
 
 **It renders no Secret and no database.**
 
 ## The three Secrets you must create first
 
-| Value | Default name | Shape | If wrong |
-| --- | --- | --- | --- |
-| `database.existingSecret` / `.existingSecretKey` | `vpay-database` / `url` | one key holding a full `postgres://` URL | both Deployments fail to start |
-| `signingKey.existingSecret` / `.key` | `vpay-oauth-signing-key` / `oauth-signing-key.pem` | PEM RSA private key (PKCS#8 or PKCS#1) | the server Deployment exits **78** |
-| `rails.existingSecret` | `vpay-rails` | one key per `${VAR}` in the deployed image's config — **read it at upgrade time, the list grows** | exit **78** on **both** Deployments |
+| Value                                            | Default name                                       | Shape                                                                                             | If wrong                            |
+| ------------------------------------------------ | -------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ----------------------------------- |
+| `database.existingSecret` / `.existingSecretKey` | `vpay-database` / `url`                            | one key holding a full `postgres://` URL                                                          | both Deployments fail to start      |
+| `signingKey.existingSecret` / `.key`             | `vpay-oauth-signing-key` / `oauth-signing-key.pem` | PEM RSA private key (PKCS#8 or PKCS#1)                                                            | the server Deployment exits **78**  |
+| `rails.existingSecret`                           | `vpay-rails`                                       | one key per `${VAR}` in the deployed image's config — **read it at upgrade time, the list grows** | exit **78** on **both** Deployments |
 
 Use **`--from-env-file`, not `--from-literal`**: "a credential on a command line
 is in your shell history and in `ps` output."
 
-The signing key is mounted on the **server Deployment only**. Both *flag*
+The signing key is mounted on the **server Deployment only**. Both _flag_
 spellings of handing it to the worker are refused; `VPAY_OAUTH_SIGNING_KEY_FILE`
 in the environment is ignored rather than refused, deliberately — "a shared env
 block must not `CrashLoopBackOff` a worker". **So the guarantee is the volume
@@ -95,8 +95,8 @@ list in `deployment-worker.yaml`, not the flag check.**
 `signingKey.defaultMode` is **`0440`, not `0400`** — with `fsGroup` set, a
 Secret volume is owned by `root:<fsGroup>` and these pods run as UID 65532, so
 `0400` is unreadable by the only process in the image, which exits 78 naming a
-file it can see and cannot open. *Reasoned from Kubernetes' documented ownership
-rule; not observed, because no pod has run.*
+file it can see and cannot open. _Reasoned from Kubernetes' documented ownership
+rule; not observed, because no pod has run._
 
 The rail Secret is projected with `envFrom.secretRef`, so `kubectl describe pod`
 shows the variable **names** and never the values.
@@ -112,7 +112,7 @@ belongs to whoever operates the database."
 ## The two configuration facts that will bite you
 
 **1. The overlay is mounted with `subPath`, and it must be.** Mounting a
-ConfigMap *at* `/config` replaces the baked directory and the process exits 78
+ConfigMap _at_ `/config` replaces the baked directory and the process exits 78
 complaining about a file it can no longer see. The consequence: the mounted file
 does **not** update when the ConfigMap changes — which is fine, ADR-0003 has no
 hot reload — and the chart puts a `checksum/config-overlay` annotation on both
@@ -148,7 +148,7 @@ run against a cluster.
 ## Routing
 
 **Two Ingress objects for `/v1` and `/v1/oauth/token`** because ingress-nginx
-applies `limit-rps` per Ingress *object*, and a token request costs an RSA
+applies `limit-rps` per Ingress _object_, and a token request costs an RSA
 verification plus a database write — "the expensive unauthenticated surface".
 nginx enforces the limit **per controller replica**, so the effective global
 limit is roughly `limitRps × replicas`; an exact one needs Gateway API's
@@ -187,12 +187,12 @@ is an unmetered token endpoint that renders, validates and reports healthy."
 
 ## The checkout page needs two API URLs, and a third thing outside the chart
 
-- **`checkout.apiUrl`** — *this pod's* view of vpay. `middleware.ts` calls
+- **`checkout.apiUrl`** — _this pod's_ view of vpay. `middleware.ts` calls
   `GET {apiUrl}/v1/browser/checkout/origins?key=…` server-side to build the
   embedded page's `frame-ancestors`. Empty means this release's own server
   Service. **Missing entirely is not an error**: the CSP becomes
   `frame-ancestors 'none'` — correct, fail-closed, and no merchant can embed.
-- **`checkout.publicApiUrl`** — *a payer's browser's* view. Required when the
+- **`checkout.publicApiUrl`** — _a payer's browser's_ view. Required when the
   page is enabled, enforced by a named guard rather than defaulted, "because the
   app throws on a missing `NEXT_PUBLIC_VPAY_API_URL` and a default would be a
   pod that starts, fails readiness and never says why."

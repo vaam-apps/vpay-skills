@@ -51,12 +51,12 @@ docker ps -a --filter label=org.testcontainers.managed-by=testcontainers
 Recorded instances, all on the authoring host, all resolved without a code
 change:
 
-| Evidence | Outcome |
-| --- | --- |
-| 250 containers stuck in `Created`, accumulating for days; another agent running the same suite at load 13–24 | 240 removed, then **1290/1290 passed** |
-| load 19, `fs.inotify.max_user_instances` 128, 24 `created`-state containers | debris removed, re-run **0** |
-| five consecutive failures at 1151/1151/1151/1225/1270 of 1696, load 25, another worktree's e2e stack up | same suite **1696/1696 at load 3**, Rust byte-identical |
-| an abandoned `vpay-demo` compose stack crash-looping on the daemon | stack torn down, suite green |
+| Evidence                                                                                                     | Outcome                                                 |
+| ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------- |
+| 250 containers stuck in `Created`, accumulating for days; another agent running the same suite at load 13–24 | 240 removed, then **1290/1290 passed**                  |
+| load 19, `fs.inotify.max_user_instances` 128, 24 `created`-state containers                                  | debris removed, re-run **0**                            |
+| five consecutive failures at 1151/1151/1151/1225/1270 of 1696, load 25, another worktree's e2e stack up      | same suite **1696/1696 at load 3**, Rust byte-identical |
+| an abandoned `vpay-demo` compose stack crash-looping on the daemon                                           | stack torn down, suite green                            |
 
 **Report it, do not absorb it.** The house phrasing for a run that died this way
 is "an environment failure, not a code one… **Not counted as a result**", with
@@ -71,7 +71,7 @@ start under rootlesskit's port manager. Also seen as testcontainers' own
 
 **Fix: already structural — do not re-solve it.** `.config/nextest.toml` puts
 every container-starting package into a `postgres-containers` test group with
-`max-threads = 1`, serialising container *starts* while each test keeps its own
+`max-threads = 1`, serialising container _starts_ while each test keeps its own
 container and its own `Drop`-based cleanup.
 
 **If you add a package whose tests start a container, add it to that `filter`.**
@@ -87,8 +87,7 @@ at process exit (Rust does not drop statics), so a shared container leaks the
 underlying Docker container forever. Verified by running that version 8+ times
 and finding hundreds of orphaned `postgres:16-alpine` containers still `Up`,
 which drove the Docker VM into memory pressure and OOM-killed an unrelated
-container. `max-threads = 3` was also tried and still failed roughly 1 run in
-14. The tradeoff taken is wall-clock, not correctness.
+container. `max-threads = 3` was also tried and still failed roughly 1 run in 14. The tradeoff taken is wall-clock, not correctness.
 
 ## `OCI runtime exec failed: … current working directory is outside of container mount namespace root` / `possible container breakout detected`
 

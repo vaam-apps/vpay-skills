@@ -5,6 +5,11 @@ description: vpay's outbound webhooks — the fifteen-type event vocabulary clos
 
 # Outbound webhooks
 
+> **Verified against vpay `f063ee96` (2026-09-15).** Version-sensitive claims below
+> carry the date they became true — a feature in vpay's `master` may be absent
+> from the tree you are editing. On an older or newer vpay, trust the
+> repository over this page. See VERSIONING.md.
+
 Stripe's scheme, copied exactly, so a merchant's existing verification code
 works unchanged.
 
@@ -35,18 +40,18 @@ cancelled state at all.
 
 **Only real Stripe event types go in this list.** A custom type is silently
 dropped by any merchant using `stripe-node`'s typed event union or an
-exhaustive `switch`. That constraint is why a *late* success emits a plain
+exhaustive `switch`. That constraint is why a _late_ success emits a plain
 `payment_intent.succeeded`: an event merchants structurally tend to ignore is
 the worst possible carrier for "money actually arrived".
 
 **Eleven of the fifteen have a writer. Four never do:**
 
-| Type                       | Why nothing emits it                                        |
-| -------------------------- | ----------------------------------------------------------- |
-| `payment_intent.created`   | events are written for *terminal* transitions; this is progress |
-| `payment_intent.processing`| same                                                        |
-| `charge.refunded`          | no rail in this repository can refund anything              |
-| `charge.refund.updated`    | same — and nothing writes a `refunds` row at all            |
+| Type                        | Why nothing emits it                                            |
+| --------------------------- | --------------------------------------------------------------- |
+| `payment_intent.created`    | events are written for _terminal_ transitions; this is progress |
+| `payment_intent.processing` | same                                                            |
+| `charge.refunded`           | no rail in this repository can refund anything                  |
+| `charge.refund.updated`     | same — and nothing writes a `refunds` row at all                |
 
 Do not write code that waits for one of those four. Full writer table:
 [references/events.md](references/events.md).
@@ -88,7 +93,7 @@ Vpay-Signature: t=1753401600,v1=<hex>[,v1=<hex>]
   the text that is signed** — it is written once and reused, because the whole
   scheme rests on those being the same characters;
 - **one `v1=` per configured secret, in configuration order.** That is what
-  lets a receiver holding *either* secret verify during a rotation;
+  lets a receiver holding _either_ secret verify during a rotation;
 - receivers reject a timestamp older than **5 minutes**.
 
 **The same value is sent again as `Stripe-Signature`**, so a merchant can hand
@@ -106,7 +111,7 @@ instead of sending, and boot-time validation is the real guard.
 
 A pre-epoch clock writes `t=-…`, which fails both verifiers' `^\d+$` rule.
 Clamping to zero would be worse — the delivery would then be signed with a
-timestamp the sender does not believe and would fail the *tolerance* check
+timestamp the sender does not believe and would fail the _tolerance_ check
 instead, reported as something a merchant could plausibly debug.
 
 ## Endpoints come from YAML. There is no endpoint API.

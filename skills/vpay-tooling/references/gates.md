@@ -27,16 +27,16 @@ which are shell. `just verify` is the real list; `verify-all` is a convenience.
 Four gates fail in **both** directions, and that is the property to remember,
 because the intuitive half is the one that never bites you:
 
-- **`verify-status`** — a token in code with no declaration fails, *and* a
+- **`verify-status`** — a token in code with no declaration fails, _and_ a
   declaration whose token no longer exists fails.
-- **`verify-sdk-parity`** — a claim naming a missing test fails, *and* a method
-  either SDK declares with no matrix row fails, *and* a row whose method is
+- **`verify-sdk-parity`** — a claim naming a missing test fails, _and_ a method
+  either SDK declares with no matrix row fails, _and_ a row whose method is
   gone fails. Two-directional since 2026-09-06; before that, deleting a whole
   row passed.
-- **`verify-serde`** — a non-compliant type fails, *and* an exemption row
+- **`verify-serde`** — a non-compliant type fails, _and_ an exemption row
   naming a type that now complies, or no longer exists, fails. A stale
   exemption is a decision the code already reversed, described as current.
-- **`verify-migrations`** — an edited file fails, *and* a manifest line whose
+- **`verify-migrations`** — an edited file fails, _and_ a manifest line whose
   file is gone fails.
 
 ## 1. `verify-no-mocks`
@@ -159,7 +159,7 @@ Then it runs `cratestack check --schema schemas/vpay.cstack`.
 
 **Implements:** shell in the `justfile`.
 
-**How you trip it:** not having the CLI. A *version* mismatch only WARNs and
+**How you trip it:** not having the CLI. A _version_ mismatch only WARNs and
 the check still runs, against whatever grammar is on PATH.
 
 **The connected trap:** `schemas/vpay.cstack` **is** wired into the build since
@@ -186,7 +186,7 @@ and leaving its exemption row. Visibility is deliberately not part of the rule
 — both adapters' wire modules are `pub(crate)`, and a wire does not care what
 Rust thinks of a type's visibility.
 
-**What it does not check:** whether a reason is a *good* one. "models MTN's
+**What it does not check:** whether a reason is a _good_ one. "models MTN's
 camelCase Collections wire" and "too many to fix" are both non-empty strings.
 The table exists to put the sentence where a reviewer sees it.
 
@@ -247,21 +247,21 @@ the first. The numbering is non-contiguous — check 6 was deleted, 7a was split
 three ways, 5b and 7b-ii were added. Read the recipe body, not its header
 paragraph.
 
-| # | Refuses | Scope |
-| --- | --- | --- |
-| 1 | a hard-coded palette colour: `(bg\|text\|border\|ring\|fill\|stroke\|from\|via\|to\|decoration\|outline\|shadow\|accent\|caret\|divide\|placeholder)-(red\|green\|blue\|amber\|slate\|…\|black\|white)` | `frontends`, `examples` |
-| 1b | an arbitrary colour value: the same prefixes followed by `-[#`, `-[rgb`, `-[hsl`, `-[oklch`, `-[color-mix` | same |
-| 2 | a daisyUI 4 class daisyUI 5 removed: `form-control`, `label-text`, `label-text-alt`, `btn-group`, `input-group`, `card-compact`, `input-bordered`, `select-bordered`, `textarea-bordered`, `tabs-bordered`, `tabs-lifted`, `tabs-boxed` | same |
-| 3 | `!important`, outside three documented exemptions | same |
-| 4 | a `cva(` call outside a component package | `frontends/apps`, `examples` |
-| 5 | importing `@vpay/ui` — the package was **deleted 2026-09-12**. Covers `from`/`import`/`require(`/`resolve(`, `@import`, and a `"@vpay/ui":` dependency key | tree |
-| 5b | path-reaching into it: `"../ui/src"`, `"frontends/packages/ui"` | tree |
-| 6 | **deleted.** It was a 200-line ceiling on `@vpay/ui` files; after the package went, its pathspec matched nothing, the loop body never ran and `fail` stayed 0. A check that cannot fail reads as coverage it no longer provides | — |
-| 7a-i | a computed class name: `className\s*=\s*{` | `frontends/apps` |
-| 7a-ii | a status-colour theme token: `(bg\|text\|border\|ring\|fill\|stroke\|divide\|outline\|shadow)-(state-[a-z]+-(fg\|bg\|border)\|destructive(-foreground)?)` | `frontends/apps` |
-| 7a-iii | a class attribute over 60 characters: `className="[^"]{61,}"` | `frontends/apps` |
-| 7b | a daisyUI **component** class. The alternation deliberately omits `table`, `select` and `mask` (real Tailwind utilities — `table-fixed`, `select-none`, Tailwind 4's `mask-*`) and omits `collapse` outright, because daisyUI's `.collapse` and Tailwind's `visibility: collapse` are the same token and a grep cannot tell them apart | `frontends/apps` |
-| 7b-ii | `table`/`select`/`mask` when daisyUI-modifier-suffixed or bare. One exemption: `frontends/apps/checkout/src/components/locale-switch.tsx` | `frontends/apps` |
+| #      | Refuses                                                                                                                                                                                                                                                                                                                                | Scope                        |
+| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
+| 1      | a hard-coded palette colour: `(bg\|text\|border\|ring\|fill\|stroke\|from\|via\|to\|decoration\|outline\|shadow\|accent\|caret\|divide\|placeholder)-(red\|green\|blue\|amber\|slate\|…\|black\|white)`                                                                                                                                | `frontends`, `examples`      |
+| 1b     | an arbitrary colour value: the same prefixes followed by `-[#`, `-[rgb`, `-[hsl`, `-[oklch`, `-[color-mix`                                                                                                                                                                                                                             | same                         |
+| 2      | a daisyUI 4 class daisyUI 5 removed: `form-control`, `label-text`, `label-text-alt`, `btn-group`, `input-group`, `card-compact`, `input-bordered`, `select-bordered`, `textarea-bordered`, `tabs-bordered`, `tabs-lifted`, `tabs-boxed`                                                                                                | same                         |
+| 3      | `!important`, outside three documented exemptions                                                                                                                                                                                                                                                                                      | same                         |
+| 4      | a `cva(` call outside a component package                                                                                                                                                                                                                                                                                              | `frontends/apps`, `examples` |
+| 5      | importing `@vpay/ui` — the package was **deleted 2026-09-12**. Covers `from`/`import`/`require(`/`resolve(`, `@import`, and a `"@vpay/ui":` dependency key                                                                                                                                                                             | tree                         |
+| 5b     | path-reaching into it: `"../ui/src"`, `"frontends/packages/ui"`                                                                                                                                                                                                                                                                        | tree                         |
+| 6      | **deleted.** It was a 200-line ceiling on `@vpay/ui` files; after the package went, its pathspec matched nothing, the loop body never ran and `fail` stayed 0. A check that cannot fail reads as coverage it no longer provides                                                                                                        | —                            |
+| 7a-i   | a computed class name: `className\s*=\s*{`                                                                                                                                                                                                                                                                                             | `frontends/apps`             |
+| 7a-ii  | a status-colour theme token: `(bg\|text\|border\|ring\|fill\|stroke\|divide\|outline\|shadow)-(state-[a-z]+-(fg\|bg\|border)\|destructive(-foreground)?)`                                                                                                                                                                              | `frontends/apps`             |
+| 7a-iii | a class attribute over 60 characters: `className="[^"]{61,}"`                                                                                                                                                                                                                                                                          | `frontends/apps`             |
+| 7b     | a daisyUI **component** class. The alternation deliberately omits `table`, `select` and `mask` (real Tailwind utilities — `table-fixed`, `select-none`, Tailwind 4's `mask-*`) and omits `collapse` outright, because daisyUI's `.collapse` and Tailwind's `visibility: collapse` are the same token and a grep cannot tell them apart | `frontends/apps`             |
+| 7b-ii  | `table`/`select`/`mask` when daisyUI-modifier-suffixed or bare. One exemption: `frontends/apps/checkout/src/components/locale-switch.tsx`                                                                                                                                                                                              | `frontends/apps`             |
 
 **How you trip it, in rough order of frequency:** writing `bg-red-500` instead
 of a theme token; copying a daisyUI 4 tutorial and using `form-control` or
@@ -300,7 +300,7 @@ anybody could silence with one command, and the command's name would make that
 look like the fix rather than the mistake. Revert the file and write a **new**
 migration that corrects it. See `docs/runbooks/migrations.md`.
 
-What the gate does not stop is someone who edits a migration *and* hand-edits
+What the gate does not stop is someone who edits a migration _and_ hand-edits
 its manifest line — nothing can, since whoever can edit two files can edit
 three. What it buys is that the edit becomes a one-line diff on a file whose
 only purpose is to be reviewed.

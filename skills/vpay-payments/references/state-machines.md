@@ -16,13 +16,13 @@ strings are kept visible where a reviewer will see a mismatch.
 
 ## `IntentStatus` — the merchant-facing one
 
-| Value                     | Meaning                                                          |
-| ------------------------- | ----------------------------------------------------------------- |
+| Value                     | Meaning                                                                                            |
+| ------------------------- | -------------------------------------------------------------------------------------------------- |
 | `requires_payment_method` | created, not yet confirmed. `INITIAL`. The only status from which `confirm` and `cancel` are legal |
-| `requires_action`         | redirect rails only; carries `next_action.redirect_to_url`        |
-| `processing`              | the rail has the charge; the reconciler owns what happens next     |
-| `succeeded`               | the money moved                                                   |
-| `canceled`                | cancelled **before any rail saw it**                              |
+| `requires_action`         | redirect rails only; carries `next_action.redirect_to_url`                                         |
+| `processing`              | the rail has the charge; the reconciler owns what happens next                                     |
+| `succeeded`               | the money moved                                                                                    |
+| `canceled`                | cancelled **before any rail saw it**                                                               |
 
 **There is no `failed`.** A rail-reported failure returns the intent to
 `requires_payment_method` and sets `last_payment_error`. `canceled` is not a
@@ -41,7 +41,7 @@ canceled                 –      –              –                  –
 
 `–` is `None`, which means **"that request is not legal from that status"** —
 it does **not** mean the intent is stuck. `processing → succeeded` is a real
-edge; it is just not a *merchant verb*, so it is not in this table.
+edge; it is just not a _merchant verb_, so it is not in this table.
 
 Two `None`s that surprise people:
 
@@ -56,14 +56,14 @@ Two `None`s that surprise people:
 
 ## `ChargeState` — operator-facing, internal, never on the wire
 
-| Value        | Meaning                                                  | Still polled? |
-| ------------ | --------------------------------------------------------- | ------------- |
-| `submitting` | the row exists; the rail has not been asked yet           | yes           |
-| `submitted`  | submitted, no answer yet                                  | yes           |
-| `pending`    | the rail acknowledged and is working on it                | yes           |
-| `unresolved` | past the 24 h horizon with no terminal answer             | **yes**       |
-| `succeeded`  | the rail says the money moved                             | no            |
-| `failed`     | the rail refused                                          | no            |
+| Value        | Meaning                                         | Still polled? |
+| ------------ | ----------------------------------------------- | ------------- |
+| `submitting` | the row exists; the rail has not been asked yet | yes           |
+| `submitted`  | submitted, no answer yet                        | yes           |
+| `pending`    | the rail acknowledged and is working on it      | yes           |
+| `unresolved` | past the 24 h horizon with no terminal answer   | **yes**       |
+| `succeeded`  | the rail says the money moved                   | no            |
+| `failed`     | the rail refused                                | no            |
 
 `ChargeState::is_live()` is the reconciler's predicate and
 `is_terminal()` its complement.
@@ -85,7 +85,7 @@ built around:
 > **Never let a payer act on a transaction you cannot name.**
 
 - **Push (MTN):** the prompt reaches the payer's handset, so the payer can act
-  *before* we learn whether submission succeeded. The reference must be durable
+  _before_ we learn whether submission succeeded. The reference must be durable
   **before** submitting. That is what `submitting` is for.
 - **Redirect (Orange):** the payer cannot act until we hand them a URL, so the
   rail's token must be durable **before** redirecting.
@@ -98,15 +98,15 @@ derived from the category alone.
 
 ## `RefundStatus`
 
-| Value       | Meaning                                    |
-| ----------- | ------------------------------------------ |
-| `pending`   | submitted to the rail; money not back yet  |
-| `succeeded` | the rail returned the funds                |
-| `failed`    | the rail refused. **Terminal**             |
-| `canceled`  | withdrawn before the rail acted            |
+| Value       | Meaning                                   |
+| ----------- | ----------------------------------------- |
+| `pending`   | submitted to the rail; money not back yet |
+| `succeeded` | the rail returned the funds               |
+| `failed`    | the rail refused. **Terminal**            |
+| `canceled`  | withdrawn before the rail acted           |
 
 Deliberately not `IntentStatus`, and deliberately carrying a `failed` the
-intent has none of: a refused refund *is* failed and stays that way, whereas a
+intent has none of: a refused refund _is_ failed and stays that way, whereas a
 declined charge falls back to `requires_payment_method` so another rail can be
 tried. **Refunds do not change their intent's status at all**, so sharing one
 type would invite exactly the assignment the flow doc forbids.
@@ -128,15 +128,15 @@ draft ──finalize──> open ──> paid | void | uncollectible
   └────void────> void        (also: DELETE, which removes it entirely)
 ```
 
-| Value           | Meaning                                                             |
-| --------------- | -------------------------------------------------------------------- |
-| `draft`         | being edited; lines mutable, no number, cannot be paid               |
-| `open`          | issued; has a number, lines frozen, waiting to be paid               |
-| `paid`          | terminal; only reachable with `amount_remaining = 0`                 |
+| Value           | Meaning                                                                                                                                  |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `draft`         | being edited; lines mutable, no number, cannot be paid                                                                                   |
+| `open`          | issued; has a number, lines frozen, waiting to be paid                                                                                   |
+| `paid`          | terminal; only reachable with `amount_remaining = 0`                                                                                     |
 | `void`          | cancelled by the merchant. Terminal. **Keeps its number** — a number that vanished is a hole an accountant reads as a destroyed document |
-| `uncollectible` | written off: still owed, never expected. Terminal                     |
+| `uncollectible` | written off: still owed, never expected. Terminal                                                                                        |
 
-An invoice is a *document*; an intent is an *attempt to move money*. They share
+An invoice is a _document_; an intent is an _attempt to move money_. They share
 not one state, which is why overloading `IntentStatus` here would put "somebody
 wrote this off" in the same type as "the rail is thinking about it".
 
@@ -181,7 +181,7 @@ added**.
 
 `payer_actionable` means "the payer could plausibly succeed on a **fresh**
 PaymentIntent" — never on the same one. The two predicates are **never true at
-once**, and a code that is neither is the *operator's*:
+once**, and a code that is neither is the _operator's_:
 `provider_account_blocked` means your own partner account is blocked, and it
 pages.
 
@@ -190,21 +190,21 @@ attached. **A rising rate of it means an adapter's mapping table has drifted
 behind the rail — alert on it, do not tolerate it.**
 
 `LastPaymentErrorObject.code` on the wire is a `String`, not this enum: the
-vocabulary is enforced where it is *written*, not on the read path, so a code
+vocabulary is enforced where it is _written_, not on the read path, so a code
 this build cannot name never turns a merchant's `GET` into a `500`.
 
 ## Where the state lives, versus where it is enforced
 
-| Invariant                                 | Enforced by                                                         |
-| ----------------------------------------- | -------------------------------------------------------------------- |
-| legal intent transition                   | `next_status` **and** a compare-and-swap `UPDATE ... WHERE status = …` |
-| one charge per intent                     | `CREATE UNIQUE INDEX one_charge_per_intent` (migration `0004`)       |
-| one invoice per intent                    | the same device, migration `0036`                                    |
-| `paid` implies nothing remaining          | `paid_means_nothing_remaining` CHECK (migration `0036`)              |
-| no over-refund                            | `no_over_refund` CHECK (migration `0003`)                            |
-| non-negative amounts                      | four CHECKs on `payment_intents`, plus `Money::new`                  |
+| Invariant                                     | Enforced by                                                                                          |
+| --------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| legal intent transition                       | `next_status` **and** a compare-and-swap `UPDATE ... WHERE status = …`                               |
+| one charge per intent                         | `CREATE UNIQUE INDEX one_charge_per_intent` (migration `0004`)                                       |
+| one invoice per intent                        | the same device, migration `0036`                                                                    |
+| `paid` implies nothing remaining              | `paid_means_nothing_remaining` CHECK (migration `0036`)                                              |
+| no over-refund                                | `no_over_refund` CHECK (migration `0003`)                                                            |
+| non-negative amounts                          | four CHECKs on `payment_intents`, plus `Money::new`                                                  |
 | `supports_partial_refunds ⇒ supports_refunds` | `Capabilities::is_coherent` in Rust **and** `partial_refunds_imply_refunds` CHECK (migration `0002`) |
-| event type is in the vocabulary           | `type_is_a_documented_event` CHECK (migration `0039`)                |
+| event type is in the vocabulary               | `type_is_a_documented_event` CHECK (migration `0039`)                                                |
 
 The pattern: a rule that a concurrent writer could violate lives in the
 **statement or the index**, and a Rust guard beside it is at best a nicer error
@@ -219,5 +219,5 @@ form, and it **compiles into `vpay-db`** — a mismatch is a build failure, not 
 gate failure. But `model PaymentIntent`, `model Charge` and `model Refund` are
 type-checked **sketches that nothing queries**; the money tables are read
 through hand-written sqlx. `backends/migrations/*.sql` is the authoritative
-schema, and the drift between the two is *measured*, not closed
+schema, and the drift between the two is _measured_, not closed
 (`docs/status/cratestack.md`).

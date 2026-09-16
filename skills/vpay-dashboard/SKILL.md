@@ -1,9 +1,14 @@
 ---
 name: vpay-dashboard
-description: The staff operator console at frontends/apps/dashboard — it is the OAuth client and runs the code leg in its own process, the /dash/v1 read seam and the token lifecycle, the BFF that exists and that nothing calls, navigation enforced as a gate rather than a comment, and the honest-absence rules that decide what a screen may and may not show. Load before adding a page, a column, a nav entry or any read, and before assuming a row you see is backed by a column something writes.
+description: The staff operator console at frontends/apps/dashboard — it is the OAuth client and runs the code leg in its own process, the /dash/v1 read seam over two transports, the BFF that exists and that nothing calls, navigation enforced as a gate rather than a comment, and the honest-absence rules that decide what a screen may and may not show. Load before adding a page, a column, a nav entry, a CrateStack procedure or any read, and before assuming a row you see is backed by a column something writes.
 ---
 
 # vpay dashboard
+
+> **Verified against vpay `f063ee96` (2026-09-15).** Version-sensitive claims below
+> carry the date they became true — a feature in vpay's `master` may be absent
+> from the tree you are editing. On an older or newer vpay, trust the
+> repository over this page. See VERSIONING.md.
 
 `frontends/apps/dashboard` (`@vpay/dashboard`). Next 15.5.25 App Router, React
 19, Refine 5. Its own `README.md` is the best in-repo companion; the flow docs
@@ -23,7 +28,7 @@ sees a code, a verifier or a token. The `/dash/v1` access token is read back
 out of the `staff_sessions` row on every render rather than kept here, which is
 what makes signing out a revocation.
 
-## Two things that look like bugs and are not
+## Three things that look like bugs and are not
 
 **There is no route at `redirect_uri`, and nothing is missing.**
 `dashboard_client.redirect_uris` names `http://localhost:3000/dash/v1/callback`
@@ -35,29 +40,35 @@ no wildcard — and not a page. A route there would be a page nobody can reach.
 **Nothing in this app calls the BFF, and that is a maintainer decision.** The
 handlers under `app/api/dash/` are real and tested and no page, component or
 test but their own touches them. They exist so a client-side data layer has a
-transport when one is written. Whether this app should have an
-authenticated browser-reachable surface at all **reverses a stated property of
-its security model** and is RD5 in the Refine plan — not this code's call.
-Deleting the route files and `src/server/bff.ts` breaks nothing else.
+transport when one is written. Whether this app should have an authenticated
+browser-reachable surface at all **reverses a stated property of its security
+model** and is RD5 in the Refine plan — not this code's call. Deleting the
+route files and `src/server/bff.ts` breaks nothing else.
+
+**The `$procs` transport mounts five procedures, and three places in the Rust
+say it mounts one.** Code wins — five are mounted, and only
+`searchPaymentIntents` is probed by a test at the transport layer. A sixth
+procedure is routed automatically and tested by nobody. Detail and the exact
+stale sentences: `references/read-seam-and-bff.md`.
 
 ## The layout
 
-| Directory | What lives there |
-| --- | --- |
-| `app/` | Routes only. Composition, a redirect, a fetch — no logic worth testing alone |
-| `app/api/dash/` | The BFF's route handlers. Four lines each; `src/server/bff.ts` is the substance |
-| `middleware.ts` | Next reads a middleware **only** from the project root |
-| `src/components/` | Every rendered component. Pure props in, markup out — no `fetch`, no `next/headers` |
-| `src/server/` | Everything touching vpay, cookies or PKCE. Imported only by `app/` and itself |
-| `src/dash/` | The `/dash/v1` read seam — `getList`/`getOne` over `readDash`. No framework |
-| `src/config/` | `settings.ts` decides what a configuration means; `runtime.ts` reads the env once |
-| `src/format.ts` | Money, instants, the em dash |
-| `src/payments-query.ts` | The URL's filter vocabulary ↔ the API's, and the two paging links |
-| `src/testing/` | Fixtures. Imported by tests and by nothing under `app/` |
+| Directory               | What lives there                                                                    |
+| ----------------------- | ----------------------------------------------------------------------------------- |
+| `app/`                  | Routes only. Composition, a redirect, a fetch — no logic worth testing alone        |
+| `app/api/dash/`         | The BFF's route handlers. Four lines each; `src/server/bff.ts` is the substance     |
+| `middleware.ts`         | Next reads a middleware **only** from the project root                              |
+| `src/components/`       | Every rendered component. Pure props in, markup out — no `fetch`, no `next/headers` |
+| `src/server/`           | Everything touching vpay, cookies or PKCE. Imported only by `app/` and itself       |
+| `src/dash/`             | The `/dash/v1` read seam — `getList`/`getOne` over `readDash`. No framework         |
+| `src/config/`           | `settings.ts` decides what a configuration means; `runtime.ts` reads the env once   |
+| `src/format.ts`         | Money, instants, the em dash                                                        |
+| `src/payments-query.ts` | The URL's filter vocabulary ↔ the API's, and the two paging links                   |
+| `src/testing/`          | Fixtures. Imported by tests and by nothing under `app/`                             |
 
 The split that matters is `src/server/` vs `src/components/`: a component that
 fetched would be a component no test could render, and a `fetch` inside a
-component is how a page ends up unable to say *why* it is empty.
+component is how a page ends up unable to say _why_ it is empty.
 
 `src/server/actions.ts` is a `'use server'` file and may export **only async
 functions** — a constant exported from there is a build error, not a lint
@@ -69,12 +80,15 @@ read cookies.
 
 ## Pages
 
-| Route | What it does |
-| --- | --- |
-| `/` | Redirects to `/payments` or `/login` |
-| `/login`, `/login/totp`, `/login/password` | Password → TOTP (a first sign-in also renders the enrolment QR and secret) → the forced password change |
-| `/payments`, `/payments/{id}` | REST-backed. Status and date filters, cursor paging; the detail page adds charge, refunds, last error, timeline |
-| `/refunds`, `/deliveries`, `/customers`, `/checkouts` | Procedure-backed lists. Offset paged, no filters, no detail route yet |
+| Route                                                 | What it does                                                                                                    |
+| ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `/`                                                   | Redirects to `/payments` or `/login`                                                                            |
+| `/login`, `/login/totp`, `/login/password`            | Password → TOTP (a first sign-in also renders the enrolment QR and secret) → the forced password change         |
+| `/payments`, `/payments/{id}`                         | REST-backed. Status and date filters, cursor paging; the detail page adds charge, refunds, last error, timeline |
+| `/refunds`, `/deliveries`, `/customers`, `/checkouts` | Procedure-backed lists. Offset paged, no filters, no detail route yet                                           |
+
+All four procedure-backed lists are Server Components reading through
+`readProcedurePage`, and all four share `src/components/procedure-table.tsx`.
 
 `/login/password` is a step, not a nag: `vpay-server staff add` sets
 `password_change_required`, and ADR-0017 decision 1 refuses **every**
@@ -129,7 +143,8 @@ only the pages behind the gate render.
 
 ## More
 
-- `references/read-seam-and-bff.md` — `/dash/v1`, `PROCEDURE_OF`, the token
-  lifecycle, the BFF's properties and its method policy.
+- `references/read-seam-and-bff.md` — the two transports and the five mounted
+  procedures, `PROCEDURE_OF`, the token lifecycle, the BFF's properties and its
+  method policy. **Read this before adding a procedure or a read.**
 - `references/what-a-screen-may-show.md` — the honest-absence rules, status
   colour, and what this app still cannot do.

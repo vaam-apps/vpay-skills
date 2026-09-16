@@ -5,6 +5,11 @@ description: The five packages under sdks/ and the parity rule that binds the tw
 
 # vpay SDKs
 
+> **Verified against vpay `f063ee96` (2026-09-15).** Version-sensitive claims below
+> carry the date they became true — a feature in vpay's `master` may be absent
+> from the tree you are editing. On an older or newer vpay, trust the
+> repository over this page. See VERSIONING.md.
+
 `sdks/` holds five packages. Two are merchant SDKs, two are payer surfaces, and
 one is evidence rather than an SDK.
 
@@ -35,16 +40,16 @@ gate refuses: `references/parity.md`. Read it before editing
 
 ## The packages
 
-| Path | Name | What it is | Published |
-| --- | --- | --- | --- |
-| `sdks/nodejs` | `@vaam-apps/vpay-sdk` | **Merchant** SDK for `/v1`. `private_key_jwt` auth, the single-401 re-auth, the form encoder, `verifyWebhook`, and eight resources. Second entry point `./stripe` exports `createStripeAuthenticator`, with `stripe` as an **optional** peer | yes, public |
-| `sdks/rust` | `vpay-sdk` | The Rust twin. Same eight resources, same wire | **`publish = false`, deliberately** — "publishing a client for an API nobody can reach would be actively misleading". Flip it once `/v1` is deployed |
-| `sdks/stripe-js` | `@vaam-apps/vpay-stripe-js` | The browser **payer** surface, Stripe.js-shaped. `loadStripe`, `initEmbeddedCheckout`, `openCheckoutPopup`, `notifyCheckoutOpener`. **Zero runtime dependencies** | yes, public |
-| `sdks/flutter/vpay_checkout_flutter` | `vpay_checkout_flutter` | The mobile **payer** surface. Opens the hosted page in a native window and reports a typed result once the intent actually settles | **`publish_to: none`** (2026-09-13) |
-| `sdks/stripe-compat` | `@vaam-apps/vpay-stripe-compat` | **Evidence, not an SDK.** Drives the real `stripe@22.6.1` package against a live compose stack. `private: true`, ships nothing, and **gets no rows in the parity matrix** — "the compat suite proves claims rather than making them" | never |
+| Path                                 | Name                            | What it is                                                                                                                                                                                                                                   | Published                                                                                                                                            |
+| ------------------------------------ | ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `sdks/nodejs`                        | `@vaam-apps/vpay-sdk`           | **Merchant** SDK for `/v1`. `private_key_jwt` auth, the single-401 re-auth, the form encoder, `verifyWebhook`, and eight resources. Second entry point `./stripe` exports `createStripeAuthenticator`, with `stripe` as an **optional** peer | yes, public                                                                                                                                          |
+| `sdks/rust`                          | `vpay-sdk`                      | The Rust twin. Same eight resources, same wire                                                                                                                                                                                               | **`publish = false`, deliberately** — "publishing a client for an API nobody can reach would be actively misleading". Flip it once `/v1` is deployed |
+| `sdks/stripe-js`                     | `@vaam-apps/vpay-stripe-js`     | The browser **payer** surface, Stripe.js-shaped. `loadStripe`, `initEmbeddedCheckout`, `openCheckoutPopup`, `notifyCheckoutOpener`. **Zero runtime dependencies**                                                                            | yes, public                                                                                                                                          |
+| `sdks/flutter/vpay_checkout_flutter` | `vpay_checkout_flutter`         | The mobile **payer** surface. Opens the hosted page in a native window and reports a typed result once the intent actually settles                                                                                                           | **`publish_to: none`** (2026-09-13)                                                                                                                  |
+| `sdks/stripe-compat`                 | `@vaam-apps/vpay-stripe-compat` | **Evidence, not an SDK.** Drives the real `stripe@22.6.1` package against a live compose stack. `private: true`, ships nothing, and **gets no rows in the parity matrix** — "the compat suite proves claims rather than making them"         | never                                                                                                                                                |
 
 The two payer surfaces are **not** a third and fourth merchant SDK. They
-authenticate a payer's *device* with a publishable key and a per-session
+authenticate a payer's _device_ with a publishable key and a per-session
 `client_secret`, speak `/v1/browser`, and share **no capability row** with the
 merchant tables. Each has its own table in `docs/sdks/parity.md`.
 
@@ -62,11 +67,11 @@ ADR-0015 decision 1. Two deliberate asymmetries you will meet:
   Rust cannot spell the first (`non_snake_case`) and the Node package should
   not spell the second (Stripe's own Node SDK says `markUncollectible`).
   **An entry in that table that exempts nothing fails the build**, the way
-  ADR-0016's serde exemption table does. A *rule* ("TypeScript may camel-case
+  ADR-0016's serde exemption table does. A _rule_ ("TypeScript may camel-case
   any row") was rejected: it would make every future divergence silent.
 - **Types diverge where the languages do.** A patch field is three-state in
   both (`Option<Option<String>>` / `string | null | undefined`) because
-  `description=` clears; an *invoice item* patch field is two-state in both,
+  `description=` clears; an _invoice item_ patch field is two-state in both,
   because its columns are `NOT NULL` and `description=` is a `400`. `refund.fee`
   is `Option<i64>` in Rust and `fee?: number | null` in TypeScript. Each cell's
   proving test asserts the resulting **body**, never the type.
@@ -93,7 +98,7 @@ with a deployment default that does not exist.
 Both merchant SDKs are **hand-written** against the wire contract in
 `docs/flows/merchant-auth.md` and the flow docs. `verify-sdk-parity` is what
 keeps them in step — there is no generator to re-run and no spec to edit.
-Generated code that *does* exist (pigeon, ZenStack) and how to regenerate it is
+Generated code that _does_ exist (pigeon, ZenStack) and how to regenerate it is
 in `references/generated-code.md`.
 
 ## More

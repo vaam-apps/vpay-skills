@@ -16,7 +16,7 @@ reschedules itself, keyed `vpay_worker::jobs::FANOUT_DEDUPE_KEY`
   immediately, so a backlog drains over several passes rather than in one
   enormous read.
 - `FAN_OUT_IDLE` = 5 s when the backlog is empty. That is the whole latency
-  budget between a payment settling and its webhook being *enqueued*.
+  budget between a payment settling and its webhook being _enqueued_.
 - A **poll**, not `LISTEN`/`NOTIFY`, deliberately: the drain must also pick up
   events written by a process that has since died, which a notification would
   not deliver.
@@ -37,12 +37,12 @@ pass finds nothing.
 
 ## Two retry ladders, and they do not share
 
-| | `poll_delay` | `delivery_delay` |
-| --- | --- | --- |
-| Asks | a **rail**, what happened to money | a **merchant**, telling them what already happened |
-| Rungs | 10s, 20s, 30s, 45s, 60s, 90s, then 120s to the 30-minute mark, then 15 min | 10s, 30s, 2m, 10m, 1h, 6h, 24h |
-| Runs out | **never** — always another rung | **yes** — `None` after seven, and the delivery is `exhausted` |
-| Return type | `Duration` | `Option<Duration>` |
+|             | `poll_delay`                                                               | `delivery_delay`                                              |
+| ----------- | -------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| Asks        | a **rail**, what happened to money                                         | a **merchant**, telling them what already happened            |
+| Rungs       | 10s, 20s, 30s, 45s, 60s, 90s, then 120s to the 30-minute mark, then 15 min | 10s, 30s, 2m, 10m, 1h, 6h, 24h                                |
+| Runs out    | **never** — always another rung                                            | **yes** — `None` after seven, and the delivery is `exhausted` |
+| Return type | `Duration`                                                                 | `Option<Duration>`                                            |
 
 Both are in `vpay_worker` (crate root). The `Option` is the point: "the ladder
 ran out" is the `exhausted` transition of a `webhook_deliveries` row and must
@@ -61,14 +61,14 @@ delivery failure through `JobError::decision`.
 
 ## Budgets and caps
 
-| Constant                   | Value  | Why                                                                 |
-| -------------------------- | ------ | ------------------------------------------------------------------- |
-| `WEBHOOK_CONNECT_TIMEOUT`  | 5 s    | shorter than a rail's; an unreachable receiver is retried in seconds |
-| `WEBHOOK_REQUEST_TIMEOUT`  | 10 s   | a handler slower than this has acknowledged nothing a sender can rely on |
-| `MAX_ACK_BODY_BYTES`       | 8 KiB  | nothing parses the ack; the cap stops an unbounded response          |
-| excerpt stored             | 512 chars | enough of an error page to recognise it in a runbook              |
-| `SCAN_DELIVERIES_INTERVAL` | 10 min | backstop                                                            |
-| `SCAN_DELIVERIES_BATCH`    | 500    | backstop                                                            |
+| Constant                   | Value     | Why                                                                      |
+| -------------------------- | --------- | ------------------------------------------------------------------------ |
+| `WEBHOOK_CONNECT_TIMEOUT`  | 5 s       | shorter than a rail's; an unreachable receiver is retried in seconds     |
+| `WEBHOOK_REQUEST_TIMEOUT`  | 10 s      | a handler slower than this has acknowledged nothing a sender can rely on |
+| `MAX_ACK_BODY_BYTES`       | 8 KiB     | nothing parses the ack; the cap stops an unbounded response              |
+| excerpt stored             | 512 chars | enough of an error page to recognise it in a runbook                     |
+| `SCAN_DELIVERIES_INTERVAL` | 10 min    | backstop                                                                 |
+| `SCAN_DELIVERIES_BATCH`    | 500       | backstop                                                                 |
 
 The timeouts live **beside the handler that spends them**, not in the binary.
 They used to live in `vpay-worker-bin` and be written out again by two test
@@ -83,7 +83,7 @@ This is why merchants are told to **acknowledge first and work afterwards**.
 
 `vpay_worker::ssrf::vet` resolves and classifies the target before the request
 (`AddressClass`, `EgressPolicy`, `EgressRefusal`, `VettedTarget`), and
-`pinned_client` builds a client for *that* delivery pinned to the vetted
+`pinned_client` builds a client for _that_ delivery pinned to the vetted
 address. A shared client cannot be pinned, which is why there is no shared
 webhook client anywhere in the process.
 
@@ -128,12 +128,12 @@ grammar, you are changing four things: the signer, both verifiers, and
 
 ## What an operator can and cannot recover
 
-| Situation                                  | Recovery                                                            |
-| ------------------------------------------ | ------------------------------------------------------------------- |
-| delivery failed, ladder not spent          | automatic — next rung                                               |
+| Situation                                  | Recovery                                                               |
+| ------------------------------------------ | ---------------------------------------------------------------------- |
+| delivery failed, ladder not spent          | automatic — next rung                                                  |
 | delivery `exhausted` (7 attempts)          | operator action against `webhook_deliveries`; the merchant is not told |
-| event `fanout_state = 'failed'` (5 passes) | operator re-arms it; **nothing** retries automatically              |
-| merchant simply missed one                 | they poll `GET /v1/events` — same renderer, same bytes              |
+| event `fanout_state = 'failed'` (5 passes) | operator re-arms it; **nothing** retries automatically                 |
+| merchant simply missed one                 | they poll `GET /v1/events` — same renderer, same bytes                 |
 
 `webhook_deliveries` (migration `0022`, `vpay_db::webhook_deliveries`) is a
 **state row read by humans**, not a log. That is why the response excerpt is
