@@ -1,6 +1,6 @@
 # `just verify-ui` — the class-string gate
 
-_Verified against vpay `93c6dfd0` (2026-09-16). Version-sensitive claims
+_Verified against vpay `7a79684e` (2026-09-16). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 `justfile`'s `verify-ui` recipe. It is part of `just verify`, which is part of

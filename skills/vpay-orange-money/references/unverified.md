@@ -1,6 +1,6 @@
 # What is still unverified about Orange, and what each item blocks
 
-_Verified against vpay `93c6dfd0` (2026-09-16). Version-sensitive claims
+_Verified against vpay `7a79684e` (2026-09-16). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 **As of 2026-09-16, no request from this repository has ever reached Orange

@@ -1,6 +1,6 @@
 # CrateStack in vpay: the private module, the traps, and the drift
 
-_Verified against vpay `93c6dfd0` (2026-09-16). Version-sensitive claims
+_Verified against vpay `7a79684e` (2026-09-16). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 `vpay-db` compiles `schemas/vpay.cstack` with CrateStack's
