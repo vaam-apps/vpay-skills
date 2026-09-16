@@ -8,6 +8,30 @@ Releases are named for the date of verification and the vpay commit verified
 against, because vpay publishes no release tags and its workspace version has
 never moved off `0.1.0`. See [VERSIONING.md](VERSIONING.md).
 
+## Unreleased — pending [vaam-apps/vpay#180](https://github.com/vaam-apps/vpay/pull/180)
+
+**Do not merge before that PR does, and bump `coverage.json`'s `baseline` to its
+merge commit in the same change.** Until then these skills describe a state that
+exists only on a branch, which is the exact failure this repository's versioning
+policy exists to prevent.
+
+### Claims that stopped being true
+
+> `vpay-tooling` and `vpay-troubleshooting` said `just audit-web` was **not** in
+> `just ci` and that `just ci` ran offline, and that the audit ceiling was
+> `--audit-level=high`. Those were accurate readings of vpay's prose and wrong
+> about vpay's behaviour — the recipe had said otherwise since 2026-09-11
+> (issue #103). vpay#180 fixed the prose; these skills now say `audit-web` is in
+> `just ci`, that moderates fail, and that **`just ci` needs the network**.
+
+The two discrepancies were `vpay-tooling`'s headline evidence for its authority
+rule ("the recipe body wins over its own comment"). They are recorded as spent
+rather than deleted, because finding them is what the rule was worth.
+
+Newly carried: issue #103's allowlist for an accepted advisory is **not built**,
+so a moderate advisory in a transitive dev dependency blocks every merge with no
+sanctioned way to accept it.
+
 ## v2026-09-16-f063ee96 — first release
 
 Verified against vpay [`f063ee96`](https://github.com/vaam-apps/vpay/commit/f063ee9647867699f3b12622a62ac0004609373b)
