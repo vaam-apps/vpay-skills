@@ -90,3 +90,28 @@ npx skills add https://github.com/vaam-apps/vpay-skills --skill vpay
 `vpay` is the orientation skill and routes to the rest. This repository dogfoods
 them: they install into `.agents/skills/` and pin in `skills-lock.json`, the
 same mechanism `vaam-ui` already uses.
+
+## Keeping them current
+
+```bash
+npx skills update          # upgrade every installed skill
+npx skills ls              # what is installed, and from where
+```
+
+Three things measured on 2026-09-16 that will mislead you otherwise:
+
+- **`update` always takes the default branch.** There is no way to install or
+  hold a tag — `owner/repo@ref` is accepted and silently ignored, including a
+  ref that does not exist.
+- **`✓ Updated` does not mean anything changed.** It is printed
+  unconditionally. The `computedHash` in `skills-lock.json` is what tells you
+  whether content moved; diff it across the update.
+- **`skills-lock.json` is the only pin there is.** Commit it. It is what keeps
+  a project on known content, and `npx skills experimental_install` restores
+  from it.
+
+So upgrading is deliberate, not automatic: nothing re-fetches on its own, and a
+project stays on the bytes in its lockfile until someone runs `add` or `update`.
+Before you run either against a vpay older than the skills' baseline, read the
+skills repo's `CHANGELOG.md` — its "claims that stopped being true" sections are
+written for exactly that moment.

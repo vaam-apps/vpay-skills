@@ -110,22 +110,43 @@ v2026-09-16-f063ee96
 changed, and — most importantly — **any claim that stopped being true**, so
 someone upgrading can find the thing that will break them.
 
-## Installing a specific version
-
-`npx skills add` fetches the default branch:
+## Installing, upgrading, and the pin that actually exists
 
 ```bash
-npx skills add https://github.com/vaam-apps/vpay-skills --skill vpay
+npx skills add https://github.com/vaam-apps/vpay-skills --skill vpay   # install
+npx skills update                                                      # upgrade
+npx skills ls                                                          # what is installed
 ```
 
-What pins it is the **lockfile**, not the command. `skills-lock.json` records a
-`computedHash` of the exact content installed, so a project that has installed a
-skill keeps that content until someone re-runs the command. Commit
-`skills-lock.json`.
+**`npx skills add` always fetches the default branch. There is no way to install
+a tag.** Measured 2026-09-16: the `owner/repo@ref` form is accepted and
+**silently ignored** — installing `vaam-apps/vpay-skills@v2026-09-16-f063ee96`
+produced `main`'s bytes, and so did
+`vaam-apps/vpay-skills@this-ref-does-not-exist`, which reported success. The
+lockfile records no ref, only `source` and `computedHash`.
 
-**If you are pinned to an old vpay**, that is exactly the case where you should
-_not_ silently take the latest skills. Check the tag whose vpay commit is
-nearest your own, and read `CHANGELOG.md` between there and now.
+~~Check the tag whose vpay commit is nearest your own.~~ **Corrected
+2026-09-16:** this page said that until the CLI was actually tested. You cannot
+install a tag. The tags remain useful as a **reading** index — pair one with
+`CHANGELOG.md` to see what changed — but not as an install target.
+
+So the only pin is the **lockfile**. `skills-lock.json` records a `computedHash`
+of the content installed; a project keeps that content until someone runs
+`add` or `update` again. **Commit `skills-lock.json`** — on this distribution
+model it is the entire version-control story, and
+`npx skills experimental_install` restores from it.
+
+**"Updated" does not mean "changed".** `npx skills update` reports
+`✓ Updated <skill>` unconditionally, including when the content and the hash are
+byte-identical afterwards (measured 2026-09-16). To know whether anything moved,
+diff the `computedHash` in `skills-lock.json` before and after — that is the
+value that tells the truth.
+
+**If you are pinned to an old vpay**, that is exactly when you should not
+silently take the latest skills, because these skills describe a newer tree.
+Read `CHANGELOG.md` — in particular its "claims that stopped being true"
+sections — before running `update`, and let the gate's drift line tell you how
+far apart you are.
 
 ## What the gate can and cannot tell you
 
