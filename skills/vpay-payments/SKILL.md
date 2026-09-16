@@ -1,6 +1,6 @@
 ---
 name: vpay-payments
-description: vpay's payment domain model — the PaymentIntent lifecycle (which has no failed status), the charge, refund and invoice state machines, the one-charge-per-intent rule, and money as integer minor units. Load this before touching any status, transition, amount or currency, before writing a state machine or a settlement path, and before assuming a payment can be retried, refunded or moved to a state you have not checked is reachable.
+description: vpay's payment domain model — the PaymentIntent lifecycle (which has no failed status), the charge, refund and invoice state machines, the one-charge-per-intent rule, the refund write path and what still never settles, the double-entry ledger and its one live writer, and money as integer minor units. Load this before touching any status, transition, amount or currency, before writing a state machine, a settlement path or a ledger posting, and before assuming a payment can be retried, refunded or moved to a state you have not checked is reachable.
 ---
 
 # The payment domain
@@ -109,31 +109,68 @@ multi-currency support.
   units overcharges by 100× on a two-decimal currency, with nothing downstream
   able to detect it.
 
-## Refunds: reading one is real, the entire write side is absent
+## Refunds: a merchant can create one, and no rail has ever returned money
 
-`GET /v1/refunds/{id}` renders a ten-key `RefundObject`, and that read is real
-— merchant-scoped by a join onto the owning intent, because `refunds` carries
-no `merchant_id`.
+~~Nothing writes a `refunds` row. `POST /v1/refunds` is mounted nowhere,
+`vpay_db::Refunds` is two reads and no create, and neither event type has ever
+been emitted.~~ **Corrected 2026-09-16 (RFC-0003, issues #45 and #46): every
+clause of that is now false.** What landed:
 
-**Nothing writes a `refunds` row.** Every part of the write side is missing,
-and they are missing independently:
+- **Five routes across three paths** — `POST`/`GET /v1/refunds`,
+  `GET`/`POST /v1/refunds/{id}`, `POST /v1/refunds/{id}/cancel`. The create is
+  no longer a `404`.
+- **`vpay_db::Refunds::create` writes the row** and reserves the amount
+  against the intent **in the same transaction**. The `no_over_refund` CHECK
+  is what refuses an over-refund, and it is reachable from a merchant request
+  for the first time.
+- **Both event types are emitted** — `charge.refunded` on create,
+  `charge.refund.updated` on update, cancel and failure. Both had been
+  documented-but-never-written since migration `0018`.
+- **Both rails declare `supports_refunds: true` and neither answers
+  `Unsupported`**: `mtn_momo::refund` is a written Disbursements `transfer`
+  (2026-09-15) and `orange_money::refund` is a declared `NotImplemented`
+  token, because an Orange refund is an outbound transfer this repository has
+  no specification for. The reason changed, not just the value.
 
-- **no route** — `POST /v1/refunds` is declared in the wire contract and
-  mounted nowhere;
-- **no repository create** — `vpay_db::Refunds` is two reads
-  (`get_for_merchant`, `list_for_intent`) and no create;
-- **no adapter that can execute one** — `mtn_momo::refund` is
-  `NotImplemented` (MTN refunds are the Disbursements product, and no
-  deployment holds that credential) and Orange Money inherits the port's
-  `Unsupported`, because its Web Payment product documents no refund API;
-- **no event writer** — `charge.refunded` and `charge.refund.updated` are in
-  the documented vocabulary and **neither has ever been emitted**;
-- **no ledger posting** — see below; nothing posts anything at all.
+**What is still false, and blurring it is this repository's cardinal sin:**
 
-`vpay_db::Settlement::apply_refund_succeeded` does exist and is tested against
-Postgres, but it is called by **nothing outside tests** and could not run
-anyway, because nothing creates a `pending` refund for it to settle. Every
-refund this deployment can render is one an operator or a test put there.
+> **No rail has ever returned money to anyone.** MTN's Disbursements product
+> has never been called from this repository — not in production, not against
+> the sandbox, not once — and **no real Disbursements credential exists in the
+> project**. `mtn_momo::refund` is WireMock-proven and rail-unproven, so a
+> deployment reaching it today gets `ProviderError::Config`.
+
+> **Nothing settles a `pending` refund.** There is no refund poll ladder: the
+> port has no refund status read and `Refunded` has no status field (RFC-0003
+> open question 8). Every refund the routes create stays `pending` **forever**,
+> so `invoices.amount_refunded` never moves, `refunds.fee` is written by
+> nothing, and `Settlement::apply_refund_succeeded` — which does exist and is
+> tested against Postgres — is still reached by **nothing a merchant can
+> cause**. An `Ok` from the rail means the rail _accepted the instruction_ and
+> is written as `pending`, deliberately.
+
+Two consequences worth carrying:
+
+- **A refund whose transfer was already instructed cannot be cancelled.** The
+  cancel statement carries `NOT EXISTS (… provider_requests … 'refund')`,
+  closing a double-payout hole measured on 2026-09-16: a 5 000 charge, one
+  full refund MTN accepted, a `200 canceled`, and a second full refund — two
+  transfers on the rail's own journal. Since nothing settles refunds, that is
+  **every** refund with an attempt row; cancel's remaining subject is a create
+  that died before recording its attempt. A merchant reconciles a stuck
+  `pending` against the rail by `provider_reference_id` instead.
+- **The destination is persisted nowhere.** There is no `destination` column
+  on `refunds` and this change did not add one — retention is RFC-0003 open
+  question 3 and is **undecided**, so storing it would be answering a question
+  reserved for the maintainer. vpay therefore cannot tell an operator which
+  payee a refund went to; the rail's records can, by `provider_reference_id`.
+  The one exception, recorded rather than hidden: `refunds.failure_raw` stores
+  the rail's own refusal text, which a rail is free to echo a payee into.
+  Nothing renders that column.
+
+`GET /v1/refunds/{id}` renders a ten-key `RefundObject` — the same renderer all
+five routes and both event types use — merchant-scoped by a join onto the
+owning intent, because `refunds` carries no `merchant_id`.
 
 The `fee` field is the part with an invariant (issue #46):
 
@@ -148,32 +185,50 @@ The `fee` field is the part with an invariant (issue #46):
 exists because `amount: row.amount - row.fee.unwrap_or(0)` once passed every
 other test in the crate.
 
-## The ledger posts nothing
+## The ledger has one live writer, and still asserts none of its invariants
 
 `vpay-ledger` is double-entry, credit-normal
 (`balance(account) = SUM(credit) − SUM(debit)`), with three accounts —
-`MerchantPayable`, `PayerClearing`, `PlatformFeeRevenue` — and a `Direction`
-that carries the sign so an `Entry::amount` is always a non-negative `Money`.
+`MerchantPayable { merchant_id }`, `PayerClearing`, `PlatformFeeRevenue` — and
+a `Direction` that carries the sign so an `Entry::amount` is always a
+non-negative `Money`.
 
-> **No code path in any shipping binary writes, updates or reads
-> `ledger_transactions` or `ledger_entries`.** The tables exist (migration
-> `0005`) and are empty of callers. The crate is linked into `vpay-api` and
-> `vpay-worker` only so their error composites can `#[from]` `LedgerError`.
+~~No code path in any shipping binary writes, updates or reads
+`ledger_transactions` or `ledger_entries`.~~ **Corrected 2026-09-16 (RFC-0003
+§ 4): the ledger got its first writer.** `vpay_db::ledger::post_in_tx` is it,
+and it is `pub(crate)` with no entry on any public trait — so a consumer names
+the business operation, never the raw double entry. Two call sites, both in
+`vpay_db::settlement`:
 
-What is real is **invariant 1**: `Transaction::validate()` refuses a
-transaction whose debits do not equal its credits, or that has fewer than two
-legs. It is deliberately **not** a database constraint and will not become one
-— `SUM(debit) = SUM(credit)` is an aggregate over sibling rows and a row-level
-`CHECK` cannot see them.
+| Posting     | Written by                            | Reached in a shipping binary?                              |
+| ----------- | ------------------------------------- | ---------------------------------------------------------- |
+| **CAPTURE** | `Settlement::apply_succeeded`         | **yes** — `vpay_worker`'s settle path                      |
+| **REFUND**  | `Settlement::apply_refund_succeeded`  | **no** — nothing settles a refund, so nothing calls it     |
 
-The flow doc's other three invariants are **not started**, it says they are
-"asserted nightly" and **nothing schedules any assertion**, and invariant 2
-(per-merchant balance) is not even computable: `AccountKind` has no
-per-merchant dimension, so nothing says which merchant a `MerchantPayable`
-posting belongs to. That is also why `GET /v1/balance` is unmounted.
+Two more things moved the same day: `AccountKind::MerchantPayable` gained
+`merchant_id` as a **variant payload** (mirrored by
+`ledger_entries_merchant_id_iff_merchant_payable`, migration `0045`), so
+invariant 2 is computable and `Ledger::merchant_payable_balance` exists; and
+**`Transaction::validate()` now balances per currency** — it summed minor
+units across every leg until 2026-09-15, and a mixed-currency posting
+committed.
 
-Postings, the charge relationship, the over-refund guard and what building
-persistence would actually involve: [references/ledger.md](references/ledger.md).
+> **Still absent: any assertion of invariants 2–4.** `docs/flows/ledger.md`
+> says they are "asserted nightly". **Nothing schedules any assertion**, and
+> that sentence describes the intent. Invariant 1 is application-enforced by
+> `validate()`, which `post_in_tx` calls before its first statement; it is
+> deliberately **not** a database constraint and will not become one —
+> `SUM(debit) = SUM(credit)` is an aggregate over sibling rows and a row-level
+> `CHECK` cannot see them.
+
+`GET /v1/balance` is still unmounted. ~~There is no ledger read path.~~ There
+is one now — `Ledger::merchant_payable_balance`, since 2026-09-16 — and
+**nothing routes it**; a handler that ever does must scope the caller to the
+merchant it passes, because that `merchant_id` is what is being asked about
+and not a permission.
+
+Postings, the charge relationship, the over-refund guard and what an invariant
+runner would still involve: [references/ledger.md](references/ledger.md).
 
 ## Invoices
 
@@ -198,7 +253,15 @@ failure taxonomy: [references/state-machines.md](references/state-machines.md).
 ## Status, as of 2026-09-16
 
 The state functions, `Money`, the failure taxonomy and the settlement
-transaction are real and tested. The ledger posts nothing and nothing writes a
-refund. Exactly **one** real rail call has ever been made — a EUR `mtn_momo`
-intent settled against MTN's sandbox on 2026-09-15. Orange's redirect rail has
-never been called, no real payer has ever been prompted, no money has moved.
+transaction are real and tested. A merchant can create a refund and the ledger
+records a capture — ~~the ledger posts nothing and nothing writes a refund~~,
+corrected 2026-09-16.
+
+What has **not** changed is the line that matters: exactly **one** real rail
+call has ever been made — a EUR `mtn_momo` intent settled against MTN's
+sandbox on 2026-09-15. MTN's Disbursements product has never been called at
+all, Orange's redirect rail has never been called, no real payer has ever been
+prompted, and **no money has moved in either direction**. Mounting a route is
+not a rail call; `docs/status.md`'s load-bearing banner is unchanged, and a
+skill that narrates this work as narrowing it is the failure this repository is
+organised against.
