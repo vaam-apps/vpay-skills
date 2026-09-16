@@ -1,6 +1,6 @@
 # Every mounted route, and the middleware around them
 
-_Verified against vpay `93c6dfd0` (2026-09-16). Version-sensitive claims
+_Verified against vpay `d3a8810b` (2026-09-16). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 Assembled in `vpay_api::router` (`backends/crates/vpay-api/src/lib.rs`).
@@ -21,7 +21,10 @@ fallback is deleted.
 ## `/v1` — merchant API
 
 Source: `V1_ROUTES` in `backends/crates/vpay-api/src/v1/mod.rs`.
-**21 paths, 33 methods.**
+**23 paths, 37 methods as of 2026-09-16** — ~~21 paths, 33 methods~~, which
+this page said until the refund routes landed (RFC-0003 § 2, vpay#178). Both
+figures are counted off `V1_ROUTES`' own `methods:` field, which is the
+router's source rather than a description of it.
 
 | Method(s)                | Path                                   | Handler                                             |
 | ------------------------ | -------------------------------------- | --------------------------------------------------- |
@@ -35,7 +38,9 @@ Source: `V1_ROUTES` in `backends/crates/vpay-api/src/v1/mod.rs`.
 | POST, GET                | `/v1/checkout/sessions`                | `checkout_sessions::{create, list}`                 |
 | GET                      | `/v1/checkout/sessions/{id}`           | `checkout_sessions::retrieve`                       |
 | POST                     | `/v1/checkout/sessions/{id}/expire`    | `checkout_sessions::expire`                         |
-| GET                      | `/v1/refunds/{id}`                     | `refunds::retrieve`                                 |
+| POST, GET                | `/v1/refunds`                          | `refunds::{create, list}`                           |
+| GET, POST                | `/v1/refunds/{id}`                     | `refunds::{retrieve, update}`                       |
+| POST                     | `/v1/refunds/{id}/cancel`              | `refunds::cancel`                                   |
 | POST, GET                | `/v1/customers`                        | `customers::{create, list}`                         |
 | GET, POST, DELETE        | `/v1/customers/{id}`                   | `customers::{retrieve, update, delete}`             |
 | POST, GET                | `/v1/invoices`                         | `invoices::{create, list}`                          |
@@ -64,9 +69,17 @@ Things about this table that are decisions rather than accidents:
   is what is searched, via query parameters.
 - **There is no collection `GET` on `/v1/invoice_items`.** An invoice's lines
   are read from the invoice (`invoice.lines`, expanded on every render).
-- **`GET /v1/refunds/{id}` with no `POST /v1/refunds`** is deliberate and
+- ~~**`GET /v1/refunds/{id}` with no `POST /v1/refunds`** is deliberate and
   unusual — issue #45 decided a refund needs an authoritative read even though
-  nothing can create one.
+  nothing can create one.~~ **Corrected 2026-09-16:** all five refund methods
+  are mounted (RFC-0003 § 2). `POST /v1/refunds` is no longer a `404`, and a
+  merchant request can now reach the `no_over_refund` CHECK. The read-only
+  period ran from 2026-09-05 (issue #45) to 2026-09-16.
+  **What did not change:** nothing settles a refund. There is no refund poll
+  ladder (RFC-0003 open question 8), so every refund these routes create stays
+  `pending` — and **no rail in this repository has ever returned money to
+  anyone.** Mounting a route is not a rail call; do not read these five rows as
+  a payout path.
 
 ## `/v1/oauth` — the merchant OP
 

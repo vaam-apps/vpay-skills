@@ -5,7 +5,7 @@ description: How to build, test, lint and gate vpay — the just recipes that ma
 
 # vpay tooling and gates
 
-> **Verified against vpay `93c6dfd0` (2026-09-16).** Version-sensitive claims below
+> **Verified against vpay `d3a8810b` (2026-09-16).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -86,20 +86,20 @@ the justfile. The order is chronological by landing date on purpose, so that
 "check-schema is the seventh gate" — which four other files say — stays true
 when a gate is added.
 
-| Gate                  | Refuses                                                                                                                                              |
-| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `verify-no-mocks`     | a test double reachable from a shipping binary through non-dev edges of the resolved cargo graph                                                     |
-| `verify-status`       | a `NotImplemented` token not declared in `docs/status.md`, **or** a declaration whose token is gone — both directions                                |
-| `verify-errors`       | a `pub` error type in `backends/crates` not implementing `Classify`; `anyhow` outside `backends/apps` (ADR-0011)                                     |
-| `verify-sdk-parity`   | a parity-matrix claim naming a test that does not exist, a gap without a date and owner, or a row/method mismatch in **either** direction (ADR-0015) |
-| `verify-links`        | a relative link in a tracked `*.md` that does not resolve to a **git-tracked** path                                                                  |
-| `verify-npm-scope`    | a publishable SDK package misnamed, unpublishable, or a retired `@vpay/*` name outside the docs allowlist                                            |
-| `check-schema`        | a missing `cratestack` CLI (**fails, never skips**), a schema with no `datasource`, or fewer than 15 model/enum declarations                         |
-| `verify-serde`        | a serialisable type under `backends/crates` without `rename_all`, and a **stale exemption row** (ADR-0016 §3)                                        |
-| `verify-repositories` | anything outside `vpay-db` naming a concrete repository implementation. No exemption mechanism (ADR-0016 §5)                                         |
-| `verify-toolchain`    | `backends/Dockerfile`'s `FROM rust:` disagreeing with `rust-toolchain.toml`                                                                          |
-| `verify-ui`           | eleven numbered greps: palette colours, daisyUI-4 classes, `!important`, `cva` in an app, computed `className`, and more                             |
-| `verify-migrations`   | a `backends/migrations/*.sql` whose SHA-256 no longer matches `MANIFEST.sha256`                                                                      |
+| Gate                  | Refuses                                                                                                                                                                                                         |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `verify-no-mocks`     | a test double reachable from a shipping binary through non-dev edges of the resolved cargo graph                                                                                                                |
+| `verify-status`       | a `NotImplemented` token not declared in `docs/status.md`, **or** a declaration whose token is gone, **or** (since 2026-09-16) a `<rail>::…` token carried outside that rail's adapter crate — three directions |
+| `verify-errors`       | a `pub` error type in `backends/crates` not implementing `Classify`; `anyhow` outside `backends/apps` (ADR-0011)                                                                                                |
+| `verify-sdk-parity`   | a parity-matrix claim naming a test that does not exist, a gap without a date and owner, or a row/method mismatch in **either** direction (ADR-0015)                                                            |
+| `verify-links`        | a relative link in a tracked `*.md` that does not resolve to a **git-tracked** path                                                                                                                             |
+| `verify-npm-scope`    | a publishable SDK package misnamed, unpublishable, or a retired `@vpay/*` name outside the docs allowlist                                                                                                       |
+| `check-schema`        | a missing `cratestack` CLI (**fails, never skips**), a schema with no `datasource`, or fewer than 15 model/enum declarations                                                                                    |
+| `verify-serde`        | a serialisable type under `backends/crates` without `rename_all`, and a **stale exemption row** (ADR-0016 §3)                                                                                                   |
+| `verify-repositories` | anything outside `vpay-db` naming a concrete repository implementation. No exemption mechanism (ADR-0016 §5)                                                                                                    |
+| `verify-toolchain`    | `backends/Dockerfile`'s `FROM rust:` disagreeing with `rust-toolchain.toml`                                                                                                                                     |
+| `verify-ui`           | eleven numbered greps: palette colours, daisyUI-4 classes, `!important`, `cva` in an app, computed `className`, and more                                                                                        |
+| `verify-migrations`   | a `backends/migrations/*.sql` whose SHA-256 no longer matches `MANIFEST.sha256`                                                                                                                                 |
 
 `verify-docs` runs last and is **not** a gate — it exits 0 whatever it finds.
 That is deliberate: the cheapest way to pass a doc-ratio gate is to delete the

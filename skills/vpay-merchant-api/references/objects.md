@@ -1,6 +1,6 @@
 # Wire objects
 
-_Verified against vpay `93c6dfd0` (2026-09-16). Version-sensitive claims
+_Verified against vpay `d3a8810b` (2026-09-16). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 Every wire DTO lives in one module: `vpay_api::model`
@@ -33,18 +33,19 @@ breaks its tripwire test on purpose** — update the count and the SDKs together
 `vpay_core::ids` owns all of them, with `is_well_formed(prefix, id)` and a
 minting function per type.
 
-| Prefix  | Object                                |
-| ------- | ------------------------------------- |
-| `pi_`   | PaymentIntent                         |
-| `ch_`   | Charge (internal — never on the wire) |
-| `re_`   | Refund                                |
-| `evt_`  | Event                                 |
-| `cs_`   | CheckoutSession                       |
-| `cus_`  | Customer                              |
-| `in_`   | Invoice                               |
-| `ii_`   | InvoiceItem                           |
-| `stf_`  | Staff member                          |
-| `cred_` | Credential                            |
+| Prefix  | Object                                                              |
+| ------- | ------------------------------------------------------------------- |
+| `pi_`   | PaymentIntent                                                       |
+| `ch_`   | Charge (internal — never on the wire)                               |
+| `re_`   | Refund                                                              |
+| `evt_`  | Event                                                               |
+| `cs_`   | CheckoutSession                                                     |
+| `cus_`  | Customer                                                            |
+| `in_`   | Invoice                                                             |
+| `ii_`   | InvoiceItem                                                         |
+| `stf_`  | Staff member                                                        |
+| `cred_` | Credential                                                          |
+| `lt_`   | Ledger transaction (internal — never on the wire; added 2026-09-15) |
 
 Also in `ids`: `CLIENT_SECRET_INFIX` (`_secret_`), `client_secret_suffix()`
 (160 bits from the OS CSPRNG), `client_secret(id, suffix)`, and
@@ -89,11 +90,51 @@ Exactly ten keys: `id` (`re_…`), `object`, `amount`, `currency`,
 `payment_intent`, `status` (`RefundStatus`), `reason`, `metadata`, `created`,
 `fee`.
 
-`fee` is `Option<i64>` and the null-versus-zero distinction is the whole reason
-it exists (issue #46). See `vpay-payments` for the invariant it protects.
+**One renderer for all five refund routes and both event types.** Two would
+let the documented webhook fallback answer a different question from the one
+the webhook asked, which is the same rule `vpay_api::v1::events` follows for
+its own object.
 
-**Nothing writes a `refunds` row.** Every refund this deployment can render is
-one an operator or a test put there, and `fee` is `null` on all of them.
+`fee` is `Option<i64>` and the null-versus-zero distinction is the whole reason
+it exists (issue #46). See `vpay-payments` for the invariant it protects. It is
+`null` on every row in every deployment, and will stay so: only the settlement
+writes it, and nothing settles a `pending` refund.
+
+~~Nothing writes a `refunds` row.~~ **Corrected 2026-09-16:
+`POST /v1/refunds` does (RFC-0003 § 2).** What the create accepts, which is
+_not_ the object's key set:
+
+| Param            | Notes                                                                                                                                                               |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `payment_intent` | required; must be this merchant's `succeeded` intent, else a `404`                                                                                                  |
+| `amount`         | **a string on the wire** — the body is form-encoded, and typing it here would hand "not a number" to serde, which answers `param: "body"`. Defaults to what remains |
+| `reason`         | optional                                                                                                                                                            |
+| `destination`    | a nested map — see below                                                                                                                                            |
+| `metadata`       | the usual bounds                                                                                                                                                    |
+
+**`destination` is the eleventh key that is deliberately not on the object.**
+The wire shape is `destination[<rail_code>][msisdn]` — nested under the rail's
+own code, for `payment_method_data`'s reason: a typed struct here would have to
+name `mtn_momo` as a field, and `if provider == "mtn_momo"` outside an adapter
+crate is what ADR-0002 forbids. It is **required** on a rail declaring
+`RefundDestination::Required` (both rails, today) and **refused** on one that
+returns money to the instrument that paid. The **adapter** parses the inner
+map; the core's whole business with it is presence.
+
+**It is persisted nowhere**: there is no `destination` column on `refunds`,
+because its retention is RFC-0003 open question 3 and is **undecided** — the
+customer object settled on twelve months and a refund destination has no
+policy. It is in no response, in no event body, and logged only **masked**
+(`+2376••••200`). The cost, stated rather than hidden: vpay cannot tell an
+operator which payee a refund went to. One qualification, recorded on review
+2026-09-16: `refunds.failure_raw` stores the rail's own refusal text and a rail
+may echo the payee into it. Nothing renders that column — `RefundObject` is ten
+keys and none is a failure field — so it reaches no response and no webhook.
+
+`POST /v1/refunds/{id}` updates **`metadata` and nothing else**: `amount`,
+`reason`, `payment_intent` and `destination` each earn a `400` naming the
+parameter, refused _before_ the claim so the key is left unspent and the
+corrected retry is a fresh request rather than a replay of the refusal.
 
 ## CheckoutSession — `CheckoutSessionObject`
 

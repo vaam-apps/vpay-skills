@@ -5,7 +5,7 @@ description: The staff operator console at frontends/apps/dashboard — it is th
 
 # vpay dashboard
 
-> **Verified against vpay `93c6dfd0` (2026-09-16).** Version-sensitive claims below
+> **Verified against vpay `d3a8810b` (2026-09-16).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -89,6 +89,15 @@ read cookies.
 
 All four procedure-backed lists are Server Components reading through
 `readProcedurePage`, and all four share `src/components/procedure-table.tsx`.
+
+**`/refunds` can show rows from 2026-09-16** and never could before: nothing
+wrote a `refunds` row until `vpay_db::Refunds::create` landed (RFC-0003,
+vpay#178). If you are reasoning about that screen, it is no longer safe to
+assume the empty state is the only state — but every row it shows will read
+`pending`, because **nothing settles a refund** (no poll ladder, RFC-0003 open
+question 8) and **no rail has ever returned money to anyone.** A row on this
+screen is an instruction recorded, never a payout. The dashboard still cannot
+_create_ one: `/dash/v1` refuses every non-`GET` at the boundary.
 
 `/login/password` is a step, not a nag: `vpay-server staff add` sets
 `password_change_required`, and ADR-0017 decision 1 refuses **every**

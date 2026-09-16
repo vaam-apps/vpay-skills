@@ -1,6 +1,6 @@
 # The state machines
 
-_Verified against vpay `93c6dfd0` (2026-09-16). Version-sensitive claims
+_Verified against vpay `d3a8810b` (2026-09-16). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 Every enum below is in `backends/crates/vpay-core/src/state.rs` except
@@ -114,15 +114,49 @@ declined charge falls back to `requires_payment_method` so another rail can be
 tried. **Refunds do not change their intent's status at all**, so sharing one
 type would invite exactly the assignment the flow doc forbids.
 
-`canceled` is in the vocabulary because migration `0017` put it there, not
-because anything reaches it. **Nothing writes a refund**, so there is no
-transition function for this enum and none should be invented ahead of a rail
-that can execute one.
+~~`canceled` is in the vocabulary because migration `0017` put it there, not
+because anything reaches it, and nothing writes a refund at all.~~
+**Corrected 2026-09-16 (RFC-0003 §§ 2-3).** A merchant creates refunds now,
+and the reachability of each value is uneven in a way worth spelling out:
+
+| Value       | Reached by                                                                                           |
+| ----------- | ---------------------------------------------------------------------------------------------------- |
+| `pending`   | `POST /v1/refunds` — and **nothing moves a refund out of it except a refusal**, the row below        |
+| `failed`    | the rail declining, or a `Config`/`NotImplemented` on the way to it (`fail_with_event`)              |
+| `canceled`  | `POST /v1/refunds/{id}/cancel`, which **refuses every refund whose transfer was already instructed** |
+| `succeeded` | `Settlement::apply_refund_succeeded` only — **reached by nothing a merchant can cause**              |
+
+Read those four rows together: a refund the rail **accepted**, and a refund
+whose outcome is **unknown** (`Transport`/`Malformed` — the handler returns
+`201` with the pending row and logs that nothing will move it), both stay
+`pending` indefinitely. Only a refusal moves a refund, and it moves it to
+`failed`. "Nothing settles a pending refund" is the exact claim; "every refund
+stays pending" is the loose one, and it is wrong about Orange, where a refund
+create fails on `NotImplemented("orange_money::refund")`.
+
+**There is still no transition function for this enum, and none should be
+invented.** Every move is a compare-and-swap in the statement — the cancel
+carries `AND status = 'pending'` plus
+`NOT EXISTS (… provider_requests … 'refund')`, and a Rust guard beside it is
+the thing a future writer calls _instead of_ taking the lock. That `NOT EXISTS`
+closed a measured double-payout hole on 2026-09-16 (a cancel released the
+reservation `no_over_refund` is computed from, and the same money was refunded
+twice); since nothing settles refunds, it means **no refund a merchant creates
+is cancellable** — the attempt row is written before the rail call, so by the
+time they hold the `re_…` there is one.
+
+`succeeded` is the one to be careful with. An `Ok` from `ProviderAdapter::refund`
+is the rail **accepting an instruction**, not money moving — `Refunded` has no
+status field and the port has no refund status read (RFC-0003 open question 8)
+— so writing `succeeded` on one would tell a merchant something no response
+said. `pending` is what the handler writes, deliberately.
 
 The over-refund guard is in the database, not in Rust:
 `no_over_refund CHECK (amount_refunded + amount_refund_pending <= amount)` on
 `payment_intents` (migration `0003`), plus `fee_non_negative` on `refunds`
-(migration `0031`).
+(migration `0031`). It is **reachable from a merchant request since
+2026-09-16**: `Refunds::create` reserves the amount in the transaction that
+writes the row, so the CHECK is what answers `409 over_refund`.
 
 ## `InvoiceStatus`
 
@@ -151,7 +185,11 @@ by trying.
 
 `amount_refunded` on an invoice is **gross** and does not reopen a `paid`
 invoice (D5, migration `0042`): a fully refunded invoice stays `paid` with
-`amount_remaining` at `0`.
+`amount_remaining` at `0`. **Its stored value is `0` in every deployment**, and
+the reason changed on 2026-09-16: it used to be that nothing created a refund;
+now a merchant can, but the single statement that writes this column runs only
+inside the settlement that moves a refund to `succeeded`, and nothing settles a
+`pending` refund.
 
 ## `ProviderFlow`
 
@@ -198,16 +236,19 @@ this build cannot name never turns a merchant's `GET` into a `500`.
 
 ## Where the state lives, versus where it is enforced
 
-| Invariant                                     | Enforced by                                                                                          |
-| --------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| legal intent transition                       | `next_status` **and** a compare-and-swap `UPDATE ... WHERE status = …`                               |
-| one charge per intent                         | `CREATE UNIQUE INDEX one_charge_per_intent` (migration `0004`)                                       |
-| one invoice per intent                        | the same device, migration `0036`                                                                    |
-| `paid` implies nothing remaining              | `paid_means_nothing_remaining` CHECK (migration `0036`)                                              |
-| no over-refund                                | `no_over_refund` CHECK (migration `0003`)                                                            |
-| non-negative amounts                          | four CHECKs on `payment_intents`, plus `Money::new`                                                  |
-| `supports_partial_refunds ⇒ supports_refunds` | `Capabilities::is_coherent` in Rust **and** `partial_refunds_imply_refunds` CHECK (migration `0002`) |
-| event type is in the vocabulary               | `type_is_a_documented_event` CHECK (migration `0039`)                                                |
+| Invariant                                        | Enforced by                                                                                                 |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
+| legal intent transition                          | `next_status` **and** a compare-and-swap `UPDATE ... WHERE status = …`                                      |
+| one charge per intent                            | `CREATE UNIQUE INDEX one_charge_per_intent` (migration `0004`)                                              |
+| one invoice per intent                           | the same device, migration `0036`                                                                           |
+| `paid` implies nothing remaining                 | `paid_means_nothing_remaining` CHECK (migration `0036`)                                                     |
+| no over-refund                                   | `no_over_refund` CHECK (migration `0003`) — reachable from `POST /v1/refunds` since 2026-09-16              |
+| a refund the rail already has is not cancellable | `NOT EXISTS (… provider_requests … 'refund')` in the cancel statement (2026-09-16)                          |
+| a ledger transaction balances, per currency      | `vpay_ledger::Transaction::validate()`, called by `vpay_db::ledger::post_in_tx` before any statement        |
+| a `merchant_id` iff `merchant_payable`           | `ledger_entries_merchant_id_iff_merchant_payable` CHECK (migration `0045`) **and** `AccountKind`'s sum type |
+| non-negative amounts                             | four CHECKs on `payment_intents`, plus `Money::new`                                                         |
+| `supports_partial_refunds ⇒ supports_refunds`    | `Capabilities::is_coherent` in Rust **and** `partial_refunds_imply_refunds` CHECK (migration `0002`)        |
+| event type is in the vocabulary                  | `type_is_a_documented_event` CHECK (migration `0039`)                                                       |
 
 The pattern: a rule that a concurrent writer could violate lives in the
 **statement or the index**, and a Rust guard beside it is at best a nicer error

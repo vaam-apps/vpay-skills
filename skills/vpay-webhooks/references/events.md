@@ -1,6 +1,6 @@
 # The event vocabulary and its writers
 
-_Verified against vpay `93c6dfd0` (2026-09-16). Version-sensitive claims
+_Verified against vpay `d3a8810b` (2026-09-16). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 Verified against the code on **2026-09-16**.
@@ -38,8 +38,8 @@ rule exists.
 | `payment_intent.succeeded`      | `Settlement::apply_succeeded`                                                                     | 2026-09-03              |
 | `payment_intent.payment_failed` | `vpay_db::settlement::apply_failed` **and** `vpay_api::v1::payment_intents::persist_decline`      | 2026-09-03 / 2026-09-10 |
 | `payment_intent.canceled`       | `vpay_api::v1::payment_intents::cancel_with_event`                                                | 2026-09-10              |
-| `charge.refunded`               | **— nothing**                                                                                     | —                       |
-| `charge.refund.updated`         | **— nothing**                                                                                     | —                       |
+| `charge.refunded`               | `vpay_api::v1::refunds::write_pending_refund`                                                     | 2026-09-16              |
+| `charge.refund.updated`         | `vpay_api::v1::refunds` — `cancel_once`, `update_once`, `fail_with_event`                         | 2026-09-16              |
 | `checkout.session.expired`      | `vpay_db::checkout_sessions::expire_due` (the hourly sweep only)                                  | 2026-09-04              |
 | `customer.created`              | `vpay_api::v1::customers::create_with_event`                                                      | 2026-09-10              |
 | `customer.updated`              | `vpay_api::v1::customers::update_once`, under the row's lock                                      | 2026-09-10              |
@@ -49,20 +49,82 @@ rule exists.
 | `invoice.paid`                  | `Settlement::apply_succeeded`                                                                     | 2026-09-07              |
 | `invoice.voided`                | `vpay_api::v1::invoices::write_with_event`                                                        | 2026-09-07              |
 
-### The four with no writer
+### The two with no writer
 
 `payment_intent.created` and `payment_intent.processing` are **progress**, and
-vpay writes events for terminal transitions only. The two refund types have no
-writer because **no rail in this repository refunds anything** —
-`mtn_momo::refund` is `NotImplemented` (MTN refunds are the Disbursements
-product, with its own subscription key and token scope that no deployment has
-been issued) and Orange Money's Web Payment product documents no refund API at
-all, so its adapter inherits the port's `Unsupported`.
+vpay writes events for terminal transitions only.
 
-The knock-on: nothing writes a `refunds` row, `POST /v1/refunds` is unrouted,
-and `vpay_db::Refunds` is two reads and no write. So what the event tests prove
-about the refund types is that the _contract_ holds, not that a refund event
-works.
+~~The two refund types have no writer because no rail in this repository
+refunds anything — `mtn_momo::refund` is `NotImplemented` and Orange Money's
+Web Payment product documents no refund API at all, so its adapter inherits
+the port's `Unsupported`. The knock-on: nothing writes a `refunds` row,
+`POST /v1/refunds` is unrouted, and `vpay_db::Refunds` is two reads and no
+write.~~ **Corrected 2026-09-16 — every clause of that is now false.** All
+five `/v1/refunds` routes are mounted, `vpay_db::Refunds::create` writes rows,
+neither rail answers `Unsupported` any more, and both refund types have
+writers. What the paragraph got right is the only thing that has not changed:
+**no rail has ever returned money to anyone.**
+
+### The two refund types, in detail — emitted since 2026-09-16
+
+They were in the original seven of `0018` and nothing wrote them for the whole
+of this repository's history until RFC-0003 § 2 mounted the routes. Four things
+a merchant handler has to know:
+
+1. **`charge.refunded` is written for a refund that is only `pending`**, in
+   the transaction that creates the row and reserves the amount against the
+   intent (`write_pending_refund`). The transition it reports is "this charge
+   now has a refund against it", which has happened. Its body carries
+   `status: "pending"`.
+2. **There is no event that says the money arrived, and there will not be one
+   today.** Nothing settles a pending refund — there is no refund poll ladder
+   (RFC-0003 open question 8) — so no code path in this repository moves a
+   refund out of `pending`. A handler that blocks on
+   `charge.refund.updated` with `status: "succeeded"` blocks for ever.
+   `vpay_db::Settlement::apply_refund_succeeded` is the method that would
+   write that transition, it is fully implemented and tested, and it is called
+   by no shipping binary.
+3. **`charge.refund.updated` says a refund that already existed changed** —
+   Stripe's own split. Three writers, all in `vpay_api::v1::refunds`:
+   - `cancel_once` — the compare-and-swap, the released reservation and the
+     event, in one transaction;
+   - `update_once` — the metadata merge under the row's lock. **A request
+     that carries no `metadata` at all writes nothing and emits nothing**; it
+     reads the object back unchanged, because an event about a change that did
+     not happen is a webhook a merchant has to work out how to ignore;
+   - `fail_with_event` — reached **inside the create request**, when the rail
+     answers `Rejected`, `NotImplemented`, `Unsupported` or `Config`. The
+     refund goes `pending` -> `failed`, the reservation goes back, the event
+     is written, and the merchant gets an error response rather than a `201`.
+     So on `orange_money`, whose `refund` is a declared `NotImplemented`
+     token, **a create emits `charge.refunded` and then
+     `charge.refund.updated` for the same refund inside one HTTP request**,
+     and the merchant sees an error. A handler must tolerate that ordering
+     arriving out of order, because delivery is unordered.
+
+   The one `ProviderError` split that does **not** emit: `Transport` and
+   `Malformed` mean vpay does not know what the rail did with the
+   instruction, so nothing is released, no event is written, the refund stays
+   `pending` with its reservation held, and the merchant is answered `201`
+   with that pending refund. Reconcile it against the rail by its
+   `provider_reference_id` — **nothing in this repository will move it.**
+
+4. **`apply_refund_succeeded` deliberately emits neither**, and that is not an
+   oversight to fix by adding an `INSERT` there. Emitting one needs the wire
+   object `vpay-api` shapes, which is the caller's to supply; a caller that
+   settles a refund through that method owes the merchant a
+   `charge.refund.updated`, and the method's signature is what would have to
+   carry it, as `erase_customer_in_tx`'s does.
+
+**Both bodies are the ten-key `RefundObject`** — `id`, `object`, `amount`,
+`currency`, `payment_intent`, `status`, `reason`, `metadata`, `created`, `fee`
+— rendered by the same type `GET /v1/refunds/{id}` returns.
+`the_refund_object_is_the_documented_ten_keys` is the tripwire, and it is
+there because an eleventh key reaches a signed body stored in `events` for
+ever. **The payee is not among the ten**, and cannot be: the `destination` a
+merchant sends is persisted in no column at all (retention is RFC-0003 open
+question 3, undecided). vpay cannot tell an operator which payee a refund went
+to; the rail's records can, by `provider_reference_id`.
 
 ### Two Stripe invoice types deliberately absent from the list
 

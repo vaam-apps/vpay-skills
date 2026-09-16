@@ -1,6 +1,6 @@
 # Migrations and the database
 
-_Verified against vpay `93c6dfd0` (2026-09-16). Version-sensitive claims
+_Verified against vpay `d3a8810b` (2026-09-16). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 ## The rule that will bite you: a shipped migration is never edited
@@ -99,12 +99,30 @@ landed has no `shop` database.
 
 ## Things about the schema that are true and surprising
 
-- **`refunds` rows are never written.** Reading one works — issue #45 landed
+- ~~**`refunds` rows are never written.** Reading one works — issue #45 landed
   `vpay_db::Refunds::get_for_merchant` and `GET /v1/refunds/{id}` — but there is
   no `POST /v1/refunds` route, no `create` in the repository, no adapter that
   can execute a refund, and no writer for `charge.refunded` /
   `charge.refund.updated`. Both event types are in the documented vocabulary and
-  **neither has ever been emitted.** (Stated in `docs/status.md`, 2026-09-16.)
+  **neither has ever been emitted.**~~ **Corrected 2026-09-16 (RFC-0003,
+  vpay#178) — every clause above was true until then and all four stopped
+  being true at once.** `vpay_db::Refunds::create` writes `refunds` rows and
+  reserves the amount against the intent in the same transaction; five `/v1`
+  refund methods are mounted across three paths; `mtn_momo::refund` is a real
+  `POST /disbursement/v1_0/transfer`; and `charge.refunded` /
+  `charge.refund.updated` are emitted for the first time.
+
+  **What is still true, and is the part that matters at 3 a.m.:** a `refunds`
+  row does not mean money moved. **No rail in this repository has ever returned
+  money to anyone**, and MTN's Disbursements product has never been called
+  outside WireMock — there is no real Disbursements credential in the project.
+  Nothing settles a pending refund (there is no refund poll ladder, RFC-0003
+  open question 8), so a refund the rail accepted — or one whose outcome is
+  unknown — stays `pending` indefinitely, `invoices.amount_refunded` never
+  moves, and `refunds.fee` is written by nothing. Only a _refusal_ moves a
+  refund, to `failed`; nothing reaches `succeeded` that a merchant can cause. If you are looking at a stuck `pending` refund, that is the designed
+  state, not your bug.
+
 - **`refunds.fee` is nullable with no `DEFAULT` on purpose.** `None` means "the
   rail did not report a fee" and `Some(0)` means "the rail said it was free";
   collapsing them is the defect the integrator issue reported. An adapter must

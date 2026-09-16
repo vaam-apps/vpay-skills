@@ -1,6 +1,6 @@
 # MTN's three failure vocabularies
 
-_Verified against vpay `93c6dfd0` (2026-09-16). Version-sensitive claims
+_Verified against vpay `d3a8810b` (2026-09-16). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 All of this lives in `backends/crates/vpay-adapter-mtn-momo/src/mapping.rs`,
@@ -102,6 +102,30 @@ accounted for rather than missed:
 | `RESOURCE_ALREADY_EXIST`                                                          | the duplicate-reference answer, handled as HTTP 409 → `Submitted`; as a `FAILED` reason it would be MTN contradicting itself                                                                                                                                                                                                               |
 | `TRANSACTION_CANCELED`                                                            | **the one genuinely open row.** `payer_declined` would read well, but MTN publishes no description saying _who_ cancels, and the Collection API's only cancel operations are `CancelInvoice` and `CancelPreApproval`, neither of which vpay calls. Guessing "the payer" would put a sentence in front of a buyer on the strength of a verb |
 | `INVALID_CURRENCY`, `NOT_ALLOWED_TARGET_ENVIRONMENT`, `INVALID_CALLBACK_URL_HOST` | `CONFIGURATION_CODES`, ours to fix; inventing a payer-facing code for our own misconfiguration would blame the wrong party                                                                                                                                                                                                                 |
+
+## The refund path reuses all of this, on an assumption
+
+**New on 2026-09-16, and the caveat is the point.** `mtn_momo::refund` is a
+real `POST /disbursement/v1_0/transfer` since 2026-09-15 (RFC-0003, vpay#178),
+and `refund_outcome` maps its failures through the very same
+`mapping::failure_code` — this page's tables — rather than a Disbursements
+table of its own. `mapping.rs` was **not touched** by that work.
+
+That reuse is a **deliberate assumption recorded in the adapter**, not a
+verified equivalence: MTN publishes no schema document for the Disbursement
+API at all (`docs/flows/adapter-mtn-momo.md`, re-checked 2026-09-11), so there
+is nothing to diff a Disbursements-specific table against. A reason this table
+does not know falls through to `provider_error` carrying the rail's own word —
+the same safe direction the charge path takes.
+
+So: **every row above is evidenced for Collections and assumed for
+Disbursements.** If MTN's transfer endpoint answers a `reason` this table maps
+to something confident, that confidence is inherited, not earned. And the
+larger caveat swallows the smaller one — **MTN's Disbursements product has
+never been called from this repository**, not in production, not against the
+sandbox, not once. There is no real Disbursements credential in the project;
+the refund is WireMock-proven and rail-unproven, and **no rail here has ever
+returned money to anyone.**
 
 ## `PRODUCED_FAILURE_CODES` — the declared vocabulary
 

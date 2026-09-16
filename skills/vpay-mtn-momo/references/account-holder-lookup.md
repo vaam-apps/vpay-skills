@@ -1,17 +1,57 @@
 # `account_holder_name` — real code, never called against the real rail
 
-_Verified against vpay `93c6dfd0` (2026-09-16). Version-sensitive claims
+_Verified against vpay `d3a8810b` (2026-09-16). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 `ProviderAdapter::account_holder_name(msisdn, config) ->
-Result<Option<AccountHolder>, ProviderError>`. MTN implements it; Orange
-does not (see the `vpay-orange-money` skill). Issue #47. Policy:
+Result<Option<AccountHolder>, ProviderError>`. MTN implements it, under the
+**Collections** subscription key and token scope `submit` already holds;
+Orange declares `supports_account_holder_lookup: false` and inherits the
+port's `Unsupported` (see the `vpay-orange-money` skill — that is still true
+of the lookup, and is no longer true of Orange's `refund`). Issue #47. Policy:
 `docs/flows/account-holder-lookup.md`.
 
 **As of 2026-09-16 this endpoint has never been called against MTN's real
 sandbox.** The 2026-09-15 live run exercised the token mint, `requesttopay`
 and the status query, and nothing else. Everything below the first section is
 therefore proven against WireMock only.
+
+## Since 2026-09-16 there are TWO callers, and neither may reach this method directly
+
+`GET /v1/account_holders` was the only caller until 2026-09-16. Now
+`POST /v1/refunds` asks the same question about a nominated payee before it
+instructs a transfer (`vpay_api::v1::refunds::verify_registered_holder`), on
+the **capability** and never on a rail code — so it runs on `mtn_momo` and is
+skipped entirely on `orange_money`, where RFC-0003 § 1 accepts the destination
+unverified.
+
+**Both go through `vpay_api::v1::account_holders::ask_rail`, not through the
+adapter.** That is a fix from the review of 2026-09-16, and the two properties
+it restored are the reason to keep it that way:
+
+- `vpay_account_holder_lookups_total` is **every** lookup vpay makes again.
+  The flow doc asks an operator to alert on a sustained `not_found` rate near
+  1.0 — which is what the mis-cased path segment below looks like from outside
+  — and a caller missing from the series makes that alarm read a fraction of
+  the traffic;
+- a refund refused for an unregistered payee is refused **before any row, any
+  attempt and any rail instruction**, so without `ask_rail`'s line it left _no
+  trace at all_: a third party looked up by phone number with nothing written
+  anywhere in vpay.
+
+Two consequences follow for this method, and they are the sharp ones:
+
+1. **A `payments:write` credential can now probe registration and read the
+   answer off a `400`.** The reserved rate-limit decision in issue #47 § 3 is
+   therefore about _lookups_, not about a route — a limit that covered only
+   `GET /v1/account_holders` would not be the control it reads as.
+2. **The refund caller never compares a name.** It branches on
+   `Some`/`None` only: `Some(_)` means the number is a registered account and
+   the transfer may be attempted, `None` is a `400` naming `destination`, and
+   an `Err` keeps its own `502`/`500`. vpay holds no verified buyer name to
+   compare against, so matching the holder's name is the _merchant's_ job —
+   which is what the route exists for. The name is not stored, not logged and
+   not compared.
 
 ## The three answers, and why the middle one is the sharp one
 
@@ -26,10 +66,13 @@ therefore proven against WireMock only.
 ADR-0011 so the boundary answers 502/500 rather than a 200 a caller would
 read as "no such holder".
 
-The distinction is the whole point of the method. The caller it exists for
-refuses a nominated refund destination whose name it cannot match, and it
-must be able to tell a number that is not registered from a lookup that never
-happened — the first is the payer's problem and the second is ours.
+The distinction is the whole point of the method, and since 2026-09-16 it is
+load-bearing in vpay's own money path and not only in an integrator's.
+`verify_registered_holder` must be able to tell a number that is not
+registered from a lookup that never happened — the first is the merchant's to
+fix and answers `400`, the second is ours and keeps its `502`/`500`.
+Collapsing them would tell an integrator that a real person's real account
+does not exist, and would refuse a refund over an outage.
 
 ## The two unverified assumptions, and why they compound
 
@@ -77,7 +120,9 @@ error and nothing in the metrics but a `not_found` rate of 1.0.
 
 Reversing either costs one constant or one match arm.
 `docs/flows/account-holder-lookup.md` carries what to check on the first real
-sandbox call. **Check both on that call, and date what you find.**
+sandbox call. **Check both on that call, and date what you find** — and note
+that since 2026-09-16 the cost of being wrong includes refusing every MTN
+refund whose payee is perfectly real.
 
 ## `account_holder_outcome` — the full table
 
@@ -146,7 +191,12 @@ sites would take it back out.
 
 **Nothing in this method logs the number or the name.** The `debug!` carries
 the HTTP status and the rail's code only; the masked MSISDN that reaches an
-operator's log is written by the `/v1` handler, once. The obligation the type
+operator's log is written once by `ask_rail`, which is where the counter and
+the mask live for **both** callers — `info` with `found = true/false`, `warn`
+with the rail's code when the lookup failed, plus a `caller` field
+(`v1_account_holders` or `v1_refunds_create`) that is deliberately a `tracing`
+field and **never a metric label**, because the counter is pinned at one
+label. The obligation the type
 cannot enforce, stated in `AccountHolder::name`'s own `# Errors` section: the
 value is a third party's name and **must not be logged, stored, or counted as
 a metric label**.

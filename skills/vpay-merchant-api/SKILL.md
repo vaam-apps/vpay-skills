@@ -5,7 +5,7 @@ description: The vpay HTTP surface — the /v1 merchant API, its route tables, O
 
 # The vpay HTTP surface
 
-> **Verified against vpay `93c6dfd0` (2026-09-16).** Version-sensitive claims below
+> **Verified against vpay `d3a8810b` (2026-09-16).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -122,6 +122,12 @@ Do not hand-roll the claim/finish dance — reuse `PostRequest` from
 `vpay_api::v1::payment_intents` (`pub(crate)`), which every `/v1` write already
 goes through. [references/idempotency.md](references/idempotency.md).
 
+**On `POST /v1/refunds` the claim is the _only_ thing standing between a
+merchant's retry and a second payout.** Unlike a charge, which
+`one_charge_per_intent` makes unrepeatable, nothing in the schema forbids two
+refunds of one intent — two partial refunds are a legitimate thing a merchant
+does. Do not weaken or bypass the claim on that route.
+
 ## Body limits
 
 64 KiB on `/v1` and `/dash/v1` (`V1_BODY_LIMIT_BYTES`), 16 KiB on `/provider`
@@ -136,24 +142,53 @@ There is **no OpenAPI or Swagger file in this repository.** The wire contract
 is `docs/flows/merchant-auth/resource-contract.md`, `docs/api/README.md` and
 the two SDKs.
 
-| Declared               | Where                        | Reality (2026-09-16)                                                                                                                                                                     |
-| ---------------------- | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `POST /v1/refunds`     | resource-contract; both SDKs | **Unmounted.** No rail can refund — `mtn_momo::refund` is `NotImplemented`, Orange answers `Unsupported`, and nothing writes a `refunds` row at all. `GET /v1/refunds/{id}` _is_ served. |
-| `GET /v1/balance`      | resource-contract; both SDKs | **Unmounted.** There is no ledger read path.                                                                                                                                             |
-| `GET /v1/events?type=` | `docs/api/README.md`         | Route served, **filter silently ignored** — `ListParams` in `vpay_api::v1::events` has no `type` field, so a filtered call gets an unfiltered page rather than a `400`.                  |
+| Declared               | Where                        | Reality (2026-09-16)                                                                                                                                                                                                          |
+| ---------------------- | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /v1/balance`      | resource-contract; both SDKs | **Unmounted.** A ledger read path exists since 2026-09-16 (`vpay_db::Ledger::merchant_payable_balance`) and **nothing routes it**; the nest's fallback answers the honest `404` rather than a body vpay would have to invent. |
+| `GET /v1/events?type=` | `docs/api/README.md`         | Route served, **filter silently ignored** — `ListParams` in `vpay_api::v1::events` has no `type` field, so a filtered call gets an unfiltered page rather than a `400`.                                                       |
 
-Both SDKs can call all three, and each gets the honest envelope. **Mounting
-`POST /v1/refunds` would mount a route that can only ever answer `501`** —
-which is why it is absent; the decision is argued in `vpay_api::v1::refunds`.
+~~`POST /v1/refunds` is unmounted, and mounting it would mount a route that
+can only ever answer `501`.~~ **Corrected 2026-09-16 (RFC-0003 § 2): the
+refund resource is mounted for five methods across three paths** —
+`POST`/`GET /v1/refunds`, `GET`/`POST /v1/refunds/{id}`,
+`POST /v1/refunds/{id}/cancel`, pinned by
+`the_refund_resource_is_mounted_for_exactly_five_methods`. The create writes a
+real row, reserves the amount and emits `charge.refunded`; it does **not**
+answer `501`, and it does **not** mean money came back — see
+[references/objects.md](references/objects.md) § Refund and the `vpay-payments`
+skill before writing anything that implies it did.
+
+**The operational consequence, because it will cost you a day otherwise:**
+there is **no refund poll ladder** (RFC-0003 open question 8), so a refund the
+rail accepts stays `pending` indefinitely. Only a _refusal_ moves a refund, to
+`failed`; `succeeded` is written by `Settlement::apply_refund_succeeded` alone
+and **nothing a merchant can cause reaches it.** An integration that creates a refund and
+waits for `succeeded` waits forever. `charge.refund.updated` does **not**
+rescue it: that event is emitted on a failure, on a metadata `update` and on a
+`cancel` — three places, all in `vpay_api::v1::refunds` — and **never on a
+settlement**, because nothing settles. And no rail in this repository has
+ever returned money to anyone: on Orange the create fails outright
+(`NotImplemented("orange_money::refund")`), and on MTN it reaches the
+Disbursements `transfer`, which has never been called outside WireMock.
+
+Both SDKs can call `GET /v1/balance`, and it gets the honest envelope.
 
 ## Where this repository's docs are wrong
 
 Code wins in all four. Fix the doc in the same commit if you touch the area.
 
 - `docs/api/README.md` § "Served today" says **"thirty-one methods across
-  twenty paths"**. `V1_ROUTES` has **33 methods across 21 paths** — it is
-  missing `/v1/invoices/{id}/mark_uncollectible`, and its own increments do not
-  add up either.
+  twenty paths"**, last re-counted on 2026-09-07. `V1_ROUTES` has **37 methods
+  across 23 paths** as of 2026-09-16 — it is missing
+  `/v1/invoices/{id}/mark_uncollectible` and the four refund methods RFC-0003
+  § 2 added, and its own increments do not add up either. (This page said
+  "33 across 21" until 2026-09-16; the refund routes are the difference.)
+- `docs/flows/merchant-auth/resource-contract.md` says "**All four** refund
+  routes are served since 2026-09-16". That counts the four RFC-0003 § 2
+  _added_ — create, update, list, cancel — beside the read that shipped on
+  2026-09-05, and reads as a total. The total is **five methods across three
+  paths**; `the_refund_resource_is_mounted_for_exactly_five_methods` is the
+  number to trust.
 - `vpay_api::browser`'s module header opens "the **two** routes a payer's
   browser may call", and `browser_checkout.rs`'s header repeats it. There are
   **five**; the assertion further down that same test file says 5 and is right.
