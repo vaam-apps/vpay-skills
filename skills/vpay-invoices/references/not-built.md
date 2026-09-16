@@ -42,19 +42,48 @@ second `invoice.paid` (decided 2026-09-10, issue #91 D5; it was an open
 maintainer question from 2026-09-07). Migration `0042`'s header carries the
 argument; it is reversible in two places — that migration and one statement.
 
-## No rail can refund, so `amount_refunded` is `0` everywhere
+## `amount_refunded` is `0` everywhere — but not for the reason it used to be
 
-`mtn_momo::refund` is `ProviderError::NotImplemented` (refunds are MTN's
-Disbursements product, for which this deployment has never held a credential);
-Orange Money answers `Unsupported` (its Web Payment product documents no refund
-API). `POST /v1/refunds` is **unrouted** and `vpay_db::Refunds` exposes no
-`create`.
+**The value has not changed. The reason has, on 2026-09-16, and the difference
+decides which file an agent opens.**
 
-So `amount_refunded` is `0` on every invoice in every deployment,
-`apply_refund_succeeded` is called by **no shipping binary**, and the cases
-that prove it seed a `pending` refunds row with a raw `INSERT`. What is built
-is the database's answer and the transaction that writes it; what is not built
-is everything that would produce a refund in the first place.
+~~`mtn_momo::refund` is `ProviderError::NotImplemented`; Orange Money answers
+`Unsupported`; `POST /v1/refunds` is **unrouted** and `vpay_db::Refunds`
+exposes no `create`. So what is not built is everything that would produce a
+refund in the first place.~~ **Every clause of that is false since
+2026-09-16** (RFC-0003 § 2):
+
+- all five `/v1/refunds` routes are mounted, and `POST /v1/refunds` is no
+  longer a `404`;
+- `vpay_db::Refunds::create` writes `refunds` rows and reserves the amount
+  against the intent in the same transaction;
+- `mtn_momo::refund` is written — a real `POST /disbursement/v1_0/transfer`;
+- `orange_money::refund` is a declared `NotImplemented` token and
+  `supports_refunds` is `true` on Orange. **Neither rail answers `Unsupported`
+  any more.**
+
+**The reason now is that nothing settles a pending refund.**
+`Settlement::apply_refund_succeeded` is the only code in this repository that
+moves `invoices.amount_refunded`, and it is reached by **no shipping path**:
+there is no refund poll ladder (RFC-0003 open question 8), the port has no
+refund status read, and `Refunded` carries no status field, so the most an
+adapter can report is that a rail took the instruction. An `Ok` from a rail is
+an acceptance, not a settlement, and `apply_refund_succeeded` is the method
+that would record the lie — which is exactly why the create handler does not
+call it. Every refund the routes create stays `pending` for ever.
+
+So `amount_refunded` is still `0` on every invoice in every deployment, and
+`refunds.fee` is still written by nothing. The cases that prove the transaction
+still seed a `pending` refunds row with a raw `INSERT`, because no shipping
+path produces a settled one. What is built is the database's answer and the
+transaction that writes it; what is not built is the thing that would ever call
+it.
+
+**And the sentence that has not moved at all: no rail has ever returned money
+to anyone.** MTN's Disbursements product has never been called from this
+repository — `mtn_momo::refund` is WireMock-proven and rail-unproven, and no
+real MTN Disbursements credential exists in the project. Do not write anything
+that implies a merchant can get money back today.
 
 ## No dunning, no timer, no automatic `uncollectible`
 

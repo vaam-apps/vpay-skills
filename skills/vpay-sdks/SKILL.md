@@ -1,6 +1,6 @@
 ---
 name: vpay-sdks
-description: The five packages under sdks/ and the parity rule that binds the two merchant SDKs — add a capability to one and you add it to all, or you write a dated gap row. Covers what each SDK is and which are published, how a parity row is written and all three directions of cargo xtask verify-sdk-parity with the measured holes that motivated each, the Stripe SDK compatibility story, the Flutter payer plugin, and the generated code that exists (pigeon, ZenStack) versus the OpenAPI codegen that does not. Load before adding, renaming or removing any SDK method or test.
+description: The five packages under sdks/ and the parity rule that binds the two merchant SDKs — add a capability to one and you add it to all, or you write a dated gap row. Covers what each SDK is and which are published, how a parity row is written and all three directions of cargo xtask verify-sdk-parity with the measured holes that motivated each, the Stripe SDK compatibility story, the five refund methods and the destination[<rail>][msisdn] payee whose leading + no SDK may add for you, the Flutter payer plugin, and the generated code that exists (pigeon, ZenStack) versus the OpenAPI codegen that does not. Load before adding, renaming or removing any SDK method or test.
 ---
 
 # vpay SDKs
@@ -34,6 +34,17 @@ Three things follow that catch people out:
   does a commented-out declaration, nor a title that only appears inside a
   string.
 
+> **A `✅` proves a test NAME exists. It never proves anything RUNS it.**
+> `verify-sdk-parity` reads the name and finds it in that SDK's sources; it
+> cannot tell whether any job executes it. Measured 2026-09-16: the Rust
+> column's `live_refund_lifecycle` and `live_refund_destination_refusals` were
+> `✅` on **three rows for a full day** while `.github/workflows/ci.yml` named
+> only `--test live_invoices`, so nothing compiled that binary. The workflow
+> names `--test live_refunds` too now. **Read a `✅` as "a case exists that
+> would fail", not "something ran it."** Adding a row whose test lives in a
+> new binary means adding that binary to the workflow in the same change —
+> the gate will not remind you.
+
 Full mechanics, including how to write a row and what each direction of the
 gate refuses: `references/parity.md`. Read it before editing
 `docs/sdks/parity.md`.
@@ -42,8 +53,8 @@ gate refuses: `references/parity.md`. Read it before editing
 
 | Path                                 | Name                            | What it is                                                                                                                                                                                                                                   | Published                                                                                                                                            |
 | ------------------------------------ | ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `sdks/nodejs`                        | `@vaam-apps/vpay-sdk`           | **Merchant** SDK for `/v1`. `private_key_jwt` auth, the single-401 re-auth, the form encoder, `verifyWebhook`, and eight resources. Second entry point `./stripe` exports `createStripeAuthenticator`, with `stripe` as an **optional** peer | yes, public                                                                                                                                          |
-| `sdks/rust`                          | `vpay-sdk`                      | The Rust twin. Same eight resources, same wire                                                                                                                                                                                               | **`publish = false`, deliberately** — "publishing a client for an API nobody can reach would be actively misleading". Flip it once `/v1` is deployed |
+| `sdks/nodejs`                        | `@vaam-apps/vpay-sdk`           | **Merchant** SDK for `/v1`. `private_key_jwt` auth, the single-401 re-auth, the form encoder, `verifyWebhook`, and nine resources. Second entry point `./stripe` exports `createStripeAuthenticator`, with `stripe` as an **optional** peer | yes, public                                                                                                                                          |
+| `sdks/rust`                          | `vpay-sdk`                      | The Rust twin. Same nine resources, same wire                                                                                                                                                                                               | **`publish = false`, deliberately** — "publishing a client for an API nobody can reach would be actively misleading". Flip it once `/v1` is deployed |
 | `sdks/stripe-js`                     | `@vaam-apps/vpay-stripe-js`     | The browser **payer** surface, Stripe.js-shaped. `loadStripe`, `initEmbeddedCheckout`, `openCheckoutPopup`, `notifyCheckoutOpener`. **Zero runtime dependencies**                                                                            | yes, public                                                                                                                                          |
 | `sdks/flutter/vpay_checkout_flutter` | `vpay_checkout_flutter`         | The mobile **payer** surface. Opens the hosted page in a native window and reports a typed result once the intent actually settles                                                                                                           | **`publish_to: none`** (2026-09-13)                                                                                                                  |
 | `sdks/stripe-compat`                 | `@vaam-apps/vpay-stripe-compat` | **Evidence, not an SDK.** Drives the real `stripe@22.6.1` package against a live compose stack. `private: true`, ships nothing, and **gets no rows in the parity matrix** — "the compat suite proves claims rather than making them"         | never                                                                                                                                                |
@@ -53,9 +64,60 @@ authenticate a payer's _device_ with a publishable key and a per-session
 `client_secret`, speak `/v1/browser`, and share **no capability row** with the
 merchant tables. Each has its own table in `docs/sdks/parity.md`.
 
-The eight merchant resources, in both languages: `payment_intents`,
-`checkout.sessions`, `customers`, `invoices`, `invoice_items`, `refunds`,
-`events`, `account_holders`, `balance`.
+**Nine** merchant resources as of 2026-09-16, in both languages:
+`payment_intents`, `checkout.sessions`, `customers`, `invoices`,
+`invoice_items`, `refunds`, `events`, `account_holders`, `balance`. (~~Eight.~~
+This page said eight beside a list of nine; corrected 2026-09-16 by counting
+`client.ts`. Nothing gates a count in prose.)
+
+## Refunds: five methods each since 2026-09-16, and one trap that will bite
+
+Both SDKs ship **create, retrieve, update, list and cancel** on `refunds`, and
+both event unions carry `charge.refunded` and `charge.refund.updated`.
+`refunds.create` takes a `destination`. `balance.retrieve` is now the only SDK
+method in either package with no route behind it.
+
+**The wire shape is `destination[<rail_code>][msisdn]`** — a rail-agnostic
+envelope with a rail-specific interior, and **the rail's own code is the outer
+key**, not a constant. The rail is not a preference: a refund goes back on the
+rail the charge was made on, the server reads that off the charge, and a
+`destination` naming any other rail is a `400` naming `destination`.
+
+> **The trap.** The server's validator — `vpay_provider::RefundTarget::
+> mobile_money`, which is fallible and canonicalising — **requires a leading
+> `+`**. `+237600000200` is a payee; the bare national `600000200` is a `400`
+> naming `destination`, even though `GET /v1/account_holders` accepts the bare
+> form on the same server. The asymmetry is deliberate and runs in the safe
+> direction: a lookup that guesses the country wrong returns the wrong name, a
+> transfer that guesses wrong sends the money.
+>
+> **Neither SDK normalises the number, and neither may start.** They send the
+> string the merchant wrote, byte for byte — no `+` added, none stripped, no
+> rewriting. An SDK that "helpfully" canonicalised would pass every one of its
+> own fixtures and fail against the real server the moment the server's rule
+> widened, because the fixtures would be asserting the SDK's rule back to
+> itself. `the_sdk_never_normalises_a_payees_number` and `refunds.create never
+> normalises a payee's number on its way to the wire` are the cases; deleting
+> either is how this regresses.
+
+`destination` is optional in both param types **only** because the port allows
+a rail that refunds to the instrument that paid, and such a rail refuses one.
+Neither rail vpay carries is one — both declare `RefundDestination::Required`
+— so a create with no `destination` is a `400` against every deployment this
+repository can build.
+
+**And the sentence none of this changes: no rail has ever returned money to
+anyone.** A `201` from `refunds.create` means a row exists and its amount is
+reserved against the intent. It does not mean the payee has been paid: the
+refund is `pending` and **nothing settles a pending refund** (RFC-0003 open
+question 8). Both SDKs' module docs open with that; keep it there.
+
+One asymmetry recorded rather than faked: Rust's `CreateRefundParams` has a
+hand-written `Debug` that redacts the payee and the Node package **cannot** —
+its params are an object literal the merchant allocated, so `util.inspect` and
+`JSON.stringify` print the number in full. A `⛔ 2026-09-16` row, written
+because the row above it was `✅/✅` on a title naming `inspect` while neither
+Node test checked it.
 
 ## Parity is per capability, not per method name or per shape
 
@@ -78,9 +140,21 @@ ADR-0015 decision 1. Two deliberate asymmetries you will meet:
 
 ## The live suites fail rather than skip
 
-`sdks/rust/tests/live_invoices.rs` (behind the `live-stack` cargo feature) and
-`sdks/nodejs/src/invoices.live.test.ts` (its own vitest project), both run by
-`just sdk-live` and CI's `e2e` job. `sdks/stripe-compat` works the same way:
+`sdks/rust/tests/live_invoices.rs` and `live_refunds.rs` (both behind the
+`live-stack` cargo feature) and `sdks/nodejs/src/{invoices,refunds}.live.test.ts`,
+all run by `just sdk-live` and CI's `e2e` job.
+
+**The two languages are wired differently, and only one of them is safe.**
+Node's live cases are one vitest project matching a **glob** —
+`vitest.live.config.ts`, `src/**/*.live.test.ts`, with `passWithNoTests: false`
+— so a new `*.live.test.ts` is picked up with no wiring. A Rust live binary
+must be **named explicitly** in `.github/workflows/ci.yml`: the step is `cargo
+test -p vpay-sdk --features live-stack --test live_invoices --test
+live_refunds`, and `live_refunds` was missing from it for a day after wave 3
+added the file, which is the measurement behind the parity-gate warning above.
+Add a Rust live binary and add it to the workflow in the same change.
+
+`sdks/stripe-compat` works the same way:
 `src/preflight.ts` is a vitest `globalSetup` that fails the run when no stack
 answers `/healthz` or the merchant handshake does not complete.
 
