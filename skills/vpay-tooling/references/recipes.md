@@ -1,6 +1,6 @@
 # The recipe inventory
 
-_Verified against vpay `d3a8810b` (2026-09-16). Version-sensitive claims
+_Verified against vpay `9653ee94` (2026-09-16). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 `justfile` is 4 704 lines, two-thirds of them comment (2026-09-16).
@@ -351,12 +351,19 @@ of its commands.
 What it proves: the chart lints under three value sets; all three render (the
 Gateway API one needs `--api-versions gateway.networking.k8s.io/v1`, without
 which the `HTTPRoute` templates render **nothing** and every check below would
-pass over an empty file); the **22 named guards** under
-`deploy/helm/vpay/ci/guards/` are exactly the 22 the recipe lists and each
+pass over an empty file); the **24 named guards** under
+`deploy/helm/vpay/ci/guards/` are exactly the 24 the recipe lists and each
 fires _by name_ with a non-zero exit; the default render templates no checkout
 page and `ci/values-full.yaml`'s does; the Ingress carries `limit-rps` and the
 token Ingress is **tighter** than `/v1`'s; both mechanisms route `/provider`;
 and every rendered object validates against upstream schemas.
+
+_This said **22** until 2026-09-16, when ADR-0022 retired
+`dashboard-not-templated` (the chart now templates the dashboard) and added
+`connection-budget` and `networkpolicy-management-route`._ Note that **24
+guards are covered by 25 fixture files**: the harness learned
+`<guard>.<n>.yaml` variants so `connection-budget` could be gated in both
+directions, and the recipe's own count is of guard _names_, not files.
 
 The guard set is written out rather than counted, because "22 files found, 22
 fired" is also what deleting a guard _and_ its values file looks like.

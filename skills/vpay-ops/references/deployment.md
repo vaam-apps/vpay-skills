@@ -1,6 +1,6 @@
 # Deployment: images, the chart, and what it deliberately does not do
 
-_Verified against vpay `d3a8810b` (2026-09-16). Version-sensitive claims
+_Verified against vpay `9653ee94` (2026-09-16). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 Everything here renders and validates. **Nothing here has run.** See the
@@ -46,6 +46,21 @@ and a memory-backed `emptyDir` on `/tmp`, **holds no merchant credential, no
 rail credential and no signing key, and reads no YAML** — its whole
 configuration is two environment variables.
 
+**Since 2026-09-16 (ADR-0022) the `runner` (dashboard) stage matches it**:
+`USER node`, `HOME`/`XDG_CACHE_HOME` at `/tmp`, `HOSTNAME=0.0.0.0`, and a
+`HEALTHCHECK` against `/healthz` — a route that did not exist in the dashboard
+app before that commit. This page previously described the dashboard image as
+builder-plus-`CMD` only, which was accurate: the stage declared no `USER` and
+its behaviour under `readOnlyRootFilesystem` had never been observed, which is
+why the chart refused to template it (the retired `dashboard-not-templated`
+guard).
+
+`HOSTNAME=0.0.0.0` is load-bearing, not cosmetic. Docker injects
+`HOSTNAME=<container id>` into every container and Next's standalone server
+binds whatever that resolves to — the bridge IP. Without the explicit value,
+`docker run -p` works while **every `127.0.0.1` probe is refused**, which is
+what the `HEALTHCHECK` and a kubelet's probe both dial.
+
 ### Passing `worker` as an argument
 
 Two platforms, two spellings, and the difference matters:
@@ -63,20 +78,69 @@ Deployment passes `args: ["worker"]`.
 
 | Object                             | Notes                                                                                                                                   |
 | ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `Deployment` server                | `server.replicaCount`, 2 by default                                                                                                     |
+| `Deployment` server                | `server.replicaCount` (2) — **or no `spec.replicas` at all** when `server.autoscaling.enabled`, so the HPA governs                      |
+| `Deployment` management            | optional, `management.enabled` **false** by default; fixed `replicaCount` (2), **never autoscaled**                                     |
 | `Deployment` worker                | 1 replica, `strategy: Recreate`, server image + `args: ["worker"]`                                                                      |
 | `Deployment` checkout              | optional, `checkout.enabled` **false** by default                                                                                       |
+| `Deployment` dashboard             | optional, `dashboard.enabled` **false** by default; fixed 2 replicas, **never autoscaled**                                              |
+| `HorizontalPodAutoscaler`          | optional (`server.autoscaling.enabled`), **server only**                                                                                |
 | `Service`                          | ClusterIP, ports `http` (8080) and `metrics` (9090)                                                                                     |
 | `Service` worker                   | **headless, `metrics` only** — exists so the worker can be scraped                                                                      |
+| `Service` management, dashboard    | with their Deployments                                                                                                                  |
 | `ServiceAccount`                   | `automountServiceAccountToken: false`                                                                                                   |
-| `PodDisruptionBudget`              | `minAvailable: 1`, **server only**                                                                                                      |
-| `ConfigMap` overlay                | optional; mounted with `subPath`                                                                                                        |
+| `PodDisruptionBudget`              | `minAvailable: 1`; server, **and management when enabled**                                                                              |
+| `ConfigMap` overlay                | optional; mounted with `subPath`. **Splits into two** when `management.enabled` — each tier needs its own `deployment.surfaces`         |
 | `Ingress` ×4                       | `-api` (`/v1`), `-token` (`/v1/oauth/token`, tighter `limit-rps`), `-provider` (`/provider`, **on by default**), `-checkout` (optional) |
-| `HTTPRoute`                        | optional (`route.enabled`); **one** object, **three rules**                                                                             |
+| `HTTPRoute`                        | optional (`route.enabled`); **one** object, **four rules** since ADR-0022 added `/dash/v1`                                              |
 | `NetworkPolicy`                    | optional, default-deny both directions                                                                                                  |
-| `ServiceMonitor`, `PrometheusRule` | optional; every threshold proposed                                                                                                      |
+| `ServiceMonitor`, `PrometheusRule` | optional; every threshold proposed. Scrapes server, worker **and management**; the dashboard exports no metrics and gets none           |
 
 **It renders no Secret and no database.**
+
+## Surfaces: one image, two tiers (ADR-0022, 2026-09-16)
+
+`deployment.surfaces` in the YAML selects which surfaces a process mounts.
+**Absent means every surface**, so a deployment that predates this key upgrades
+unchanged; an empty list or an unknown value is a boot refusal (exit 78).
+
+| Surface      | Mounts                                                   |
+| ------------ | -------------------------------------------------------- |
+| `business`   | `/v1`, `/v1/browser`, `/provider`, and `/v1/oauth/token` |
+| `management` | `/dash/v1` and the `staff` sign-in routes                |
+
+`/v1/oauth` is **split rather than assigned**: `/token` is business-only
+because it is the _merchant_ private-key-JWT grant, while `jwks.json` and the
+discovery document serve on both, so the management tier does not depend on the
+business tier being up to validate a staff token. Do not "simplify" this by
+mounting the whole nest on either surface — ADR-0017's staff grant terminates
+at `/dash/v1/oauth/token`, **not** at `/v1/oauth/token`, and the two are
+different grants.
+
+It cannot be inferred from `merchant_clients`: `validate_dashboard_binding`
+requires the dashboard client's `merchant_id` to exist in that list, so a
+management-only process still needs it populated.
+
+### The ceiling that binds before CPU does
+
+`vpay_db::pool::MAX_CONNECTIONS` is a **compile-time `10` per process**, not a
+chart value. Under an HPA that is the binding constraint, and the
+`connection-budget` guard enforces it:
+
+```
+(server.autoscaling.maxReplicas + management.replicaCount + worker.replicaCount) × 10
+  ≤ database.maxConnections − database.reservedConnections
+```
+
+A business tier scaling to 8 with management at 2 and worker at 1 wants 110
+connections against Postgres' default budget of 100 — it exhausts connections
+**before** it reaches any CPU target, and the symptom is `acquire_timeout` on
+whichever path asks next. `database.maxConnections` is required once
+autoscaling is on; there is deliberately no default, because guessing 100 on
+behalf of a managed instance is how this becomes an incident.
+
+The `10` is duplicated into the chart on purpose — a Helm template cannot read
+a Rust constant — and both sides name each other. **If you change one, change
+both.**
 
 ## The three Secrets you must create first
 
