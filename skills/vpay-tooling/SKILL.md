@@ -5,7 +5,7 @@ description: How to build, test, lint and gate vpay — the just recipes that ma
 
 # vpay tooling and gates
 
-> **Verified against vpay `d3a8810b` (2026-09-16).** Version-sensitive claims below
+> **Verified against vpay `9d83ff0e` (2026-09-17).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -144,21 +144,47 @@ needs the network.
 
 Change one of these and the other must move in the **same commit**.
 
-| If you change                     | You must also change                                                                                                                        | Enforced by                                 |
-| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
-| `rust-toolchain.toml` `channel`   | `backends/Dockerfile`'s `FROM rust:<version>-alpine…`                                                                                       | `verify-toolchain`                          |
-| `justfile`'s `cratestack_version` | `Cargo.toml`'s `cratestack = { package = "cratestack-pg", version = "=…" }`                                                                 | nothing — read `CLAUDE.md`, then check both |
-| `.nvmrc`                          | `package.json` `engines.node` (`.npmrc` sets `engine-strict=true`)                                                                          | `pnpm install --frozen-lockfile` exits 1    |
-| add or drop a **test binary**     | `expected_suites` in `justfile`                                                                                                             | `verify-ignored`                            |
-| add a **migration**               | run `just migrations-manifest`                                                                                                              | `verify-migrations`                         |
-| add a **helm guard**              | its name in `helm-check`'s `expected_guards`, its values file in `deploy/helm/vpay/ci/guards/`, and the `fail` in `templates/_validate.tpl` | `helm-check`                                |
-| add a `NotImplemented` token      | its declaration in `docs/status.md`                                                                                                         | `verify-status`                             |
-| add an SDK method                 | its row in `docs/sdks/parity.md`                                                                                                            | `verify-sdk-parity`                         |
+| If you change                     | You must also change                                                                                                                                                                   | Enforced by                                 |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| `rust-toolchain.toml` `channel`   | `backends/Dockerfile`'s `FROM rust:<version>-alpine…`                                                                                                                                  | `verify-toolchain`                          |
+| `justfile`'s `cratestack_version` | `Cargo.toml`'s `cratestack = { package = "cratestack-pg", version = "=…" }`                                                                                                            | nothing — read `CLAUDE.md`, then check both |
+| `.nvmrc`                          | `package.json` `engines.node` (`.npmrc` sets `engine-strict=true`)                                                                                                                     | `pnpm install --frozen-lockfile` exits 1    |
+| add or drop a **test binary**     | `expected_suites` in `justfile`                                                                                                                                                        | `verify-ignored`                            |
+| add a **migration**               | run `just migrations-manifest`                                                                                                                                                         | `verify-migrations`                         |
+| add a **helm guard**              | its name in `helm-check`'s `expected_guards`, its values file in `deploy/helm/vpay/ci/guards/`, and the `fail` in `templates/_validate.tpl`                                            | `helm-check`                                |
+| add a `NotImplemented` token      | its declaration in `docs/status.md`                                                                                                                                                    | `verify-status`                             |
+| add an SDK method                 | its row in `docs/sdks/parity.md`                                                                                                                                                       | `verify-sdk-parity`                         |
+| `flutter-toolchain.toml`'s pin    | nothing — no `verify-*` gate reads it, unlike `rust-toolchain.toml`'s `verify-toolchain`. Its `channel` field is `[user-branch]`, not a clean channel pin, by the file's own admission | nothing                                     |
 
 `verify-toolchain` exists because the drift was measured: with `channel` moved
 to 1.98.0 and the Dockerfile left on 1.95.0, the whole of `just ci` was green.
 CI reads the channel out of `rust-toolchain.toml` with an **anchored `sed`** in
 five jobs, so reformatting that line breaks CI.
+
+## Flutter, `.agents/skills/`, and a dead MSISDN convention
+
+Three facts with no home above, kept short here on purpose — depth is in
+[references/recipes.md](references/recipes.md).
+
+- **Six `*flutter*` recipes** (`install-flutter`, `analyze-flutter`,
+  `test-flutter`, `test-flutter-web`, `test-flutter-e2e`,
+  `test-flutter-emulator`) build and test `vpay_checkout_flutter`
+  (`vpay-sdks` owns what the package does). All six share one
+  `_flutter-preflight` and **none is in `just ci`** (D-M3) — every count
+  quoted for this package is a human running the recipe by hand.
+  `flutter-toolchain.toml` pins Flutter 3.47.2 / Dart 3.13.2, unenforced
+  (see the Lockstep table above).
+- **`.prettierignore`'s `.agents/skills/` entry** excludes vpay's own
+  vendored agent skills (installed by issue #188 from
+  `cratestack/cratestack-skills`, hash-pinned in vpay's `skills-lock.json`)
+  — a different, unrelated `skills/` from this repository. Reformatting a
+  vendored copy would change the bytes the lock file hashes; do not "fix" a
+  lint complaint under that path.
+- **A hex-suffixed MSISDN no longer steers WireMock** (2026-09-16, #191):
+  server-side phone validation (#186) rejects it before the mock rail is
+  ever asked. `worker_e2e`/`worker_kill9` and `examples/shop`'s demo table
+  now use real, `phonenumber`-valid Cameroon numbers matching
+  `2376[579]\d{7}`.
 
 ## Further reading
 
