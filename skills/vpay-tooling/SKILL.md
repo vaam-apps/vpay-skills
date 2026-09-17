@@ -180,7 +180,7 @@ Three facts with no home above, kept short here on purpose — depth is in
   — a different, unrelated `skills/` from this repository. Reformatting a
   vendored copy would change the bytes the lock file hashes; do not "fix" a
   lint complaint under that path.
-- **A hex-suffixed MSISDN no longer steers WireMock** (2026-09-16, #191):
+- **A hex-suffixed MSISDN no longer steers WireMock** (2026-09-17, #191):
   server-side phone validation (#186) rejects it before the mock rail is
   ever asked. `worker_e2e`/`worker_kill9` and `examples/shop`'s demo table
   now use real, `phonenumber`-valid Cameroon numbers matching

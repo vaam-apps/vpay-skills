@@ -195,7 +195,7 @@ it is the version installed on the authoring host, not a value computed from
 a `pubspec.yaml` constraint, and nothing enforces agreement between the two
 the way `verify-toolchain` enforces the Rust pin.
 
-### WireMock steering MSISDNs — the hex convention is dead (2026-09-16, #191)
+### WireMock steering MSISDNs — the hex convention is dead (2026-09-17, #191)
 
 `worker_e2e`/`worker_kill9` (the chaos suites) used to steer WireMock's own
 mock rail by hiding the scenario as **hex digits inside the MSISDN**
@@ -205,7 +205,7 @@ Cameroon mobile prefix. Once server-side phone validation landed (#186), a
 confirm carrying one of those numbers gets vpay's own `400` before the rail
 is ever asked, which defeats the point of a steering number.
 
-**Fixed 2026-09-16 (#191).** Steering MSISDNs are now real,
+**Fixed 2026-09-17 (#191).** Steering MSISDNs are now real,
 `phonenumber`-valid Cameroon mobile numbers matching `2376[579]\d{7}` — the
 real prefix set — continuing the old numeric _suffix_ convention
 (`237670000900/909/915/919` for the four chaos scenarios). `examples/shop`'s
