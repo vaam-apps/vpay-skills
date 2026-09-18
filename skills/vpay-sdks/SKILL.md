@@ -5,7 +5,7 @@ description: The five packages under sdks/ and the parity rule that binds the tw
 
 # vpay SDKs
 
-> **Verified against vpay `9d83ff0e` (2026-09-17).** Version-sensitive claims below
+> **Verified against vpay `991e9825` (2026-09-17).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
