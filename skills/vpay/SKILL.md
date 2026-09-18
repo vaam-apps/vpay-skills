@@ -74,9 +74,12 @@ miniature: the recipe wins over the prose.
 ## Before you start, and when you finish
 
 ```bash
-just verify        # twelve gates + one advisory report — before AND after
+just verify        # 14 gates (2026-09-18) + 1 report — before AND after
 cat docs/status.md
 ```
+
+The recipe echoes its own count; trust that over any number written down,
+here or in vpay. It was twelve until 2026-09-17.
 
 When you finish: `just ci`, then update the status page your change belongs to
 **in the same commit**, then the relevant `docs/flows/*.md` **Status** section.

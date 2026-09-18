@@ -114,8 +114,8 @@ gate table carries what each gate printed on a named commit, and the page says
 so: "Those numbers are a measurement of one tree on one day, not a promise."
 `docs/status/gates.md` goes further — read its numbers "as date-stamps rather
 than totals: it calls `verify-sdk-parity` the reader of 'the fourth
-machine-checked document', which was true on 2026-09-03, when four of these
-twelve gates existed."
+machine-checked document', which was true on 2026-09-03, when four of the
+fourteen gates there are now (2026-09-18) existed."
 
 ## Known-stale links
 
