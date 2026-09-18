@@ -54,8 +54,10 @@ which are shell. `just verify` is the real list; `verify-all` is a convenience.
 ## Both-directions gates
 
 Five gates fail in **both** directions (2026-09-18; four before
-`verify-privacy-inventory`), and that is the property to remember, because the
-intuitive half is the one that never bites you:
+`verify-privacy-inventory`) — `verify-status`, `verify-sdk-parity`,
+`verify-serde`, `verify-migrations` and `verify-privacy-inventory`. That is the
+property to remember, because the intuitive half is the one that never bites
+you:
 
 - **`verify-status`** — a token in code with no declaration fails, _and_ a
   declaration whose token no longer exists fails, _and_ (since 2026-09-16) a
@@ -74,6 +76,17 @@ intuitive half is the one that never bites you:
 - **`verify-privacy-inventory`** — a migrated column no inventory element
   classifies fails, _and_ an inventory copy naming a column no migration
   creates fails. See [§ 14](#14-verify-privacy-inventory).
+
+**`verify-links` is not one of them**, though it is the one people add to this
+list from memory: it fails a link that resolves to no tracked path and has no
+second direction — nothing fails a tracked file that no link points at, and
+nothing could, because most files are not link targets.
+
+And the property has a floor, which [§ 14](#14-verify-privacy-inventory) is the
+proof of: **both directions of a derive-then-compare gate read the same derived
+set**, so a deriver that answers "nothing" for input it does not understand
+makes both directions agree about something neither can see. Two directions
+are only as good as the oracle they share.
 
 ## What the gates last printed
 
@@ -114,6 +127,12 @@ above:
 | `verify-repositories`      | 4 impls, 83 files outside      | **4 impls, 84 files outside**               |
 | `verify-versions`          | did not exist                  | **red** — 2 unannotated `extra-files`       |
 | `verify-privacy-inventory` | did not exist                  | **295 columns / 25 elements / 10 surfaces** |
+
+`verify-privacy-inventory`'s own line breaks down further, re-measured on
+`pr-187` head `4e9fe73e` (2026-09-18): **295 columns, 25 elements** of which
+16 are personal-data and 17 `necessary`, **10 non-database surfaces** of which
+6 are not yet statically enumerable. `cargo test -p xtask` on that head is
+**276 passed**, 26 of them in `privacy_inventory_tests`.
 
 `verify-status` is still **1**; `verify-migrations` still **48**;
 `check-schema` still **27**, under cratestack 0.12.0. `verify-ui` prints
@@ -494,14 +513,21 @@ built for — and vpay recorded that rather than working around it. If you find
 it red on a branch, check whether the branch predates #204's repair before
 looking for a cause in your own change.
 
+The bare-string refusal shipped with #204 and its **tests** arrive in
+[#206](https://github.com/vaam-apps/vpay/pull/206), which also moves
+`AGENTS.md`'s own gate count to thirteen; it reaches fourteen when #187 lands.
+So on a tree between those two merges, `AGENTS.md` and the recipe disagree —
+see the box at the top of this page for how far that went.
+
 ## 14. `verify-privacy-inventory`
 
 _The fourteenth gate, from [#187](https://github.com/vaam-apps/vpay/pull/187)
 (issue #144, ADR-0020, RFC-0002). Written on its branch as the thirteenth and
-renumbered when `verify-versions` landed first. **Read from `pr-187`
-(`932df356`) on 2026-09-18, before it merged** — confirm against the recipe._
+renumbered when `verify-versions` landed first. **Read from `pr-187` head
+`4e9fe73e` on 2026-09-18, after its review and before it merged** — confirm
+against the recipe._
 
-**Refuses**, in both directions plus three validations:
+**Refuses, completely** — this is the whole list:
 
 - a column any `backends/migrations` file creates that **no element in
   `schemas/privacy-inventory.yaml` classifies**;
@@ -514,10 +540,13 @@ renumbered when `verify-versions` landed first. **Read from `pr-187`
 - a `control` outside `{redact, none, forbid}` or a `subject` outside
   `{payer, staff, merchant, none, system}` — a typo like `redcat` would
   otherwise classify a column as protected when it is not;
+- a copy whose `kind` is not `column`, a `column` copy missing its table or
+  column, or a file whose `version` is not `1`;
 - a **registered** non-database surface with a duplicate id, an id colliding
   with an element name, or an empty `surface`/`description`. (It cannot refuse
   an _unregistered_ one — nothing derives that list. The count of surfaces
   "not yet statically enumerable" is printed, not enforced.)
+- **a migration whose DDL the parser cannot read** — by name, see below.
 
 **Implements:** `cargo xtask verify-privacy-inventory`, `verify_privacy_inventory`
 in `.xtask/src/main.rs`.
@@ -530,13 +559,41 @@ string-aware and models `CREATE TABLE`, `ALTER TABLE … ADD/DROP/RENAME COLUMN`
 and `DROP TABLE`, so the derived set is the **final** schema, not the union of
 every column ever written.
 
-> **A `CREATE TABLE` the parser cannot decompose is a hard refusal, not a
-> skip.** `CREATE TABLE t AS SELECT …`, `CREATE TABLE t (LIKE u INCLUDING
-ALL)` and `CREATE TABLE t PARTITION OF u …` each used to derive an **empty**
-> set and pass — and both directions then agree for the same reason: direction
-> A cannot report columns it never derived, and direction B has no stale row
-> because an honest author classified none. A green gate over an unclassified
-> table is the one thing this gate exists to make impossible.
+> **DDL the parser cannot read is refused BY NAME, not skipped** (hardened
+> `c4c542f3`, 2026-09-18). `AS SELECT`, `PARTITION OF`, `INHERITS` and a
+> `CREATE TABLE` with no column list each fail naming the file and the table;
+> a `(LIKE other)` body fails with its own message (it parses, but yields no
+> columns, and "a table with no columns is one the inventory can never be
+> asked about"); and `ALTER TABLE … RENAME TO` fails too, because every column
+> would stay filed under the old name and the inventory would have to keep
+> naming a table that no longer exists in order to pass.
+>
+> **Why a refusal and not a skip:** an unreadable table derives as nothing, and
+> then _both_ directions agree about a table neither can see — direction A
+> cannot report columns it never derived, and direction B has no stale row
+> because an honest author classified none. **A green gate over an
+> unclassified table is the one thing this gate exists to make impossible**,
+> and that is also the limit of the both-directions property in general: the
+> two directions share one oracle, so when the oracle is silent they agree.
+
+> **The keyword match was one literal space, and every way it was wrong failed
+> OPEN.** Until `c4c542f3` the parser did `stmt.to_uppercase().find("CREATE
+TABLE")`. Measured, each against that parser: `CREATE  TABLE` (two spaces),
+> `CREATE\tTABLE`, or a `CREATE` left at the end of a wrapped line **matched
+> nothing at all** — the whole table, every column, invisible to both
+> directions; `ALTER  TABLE t ADD COLUMN email` silently lost `email`, and
+> `DROP  TABLE t` silently left `t` standing, reopening the exact defect
+> `drop_table_targets` had been added to close. There was **no word boundary**
+> (`RECREATE TABLE` contains `CREATE TABLE`) and **no string-literal
+> awareness** — and these migrations' `COMMENT ON` bodies are essays _about
+> migrations_, so one containing the words `DROP TABLE customers` would have
+> removed the real table from the derived set. The only thing keeping the old
+> spelling correct was that all 48 migrations happen to be typed with exactly
+> one space, and nothing in this repository reformats SQL. `kw_end` now matches
+> whitespace-tolerantly, at a word boundary, outside string literals — and on
+> the original bytes rather than an uppercased copy, because `to_uppercase` is
+> not length-preserving (`'ﬁ'` is three bytes, `"FI"` is two) and offsets from
+> the copy were indexing the original.
 
 **Schema qualification is dropped**: `authkestra.oauth_*` is filed under its
 bare name, which is the spelling the inventory uses. Two tables of the same
