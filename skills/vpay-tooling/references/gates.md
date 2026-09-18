@@ -1,16 +1,28 @@
 # The fourteen gates
 
 _Verified against vpay `d3a8810b` (2026-09-16); §§ 13-14 read from `pr-187`
-(`932df356`) and `master` on 2026-09-18. Version-sensitive claims
-carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
+(at `932df356`) and `master` (`aeb9e242`) on 2026-09-18, before either merged.
+The `pr-187` branch moved twice more the same day; gate names, recipe wiring
+and refusal logic were unchanged across all three commits, so treat those as
+stable and the line numbers and narrative wording as a snapshot.
+Version-sensitive claims carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 **Fourteen as of 2026-09-18.** ~~Twelve.~~ It was twelve until 2026-09-17,
 when [#201](https://github.com/vaam-apps/vpay/pull/201) appended
 `verify-versions`; [#187](https://github.com/vaam-apps/vpay/pull/187) appends
-`verify-privacy-inventory` and makes it fourteen. **Read the recipe, not this
-count** — it echoes its own (`verify: ok — the fourteen gates above passed`),
-and vpay's own `justfile` header block was left saying "Twelve" for the hours
-between the two.
+`verify-privacy-inventory` and makes it fourteen.
+
+> **Read the recipe, not the prose — and this is the best live example of the
+> authority rule there has ever been.** Measured on `master` `aeb9e242`
+> (2026-09-18), a full day after #201 merged: the `verify` recipe runs
+> **thirteen** gates and echoes _"the thirteen gates above passed"_, while
+> `AGENTS.md` says _"on this commit the gates are twelve"_ and lists twelve,
+> `docs/status.md` says _"twelve gates and one advisory report"_ over a
+> twelve-row table with no `verify-versions` row, and the `justfile`'s own
+> header block says _"Twelve invariants"_. One change moved the recipe, the
+> echo, `verify_all` and the CI step and left **every prose count in the tree**
+> behind it. `AGENTS.md` predicted this about itself — "it has gone stale at
+> nearly every count it has carried".
 
 `just verify` runs fourteen gates and then one report:
 
@@ -88,16 +100,35 @@ Six of these moved between 2026-09-11 and 2026-09-16 — `verify-errors` 19→20
 `check-schema` 26→27, `verify-serde` 90→96, `verify-migrations` 42→48. That
 rate is the reason every count on these pages carries a date.
 
-**Two of them moved again by 2026-09-18**, measured on PR #200's branch and
-written up in `docs/status/verification/2026-09-17-redirect-leg-review.md`:
-`verify-sdk-parity` 603/36/35/39 → **661 proving tests, 37 dated gaps, 35
-methods, 39 rows**, and `verify-links` 1 731/375 → **1 711 links in 397 tracked
-files** (fewer links across more files, which is what a documentation split
-does). `verify-status` is still **1**.
+**`docs/status.md` re-ran all fourteen on 2026-09-17** on `pr-187`'s merge of
+`master` at `eb078020` — the newest full column, and the only one that includes
+the two new gates. Its own note says merging `master` "moved nine of the
+numbers and added a gate"; these are the rows that differ from the column
+above:
 
-**`verify-versions` and `verify-privacy-inventory` have no row here on
-purpose.** Neither has a figure this page has seen printed on a named commit,
-and inventing one would be worse than the gap. Run them.
+| Gate                       | 2026-09-16 (`888b00c3`)        | 2026-09-17 (`eb078020`, 14 gates)           |
+| -------------------------- | ------------------------------ | ------------------------------------------- |
+| `verify-sdk-parity`        | 603 tests, 36 gaps, 35 methods | **661 tests, 37 gaps, 35 methods, 39 rows** |
+| `verify-links`             | 1 731 links in 375 files       | **1 719 links in 399 files**                |
+| `verify-serde`             | 96 types, 17 exemptions        | **102 types, 17 exemptions**                |
+| `verify-repositories`      | 4 impls, 83 files outside      | **4 impls, 84 files outside**               |
+| `verify-versions`          | did not exist                  | **red** — 2 unannotated `extra-files`       |
+| `verify-privacy-inventory` | did not exist                  | **295 columns / 25 elements / 10 surfaces** |
+
+`verify-status` is still **1**; `verify-migrations` still **48**;
+`check-schema` still **27**, under cratestack 0.12.0. `verify-ui` prints
+nothing at all on success — exit 0 is its whole output, so there is no number
+to quote and a green run is the only evidence there is.
+
+A **red** row in a gate table is a thing this repository writes down rather
+than omits ("a gate table with a green row for a red gate is worse than no
+table"). If `verify-versions` is red on a branch, check whether that branch
+predates #204 before looking for a cause in your own change.
+
+`verify-links` counted **fewer** links across **more** files — that is what a
+documentation split does, and a count moving down is not evidence of deletion.
+PR #200's branch measured 1 711 in 397 on the same day, on a different tree;
+neither is wrong.
 
 **`verify-status` moved twice in one day and came back.** It printed **2**
 partway through 2026-09-15, when RFC-0003 § 5 gave `orange_money` a `refund`
@@ -515,8 +546,20 @@ exists (31 created tables, 31 distinct bare names, as of 2026-09-18).
 
 **How you trip it:** adding a migration with a new column and not adding the
 `kind: column` copy to an element in `schemas/privacy-inventory.yaml`. Dropping
-a column and leaving its copy behind trips the other direction. See
-`docs/reference/personal-data-inventory.md` for the published prose version.
+a column and leaving its copy behind trips the other direction — and dropping a
+**table** without deleting its rows is the same failure with more rows; that is
+a real hole this gate's own review found, on migration 0009's
+`merchant_api_keys`.
+
+**The file's shape**, so you can add a row without opening it: `version: 1`,
+then `elements:` keyed by a stable element name, each carrying the eight
+classification fields, then `copies:` — a list of
+`{kind: column, table: …, column: …}`. Then `non_db_surfaces:`, a list of
+registered disclosure surfaces (**10 as of 2026-09-18, 6 of them
+`enumerable: false`**, which the gate counts and prints but does not enforce).
+The published prose companion is `docs/reference/personal-data-inventory.md`.
+The gate's own behaviour is pinned by **26 mutation cases as of 2026-09-18**
+(16 before the parser hardening the same day) in `mod privacy_inventory_tests`.
 
 ## The report: `verify-docs`
 
