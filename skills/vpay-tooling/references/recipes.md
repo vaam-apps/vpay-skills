@@ -1,6 +1,6 @@
 # The recipe inventory
 
-_Verified against vpay `9653ee94` (2026-09-16). Version-sensitive claims
+_Verified against vpay `9d83ff0e` (2026-09-17). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 `justfile` is 4 704 lines, two-thirds of them comment (2026-09-16).
@@ -151,8 +151,8 @@ test-storybook` are what fail when the config breaks.
 | `just e2e-specs`             | the Cypress half only, against a stack that is **already up**                                                                                   | a running demo stack                                 |
 | `just stripe-compat`         | brings up `compat_services` only, runs the stripe-node conformance suite                                                                        | Docker                                               |
 | `just sdk-live`              | brings up `compat_services`, runs the Rust `live_invoices` suite **and** `pnpm --filter @vaam-apps/vpay-sdk test:live`; **leaves the stack up** | Docker                                               |
-| `just test-flutter-e2e`      | real stack, real `private_key_jwt`, real `cs_…` sessions                                                                                        | `curl docker jq node pnpm`, and `just demo-up` first |
-| `just test-flutter-emulator` | drives the real page's confirm UI on an Android emulator                                                                                        | `adb`, an AVD named `vpay_e2e_avd`, a running stack  |
+| `just test-flutter-e2e`      | drives the plugin's own `BrowserClient`/`SheetController` against a real stack, real `private_key_jwt`, real `cs_…` sessions                    | `curl docker jq node pnpm`, and `just demo-up` first |
+| `just test-flutter-emulator` | drives the real native sheet's confirm UI on an Android emulator                                                                                | `adb`, an AVD named `vpay_e2e_avd`, a running stack  |
 
 Cypress lives in `frontends/tests/e2e` (`@vpay/e2e`). Four specs:
 `checkout.cy.ts`, `dashboard.cy.ts`, `shop-embedded.cy.ts`,
@@ -163,13 +163,63 @@ The Cypress binary needs `pnpm exec cypress install` on a network that reaches
 its CDN. `CYPRESS_INSTALL_BINARY=0` skips it, and the `justfile` re-exports the
 variable, so a value you export locally propagates into every recipe.
 
-**Flutter is not built on this branch.** `sdks/flutter/vpay_checkout_flutter/`
-does not exist; `just install-flutter`, `analyze-flutter`, `test-flutter`,
-`test-flutter-e2e` and `test-flutter-emulator` all share a `_flutter-preflight`
-that refuses with a message naming the missing directory. None of them is in
-`just ci`, and no CI job installs a Flutter SDK. `flutter-toolchain.toml` pins
-3.47.2 / Dart 3.13.2 but its `channel` is `[user-branch]`, which is **not** a
-clean channel pin and the file says so.
+**~~Flutter is not built on this branch~~ — corrected 2026-09-17: it is, and
+has been since 2026-09-13's Lane A/B/C.** `sdks/flutter/vpay_checkout_flutter/`
+exists; the package is `vpay_checkout_flutter`, the mobile **payer** surface
+(`vpay-sdks`'s `references/flutter-plugin.md` has the architecture — it has
+been rebuilt twice, most recently into a native Flutter sheet, #189).
+
+Six `*flutter*` recipes, all gated by a shared `_flutter-preflight` that
+refuses clearly (names the missing directory) if
+`sdks/flutter/vpay_checkout_flutter/` does not exist or Flutter is not on
+`PATH`, and **warns without failing** when the version on `PATH` differs
+from `flutter-toolchain.toml`'s pin:
+
+| Recipe                       | Proves                                                                                                                                                                                                                                                                                                                                                                                       | Needs                                                                                                          |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `just install-flutter`       | `flutter pub get` for the plugin and its `example/` app                                                                                                                                                                                                                                                                                                                                      | Flutter on `PATH`, network                                                                                     |
+| `just analyze-flutter`       | `dart analyze --fatal-infos` — this package's strictest setting, since it has no `verify-*` gate of its own                                                                                                                                                                                                                                                                                  | Flutter on `PATH`                                                                                              |
+| `just test-flutter`          | Unit tests only (`flutter test`) — the state machines are pure by design (D1/D4), no emulator, no `adb`, no stack. **Stack-independent and must keep passing with nothing running** — 258 passed / 0 skipped, 2026-09-17                                                                                                                                                                     | Flutter on `PATH`                                                                                              |
+| `just test-flutter-web`      | The **only** recipe that runs `test/web/` at all — `@TestOn('chrome')` keeps it out of a bare `flutter test` entirely (proven: `flutter test` reports the unit count with those files present, neither a pass nor a skip — not in the run). Drives `window.open`, the origin-**and**-`event.source`-pinned `vpay:complete` listener, and the popup `closed` poll in a **real** Google Chrome | `CHROME_EXECUTABLE`, or `google-chrome` on `PATH` — refuses loudly, never fakes a browser, if neither resolves |
+| `just test-flutter-e2e`      | The plugin's own `BrowserClient`/`SheetController` against a **real, running** stack — no `MockClient` anywhere in the path. Curls `/healthz` on vpay and `examples/shop` first and refuses loudly (_"bring a stack up first: just demo-up"_) rather than failing three tools deep. Does not bring the stack up or tear it down                                                              | `curl docker jq node pnpm`, and `just demo-up` already running                                                 |
+| `just test-flutter-emulator` | The real native sheet's confirm UI, driven on a real (not booted-by-this-recipe) Android emulator/device — selects by `VPAY_EMULATOR_SERIAL`, or the one attached device whose AVD is named `vpay_e2e_avd`, and refuses on zero or more than one. Calls `adb reverse` (not a `10.0.2.2` rewrite) because the checkout page's own client-side JS bakes in `localhost:8080`                    | `adb curl docker jq`, a running `vpay_e2e_avd` device, a running stack                                         |
+
+**None of the six is in `just ci`** (D-M3, unchanged since 2026-09-13): no
+CI job and no `vpay-ci` VM installs a Flutter SDK, so every count quoted for
+this package anywhere in this repository is a human running the recipe by
+hand. `flutter-toolchain.toml` pins Flutter `3.47.2` / Dart `3.13.2` the way
+`rust-toolchain.toml` pins the Rust compiler — but its `channel` field reads
+`[user-branch]`, which is **not** a clean channel pin (unlike
+`rust-toolchain.toml`'s `channel = "1.98.0"`) and the file says so itself:
+it is the version installed on the authoring host, not a value computed from
+a `pubspec.yaml` constraint, and nothing enforces agreement between the two
+the way `verify-toolchain` enforces the Rust pin.
+
+### WireMock steering MSISDNs — the hex convention is dead (2026-09-17, #191)
+
+`worker_e2e`/`worker_kill9` (the chaos suites) used to steer WireMock's own
+mock rail by hiding the scenario as **hex digits inside the MSISDN**
+(`…0ce9` slow status, `…0cf9` slow submit, `…c15` SIGTERM) — a string that
+was never a real phone number and, worse, used prefix `60`, not a real
+Cameroon mobile prefix. Once server-side phone validation landed (#186), a
+confirm carrying one of those numbers gets vpay's own `400` before the rail
+is ever asked, which defeats the point of a steering number.
+
+**Fixed 2026-09-17 (#191).** Steering MSISDNs are now real,
+`phonenumber`-valid Cameroon mobile numbers matching `2376[579]\d{7}` — the
+real prefix set — continuing the old numeric _suffix_ convention
+(`237670000900/909/915/919` for the four chaos scenarios). `examples/shop`'s
+own demo-number table moved the same way, onto real `67x` (MTN) / `69x`
+(Orange) prefixes, keeping each number's old suffix (`101`, `102`, `103`,
+`400`, `503`) so the table reads the same as before. **Both tests now assert
+the new invariant** (`/^2376[579]\d{7}$/` for the shop table) rather than
+merely matching new literals, so reverting either move fails its own suite,
+not just a fixture comparison.
+
+Not touched, deliberately: the Rust fixtures under `confirm_rails.rs` and
+`adapter_conformance.rs` that never pass through the validating API route
+still use the old `2376000000xx` block — that redesign is recorded there as
+deferred, not silently different from this fix.
 
 ## Docs
 

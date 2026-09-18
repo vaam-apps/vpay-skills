@@ -1,6 +1,6 @@
 # `sdks/flutter/vpay_checkout_flutter`
 
-_Verified against vpay `d3a8810b` (2026-09-16). Version-sensitive claims
+_Verified against vpay `9d83ff0e` (2026-09-17). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 A **payer** surface, like `@vaam-apps/vpay-stripe-js` — not a third merchant
@@ -12,177 +12,243 @@ single-column table in `docs/sdks/parity.md`.
 Design: `docs/plans/2026-09-13-flutter-plugin.md` (D1–D9). Decisions:
 ADR-0021. Process: `docs/flows/mobile-checkout.md`. `publish_to: none`.
 
-## What it does, in five steps
+## Three architectures — know which one you are reading about
 
-1. Parse the session URL the merchant's backend handed the device.
-2. **Pre-flight** — read the session, derive the stop URLs, buy the intent's
-   own `client_secret`. An `embedded` session is **refused here, before any
-   window opens**, with a typed error.
-3. **Show** — a native window (Android `WebView`, iOS/macOS `WKWebView`, a
-   `window.open` popup on web) loading `session.url`. The window's only job is
-   to report "reached one of these stop URLs" or "the payer left".
-4. **Resolve** — poll the payment intent, on a budget.
-5. **Answer** — one of `VpayCheckoutSucceeded`, `VpayCheckoutFailed`,
-   `VpayCheckoutCanceled`, `VpayCheckoutPending` (still processing — not a
-   failure and not lied about as one) or `VpayCheckoutUnresolved` (a typed
-   `VpayError`, never a silent guess).
+This package has been rebuilt twice since it shipped. A sentence written for
+an earlier build reads as current and is not — check which of these three it
+describes before you trust it:
+
+1. **A `WebView`/`WKWebView`** (original design, through 2026-09-15) —
+   rendered vpay's hosted checkout page inside the merchant app's own
+   process.
+2. **The payer's own browser, with a selectable `inApp`/`externalBrowser`
+   mode** (2026-09-14, D8) — **cutover 2026-09-16 (D5, revised)**: the mode
+   toggle and the `WebView` are both **deleted outright**, not deprecated. A
+   partial Custom Tab on Android, `SFSafariViewController` on iOS,
+   `NSWorkspace` on macOS, `window.open` on web — the only surface, because a
+   `WebView` puts `evaluateJavascript`, the cookie store and a navigation
+   delegate inside a process the merchant controls, where a compromised app
+   could read a payer's PAN and OTP undetectably.
+3. **A native Flutter sheet, `VpayCheckoutSheet`** (#189 lane 2,
+   2026-09-17 — **current**). The browser from step 2 does not go away —
+   **it stops being the checkout and becomes only the `redirect`-rail
+   handler.** MTN's push form and Orange's ready-to-redirect prompt now
+   render as Flutter widgets, driven by the session's own server-sent
+   `rails` array (#186). This is what the rest of this page describes.
+
+There is no `mode` argument left anywhere in this package. If you see one,
+you are reading about architecture 1 or 2.
+
+## What it does now, in order
+
+1. **Pre-flight.** `SheetController` reads the session
+   (`GET /v1/browser/checkout/sessions/{cs_id}`), buys the intent's own
+   `client_secret`, and gets back `rails` — each rail's `code`, `flow`
+   (`push` or `redirect`), `label_key`, an optional `display_name`, and its
+   typed fields. **No SDK release is needed for a new rail's fields, flow or
+   validation** — only its label falls back to the raw code until the
+   catalogue is updated. An unrecognised field type (`"card"` included)
+   decodes to `RailFieldKindUnknown` and is never rendered — see "Cards are
+   out of scope" below.
+2. **Render.** `VpayCheckoutSheet` — reachable through `showVpayCheckoutSheet`
+   (a large-detent, draggable `showModalBottomSheet`) or
+   `showVpayCheckoutSheetRoute` (a full route) — walks the 13-screen state
+   machine ported from `machine.ts`, skipping `select_rail` straight to the
+   single rail's entry screen when only one rail is supported. It inherits
+   the host app's own `ThemeData` — nothing here paints a fixed vpay palette
+   or reads a `VpayCheckoutTheme`.
+3. **Confirm.** For a `push` rail, `BrowserClient.confirmPaymentIntent`
+   (new in this lane) POSTs form-encoded, bracket-nested
+   `payment_method_data[type]` / `payment_method_data[<rail>][msisdn]` —
+   directly, no rail code branched on in the code that builds the request.
+4. **Poll.** `SheetController` polls with lane 1's jittered ladder
+   (`poll_jitter.dart`, `[0.75, 1.25] × interval`, now actually wired into a
+   controller for the first time) until the intent stops moving. The
+   terminal rule is the ported `client.ts:673-679` rule: `succeeded`,
+   `canceled`, or `requires_payment_method` **with a `last_payment_error`
+   present**. A bare `requires_payment_method` is not terminal — it means
+   "never confirmed," not "failed."
+5. **Redirect rails hand off, they don't take over.** A `flow: "redirect"`
+   rail (Orange) records `CheckoutRedirecting` **before** the platform host
+   is ever shown, then opens the **same** `VpayCheckoutPlatform` browser
+   host architecture 2 built. When that resolves (`stopUrlReached` or a
+   dismissal), control returns to the sheet's confirming/waiting state; a
+   redirect confirm that answers with no `next_action` polls directly,
+   without ever opening a window.
+6. **Answer.** One of `VpayCheckoutSucceeded`, `VpayCheckoutFailed`,
+   `VpayCheckoutCanceled`, `VpayCheckoutPending`, or `VpayCheckoutUnresolved`
+   — unchanged from architecture 2. A sheet dismissed **before any confirm**
+   resolves `Unresolved`, never a synthesised `Canceled`; a sheet dismissed
+   **mid-payment** (after confirm, intent still moving) polls first (D4) and
+   resolves `Pending`, never `Canceled`.
 
 ## The design decisions the tests actually pin
 
-- **D1 — the outcome is never read off a URL.** The proving test names the
-  proof itself: _`resolveAfterStopUrlReached` takes no URL argument at all —
-  the signature itself is the proof._ Reaching `success_url` with an intent
-  that is still `processing` yields **pending**, not succeeded.
-- **D4 — a dismissal polls before it reports.** A dismissed sheet fifteen
-  seconds after the payer approved an MTN push is not a cancellation; it is a
-  payer who has not been asked yet. A dismissal with a succeeded intent reports
-  `succeeded`.
-- **D2 — stop-URL matching is scheme + host + port + path.** Query and fragment
-  are **ignored**, so they are not carried across the platform channel at all —
-  there is nothing there for a host to compare against by mistake.
-  `{CHECKOUT_SESSION_ID}` is substituted before a URL becomes a stop rule.
-- **D3 — this package has no `confirm` method, by design.** vpay's own hosted
-  _page_ submits the confirm, and no JavaScript bridge exists for the package
-  to do otherwise.
+- **D1 — the outcome is never read off a URL.** Still true, now proven at
+  two layers: `resolveAfterStopUrlReached` takes no URL argument at all (the
+  signature itself is the proof, architecture 2), and the sheet's own poll
+  is what resolves a push confirm — nothing in `sheet_controller.dart`
+  short-circuits on a confirm response.
+- **D4 — a dismissal polls before it reports.** `mid-payment (after
+confirm, still moving) resolves Pending — never canceled`, `before any
+confirm, resolves Unresolved — never canceled`.
+- **D2 — stop-URL matching is scheme + host + port + path**, used now only
+  by the redirect hand-off (step 5 above). Query and fragment are ignored.
+- **D3 — no JavaScript bridge, no native peer added to any page.** Extended,
+  not just restated, by architecture 2: the checkout page itself now runs in
+  a separate browser process this plugin's code cannot reach at all.
 - **D6 — the `client_secret` and the session URL stay out of every error,
-  diagnostic and `toString`**, _including the generated channel types_
-  ("generated code is how this regresses"). A hosted session's URL carries the
-  session secret in its fragment, so it is redacted too, and the redaction is
-  asserted to survive string interpolation — which is how it would actually be
-  logged.
-- **A bad or expired link is the uniform 404**, mapped to the same typed error
-  the six causes `browser::authenticate` does not distinguish between all
-  render. The Dart client must not try to tell them apart either.
+  diagnostic and `toString`**, including the generated channel types.
+  `SheetController` reads a `client_secret` directly (never a whole session
+  URL) the same way `CheckoutController.preflight` already does.
+- **A bad or expired link is the uniform 404**, mapped to the same typed
+  error the six causes `browser::authenticate` does not distinguish between.
 
-## The two e2e suites (commit `107eff12`, 2026-09-15)
+## Money never touches a float, and the terminal rule is not the obvious one
 
-Both refuse **loudly, never skip**, when what they need is absent. Neither is
-in `just ci` (D-M3), so every count this repository quotes for this package is
-a human running the recipe by hand.
+Two of the bar `frontends/apps/checkout` set that a port loses first if
+nobody watches for it, both pinned by name:
 
-### `just test-flutter-e2e` — the Dart core against a real stack
+- **Money.** `money_format.dart` is built on lane 1's `money.dart` digit
+  surgery (ported from `money.ts:46-56`) — `amount / 100.0` is exactly the
+  bug this exists to prevent, and the zero-decimal currency table (XAF, XOF,
+  JPY, KRW, CLP, VND) is honoured. `a zero-decimal currency (XAF) never
+gains a decimal point`, `never touches a float — digit surgery only,
+reusing money.dart`.
+- **The poll's terminal rule.** `intent_updated on confirming with a
+non-terminal intent becomes waiting, carrying the rail` is the case that
+  fails first if someone "simplifies" `hasStoppedMoving` back to checking
+  only `status`.
 
-`test_e2e/real_stack_e2e_test.dart`. **Kept out of `test/` on purpose**:
-`flutter test` with no arguments only discovers `test/`, so the plain unit
-suite (`just test-flutter`, 82 passed / 0 skipped) stays stack-independent and
-must keep passing with the stack down.
+## Cards are out of scope — structurally, not by convention
 
-The decisive check is first: the recipe curls `/healthz` on both vpay and
-`examples/shop` and prints _"FAIL — nothing answers … this is a REAL end-to-end
-test and refuses to fake one. bring a stack up first: just demo-up"_.
+`RailFieldKind.fromJson` cannot represent a card field: an unrecognised
+field type decodes to `RailFieldKindUnknown`, which `rails.dart`'s
+`railChoices` already refuses to render (lane 1, D9). A native PAN field
+would move the integration from PCI **SAQ-A to SAQ-D**; nothing added in
+lane 2 changes that boundary, and nothing in the sheet's own code path can
+represent a card field even by mistake.
 
-The fixture is two real Checkout Sessions minted through **`examples/shop`'s
-own running server** — a real `POST /v1/payment_intents` + `POST
-/v1/checkout/sessions` under a real `private_key_jwt` exchange, the same two
-calls `examples/shop/src/server/orders.ts` makes for a paying customer — with
-the second expired via `POST /v1/checkout/sessions/{id}/expire` under a
-merchant token the recipe mints itself. It reads whichever private key the
-running shop container already has (`docker cp`, never generated or committed)
-and signs with `sdks/nodejs/scripts/mint-assertion.mjs`. **No merchant
-credential this package would ever hold appears in the test** — the file only
-ever receives a session `url`, exactly what a merchant's backend hands a
-device. The recipe does not bring the stack up or tear it down.
+## What has no native analogue, and is dropped by an ADR line, not silently
 
-**It found a real bug no `MockClient` fixture could catch**, which is the whole
-argument for it existing: `GET /v1/browser/checkout/sessions/{id}` never echoes
-the **session's** own `client_secret` back — only the intent's — yet
-`CheckoutSession.fromJson` _required_ that field. Every real pre-flight against
-a real server failed with `unexpected_response(200)`, and the suite had been
-green only because every `test/` fixture fabricated the key. `clientSecret` is
-now a **caller-supplied parameter** (the value the caller already authenticated
-the read with), and every mock fixture was updated to drop the key it was
-wrongly asserting, without weakening any assertion.
+`frame.ts`/`origins.ts`/`csp.ts`/`entry.ts` — the hosted page's D4/D8
+iframe-embedding refusal and the parent `postMessage` protocol — are **not**
+ported. A Flutter widget tree has no iframe to be embedded in, no parent
+frame to police an origin against, and no `postMessage` channel to gate.
+Recorded in ADR-0021's 2026-09-17 addition, not an oversight: those files
+still gate a real security property for the hosted page (a different threat
+model — an arbitrary embedding site, not a merchant's own app process), and
+the sheet's own boundary is D6 above plus D3's continued refusal of a
+native-to-page bridge.
 
-Second finding in the same commit: `package:http`'s Map-body helper
-percent-encodes `payment_method_data[type]`'s brackets, which vpay's
-Stripe-style form decoder (`backends/crates/vpay-api/src/form.rs`) does not
-recognise — it splits on the raw, unescaped bracket by design. The e2e builds
-that one request body by hand.
+## "Remember this number on this device"
 
-**One HTTP call in that file is not on `BrowserClient`**: `_rawConfirm`, which
-stands in for what a payer's browser submits on vpay's page (D3, above).
-Everything else goes through the package's own client.
+`remember_msisdn.dart` — `shared_preferences`-backed (not the hosted page's
+IndexedDB, but the same shape: opt-in, 90-day TTL **enforced on read**,
+written only after a real accepted confirm, no PIN ever, a "Forget"
+affordance). The shared-phone warning is inside `CheckboxListTile`'s own
+merged semantics label, not a tooltip. `a record exactly at the 90-day
+boundary is still readable`, `a record one microsecond past the 90-day TTL
+is no longer readable`.
 
-### `just test-flutter-emulator` — the real page in a real emulator
+**Named gap, not silently dropped**: the redirect entry screen's own
+"remember Orange Money on this device" checkbox renders and its label reads
+correctly, but only the MSISDN half of page memory has a persistence layer —
+no record is written for a redirect rail's own "remember" checkbox.
 
-Refuses the moment no Android device answers `adb`. **Does not boot an
-emulator** — booting is slow, the host is shared, and a recipe that silently
-starts one silently leaves one running. It selects by `VPAY_EMULATOR_SERIAL`,
-or by finding **exactly one** attached device whose own AVD name is
-`vpay_e2e_avd` (never some other device already on the host), and refuses on
-zero or more than one.
+## i18n — French default, 72 keys, both locales complete
 
-It calls `adb reverse` for two ports rather than rewriting URLs to `10.0.2.2`,
-and the reason is worth carrying: **the checkout page's own client-side JS
-calls `NEXT_PUBLIC_VPAY_API_URL`, baked into the container as
-`localhost:8080`**, so `adb reverse` is the one fix that makes that string
-resolve correctly for both the recipe's HTTP calls and the WebView's.
+`lib/src/sheet/i18n.dart` carries the same 72 keys as
+`frontends/apps/checkout/src/i18n/{en,fr}.ts`. `VpayLocale.fallback` is
+`fr` — defaulting to English would be a regression, because French is
+Cameroon's and Orange's language. A rail's `label_key` resolves through the
+catalogue; an unknown rail falls back to the deployment's own configured
+`display_name`, then its raw code.
 
-Its fixtures are two **unconfirmed** hosted sessions minted through
-`orders.create` — unlike `test-flutter-e2e`'s, because this suite drives the
-real page's own confirm UI. Specs live in `example/integration_test/`.
+## A real defect this lane's own gate caught — not a unit test (2026-09-17)
 
-## D8 — the external browser
+Every confirm the sheet sent was refused by the real server:
+`payment_method_data[type]` never arrived, because `BrowserClient`'s form
+encoder percent-encoded the bracket syntax's own structural characters
+(`payment_method_data%5Btype%5D`), and `vpay-api`'s form parser
+(`backends/crates/vpay-api/src/form.rs`) splits a raw key on the **literal**
+`[` before decoding anything. Every assertion in
+`test/browser_client_test.dart` had passed regardless, because they read the
+request back through `Uri.splitQueryString`, which decodes the whole key
+before an assertion ever sees it — green tests, broken product, found only
+because the hand-driven walk actually tried to pay. Fixed
+(`BrowserClient._bracketKey`); the test now asserts the **literal wire
+bytes**, and reverting the fix is confirmed to fail it.
 
-`VpayCheckoutMode.externalBrowser` is the mitigation for the design's named
-biggest risk: **Orange's page has never been driven inside a WebView** — vpay
-has only ever talked to a WireMock stub serving two links.
+**A related, non-SDK finding from the same walk**: `examples/shop`'s
+previously advertised MTN demo number `237600000000` is not a valid
+Cameroon mobile number under the server-side `phonenumber` validation the
+sheet's confirm now goes through (#186) — `curl` reproduces the same `400`
+independent of this SDK. `237671234567` (a real MTN prefix) confirms
+cleanly. See "WireMock steering MSISDNs" in `vpay-tooling`'s recipes
+reference for the parallel, already-fixed problem in vpay's own chaos-test
+fixtures.
 
-As of 2026-09-14 it is **wired, not merely designed**:
-`pigeons/checkout.dart`'s `ShowCheckoutRequest` carries a `mode` field
-(`CheckoutWindowMode`), threaded end to end. It previously threw
-`UnimplementedError`, and the ⛔ row saying so is struck through and dated.
+## Gates, 2026-09-17 (`docs/status/verification/2026-09-17-flutter-native-sheet.md`)
 
-- **Android** — `VpayCheckoutExternalBrowserSession` launches Custom Tabs
-  (`androidx.browser`) and reports the payer's return over
-  `Application.ActivityLifecycleCallbacks`. **No `startActivityForResult`, no
-  scheme to call back on**, because the outcome is always polled (D1). It
-  degrades correctly with **no merchant deployment work at all**. Proven by
-  _running_, not just compiling: a dedicated headless AVD showed a real
-  `CustomTabsIntent` open Chrome and a real hardware back press return control
-  to the host `Activity`, reporting a real dismissal over the real channel.
-- **iOS** wraps `SFSafariViewController`; **macOS** opens the default browser
-  via `NSWorkspace`. **Both are compiled by nobody** — this repository runs on
-  Linux and has no `xcodebuild` (`swiftc`/`swift` confirmed absent). Reviewed
-  by reading, and that is all. A dated ⛔.
-- **Web** — `inApp` and `externalBrowser` collapse to the identical
-  `window.open` popup, since there is no in-app WebView on Flutter web. Proven
-  by `flutter build web`. **No browser has driven it.**
-- **NOT built: D8's "tier 1"** — Android App Links / iOS 17.4+ Associated
-  Domains, so an external window can close itself instead of the payer
-  switching back manually. It needs a merchant-hosted
-  `assetlinks.json` / `apple-app-site-association` deployment this repository
-  cannot provide. `ASWebAuthenticationSession` is **deliberately not** an iOS
-  dependency, for the same reason `androidx.browser` was not one before D8: _a
-  dependency with no code path that could ever run is its own kind of false
-  claim._
+| Gate                                  | Exit                                                                                                                                                                                             |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `flutter test`                        | 0 — **258 passed / 0 skipped** (82 through architecture 2, 200 after lane 1)                                                                                                                     |
+| `dart analyze --fatal-infos .`        | 0                                                                                                                                                                                                |
+| `dart format --set-exit-if-changed .` | 0 — 57 files, 0 changed                                                                                                                                                                          |
+| `cargo xtask verify-sdk-parity`       | 0 — 661 proving tests, 37 dated gaps, 39 rows                                                                                                                                                    |
+| `just test-flutter-e2e`               | 0 — 3 passed, against a real, rebuilt `vpay-demo` stack                                                                                                                                          |
+| `just test-flutter-emulator`          | 0 — **two** suites (`checkout_dismiss_test.dart`, `checkout_external_browser_test.dart`) — the third, the old in-app-`WebView` suite, was deleted with the `WebView` in architecture 2's cutover |
 
-Custom URL scheme returns are recorded as a **decision, not an oversight**:
-`checked_forward_url` accepts only `http(s)` for `success_url`/`cancel_url`, so
-a bounce page is the only route to `myapp://…`, and a custom scheme is
-first-come-first-served on Android — any installed app may claim it and receive
-the return.
+`just ci` was **not** run for this lane, per its own brief — none of the six
+`*flutter*` recipes is in it (D-M3). See `vpay-tooling`'s recipes reference
+for what each recipe proves and needs.
 
-**A safety note the README carries and you should not soften:**
-`externalBrowser` does **not** move a digital-goods app out of App Store / Play
-scope. It can itself be the violation.
+## Driven by hand, Android only, 2026-09-17
 
-## Recipes
+Three cold MTN launches to `paid` in `examples/shop`'s own database (via a
+real signed webhook, never a value the app computed itself), one Orange
+redirect hand-off and back through the same browser host architecture 2
+built, and one deliberate mid-payment dismissal that stayed on the sheet's
+waiting screen (D4) and later reached the rail's own real terminal state
+(`failed`, `payer_timeout`) rather than a fabricated `canceled` at the
+moment of dismissal. Full detail, screenshots and transaction ids:
+`docs/status/verification/2026-09-17-flutter-native-sheet.md`.
 
-| Recipe                       | What it does                                                                                                 |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `just install-flutter`       | `flutter pub get`                                                                                            |
-| `just analyze-flutter`       | `dart analyze --fatal-infos` — the strictest setting, because this package has no `verify-*` gate of its own |
-| `just test-flutter`          | Unit only. No emulator, no `adb` — the controller is pure by design                                          |
-| `just test-flutter-e2e`      | Above                                                                                                        |
-| `just test-flutter-emulator` | Above                                                                                                        |
+## What is still not done, honestly
 
-All five go through `_flutter-preflight`, which refuses clearly when the
-package directory or the Flutter SDK is missing and **warns** (does not fail)
-when the version on PATH differs from `flutter-toolchain.toml`'s pin.
+- **iOS and macOS were not touched by this lane** — Android only, on the
+  maintainer's own `emulator-5554`. They remain compiled by nobody (no
+  `xcodebuild` on this repository's Linux host); reviewed by reading only.
+- **The redirect hand-off's stop-URL matching is still unverified on every
+  platform** — the same deep-link signal architecture 2's cutover
+  documented. Every Orange walk in this lane also ended in `dismissed`,
+  never `stopUrlReached`; D4's poll is what made that correct anyway.
+- **The "remember Orange Money" checkbox writes nothing** — see above.
+- **No real rail, anywhere.** WireMock behind every walk in this lane, as
+  everywhere else in this repository.
+- **No CI gate runs any of the six `*flutter*` recipes** (D-M3, unchanged).
+  Every count on this page is a human running the recipe by hand.
+- **The Android/web window proof from architecture 2 is retired, not
+  current**, for the one suite it depended on: `checkout_window_test.dart`
+  and its debug-only JS-injection hook (`VpayCheckoutActivityTestHarness.kt`)
+  were deleted in the 2026-09-16 browser cutover along with the `WebView`
+  they drove. No suite in this repository drives a full MTN push through
+  vpay's real hosted checkout page end to end on Android any more — the
+  native sheet replaces what that suite proved, on a different code path.
+- **D8's "tier 1"** (Android App Links / iOS 17.4+ Associated Domains, so
+  the redirect hand-off's browser can close itself) is still not built —
+  needs a merchant-hosted `assetlinks.json`/`apple-app-site-association`
+  deployment this repository cannot provide.
 
-## What has never happened
+## More
 
-No real rail. The stack `just test-flutter-e2e` drives is real; the rail behind
-it is WireMock, as everywhere else in this repository. No device, no App Store
-or Play review, and the Android 21 / iOS 12 floor is a claim nobody has tested.
+- `docs/flows/mobile-checkout.md` — the process, current as of 2026-09-17.
+- ADR-0021 — every decision, including the 2026-09-17 addition recording
+  what has no native analogue and reaffirming cards are out of scope.
+- `docs/status/mobile-flutter-plugin.md` and
+  `docs/status/verification/2026-09-17-flutter-native-sheet.md` — the area
+  page and this lane's dated verification evidence.
+- `vpay-tooling`'s recipes reference — the six `*flutter*` recipes, what
+  each needs, and the `.agents/skills/` prettierignore rule (a different,
+  unrelated vendored-skills directory inside vpay itself).
