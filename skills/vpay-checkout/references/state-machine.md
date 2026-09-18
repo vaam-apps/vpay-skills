@@ -172,6 +172,14 @@ IndexedDB database, one object store, one key. It never leaves the browser.
 - The cost is stated on the checkbox, in the payer's language, not in a
   tooltip.
 
+**Everything above describes the WEB page.** The Flutter sheet ports this to
+`shared_preferences` and keeps the 90-day read-side TTL and the
+write-on-deliberate-submit rule, but it is **not** the same behaviour in three
+named ways as of 2026-09-18 — no "Last used" badge, no re-validation on read,
+and a redirect rail's box that persists nothing. Do not read this section as a
+description of the sheet: `vpay-sdks`' `references/flutter-plugin.md`
+§ "Remember this number on this device" is the one that is true of it.
+
 **There is no PIN vault, and that is a refusal rather than an omission.** The
 requirement asked for one; this page has no PIN field and neither does anything
 behind it. `POST /v1/browser/payment_intents/{id}/confirm` accepts
