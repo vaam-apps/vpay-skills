@@ -84,7 +84,8 @@ missing.
 | `canceled`                                                 | terminal, `canceled`                                                   |
 | `requires_payment_method` **with** `last_payment_error`    | terminal, `failed`, carrying the rail's `code` and a cleaned `message` |
 | `requires_payment_method` with **no** `last_payment_error` | **still in flight**                                                    |
-| `processing`, `requires_action`                            | still in flight                                                        |
+| `processing`                                               | still in flight — the rail is moving and the status changes on its own |
+| `requires_action`                                          | **not in flight, and not the rail's turn** — see below (2026-09-17)    |
 
 **vpay has no `failed` PaymentIntent status.** A refused charge returns the
 intent to `requires_payment_method` with `last_payment_error` set. That is why
@@ -107,8 +108,37 @@ renders on its own.
    intent's outcome; otherwise → `expired`.
 3. Session still `open` → the intent decides. That is what makes a reload
    during a push land back on "check your phone" rather than on an empty form.
-4. `processing` / `requires_action` → `waiting`, `rail: null`.
-5. Zero supported rails → `refused` / `no_supported_rail`; exactly one →
+4. `processing` → `waiting`, `rail: null`.
+5. `requires_action` → `resume_redirect`, carrying the redirect URL, since
+   2026-09-17 ([vpay#199](https://github.com/vaam-apps/vpay/pull/199) on the
+   web, [vpay#208](https://github.com/vaam-apps/vpay/pull/208) for the Flutter
+   sheet). **This page said `requires_action` → `waiting` until then, and that
+   was the bug those PRs fixed**, so an agent acting on the old sentence would
+   reintroduce it.
+
+   `processing` means the rail is still working and the status will change on
+   its own, so a spinner is honest. `requires_action` means the **payer** has a
+   redirect to finish on the rail's own page — and if they abandoned it,
+   nothing changes until they go back. Showing "check your phone" there is
+   false twice over: a redirect rail never sees the payer's number, and there
+   is nothing in flight to validate. The page then polled a status only the
+   payer could move until the budget expired.
+
+   `resume_redirect` offers the one thing that can move it: a primary action
+   back to the rail's page, plus "choose another method" when more than one
+   rail is on offer. The URL is `next_action.redirect_to_url`, which
+   `payment_intents.rs`'s `rendered_intent` rebuilds from the stored charge row
+   on **every** read of a `requires_action` intent and hard-errors when it
+   cannot — so a polled intent carries it exactly as a freshly-confirmed one
+   does. If it is somehow absent, both surfaces fall back to `waiting`.
+
+   Both halves matter on the native side: splitting the reducer alone was not
+   enough, because `_afterIntentUpdate` (how a _poll_ becomes a screen) and the
+   browser-return path each built a `waiting` directly. vpay#208's own commit
+   message records that the unit tests passed while a device still showed the
+   old screen.
+
+6. Zero supported rails → `refused` / `no_supported_rail`; exactly one →
    straight to that rail's screen; more → `select_rail`.
 
 ## Ordering the controller owns
