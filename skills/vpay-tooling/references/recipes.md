@@ -1,6 +1,6 @@
 # The recipe inventory
 
-_Verified against vpay `9d83ff0e` (2026-09-17). Version-sensitive claims
+_Verified against vpay `0799a8d2` (2026-09-18). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 `justfile` is 4 704 lines, two-thirds of them comment (2026-09-16).

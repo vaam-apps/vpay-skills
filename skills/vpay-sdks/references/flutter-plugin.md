@@ -1,6 +1,6 @@
 # `sdks/flutter/vpay_checkout_flutter`
 
-_Verified against vpay `84143e1d` (2026-09-18). Version-sensitive claims
+_Verified against vpay `0799a8d2` (2026-09-18). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 A **payer** surface, like `@vaam-apps/vpay-stripe-js` — not a third merchant
@@ -148,12 +148,17 @@ D4's poll makes correct regardless, and which is the same signal already called
 unverified on every platform. Do not "fix" this by adding a button to the
 suppressed screen; that re-creates the duplicate outcome #195 exists to close.
 
-**`sessionPageUrl` is a required parameter of `SheetController`** as of this
-PR. Merging #197 and #200 in either order is conflict-free under `git` and the
-result **does not compile**: #197 adds nine `SheetController(...)`
-constructions to `test/sheet/sheet_controller_test.dart` and they fail
-`dart analyze` with `missing_required_argument`. One line per site
-(`sessionPageUrl: _sessionPageUrl,`), owed by whichever merges second.
+**`sessionPageUrl` is a required parameter of `SheetController`** (2026-09-18),
+and every construction must pass it — `test/sheet/sheet_controller_test.dart`
+names it 27 times on the merged tree. It is worth knowing why, because it will
+happen again: merging #197 and #200 was conflict-free under `git` and the
+result **did not compile**. #197 added nine `SheetController(...)`
+constructions to that file, #200 made the parameter required, and no line of
+either change touched a line of the other — so `git` had nothing to report and
+`dart analyze` had nine `missing_required_argument` errors. **A clean merge of
+two branches that each passed their own suite is not a compiling tree**, and
+nothing in this repository's gates runs Flutter to tell you (D-M3). Run
+`just analyze-flutter` after any merge that touches this package.
 
 ## Money never touches a float, and the terminal rule is not the obvious one
 
