@@ -1,6 +1,6 @@
 # `sdks/flutter/vpay_checkout_flutter`
 
-_Verified against vpay `9d83ff0e` (2026-09-17). Version-sensitive claims
+_Verified against vpay `84143e1d` (2026-09-18). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 A **payer** surface, like `@vaam-apps/vpay-stripe-js` — not a third merchant
@@ -52,11 +52,11 @@ you are reading about architecture 1 or 2.
    out of scope" below.
 2. **Render.** `VpayCheckoutSheet` — reachable through `showVpayCheckoutSheet`
    (a large-detent, draggable `showModalBottomSheet`) or
-   `showVpayCheckoutSheetRoute` (a full route) — walks the 13-screen state
+   `showVpayCheckoutSheetRoute` (a full route) — walks the 14-screen state
    machine ported from `machine.ts`, skipping `select_rail` straight to the
-   single rail's entry screen when only one rail is supported. It inherits
-   the host app's own `ThemeData` — nothing here paints a fixed vpay palette
-   or reads a `VpayCheckoutTheme`.
+   single rail's entry screen when only one rail is supported. Theming is
+   **Material 3 through `VpayCheckoutTheme`** since 2026-09-17 — this said
+   "nothing here reads a `VpayCheckoutTheme`" until then. See "Theming" below.
 3. **Confirm.** For a `push` rail, `BrowserClient.confirmPaymentIntent`
    (new in this lane) POSTs form-encoded, bracket-nested
    `payment_method_data[type]` / `payment_method_data[<rail>][msisdn]` —
@@ -156,10 +156,84 @@ is no longer readable`.
 correctly, but only the MSISDN half of page memory has a persistence layer —
 no record is written for a redirect rail's own "remember" checkbox.
 
-## i18n — French default, 72 keys, both locales complete
+## Theming — Material 3, and the one contract that was reversed
 
-`lib/src/sheet/i18n.dart` carries the same 72 keys as
-`frontends/apps/checkout/src/i18n/{en,fr}.ts`. `VpayLocale.fallback` is
+`VpayCheckoutTheme` (`lib/src/sheet/checkout_theme.dart`, exported from the
+package root alongside `kVpayCheckoutSheetCornerRadius`) is the only way a
+host app changes how the sheet looks. Pass it to `showVpayCheckoutSheet`,
+`showVpayCheckoutSheetRoute` or `VpayCheckoutSheet`. Every field has a
+default that produces the stock M3 sheet, so `const VpayCheckoutTheme()` and
+passing nothing are the same thing.
+
+**The reversal, because a skill that misses it teaches the old rule.** Until
+2026-09-17 this package deliberately had _no_ theming surface: the sheet
+"inherits `ThemeData`, never a fixed vpay palette", and
+`CheckoutPageBranding.primaryColor` was parsed out of
+`/.well-known/vpay-checkout` and pointedly **not** rendered. The maintainer
+reversed that in vpay#198. What survived the reversal is the part worth
+keeping straight: **the sheet still has no palette of its own** — there is no
+vpay colour anywhere in it, and every colour it draws is a `ColorScheme`
+role. What changed is only _whose_ colour wins.
+
+`resolve(base, {deploymentBrandColor})` decides that, highest first:
+
+| #   | Input                            | Becomes                                                         |
+| --- | -------------------------------- | --------------------------------------------------------------- |
+| 1   | `colorScheme`                    | used verbatim                                                   |
+| 2   | `seedColor`                      | `ColorScheme.fromSeed`                                          |
+| 3   | the deployment's `primary_color` | `ColorScheme.fromSeed`, unless `useDeploymentBrandColor: false` |
+| 4   | nothing                          | `base.colorScheme` — the host app's, untouched                  |
+
+A host that passes no theme and deploys no brand colour gets exactly the
+appearance it had before. The ordering is the point: the deployment's colour
+is the _operator's_ brand, and it loses to anything the app developer says
+explicitly, because the app developer is the one looking at the screen.
+`brightness` defaults to the host's, which is what lets a seeded sheet
+respect a dark host without the caller re-deriving it.
+
+The rest of the surface, with its defaults:
+
+| Field                 | Default                               | What it is                                                                                                                                                                                                                                                   |
+| --------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `sheetCornerRadius`   | `kVpayCheckoutSheetCornerRadius` = 28 | the modal's top corners. 28 and not Material's default because a _system browser sheet_ replaces this one on a redirect rail, and both iOS and Android draw those much rounder — a squarer vpay sheet handing over to a rounder system one reads as a glitch |
+| `surfaceCornerRadius` | 16                                    | the amount card, notice and outcome blocks, rail tiles                                                                                                                                                                                                       |
+| `fieldCornerRadius`   | 12                                    | the MSISDN field                                                                                                                                                                                                                                             |
+| `buttonCornerRadius`  | 16                                    | squarer than M3's stadium on purpose, so the primary action reads as a button beside the rounded tiles                                                                                                                                                       |
+| `minimumTapTarget`    | `Size.fromHeight(52)`                 | above both floors (Material 48dp, Apple 44pt) rather than at either — a payer uses this once, one-handed, anxious about money                                                                                                                                |
+| `contentPadding`      | `fromLTRB(20, 12, 20, 24)`            | around the scrolling content                                                                                                                                                                                                                                 |
+| `filledFields`        | `true`                                | M3-filled MSISDN field; `false` gives outlined, for a host whose every other field is outlined                                                                                                                                                               |
+| `textTheme`           | `null`                                | keeps the host's typography — the sheet addresses type through M3 _roles_, never hardcoded sizes                                                                                                                                                             |
+
+`showVpayCheckoutSheet` also still takes `borderRadius`, and it **wins over**
+`theme.sheetCornerRadius`: a caller passing it is naming the exact geometry.
+
+**What `resolve` actually installs, and why it is not just colours.**
+`useMaterial3` is never set — it has defaulted to `true` since Flutter 3.16
+and this package floors at `>=3.47.0`, so setting it would be noise. What the
+class supplies is the component theming M3 wants and Flutter does not default
+for you: a filled `InputDecorationTheme` with a real shape (without it the
+MSISDN field falls back to M2's underline on a host with no theme), the four
+button themes carrying `minimumTapTarget` as `minimumSize`, and
+`cardTheme.elevation: 0` so a card inside an already-raised bottom sheet does
+not read as two stacked elevations.
+
+**A trap this cost a session.** Every private helper in `checkout_sheet.dart`
+takes its `BuildContext` from a `Builder` _under_ the installed `Theme`, never
+from `State.context`. `State.context` sits **above** that `Theme`, so a helper
+reading `Theme.of(this.context)` silently gets the host's scheme and ignores
+the seeded one — the sheet is themed in the widget tree and unthemed on
+screen. Harmless while the override only carried button sizes; a real bug the
+moment it carried a `ColorScheme`.
+
+## i18n — French default, 74 keys, both locales complete
+
+`lib/src/sheet/i18n.dart` carries 74 keys against the page's 75 —
+`frontends/apps/checkout/src/i18n/{en,fr}.ts`. The single divergence is
+deliberate and asserted by name in `test/sheet/i18n_test.dart`: the page's
+`outcome.back_to` / `outcome.back_to_unnamed` collapse into one
+`outcome.done`, because a native sheet drawn over the merchant's own app
+never took the payer anywhere to come back from. (It was 72/72 until
+2026-09-17, when `state.resume_redirect_*` added three to each side.) `VpayLocale.fallback` is
 `fr` — defaulting to English would be a regression, because French is
 Cameroon's and Orange's language. A rail's `label_key` resolves through the
 catalogue; an unknown rail falls back to the deployment's own configured
