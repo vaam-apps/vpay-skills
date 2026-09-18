@@ -5,7 +5,7 @@ description: "Orientation for working in the vpay repository — a Rust + TypeSc
 
 # vpay
 
-> **Verified against vpay `d3a8810b` (2026-09-16).** Version-sensitive claims below
+> **Verified against vpay `0799a8d2` (2026-09-18).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -74,9 +74,12 @@ miniature: the recipe wins over the prose.
 ## Before you start, and when you finish
 
 ```bash
-just verify        # twelve gates + one advisory report — before AND after
+just verify        # 14 gates (2026-09-18) + 1 report — before AND after
 cat docs/status.md
 ```
+
+The recipe echoes its own count; trust that over any number written down,
+here or in vpay. It was twelve until 2026-09-17.
 
 When you finish: `just ci`, then update the status page your change belongs to
 **in the same commit**, then the relevant `docs/flows/*.md` **Status** section.

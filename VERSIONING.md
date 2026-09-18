@@ -53,6 +53,21 @@ expected — the gate checks only that the stamped commit _contains_ the baselin
 Requiring all twenty stamps to move together would make a one-skill correction
 cost a full re-verification pass, which is how you get twenty rubber-stamps.
 
+> **Stamp to a commit that will still exist. Measured 2026-09-18.** The gate
+> answers "does this stamp contain the baseline" with `git merge-base
+--is-ancestor` **inside the vpay checkout it was given**, and CI gives it a
+> clone of `master`. A stamp naming a commit on an unmerged vpay **feature
+> branch** therefore passes for exactly as long as that branch exists on the
+> remote, and fails the day it is deleted — with a message about the stamp
+> being "older or unrelated", which is not what went wrong. Two skills stamped
+> `9d83ff0e` (a merge commit on vpay's `feat/sheet-polish-192`) passed on
+> 2026-09-17 and failed on 2026-09-18, changed by nothing in this repository.
+>
+> So: **stamp to a commit on vpay's `master`.** If the work you verified
+> against has not merged yet, leave the stamp where it was and restamp when it
+> has — a stamp that is honestly a little behind is worth more than one that
+> is precise today and unresolvable next week.
+
 The baseline also governs coverage. Six flows are an overview plus a directory,
 and a claim on the overview covers the detail pages **that existed when the
 claim was made**. A page added under a claimed directory _since_ the baseline

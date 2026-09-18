@@ -1,11 +1,11 @@
 ---
 name: vpay-tooling
-description: How to build, test, lint and gate vpay — the just recipes that matter, the twelve verify gates and how contributors trip each one, what just ci actually runs, the toolchain pins that must move in lockstep, the compose stacks and ports, and the CI workflows. Load this before running any command in vpay, before adding a test binary or a migration, before bumping a toolchain pin, and whenever a gate fails and the message is not self-explanatory.
+description: How to build, test, lint and gate vpay — the just recipes that matter, the fourteen verify gates and how contributors trip each one, what just ci actually runs, the toolchain pins that must move in lockstep, the compose stacks and ports, and the CI workflows. Load this before running any command in vpay, before adding a test binary or a migration, before bumping a toolchain pin, and whenever a gate fails and the message is not self-explanatory.
 ---
 
 # vpay tooling and gates
 
-> **Verified against vpay `991e9825` (2026-09-17).** Version-sensitive claims below
+> **Verified against vpay `0799a8d2` (2026-09-18).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -64,7 +64,7 @@ In execution order:
 1. `cargo fmt --all -- --check`
 2. `pnpm exec prettier --check .`
 3. `cargo clippy --workspace --all-targets -- -D warnings`
-4. `just verify` — the twelve gates plus the `verify-docs` report
+4. `just verify` — the fourteen gates plus the `verify-docs` report
 5. `cargo nextest run --workspace`
 6. `cargo test --doc --workspace` — a **second runner**; nextest runs no doctests
 7. `just verify-ignored` — the suite census
@@ -79,27 +79,30 @@ tree where `pnpm install` has not been run.
 
 `AGENTS.md` requires `just ci` to pass locally before review.
 
-## `just verify` — the twelve gates
+## `just verify` — the fourteen gates
 
-Ten are `cargo xtask` subcommands; `check-schema` and `verify-ui` are shell in
-the justfile. The order is chronological by landing date on purpose, so that
+**Fourteen since 2026-09-18** — thirteen from 2026-09-17 (`verify-versions`,
+PR #201), twelve before that. Twelve are `cargo xtask` subcommands;
+`check-schema` and `verify-ui` are shell in the justfile. The order is chronological by landing date on purpose, so that
 "check-schema is the seventh gate" — which four other files say — stays true
 when a gate is added.
 
-| Gate                  | Refuses                                                                                                                                                                                                         |
-| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `verify-no-mocks`     | a test double reachable from a shipping binary through non-dev edges of the resolved cargo graph                                                                                                                |
-| `verify-status`       | a `NotImplemented` token not declared in `docs/status.md`, **or** a declaration whose token is gone, **or** (since 2026-09-16) a `<rail>::…` token carried outside that rail's adapter crate — three directions |
-| `verify-errors`       | a `pub` error type in `backends/crates` not implementing `Classify`; `anyhow` outside `backends/apps` (ADR-0011)                                                                                                |
-| `verify-sdk-parity`   | a parity-matrix claim naming a test that does not exist, a gap without a date and owner, or a row/method mismatch in **either** direction (ADR-0015)                                                            |
-| `verify-links`        | a relative link in a tracked `*.md` that does not resolve to a **git-tracked** path                                                                                                                             |
-| `verify-npm-scope`    | a publishable SDK package misnamed, unpublishable, or a retired `@vpay/*` name outside the docs allowlist                                                                                                       |
-| `check-schema`        | a missing `cratestack` CLI (**fails, never skips**), a schema with no `datasource`, or fewer than 15 model/enum declarations                                                                                    |
-| `verify-serde`        | a serialisable type under `backends/crates` without `rename_all`, and a **stale exemption row** (ADR-0016 §3)                                                                                                   |
-| `verify-repositories` | anything outside `vpay-db` naming a concrete repository implementation. No exemption mechanism (ADR-0016 §5)                                                                                                    |
-| `verify-toolchain`    | `backends/Dockerfile`'s `FROM rust:` disagreeing with `rust-toolchain.toml`                                                                                                                                     |
-| `verify-ui`           | eleven numbered greps: palette colours, daisyUI-4 classes, `!important`, `cva` in an app, computed `className`, and more                                                                                        |
-| `verify-migrations`   | a `backends/migrations/*.sql` whose SHA-256 no longer matches `MANIFEST.sha256`                                                                                                                                 |
+| Gate                       | Refuses                                                                                                                                                                                                         |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `verify-no-mocks`          | a test double reachable from a shipping binary through non-dev edges of the resolved cargo graph                                                                                                                |
+| `verify-status`            | a `NotImplemented` token not declared in `docs/status.md`, **or** a declaration whose token is gone, **or** (since 2026-09-16) a `<rail>::…` token carried outside that rail's adapter crate — three directions |
+| `verify-errors`            | a `pub` error type in `backends/crates` not implementing `Classify`; `anyhow` outside `backends/apps` (ADR-0011)                                                                                                |
+| `verify-sdk-parity`        | a parity-matrix claim naming a test that does not exist, a gap without a date and owner, or a row/method mismatch in **either** direction (ADR-0015)                                                            |
+| `verify-links`             | a relative link in a tracked `*.md` that does not resolve to a **git-tracked** path                                                                                                                             |
+| `verify-npm-scope`         | a publishable SDK package misnamed, unpublishable, or a retired `@vpay/*` name outside the docs allowlist                                                                                                       |
+| `check-schema`             | a missing `cratestack` CLI (**fails, never skips**), a schema with no `datasource`, or fewer than 15 model/enum declarations                                                                                    |
+| `verify-serde`             | a serialisable type under `backends/crates` without `rename_all`, and a **stale exemption row** (ADR-0016 §3)                                                                                                   |
+| `verify-repositories`      | anything outside `vpay-db` naming a concrete repository implementation. No exemption mechanism (ADR-0016 §5)                                                                                                    |
+| `verify-toolchain`         | `backends/Dockerfile`'s `FROM rust:` disagreeing with `rust-toolchain.toml`                                                                                                                                     |
+| `verify-ui`                | eleven numbered greps: palette colours, daisyUI-4 classes, `!important`, `cva` in an app, computed `className`, and more                                                                                        |
+| `verify-migrations`        | a `backends/migrations/*.sql` whose SHA-256 no longer matches `MANIFEST.sha256`                                                                                                                                 |
+| `verify-versions`          | **13th, 2026-09-17 (#201)** — release-please-owned versions that disagree; an `extra-files` entry with no `x-release-please-version` line; an internal Cargo `version = "…"` pin without one                    |
+| `verify-privacy-inventory` | **14th, 2026-09-18 (#187, issue #144)** — a migrated column with no element in `schemas/privacy-inventory.yaml`, or an inventory copy naming no live column. Both directions                                    |
 
 `verify-docs` runs last and is **not** a gate — it exits 0 whatever it finds.
 That is deliberate: the cheapest way to pass a doc-ratio gate is to delete the
@@ -144,17 +147,19 @@ needs the network.
 
 Change one of these and the other must move in the **same commit**.
 
-| If you change                     | You must also change                                                                                                                                                                   | Enforced by                                 |
-| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
-| `rust-toolchain.toml` `channel`   | `backends/Dockerfile`'s `FROM rust:<version>-alpine…`                                                                                                                                  | `verify-toolchain`                          |
-| `justfile`'s `cratestack_version` | `Cargo.toml`'s `cratestack = { package = "cratestack-pg", version = "=…" }`                                                                                                            | nothing — read `CLAUDE.md`, then check both |
-| `.nvmrc`                          | `package.json` `engines.node` (`.npmrc` sets `engine-strict=true`)                                                                                                                     | `pnpm install --frozen-lockfile` exits 1    |
-| add or drop a **test binary**     | `expected_suites` in `justfile`                                                                                                                                                        | `verify-ignored`                            |
-| add a **migration**               | run `just migrations-manifest`                                                                                                                                                         | `verify-migrations`                         |
-| add a **helm guard**              | its name in `helm-check`'s `expected_guards`, its values file in `deploy/helm/vpay/ci/guards/`, and the `fail` in `templates/_validate.tpl`                                            | `helm-check`                                |
-| add a `NotImplemented` token      | its declaration in `docs/status.md`                                                                                                                                                    | `verify-status`                             |
-| add an SDK method                 | its row in `docs/sdks/parity.md`                                                                                                                                                       | `verify-sdk-parity`                         |
-| `flutter-toolchain.toml`'s pin    | nothing — no `verify-*` gate reads it, unlike `rust-toolchain.toml`'s `verify-toolchain`. Its `channel` field is `[user-branch]`, not a clean channel pin, by the file's own admission | nothing                                     |
+| If you change                             | You must also change                                                                                                                                                                   | Enforced by                                 |
+| ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| `rust-toolchain.toml` `channel`           | `backends/Dockerfile`'s `FROM rust:<version>-alpine…`                                                                                                                                  | `verify-toolchain`                          |
+| `justfile`'s `cratestack_version`         | `Cargo.toml`'s `cratestack = { package = "cratestack-pg", version = "=…" }`                                                                                                            | nothing — read `CLAUDE.md`, then check both |
+| `.nvmrc`                                  | `package.json` `engines.node` (`.npmrc` sets `engine-strict=true`)                                                                                                                     | `pnpm install --frozen-lockfile` exits 1    |
+| add or drop a **test binary**             | `expected_suites` in `justfile`                                                                                                                                                        | `verify-ignored`                            |
+| add a **migration**                       | run `just migrations-manifest`                                                                                                                                                         | `verify-migrations`                         |
+| add a migration that **creates a column** | an element copy for it in `schemas/privacy-inventory.yaml` (2026-09-18)                                                                                                                | `verify-privacy-inventory`                  |
+| add an **internal Cargo dependency pin**  | an `# x-release-please-version` comment on that line, **and** its file in `release-please-config.json`'s `extra-files` as `{"type": "generic", "path": …}` (2026-09-17)                | `verify-versions`                           |
+| add a **helm guard**                      | its name in `helm-check`'s `expected_guards`, its values file in `deploy/helm/vpay/ci/guards/`, and the `fail` in `templates/_validate.tpl`                                            | `helm-check`                                |
+| add a `NotImplemented` token              | its declaration in `docs/status.md`                                                                                                                                                    | `verify-status`                             |
+| add an SDK method                         | its row in `docs/sdks/parity.md`                                                                                                                                                       | `verify-sdk-parity`                         |
+| `flutter-toolchain.toml`'s pin            | nothing — no `verify-*` gate reads it, unlike `rust-toolchain.toml`'s `verify-toolchain`. Its `channel` field is `[user-branch]`, not a clean channel pin, by the file's own admission | nothing                                     |
 
 `verify-toolchain` exists because the drift was measured: with `channel` moved
 to 1.98.0 and the Dockerfile left on 1.95.0, the whole of `just ci` was green.
@@ -188,7 +193,7 @@ Three facts with no home above, kept short here on purpose — depth is in
 
 ## Further reading
 
-- [references/gates.md](references/gates.md) — the twelve gates in depth,
+- [references/gates.md](references/gates.md) — the fourteen gates in depth,
   including every `verify-ui` check (its numbering is non-contiguous, so count
   the recipe's greps rather than trusting its header) and the both-directions gates.
 - [references/recipes.md](references/recipes.md) — the full recipe inventory,

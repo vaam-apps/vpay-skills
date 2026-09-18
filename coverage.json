@@ -2,10 +2,10 @@
   "//": "The docs<->skills parity map. Checked in BOTH directions by tools/verify-coverage.mjs: a docs/flows page no skill claims fails, and a claimed path that no longer exists in vpay fails. See README.md and CONTRIBUTING.md.",
   "baseline": {
     "//": "A skill is true of *a* vpay, not of vpay. vpay publishes no release tags and its workspace version has never moved off 0.1.0, so the only honest version identity is a commit and a date. Every SKILL.md is stamped with this same ref and the gate refuses one stamped differently. See VERSIONING.md.",
-    "vpayRef": "d3a8810bc225ba5e3857d8cdb5aa46a00ad18e88",
-    "vpayRefShort": "d3a8810b",
-    "vpayCommitDate": "2026-09-16",
-    "verifiedAt": "2026-09-16"
+    "vpayRef": "0799a8d27ac6d5069910ed586640f2d18be964b2",
+    "vpayRefShort": "0799a8d2",
+    "vpayCommitDate": "2026-09-18",
+    "verifiedAt": "2026-09-18"
   },
   "skills": {
     "vpay": {
@@ -68,7 +68,10 @@
         ".github/workflows/docs.yml",
         "backends/migrations/MANIFEST.sha256",
         "deploy/helm/vpay/ci/guards",
-        "deploy/dev/postgres-init/10-shop-database.sql"
+        "deploy/dev/postgres-init/10-shop-database.sql",
+        "release-please-config.json",
+        ".release-please-manifest.json",
+        "schemas/privacy-inventory.yaml"
       ]
     },
     "vpay-troubleshooting": {

@@ -1,6 +1,6 @@
 # CI, and the flakiness that was engineered out
 
-_Verified against vpay `d3a8810b` (2026-09-16). Version-sensitive claims
+_Verified against vpay `0799a8d2` (2026-09-18). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 Three workflows in `.github/workflows/`: `ci.yml`, `docs.yml`, `release.yml`.
@@ -37,7 +37,7 @@ comment; first-party `actions/*` use tags.
 | Job                              | Gated by                 | Runs                                                                                                                                                                                                                         |
 | -------------------------------- | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `changes`                        | —                        | `dorny/paths-filter` with `fetch-depth: 0`. Outputs `rust`, `deny`, `web`, `e2e`, `deploy`                                                                                                                                   |
-| `verify` — _self-checks_         | **nothing. Always runs** | the twelve gates in `just verify`'s exact order, then `cargo xtask verify-docs`                                                                                                                                              |
+| `verify` — _self-checks_         | **nothing. Always runs** | the fourteen gates (2026-09-18) in `just verify`'s exact order, then `cargo xtask verify-docs`                                                                                                                               |
 | `rust`                           | `changes.rust`           | `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo nextest run --workspace`, `just test-doc`, `just verify-ignored`                                                               |
 | `deny` — _supply chain_          | `changes.deny`           | `EmbarkStudios/cargo-deny-action@v2`, `command: check`                                                                                                                                                                       |
 | `web`                            | `changes.web`            | `just audit-web`, `just fmt-check-web`, `just lint-web`, `pnpm -r test`, `just build-storybook`, `just test-storybook`                                                                                                       |

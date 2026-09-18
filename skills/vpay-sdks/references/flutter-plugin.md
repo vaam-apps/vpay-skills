@@ -1,6 +1,6 @@
 # `sdks/flutter/vpay_checkout_flutter`
 
-_Verified against vpay `84143e1d` (2026-09-18). Version-sensitive claims
+_Verified against vpay `0799a8d2` (2026-09-18). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 A **payer** surface, like `@vaam-apps/vpay-stripe-js` — not a third merchant
@@ -35,6 +35,10 @@ describes before you trust it:
    handler.** MTN's push form and Orange's ready-to-redirect prompt now
    render as Flutter widgets, driven by the session's own server-sent
    `rails` array (#186). This is what the rest of this page describes.
+   **Narrowed again on 2026-09-18 (#195, PR #200):** what that browser is
+   handed is vpay's own `/c/{cs_id}/redirect` page on the checkout origin,
+   never the rail's URL — see "The browser leg is a controlled surface"
+   below.
 
 There is no `mode` argument left anywhere in this package. If you see one,
 you are reading about architecture 1 or 2.
@@ -68,13 +72,17 @@ you are reading about architecture 1 or 2.
    `canceled`, or `requires_payment_method` **with a `last_payment_error`
    present**. A bare `requires_payment_method` is not terminal — it means
    "never confirmed," not "failed."
-5. **Redirect rails hand off, they don't take over.** A `flow: "redirect"`
-   rail (Orange) records `CheckoutRedirecting` **before** the platform host
-   is ever shown, then opens the **same** `VpayCheckoutPlatform` browser
-   host architecture 2 built. When that resolves (`stopUrlReached` or a
-   dismissal), control returns to the sheet's confirming/waiting state; a
-   redirect confirm that answers with no `next_action` polls directly,
-   without ever opening a window.
+5. **Redirect rails hand off, they don't take over — and what they hand off
+   is a vpay page, not the rail.** A `flow: "redirect"` rail (Orange) records
+   `CheckoutRedirecting` **before** the platform host is ever shown, then
+   opens the **same** `VpayCheckoutPlatform` browser host architecture 2
+   built. When that resolves (`stopUrlReached` or a dismissal), control
+   returns to the sheet's confirming/waiting state; a redirect confirm that
+   answers with no `next_action` polls directly, without ever opening a
+   window. **Since 2026-09-18 (issue #195, PR #200)** the URL handed to that
+   browser is `{checkout_base}/c/{cs_id}/redirect?key=…#{client_secret}`,
+   built by `SheetController.redirectLegUrlFor` — **never the rail's own
+   URL.** See "The browser leg is a controlled surface" below.
 6. **Answer.** One of `VpayCheckoutSucceeded`, `VpayCheckoutFailed`,
    `VpayCheckoutCanceled`, `VpayCheckoutPending`, or `VpayCheckoutUnresolved`
    — unchanged from architecture 2. A sheet dismissed **before any confirm**
@@ -103,6 +111,54 @@ confirm, resolves Unresolved — never canceled`.
   URL) the same way `CheckoutController.preflight` already does.
 - **A bad or expired link is the uniform 404**, mapped to the same typed
   error the six causes `browser::authenticate` does not distinguish between.
+
+## The browser leg is a controlled surface (#195, PR #200, 2026-09-18)
+
+**The sheet never hands a redirect rail's own URL to the browser.** It opens
+`{checkout_base}/c/{cs_id}/redirect?key=…#{session client_secret}`, built by
+`SheetController.redirectLegUrlFor`. That vpay page reads the session, reads
+the **intent** for the rail's URL, marks the tab as a sheet's redirect leg, and
+navigates. `CheckoutRedirectRequired` still carries the rail's URL — that is
+what the state means — but `_handOffToBrowser` is not given it, so a crafted
+link to a payment origin can never become an open redirect.
+
+> **`SheetController.sessionPageUrlFrom(sessionUrl)` is the only supported
+> source of the checkout origin**, and it is `public` rather than
+> `@visibleForTesting` for exactly that reason: "the alternative every caller
+> reaches for first (`client.baseUrl`) is the wrong origin". `BrowserClient.
+baseUrl` is `deployment.public_base_url` — the **API**, which mounts no
+> `/c/` route at any prefix (`:8080` in `compose.demo.yml`, against the
+> checkout app's `:3080`). The leg shipped built on it, green, because the
+> Dart test passed one string as both origins and asserted a URL equally true
+> of the right origin and the wrong one. `sessionPageUrlFrom` takes everything
+> before the first `?` or `#` of the **server-minted** session URL (`vpay-db`'s
+> `hosted_url`), so a deployment path prefix survives it.
+
+Two details that look like sloppiness and are not: the `client_secret` goes
+into the fragment **raw**, because `parsePageCredentials` calls
+`decodeURIComponent` and percent-encoding would double-decode; and the base is
+stripped of trailing slashes only, because `//redirect` is a path segment the
+app does not route.
+
+**D2 consequence, and it is a real narrowing.** Stop-URL matching still runs,
+but a suppressed return page renders **no "return to the merchant" button**, so
+the browser leg can no longer reach one of `stopUrls` by itself. The sheet
+therefore resolves a redirect rail on the **dismissal** signal alone — which
+D4's poll makes correct regardless, and which is the same signal already called
+unverified on every platform. Do not "fix" this by adding a button to the
+suppressed screen; that re-creates the duplicate outcome #195 exists to close.
+
+**`sessionPageUrl` is a required parameter of `SheetController`** (2026-09-18),
+and every construction must pass it — `test/sheet/sheet_controller_test.dart`
+names it 27 times on the merged tree. It is worth knowing why, because it will
+happen again: merging #197 and #200 was conflict-free under `git` and the
+result **did not compile**. #197 added nine `SheetController(...)`
+constructions to that file, #200 made the parameter required, and no line of
+either change touched a line of the other — so `git` had nothing to report and
+`dart analyze` had nine `missing_required_argument` errors. **A clean merge of
+two branches that each passed their own suite is not a compiling tree**, and
+nothing in this repository's gates runs Flutter to tell you (D-M3). Run
+`just analyze-flutter` after any merge that touches this package.
 
 ## Money never touches a float, and the terminal rule is not the obvious one
 
@@ -141,20 +197,86 @@ model — an arbitrary embedding site, not a merchant's own app process), and
 the sheet's own boundary is D6 above plus D3's continued refusal of a
 native-to-page bridge.
 
-## "Remember this number on this device"
+## "Remember this number on this device" — page memory (2026-09-17/18)
 
-`remember_msisdn.dart` — `shared_preferences`-backed (not the hosted page's
-IndexedDB, but the same shape: opt-in, 90-day TTL **enforced on read**,
-written only after a real accepted confirm, no PIN ever, a "Forget"
-affordance). The shared-phone warning is inside `CheckboxListTile`'s own
-merged semantics label, not a tooltip. `a record exactly at the 90-day
-boundary is still readable`, `a record one microsecond past the 90-day TTL
-is no longer readable`.
+`remember_msisdn.dart` is the hosted page's `src/lib/memory.ts` ported to
+`shared_preferences` rather than IndexedDB, and the two rules that matter are
+the **same**: a 90-day TTL **enforced on read** (`rememberedMsisdnTtl`, the
+web's `MEMORY_MAX_AGE_MS`), and a write at **exactly one deliberate moment** —
+the payer ticks the box and submits an entry screen. Visiting, choosing a rail
+or reading an outcome stores nothing. No PIN, ever. The shared-phone warning
+is inside `CheckboxListTile`'s own merged semantics label, not a tooltip.
 
-**Named gap, not silently dropped**: the redirect entry screen's own
-"remember Orange Money on this device" checkbox renders and its label reads
-correctly, but only the MSISDN half of page memory has a persistence layer —
-no record is written for a redirect rail's own "remember" checkbox.
+`VpayRememberedMsisdn` is the class `SheetController` talks to. Two of its
+predicates are **not** interchangeable and picking the wrong one is the defect
+issue #194 was half made of: `hasRecord()` is true for an expired record too
+(the "Forget" button still shows, because an expired record is still something
+to forget); `hasActiveRecord()` is the **non-expired** half and is what seeds
+`rememberChecked`, because an expired record is nothing the box can truthfully
+say the device still remembers. The web agrees by construction —
+`parseMemoryRecord` returns `null` for an expired record, so its box is
+unticked for one too.
+
+**The read was broken until 2026-09-17 (issue #194, PR #197)** — field empty
+and box unticked after a cold relaunch, while "Forget" still rendered. Two
+independent defects, neither in the store: the prefill was gated on a screen
+transition while `defaultMsisdn` arrives **asynchronously** (so the value
+always landed after the one chance to use it), and `rememberChecked` was only
+ever set by the payer's own tap. Now the prefill runs on **every** controller
+change, guarded by `_msisdnManuallyEdited`, empty text and a
+`CheckoutCollectMsisdn` state — a payer editing a prefilled number is never
+overridden — and the box seeds **once per sheet** from `hasActiveRecord()`.
+
+**An unticked submit now CLEARS the record** (`submitMsisdn` calls `forget()`),
+matching `checkout-client.tsx`'s `rememberOnSubmit -> pageMemory.clear()`.
+Without it a payer who unticks and pays still got the number back on the next
+relaunch — the very read-back #194 is about. `forgetRemembered` also unticks
+the box, matching the web's `onForget -> setRemember(false)`.
+
+> **The ordering bug the review found, and the reason to read this before
+> touching `_loadRememberedMsisdn`.** That clear is guarded by
+> `_rememberSeeded` so it cannot run before the async seed lands. As first
+> written the flag was set **before** awaiting `hasActiveRecord()`, so the
+> window it exists to close was open for the whole length of the read: a
+> submit inside it saw `_rememberSeeded == true` with `rememberChecked` still
+> `false`, took the unticked branch, and **destroyed a record the payer had
+> never unticked.** The test that was meant to pin this gated the _first_ of
+> the three reads and so proved a window that was never the dangerous one.
+> Set the flag **after** the value it announces;
+> `_SeedGatedRememberedMsisdnStore` gates the seed's own read and fails on the
+> old ordering with `Expected: not null / Actual: <null>`.
+
+### Three named divergences from the web — none of them accidental
+
+1. **No "Last used" badge on the rail picker.** The web marks the remembered
+   rail (`screens.tsx`, `data-testid="last-used"`). The sheet's picker is a
+   plain `OutlinedButton` per rail. The string exists in **both** locales
+   (`i18n.dart`, `memory.last_used`) and **nothing in `lib/` reads it** — so
+   this is a gap, not a decision. (Not auto-selecting the remembered rail
+   **is** a decision, and matches the web: `lastRail` is "a hint, never a
+   preselection".)
+2. **No `normalizeCameroonMsisdn` re-validation on read.** The web's
+   `parseMemoryRecord` runs `isStoredMsisdn` — `normalizeCameroonMsisdn(v) === v`
+   — before a stored number reaches the form. The Flutter read path only
+   JSON-decodes and checks the TTL and rail; `normalizeCameroonMsisdn` is
+   called at **submit** time only.
+3. **`startRedirect` neither writes nor clears**, so the box on a redirect
+   rail's entry screen **seeds and reads but persists nothing** — it is
+   display-only. The web's `onStartRedirect` is not: it calls
+   `rememberOnSubmit(null, rail)`, which writes a rail-only record or clears
+   one. #197 made the redirect screen offer the box and the "Forget"
+   affordance; it did not give that screen a write.
+
+**And one open defect, left visible rather than claimed closed (2026-09-17).**
+`chooseRail` calls `_setState` — and so `notifyListeners()` — **before**
+`_loadRememberedMsisdn`, so the widget rebuilds once while `defaultMsisdn`
+still holds the previous rail's number. The field is never actively cleared on
+a rail switch, so a payer who clears it on rail A, goes back and picks rail B
+is prefilled with **rail A's** number. No test covers it and none can today:
+rails come from `CheckoutSession.rails` and no fixture or deployment offers two
+`push` rails at once (`orange_money` is `redirect` and renders no field).
+Reachable in principle — `rails.dart` branches on `RailFlow`, never on a rail
+code, so a second push rail needs no client change.
 
 ## Theming — Material 3, and the one contract that was reversed
 
@@ -278,6 +400,16 @@ fixtures.
 `*flutter*` recipes is in it (D-M3). See `vpay-tooling`'s recipes reference
 for what each recipe proves and needs.
 
+**`flutter test`'s count after the two follow-ups, and why there is no single
+number.** Each branch measured **its own tree**, so these are not a series:
+#197 (`2026-09-17-flutter-remember-msisdn-read.md`) reports **305 / 0** on its
+base and **306 / 0** after the review pass added the seed-window case, on
+Flutter 3.48.0-1.0.pre / Dart 3.14 rather than the pin; #200
+(`2026-09-17-redirect-leg-review.md`) reports **302 / 0** on its base, 297
+before. A throwaway merge of the two, which **no branch carries**, is **314
+passed / 0 failed** once the nine `sessionPageUrl:` arguments are added. Quote
+the branch, not a total.
+
 ## Driven by hand, Android only, 2026-09-17
 
 Three cold MTN launches to `paid` in `examples/shop`'s own database (via a
@@ -297,8 +429,20 @@ moment of dismissal. Full detail, screenshots and transaction ids:
 - **The redirect hand-off's stop-URL matching is still unverified on every
   platform** — the same deep-link signal architecture 2's cutover
   documented. Every Orange walk in this lane also ended in `dismissed`,
-  never `stopUrlReached`; D4's poll is what made that correct anyway.
-- **The "remember Orange Money" checkbox writes nothing** — see above.
+  never `stopUrlReached`; D4's poll is what made that correct anyway. **Since
+  2026-09-18 the leg can no longer reach a stop URL at all** — see the D2
+  consequence above.
+- **The redirect leg has never been driven end to end** (2026-09-18) — not on
+  a device, not against `just demo-up`. Every number behind #200 is unit- or
+  component-level, and whether `SFSafariViewController` and Chrome Custom Tabs
+  carry the `sessionStorage` marker across the rail's cross-origin redirect is
+  reasoned about and asserted in jsdom, **never measured**. It fails to the
+  duplicate screen, never to a wrong outcome.
+- **The "remember Orange Money" checkbox writes nothing** — see above. #197
+  gave that screen the box's _state_ and the "Forget" affordance; it did not
+  give it a write.
+- **No "Last used" badge on the rail picker** (2026-09-17) — the string is in
+  both locales and nothing reads it.
 - **No real rail, anywhere.** WireMock behind every walk in this lane, as
   everywhere else in this repository.
 - **No CI gate runs any of the six `*flutter*` recipes** (D-M3, unchanged).
@@ -323,6 +467,13 @@ moment of dismissal. Full detail, screenshots and transaction ids:
 - `docs/status/mobile-flutter-plugin.md` and
   `docs/status/verification/2026-09-17-flutter-native-sheet.md` — the area
   page and this lane's dated verification evidence.
+- `docs/status/verification/2026-09-17-flutter-remember-msisdn-read.md` (#194
+  / PR #197) and
+  `docs/status/verification/2026-09-17-redirect-leg-review.md` (#195 / PR
+  #200) — the two follow-ups above, each with its own mutation runs and its
+  own "what this does not prove".
+- `vpay-checkout`'s `SKILL.md` — the `/c/{id}/redirect` page and the return
+  page it suppresses, from the web side.
 - `vpay-tooling`'s recipes reference — the six `*flutter*` recipes, what
   each needs, and the `.agents/skills/` prettierignore rule (a different,
   unrelated vendored-skills directory inside vpay itself).

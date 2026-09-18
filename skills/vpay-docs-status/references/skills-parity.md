@@ -18,7 +18,8 @@ skill briefs an agent that is already doing it. So a skill is judged not on
 the right thing on its first attempt**".
 
 That difference is why they live in a separate repository. A briefing that has
-to clear twelve gates to be corrected is a briefing nobody corrects. The cost
+to clear fourteen gates (2026-09-18) to be corrected is a briefing nobody
+corrects. The cost
 of the separation is drift, which is what the gate below exists to refuse.
 
 The urgency is rule 2 with a force multiplier attached. A status page that lags

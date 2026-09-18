@@ -1,34 +1,63 @@
-# The twelve gates
+# The fourteen gates
 
-_Verified against vpay `d3a8810b` (2026-09-16). Version-sensitive claims
-carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
+_Verified against vpay `0799a8d2` (2026-09-18) — the merge of
+[#187](https://github.com/vaam-apps/vpay/pull/187), with #197, #200, #204 and
+#206 beneath it. Version-sensitive claims carry the date they became true —
+see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
-`just verify` runs twelve gates and then one report:
+**Fourteen as of 2026-09-18.** ~~Twelve.~~ It was twelve until 2026-09-17,
+when [#201](https://github.com/vaam-apps/vpay/pull/201) appended
+`verify-versions`; [#187](https://github.com/vaam-apps/vpay/pull/187) appends
+`verify-privacy-inventory` and makes it fourteen.
+
+> **Read the recipe, not the prose — and here is the authority rule caught in
+> the act.** Measured on `master` `aeb9e242` (2026-09-18), a full day after
+> #201 merged and **before** the merges this page is now verified against: the
+> `verify` recipe ran **thirteen** gates and echoed _"the thirteen gates above
+> passed"_, while `AGENTS.md` said _"on this commit the gates are twelve"_ and
+> listed twelve, `docs/status.md` said _"twelve gates and one advisory report"_
+> over a twelve-row table with no `verify-versions` row, and the `justfile`
+> header said _"Twelve invariants"_. One change had moved the recipe, the echo,
+> `verify_all` and the CI step and left **every prose count in the tree**
+> behind it. **Closed by #206 (thirteen) and #187 (fourteen)** — so the tree
+> agrees with itself again as of `0799a8d2`, and the window is the lesson, not
+> a live defect. `AGENTS.md` predicted it about itself: "it has gone stale at
+> nearly every count it has carried".
+
+`just verify` runs fourteen gates and then one report:
 
 ```
 verify: verify-no-mocks verify-status verify-errors verify-sdk-parity \
         verify-links verify-npm-scope check-schema verify-serde \
         verify-repositories verify-toolchain verify-ui verify-migrations \
-        verify-docs
+        verify-versions verify-privacy-inventory verify-docs
 ```
 
-Ten are `cargo xtask` subcommands implemented in `.xtask/src/main.rs`;
+Twelve are `cargo xtask` subcommands implemented in `.xtask/src/main.rs`;
 `check-schema` and `verify-ui` are shell in the `justfile`. CI's `self-checks`
 job runs exactly this list in exactly this order, and that job has no
 `changes` gating — **it runs on every push and every pull request**.
 
 The order is chronological by the date each gate landed, deliberately, so that
 ordinals written down in other files ("check-schema is the seventh gate") stay
-true when a gate is appended. Do not re-sort it by subject.
+true when a gate is appended. Do not re-sort it by subject. Two gates landing
+on the same day from branches that had not seen each other is a **normal**
+event here, not a mistake — `verify-npm-scope`/`check-schema` collided that way
+on 2026-09-05 and `verify-versions`/`verify-privacy-inventory` did on
+2026-09-17. It is resolved the same way both times: both, in the order they
+landed, and whichever lands second renumbers itself.
 
-`cargo xtask verify-all` chains the ten xtask gates. It excludes
+`cargo xtask verify-all` chains the twelve xtask gates. It excludes
 `verify-citations` (network) and cannot run `check-schema` or `verify-ui`,
 which are shell. `just verify` is the real list; `verify-all` is a convenience.
 
 ## Both-directions gates
 
-Four gates fail in **both** directions, and that is the property to remember,
-because the intuitive half is the one that never bites you:
+Five gates fail in **both** directions (2026-09-18; four before
+`verify-privacy-inventory`) — `verify-status`, `verify-sdk-parity`,
+`verify-serde`, `verify-migrations` and `verify-privacy-inventory`. That is the
+property to remember, because the intuitive half is the one that never bites
+you:
 
 - **`verify-status`** — a token in code with no declaration fails, _and_ a
   declaration whose token no longer exists fails, _and_ (since 2026-09-16) a
@@ -44,6 +73,20 @@ because the intuitive half is the one that never bites you:
   exemption is a decision the code already reversed, described as current.
 - **`verify-migrations`** — an edited file fails, _and_ a manifest line whose
   file is gone fails.
+- **`verify-privacy-inventory`** — a migrated column no inventory element
+  classifies fails, _and_ an inventory copy naming a column no migration
+  creates fails. See [§ 14](#14-verify-privacy-inventory).
+
+**`verify-links` is not one of them**, though it is the one people add to this
+list from memory: it fails a link that resolves to no tracked path and has no
+second direction — nothing fails a tracked file that no link points at, and
+nothing could, because most files are not link targets.
+
+And the property has a floor, which [§ 14](#14-verify-privacy-inventory) is the
+proof of: **both directions of a derive-then-compare gate read the same derived
+set**, so a deriver that answers "nothing" for input it does not understand
+makes both directions agree about something neither can see. Two directions
+are only as good as the oracle they share.
 
 ## What the gates last printed
 
@@ -69,6 +112,49 @@ Six of these moved between 2026-09-11 and 2026-09-16 — `verify-errors` 19→20
 `verify-sdk-parity` 550/35/32→603/36/35, `verify-links` 1 600/352→1 731/375,
 `check-schema` 26→27, `verify-serde` 90→96, `verify-migrations` 42→48. That
 rate is the reason every count on these pages carries a date.
+
+**`docs/status.md` re-ran all fourteen on 2026-09-18**, on #187's merge of
+`master` at `bd5c85d1` — the newest full column, and the first that includes
+both new gates **green**. It notes it has been re-run "three times in three
+days", which is the rate these figures move at:
+
+| Gate                       | 2026-09-16 (`888b00c3`)        | 2026-09-18 (`bd5c85d1`, 14 gates)           |
+| -------------------------- | ------------------------------ | ------------------------------------------- |
+| `verify-sdk-parity`        | 603 tests, 36 gaps, 35 methods | **662 tests, 37 gaps, 35 methods, 39 rows** |
+| `verify-links`             | 1 731 links in 375 files       | **1 741 links in 402 files**                |
+| `verify-serde`             | 96 types, 17 exemptions        | **102 types, 17 exemptions**                |
+| `verify-repositories`      | 4 impls, 83 files outside      | **4 impls, 84 files outside**               |
+| `verify-versions`          | did not exist                  | **21 version references, all 0.1.1**        |
+| `verify-privacy-inventory` | did not exist                  | **295 columns / 25 elements / 10 surfaces** |
+
+`verify-status` is still **1**; `verify-migrations` still **48**;
+`check-schema` still **27**, under cratestack 0.12.0; `verify-errors` 20 types
+/ 17 `#[from]`; `verify-npm-scope` 2 publishable, 1 private; `verify-toolchain`
+1.98.0. `verify-ui` prints nothing at all on success — exit 0 is its whole
+output, so there is no number to quote and a green run is the only evidence
+there is.
+
+`verify-privacy-inventory`'s line breaks down further: **295 columns, 25
+elements** of which 16 are personal-data and 17 `necessary`, **10
+non-database surfaces** of which 6 are not yet statically enumerable. It read
+295 on **every one** of the four merges leading here (303 on 2026-09-16, before
+`DROP TABLE` was modelled). `cargo test -p xtask` is **285 passed, 0 ignored**
+— 276 from #187's own branch plus #206's nine `version_tests` — of which **26**
+are `privacy_inventory_tests`.
+
+~~`verify-versions` is red, and that is the gate working.~~ **Corrected
+2026-09-18:** it is **green on this tree, for the first time since it landed**.
+It went red on `master` the night #201 added it, on the first release
+release-please ever cut; #204 found the cause and restored the two files, #206
+gave the refusal its tests. The row is kept in this page's history rather than
+erased, because "a gate table with a green row for a red gate is worse than no
+table" — and because a gate that catches a real regression on its second day is
+the argument for the next one.
+
+`verify-links` is the count to distrust most: 1 731/375 → 1 719/399 → 1 741/402
+in three days, and the middle step went **down** across **more** files, which is
+what a documentation split does rather than evidence of deletion. Different
+branches measured different figures on the same day (#200's tree said 1 711 in 397) and none of them is wrong.
 
 **`verify-status` moved twice in one day and came back.** It printed **2**
 partway through 2026-09-15, when RFC-0003 § 5 gave `orange_money` a `refund`
@@ -378,6 +464,166 @@ its manifest line — nothing can, since whoever can edit two files can edit
 three. What it buys is that the edit becomes a one-line diff on a file whose
 only purpose is to be reviewed.
 
+## 13. `verify-versions`
+
+_The thirteenth gate, 2026-09-17 ([#201](https://github.com/vaam-apps/vpay/pull/201))._
+
+**Refuses:** a release-please-owned version reference that disagrees with the
+others (`.release-please-manifest.json`'s `"."`, each `json` extra-file's
+`$.version`, and every `x-release-please-version`-annotated line in a `generic`
+extra-file); a file listed in `release-please-config.json`'s `extra-files` that
+carries **no** `x-release-please-version` line at all, because the `generic`
+updater rewrites only annotated lines, so an unannotated entry is a version
+that has silently stopped being bumped; an annotated line with no semver on it
+to replace; and — the direction that actually bites — **an internal Cargo
+`version = "…"` pin with no annotation**, in _any_ `Cargo.toml` in the tree,
+not only the listed ones.
+
+**Implements:** `cargo xtask verify-versions`, `verify_versions` and
+`release_please_extra_files` in `.xtask/src/main.rs`.
+
+**Why the Cargo half exists, in one sentence you should not have to rediscover:**
+`deny.toml`'s `[bans] wildcards = "deny"` forces every internal dependency to
+carry `version = "X.Y.Z"` beside its `path`; a bare `"0.1.0"` is `^0.1.0`, and
+a 0.x caret range does not cross a minor boundary. There are **fourteen such
+pins as of 2026-09-17** — eleven in the root manifest and three in member
+manifests, the latter findable only by running `cargo metadata`, not by
+reading. Miss one and the release pull request does not look untidy, it **fails
+to resolve**: `failed to select a version for the requirement vpay-core =
+"^0.1.0"`.
+
+> **The `extra-files` entry shape is load-bearing, and the obvious spelling is
+> the trap.** A **bare string** is refused outright. release-please's `base.ts`
+> does not give a bare string the annotation-only `Generic` updater — it infers
+> one from the extension: `.json`/`.yaml`/`.yml`/`.toml`/`.xml` each get a
+> _typed_ updater composed with `Generic`, and a typed updater **reparses and
+> re-serialises the document**, destroying every comment in it. Measured on
+> vpay's own v0.1.1 release (2026-09-17/18): `deploy/helm/vpay/Chart.yaml` went
+> from 48 lines to 13, its `version:` was **downgraded** 0.2.0 → 0.1.1 because
+> `$.version` is the top-level key, and `appVersion` — the field actually
+> annotated — was left alone, because the annotation had just been serialised
+> away. `pubspec.yaml` lost its comments the same way. The only form this
+> repository allows is `{"type": "generic", "path": …}`
+> ([#204](https://github.com/vaam-apps/vpay/pull/204)).
+
+**How you trip it:** adding a fifteenth internal dependency and annotating
+nothing — an ordinary thing to do that gives no hint it has armed the next
+release. Or adding a `.yaml`/`.toml`/`.json` extra-file as a bare string.
+
+**What it deliberately does not check:** an annotated line in a file the config
+does **not** list. That needs a whole-tree walk, and writing an annotation
+while never touching the config is not a mistake anyone has made.
+
+**A gate is allowed to be right about a broken tree.** `verify-versions` went
+red one commit after it landed, on `master`, for exactly the regression it was
+built for, and vpay recorded that rather than working around it — for a full
+day, in its own gate table. [#204](https://github.com/vaam-apps/vpay/pull/204)
+found the cause and restored both files;
+[#206](https://github.com/vaam-apps/vpay/pull/206) gave the bare-string refusal
+its first tests and moved `AGENTS.md`'s gate count to thirteen. **It is green
+as of `0799a8d2` — 21 version references, all `0.1.1`.** If you find it red on
+a branch, check whether that branch predates #204 before looking for a cause in
+your own change.
+
+## 14. `verify-privacy-inventory`
+
+_The fourteenth gate, from [#187](https://github.com/vaam-apps/vpay/pull/187)
+(issue #144, ADR-0020, RFC-0002). Written on its branch as the thirteenth and
+renumbered when `verify-versions` landed first. Merged as `0799a8d2`, with the
+review's parser hardening (`c4c542f3`) in it._
+
+**Refuses, completely** — this is the whole list:
+
+- a column any `backends/migrations` file creates that **no element in
+  `schemas/privacy-inventory.yaml` classifies**;
+- an inventory `column` copy naming a table/column **no migration creates**
+  (stale or misspelled);
+- an element whose `subject`, `purpose`, `tenant_boundary`, `retention`,
+  `owner` or `control` is **empty**. Those are the six string fields of
+  ADR-0020 §1's eight; `necessary` is a boolean and `recipients` a list, so
+  "present" is all either can be;
+- a `control` outside `{redact, none, forbid}` or a `subject` outside
+  `{payer, staff, merchant, none, system}` — a typo like `redcat` would
+  otherwise classify a column as protected when it is not;
+- a copy whose `kind` is not `column`, a `column` copy missing its table or
+  column, or a file whose `version` is not `1`;
+- a **registered** non-database surface with a duplicate id, an id colliding
+  with an element name, or an empty `surface`/`description`. (It cannot refuse
+  an _unregistered_ one — nothing derives that list. The count of surfaces
+  "not yet statically enumerable" is printed, not enforced.)
+- **a migration whose DDL the parser cannot read** — by name, see below.
+
+**Implements:** `cargo xtask verify-privacy-inventory`, `verify_privacy_inventory`
+in `.xtask/src/main.rs`.
+
+**It parses the migrations themselves,** and that is the decision to remember.
+`schemas/vpay.cstack` is a _projection_ — it deliberately models less than the
+whole database — so the schema file is not the authoritative surface and a
+manifest would be a second artifact that can itself drift. The parser is
+string-aware and models `CREATE TABLE`, `ALTER TABLE … ADD/DROP/RENAME COLUMN`
+and `DROP TABLE`, so the derived set is the **final** schema, not the union of
+every column ever written.
+
+> **DDL the parser cannot read is refused BY NAME, not skipped** (hardened
+> `c4c542f3`, 2026-09-18). `AS SELECT`, `PARTITION OF`, `INHERITS` and a
+> `CREATE TABLE` with no column list each fail naming the file and the table;
+> a `(LIKE other)` body fails with its own message (it parses, but yields no
+> columns, and "a table with no columns is one the inventory can never be
+> asked about"); and `ALTER TABLE … RENAME TO` fails too, because every column
+> would stay filed under the old name and the inventory would have to keep
+> naming a table that no longer exists in order to pass.
+>
+> **Why a refusal and not a skip:** an unreadable table derives as nothing, and
+> then _both_ directions agree about a table neither can see — direction A
+> cannot report columns it never derived, and direction B has no stale row
+> because an honest author classified none. **A green gate over an
+> unclassified table is the one thing this gate exists to make impossible**,
+> and that is also the limit of the both-directions property in general: the
+> two directions share one oracle, so when the oracle is silent they agree.
+
+> **The keyword match was one literal space, and every way it was wrong failed
+> OPEN.** Until `c4c542f3` the parser did `stmt.to_uppercase().find("CREATE
+TABLE")`. Measured, each against that parser: `CREATE  TABLE` (two spaces),
+> `CREATE\tTABLE`, or a `CREATE` left at the end of a wrapped line **matched
+> nothing at all** — the whole table, every column, invisible to both
+> directions; `ALTER  TABLE t ADD COLUMN email` silently lost `email`, and
+> `DROP  TABLE t` silently left `t` standing, reopening the exact defect
+> `drop_table_targets` had been added to close. There was **no word boundary**
+> (`RECREATE TABLE` contains `CREATE TABLE`) and **no string-literal
+> awareness** — and these migrations' `COMMENT ON` bodies are essays _about
+> migrations_, so one containing the words `DROP TABLE customers` would have
+> removed the real table from the derived set. The only thing keeping the old
+> spelling correct was that all 48 migrations happen to be typed with exactly
+> one space, and nothing in this repository reformats SQL. `kw_end` now matches
+> whitespace-tolerantly, at a word boundary, outside string literals — and on
+> the original bytes rather than an uppercased copy, because `to_uppercase` is
+> not length-preserving (`'ﬁ'` is three bytes, `"FI"` is two) and offsets from
+> the copy were indexing the original.
+
+**Schema qualification is dropped**: `authkestra.oauth_*` is filed under its
+bare name, which is the spelling the inventory uses. Two tables of the same
+bare name in different schemas would merge into one entry, and a column of
+either would satisfy a classification written for the other. No such pair
+exists (31 created tables, 31 distinct bare names, as of 2026-09-18).
+
+**How you trip it:** adding a migration with a new column and not adding the
+`kind: column` copy to an element in `schemas/privacy-inventory.yaml`. Dropping
+a column and leaving its copy behind trips the other direction — and dropping a
+**table** without deleting its rows is the same failure with more rows; that is
+a real hole this gate's own review found, on migration 0009's
+`merchant_api_keys`.
+
+**The file's shape**, so you can add a row without opening it: `version: 1`,
+then `elements:` keyed by a stable element name, each carrying the eight
+classification fields, then `copies:` — a list of
+`{kind: column, table: …, column: …}`. Then `non_db_surfaces:`, a list of
+registered disclosure surfaces (**10 as of 2026-09-18, 6 of them
+`enumerable: false`**, which the gate counts and prints but does not enforce).
+The published prose companion is `docs/reference/personal-data-inventory.md`.
+The gate's own behaviour is pinned by **26 mutation cases as of 2026-09-18**
+(16 before the parser hardening the same day) in `mod privacy_inventory_tests`,
+inside `cargo test -p xtask`'s 285.
+
 ## The report: `verify-docs`
 
 `cargo xtask verify-docs` runs last in `just verify` and **exits 0 whatever it
@@ -391,14 +637,18 @@ the `# Errors` and `# Panics` sections** that ADR-0011 and rustdoc depend on. A
 number that is read is worth more here than a number that is enforced.
 
 It is last so the report a human reads is the final thing on the terminal. The
-`verify: ok` line the recipe prints afterwards means the twelve gates passed
+`verify: ok` line the recipe prints afterwards means the fourteen gates passed
 and says nothing about the numbers `verify-docs` printed.
 
-## The thirteenth gate: `verify-citations`
+## `verify-citations` — a gate, but not one of the fourteen
 
-`just docs-check-citations` → `cargo xtask verify-citations`. **Not** in `just
-verify` and **not** in `just ci`, because it needs the network and an
-authenticated `gh`. It is deliberately excluded from `cargo xtask verify-all`
+`just docs-check-citations` → `cargo xtask verify-citations`. ~~The thirteenth
+gate.~~ **Renumbered 2026-09-18:** `verify-versions` and
+`verify-privacy-inventory` took the thirteenth and fourteenth places, and this
+one was never in the list they are in anyway. `justfile`'s own header calls it
+"a sixteenth check", counting `verify-docs` as the fifteenth thing `just
+verify` prints. It is **not** in `just verify` and **not** in `just ci`,
+because it needs the network and an authenticated `gh`. It is deliberately excluded from `cargo xtask verify-all`
 too.
 
 It resolves every workflow-run id, pull request and issue that a tracked `*.md`

@@ -1,11 +1,11 @@
 ---
 name: vpay-checkout
-description: The payer-facing checkout page at frontends/apps/checkout — the three surfaces (hosted, embedded, popup) and how a payer reaches each, why the client_secret rides in the URL fragment and a query-string one is ignored rather than used, the entry decision that refuses before it reads a credential, the postMessage protocols and the popup's deliberate departures from the iframe one, the twelve-state pure reducer, and the a11y and styling gates that have already gone green while measuring nothing. Load before changing anything a payer sees or any credential handling on that page.
+description: The payer-facing checkout page at frontends/apps/checkout — the three surfaces (hosted, embedded, popup) and how a payer reaches each, why the client_secret rides in the URL fragment and a query-string one is ignored rather than used, the entry decision that refuses before it reads a credential, the postMessage protocols and the popup's deliberate departures from the iframe one, the twelve-state pure reducer, the redirect leg that is a vpay page rather than the rail's own URL and the return page it suppresses, and the a11y and styling gates that have already gone green while measuring nothing. Load before changing anything a payer sees or any credential handling on that page.
 ---
 
 # vpay checkout page
 
-> **Verified against vpay `d3a8810b` (2026-09-16).** Version-sensitive claims below
+> **Verified against vpay `0799a8d2` (2026-09-18).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -24,13 +24,14 @@ expires. No bearer token, no cookie, no server-side session beyond the row.
 
 ## Routes
 
-| Route                                 | Mode                                                                                                                                                                                                                                                                                                                                   | CSP                                                   |
-| ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
-| `/c/{cs_id}?key={pk}#{client_secret}` | hosted — a full navigation, or a popup the merchant opened                                                                                                                                                                                                                                                                             | `frame-ancestors 'none'`                              |
-| `/e/{cs_id}?key={pk}#{client_secret}` | embedded — framed by `initEmbeddedCheckout`                                                                                                                                                                                                                                                                                            | `frame-ancestors <the merchant's registered origins>` |
-| `/c/{cs_id}/return?t={return_token}`  | where a redirect rail sends the payer back                                                                                                                                                                                                                                                                                             | `frame-ancestors 'none'`                              |
-| `/config/v1`                          | an **operator** verification surface. Not an API a browser uses — every page already receives its branding as props                                                                                                                                                                                                                    | —                                                     |
-| `/.well-known/vpay-checkout`          | mounted 2026-09-17 ([vpay#196](https://github.com/vaam-apps/vpay/pull/196)). The **client** contract: what an SDK needs to know about this deployment before a payer taps anything — branding, the operator's `allowed_methods` floor, `support_contact`. Same document as `/config/v1`, different audience, so its shape is a promise | —                                                     |
+| Route                                          | Mode                                                                                                                                                                                                                                                                                                                                   | CSP                                                   |
+| ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| `/c/{cs_id}?key={pk}#{client_secret}`          | hosted — a full navigation, or a popup the merchant opened                                                                                                                                                                                                                                                                             | `frame-ancestors 'none'`                              |
+| `/e/{cs_id}?key={pk}#{client_secret}`          | embedded — framed by `initEmbeddedCheckout`                                                                                                                                                                                                                                                                                            | `frame-ancestors <the merchant's registered origins>` |
+| `/c/{cs_id}/return?t={return_token}`           | where a redirect rail sends the payer back                                                                                                                                                                                                                                                                                             | `frame-ancestors 'none'`                              |
+| `/c/{cs_id}/redirect?key={pk}#{client_secret}` | **since 2026-09-18 (#195/#200)** — the Flutter sheet's redirect leg. `app/c/[id]/redirect`. Renders nothing a payer acts on; it navigates                                                                                                                                                                                              | `frame-ancestors 'none'`                              |
+| `/config/v1`                                   | an **operator** verification surface. Not an API a browser uses — every page already receives its branding as props                                                                                                                                                                                                                    | —                                                     |
+| `/.well-known/vpay-checkout`                   | mounted 2026-09-17 ([vpay#196](https://github.com/vaam-apps/vpay/pull/196)). The **client** contract: what an SDK needs to know about this deployment before a payer taps anything — branding, the operator's `allowed_methods` floor, `support_contact`. Same document as `/config/v1`, different audience, so its shape is a promise | —                                                     |
 
 Both modes render the same screens from the same state machine. The mode is a
 property of the session and the page refuses the wrong one: `/c/{id}` refuses
@@ -50,9 +51,16 @@ reach a `Referer`. `src/lib/link.ts` enforces two consequences:
    is rendered into the merchant's public page by construction.
 
 A fragment value without `_secret_` in it is refused and **never echoed
-anywhere** — it is whatever was in the address bar. `sessionStorage` holds only
-the publishable key (`vpay.checkout.key.{id}`), never a secret, because
-`sessionStorage` outlives the payment and the fragment does not.
+anywhere** — it is whatever was in the address bar.
+
+~~`sessionStorage` holds only the publishable key
+(`vpay.checkout.key.{id}`).~~ **Corrected 2026-09-18 (#195/#200):** it holds
+two things now — that key, and the redirect-leg marker
+`vpay.checkout.redirect_leg.{id}` (`src/lib/redirect-leg.ts`). **Neither is a
+secret, and that is the rule that did not change**: `sessionStorage` outlives
+the payment and the fragment does not, so nothing that would still be a
+credential tomorrow may go in it. Adding a third key means asking that
+question again, not copying the two that are there.
 
 ## `decideEntry` refuses before it reads the credential
 
@@ -104,7 +112,62 @@ The **return** page resolves its opener by a different rule and has to:
 a payer arriving there came from the _rail_, so `document.referrer` names
 Orange, not the merchant. It uses `soleOrigin` — exactly one registered
 `checkout_origins` entry is the target; with none or with several, **there is
-no channel**.
+no channel**. And ~~the return page always reports the outcome~~ — **since
+2026-09-18 (#195/#200) it is conditional**; see the next section.
+
+## The redirect leg is a controlled surface, not the rail's URL
+
+**Since 2026-09-18 (issue #195, PR #200).** The Flutter native sheet no longer
+hands a redirect rail's own URL to the payer's browser. It opens
+`/c/{cs_id}/redirect` on the **checkout** origin, and `redirect-client.tsx`
+reads the session for the **intent's** `client_secret` (`src/lib/api.ts`), then
+reads `GET /v1/browser/payment_intents/{id}` for `next_action.redirect_to_url`
+through `@vaam-apps/vpay-stripe-js`'s `retrievePaymentIntent` — the division of
+clients the section below describes, not an exception to it — and navigates.
+**The rail's URL is never a parameter of that page**, which is the whole reason
+a crafted link to a payment origin cannot be turned into an open redirect; and
+`redirectUrlOf` (`src/lib/controller.ts`) still gates the one navigation it
+does make on `http:` or `https:`.
+
+> **Two reads, not one, and the trap is that one read type-checks.**
+> `GET /v1/browser/checkout/sessions/{id}` expands the intent and **never
+> renders a `next_action`**: `PaymentIntentObject::try_from(&row)` sets it
+> `None` unconditionally and only `with_next_action` — which the browser
+> session routes never call — attaches one. The page as first written read
+> `next_action` off the session and redirected **nobody**, on every real
+> deployment, while a hand-written `fetch` stub carrying that shape kept the
+> suite green. `src/testing/browser-stub.ts` now answers `next_action: null`
+> on both session routes so no later test can certify that shape again.
+
+Before navigating, the page writes the `sessionStorage` marker
+`vpay.checkout.redirect_leg.{id}` = `"1"` (`rememberRedirectLeg`,
+`src/lib/redirect-leg.ts`; the prefix constant is
+`REDIRECT_LEG_STORAGE_PREFIX`). On the way back, `return-client.tsx` calls
+`recallRedirectLeg` **before `decideReturnEntry`** — so a malformed return URL
+cannot re-surface a foreign error screen on top of the sheet's outcome — then
+renders the `redirect_leg` screen ("returning to the app") and **returns
+without ever constructing a `ReturnController`**. No poll, no outcome, no
+channel. A query parameter could not do this job: the rail controls the
+redirect back and will not echo a vpay-added parameter.
+
+**Four limits vpay discloses rather than hides, all as of 2026-09-18:**
+
+- **The marker is consumed, not kept.** `recallRedirectLeg` is followed
+  immediately by `clearRedirectLeg`, so a later normal web checkout in the same
+  tab is not suppressed — and so a **manual reload of the return page shows the
+  full outcome**. The suppression is once per trip, by design, and there is no
+  TTL doing that work.
+- **It is unmeasured in an in-app browser.** Whether
+  `SFSafariViewController` and Chrome Custom Tabs carry `sessionStorage` across
+  the rail's cross-origin redirect is reasoned about in `redirect-leg.ts` and
+  asserted in jsdom, **never measured**. It fails to the duplicate screen,
+  never to a wrong outcome: the rail's `return_url` carries both `t` and `key`,
+  so a return page that finds no marker still has every credential it needs.
+- **A suppressed return page renders no "return to the merchant" button**, so
+  the browser leg reaches no `stopUrl` by itself; the sheet resolves the rail
+  on the **dismissal** signal alone, which D4's poll makes correct regardless.
+- **Nobody has driven the leg end to end** — not on a device, not against
+  `just demo-up`. Every number behind it is unit- or component-level.
 
 ## The browser surface
 
@@ -133,6 +196,15 @@ the latter two for the popup channel, not for framing — and the two uses of th
 list are **separate expressions** so widening one cannot widen the other.
 `middleware.test.ts` has a case named for that: the hosted page never lets that
 list reach its CSP, measured failing with the guard removed.
+
+`/c/{id}/redirect` is the fourth page on this origin and **deliberately gets no
+lookup** (2026-09-18, #195) — it never frames and never `postMessage`s, so the
+list would answer a question nothing asks. It still gets `no-referrer` (which
+is what keeps the session secret in its fragment out of the rail's `Referer`),
+`no-store`, `nosniff` and `frame-ancestors 'none'`, because the **matcher is
+every path** and those are the constant half. The omission is written down
+beside `EMBEDDED_PATH`/`HOSTED_PATH`/`RETURN_PATH` in `middleware.ts` on
+purpose: absent from that list, it read as forgotten rather than decided.
 
 ## More
 
