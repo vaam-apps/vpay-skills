@@ -127,3 +127,85 @@ should be added — the conformance suite starts its own containers via
 testcontainers. CI's `rust` job also installs Node and builds the Node SDK
 before running tests, which is why one Rust test fails on a fresh local worktree
 and never in CI (see [node-web.md](node-web.md)).
+
+### macOS has one loopback address; Linux has sixteen million (2026-09-18)
+
+Four cases in `backends/tests/integration/tests/staff_sign_in.rs` simulate
+distinct client source addresses with `reqwest::ClientBuilder::local_address` —
+`the_sign_in_rate_limit_is_per_source_address`,
+`the_second_factor_is_rate_limited_and_not_only_the_password`,
+`a_forwarded_for_header_from_an_untrusted_peer_buys_no_fresh_budget` and
+`two_replicas_share_one_sign_in_budget`. They are the only coverage of the
+per-source-address half of the sign-in rate limit, and the address is the
+thing under test, so none of it can be faked with a header: two of the four
+exist precisely to prove `X-Forwarded-For` is **not** honoured from an
+untrusted peer.
+
+Linux assigns the whole `127.0.0.0/8` to `lo`, so those binds succeed and CI is
+green. macOS assigns only `127.0.0.1` to `lo0`, so `bind()` returns
+`EADDRNOTAVAIL` and all four fail — deterministically, not flakily, and
+identically whether run in the full workspace or alone. The bind happens at
+**connect** time rather than at `ClientBuilder::build()`, so before 2026-09-18
+this surfaced as an opaque reqwest transport error:
+
+```text
+error sending request for url (http://127.0.0.1:PORT/dash/v1/staff/login)
+  1: client error (Connect)
+  2: tcp bind local error
+  3: Can't assign requested address (os error 49)
+```
+
+The fix is host setup, once per boot, not a change to the tests:
+
+```bash
+just loopback-aliases
+```
+
+It aliases every address the suite uses (`127.0.0.2`, `.3`, `.4`, `.20` and
+`.30`–`.35`) onto `lo0` and is a no-op on Linux. The aliases do **not** survive
+a reboot. Since 2026-09-18 the suite preflights the bind through a shared
+helper, so an unaliased machine fails with a message naming this command
+instead of `os error 49`.
+
+**Do not "fix" this by ignoring or gating the four cases.** A macOS developer
+seeing red here is correct; a green run that skipped them would claim the
+per-address limiter is covered when nothing measured it.
+
+### `/__admin/health` proves nothing about WireMock's stubs (2026-09-18)
+
+A conformance or integration case that reaches a WireMock host and gets a
+**404 from a live server** — e.g.
+`Config("orange_money: the token endpoint answered HTTP 404; check
+providers[].host.url")` — is not a misconfigured `host.url`. It is a readiness
+gap.
+
+`HealthCheckTask.execute()` at the pinned `wiremock/wiremock:3.9.2` tag never
+touches the `Admin` it is handed: it returns a hardcoded HTTP 200 on every
+call. A passing Docker healthcheck therefore proves the JVM started and
+`/__admin/*` is routed, and **nothing about whether the bind-mounted mappings
+are being served on the mapped host port**. `compose.yml`'s comment claimed
+otherwise until 2026-09-18 and is now struck through in place.
+
+`vpay_testkit::containers::start_wiremock` gained a second gate the same day:
+it polls `GET /__admin/mappings` on the mapped host port until WireMock's own
+`meta.total` is positive, bounded by a 5s deadline. Every caller gets it, so a
+rail request can no longer be issued against a host reporting zero mappings.
+If you add a `start_wiremock` caller, point it at a **non-empty** mappings
+directory or that gate will time out by design.
+
+### A bounded retry over `run_once` is a flake, not a test (2026-09-18)
+
+`vpay_worker::seed_singletons` stamps a job's `run_at` from the **test
+process's** clock (`OffsetDateTime::now_utc()`), while `Jobs::claim` selects
+`WHERE run_at <= now()` — evaluated by the **Postgres server** inside its own
+testcontainer. Those are two clocks. A container reading milliseconds behind
+the host makes a just-seeded job unclaimable, and `run_once` answers `None`.
+
+`None` means "nothing claimable _this instant_", never "nothing left to
+claim". The shipping `run_loop` knows this — `Ok(None) => idle(…)` waits out
+`IDLE_SLEEP` and asks again — so this is invisible in production and shows up
+only in a test that gives up. A `for _ in 0..N { … else { break } }` loop
+around `run_once` will pass on a quiet machine and fail under a full-workspace
+run. **Poll on a wall-clock deadline instead**, re-entering `run_once` on
+`None`; `checkout_sessions.rs`'s `run_until` is the worked example, and
+`worker_kill9.rs`'s `wait_for_settlement` is the older one.

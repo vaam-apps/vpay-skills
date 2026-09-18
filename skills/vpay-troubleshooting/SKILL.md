@@ -34,6 +34,9 @@ Two habits before anything else:
 | testcontainers cannot reach a Docker daemon                             | inline, below                                                |
 | `failed to create a container: Timeout error` at ~120 s                 | inline, below                                                |
 | `RootlessKit PortManager.AddPort(): bind: address already in use`       | [docker-testcontainers](references/docker-testcontainers.md) |
+| `tcp bind local error` / `Can't assign requested address (os error 49)` | [docker-testcontainers](references/docker-testcontainers.md) |
+| a rail stub answers **404** from a live WireMock host                   | [docker-testcontainers](references/docker-testcontainers.md) |
+| a `run_once` loop reports a job "never ran" only under load             | [docker-testcontainers](references/docker-testcontainers.md) |
 | `OCI runtime exec failed … outside of container mount namespace root`   | [docker-testcontainers](references/docker-testcontainers.md) |
 | container reports `unhealthy` while serving correctly                   | [docker-testcontainers](references/docker-testcontainers.md) |
 | `pnpm install` fails on Node version                                    | [node-web](references/node-web.md)                           |
