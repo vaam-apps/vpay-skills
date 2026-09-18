@@ -50,7 +50,8 @@ so a grep for the triple finds the flag that applies to it (ADR-0014).
 | Recipe                    | Does                                                                                                                      | Needs                                               |
 | ------------------------- | ------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
 | `just test`               | `test-rust` + `test-doc` + `test-web`                                                                                     |                                                     |
-| `just test-rust`          | `cargo nextest run --workspace`                                                                                           | **Docker**                                          |
+| `just test-rust`          | `cargo nextest run --workspace`                                                                                           | **Docker**; on macOS also `just loopback-aliases`   |
+| `just loopback-aliases`   | `sudo ifconfig lo0 alias` for the ten `127.0.0.x` addresses `staff_sign_in.rs` sends from; no-op on Linux                 | macOS, `sudo`                                       |
 | `just test-rust-all`      | `cargo nextest run --workspace --run-ignored all` — "expect failures; this is for seeing what is NOT covered, not for CI" | Docker                                              |
 | `just test-doc`           | `cargo test --doc --workspace`                                                                                            |                                                     |
 | `just test-web`           | `pnpm -r test`                                                                                                            | `node_modules`                                      |
