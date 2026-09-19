@@ -12,7 +12,7 @@ page is `docs/flows/customers/privacy-and-erasure.md`.
 Inside one transaction, under the caller's `SELECT … FOR UPDATE` on the
 customer row:
 
-```
+```sql
 SELECT NOT (UNREFERENCED) FROM customers WHERE id = $1
 ```
 

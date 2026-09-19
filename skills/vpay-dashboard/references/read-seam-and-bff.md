@@ -43,7 +43,7 @@ spelling of the string.
 `search_payment_intents::Payments` has five methods, and `schemas/vpay.cstack`
 declares five `procedure`s. So the mounted set is:
 
-```
+```http
 POST /dash/v1/$procs/searchPaymentIntents
 POST /dash/v1/$procs/searchRefunds
 POST /dash/v1/$procs/searchWebhookDeliveries

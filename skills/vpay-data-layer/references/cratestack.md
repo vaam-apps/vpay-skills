@@ -135,7 +135,7 @@ believe the name.**
 
 `procedure listPaymentIntents` collides with the generated `list`:
 
-```
+```text
 Error: procedure `listPaymentIntents` collides with the generated ...
 ```
 

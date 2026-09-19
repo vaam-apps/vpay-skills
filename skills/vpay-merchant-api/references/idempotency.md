@@ -12,7 +12,7 @@ and comparison in `vpay_db::idempotency`, and the sequence that joins them in
 Stripe treats `Idempotency-Key` as optional. **vpay requires it on every `POST`
 under `/v1`** (Step 2 decision D7). A missing or blank one is:
 
-```
+```text
 400  idempotency_error is NOT the type here — it is invalid_request_error
      code: invalid_request
      param: idempotency_key

@@ -125,7 +125,7 @@ case is covered by a test.
 
 ## The concurrency bound
 
-```
+```text
 pool_max = vpay_db::MAX_CONNECTIONS   // 10, not configurable anywhere
 max_safe = pool_max / 2               // 5
 concurrency > max_safe  =>  StartupError::WorkerConcurrencyExceedsPoolSize

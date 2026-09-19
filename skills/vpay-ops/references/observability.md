@@ -112,7 +112,7 @@ is JSON on stdout.
 
 **The error/log contract** (`ApiError::into_response`):
 
-```
+```text
 status = err.category().http_status()
 body   = { "error": { "type": …, "code": …, "message": err.public_message(), "param"?: … } }
 log    = at err.severity(), alert=true when Page, with the full Display + source chain

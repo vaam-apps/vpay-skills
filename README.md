@@ -108,7 +108,7 @@ That stamp is machine-enforced — the gate refuses a skill that carries none, o
 one whose stamp disagrees with `coverage.json`'s `baseline`. And
 `verify-coverage` reports how far the checkout you point it at has drifted:
 
-```
+```text
 baseline: these skills were verified against vpay f063ee96 (2026-09-16);
 this checkout is 9a3d5732 (2026-09-14) — 0 commit(s) newer,
 2 commit(s) it does not have.

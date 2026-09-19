@@ -107,7 +107,7 @@ invented.
 `vpay_worker::signing::signature_header` is the only place in the workspace
 that produces the header.
 
-```
+```text
 Vpay-Signature: t=1753401600,v1=<hex>[,v1=<hex>]
 ```
 
@@ -137,7 +137,7 @@ Clamping to zero would be worse — the delivery would then be signed with a
 timestamp the sender does not believe and would fail the _tolerance_ check
 instead, reported as something a merchant could plausibly debug.
 
-## Endpoints come from YAML. There is no endpoint API.
+## Endpoints come from YAML. There is no endpoint API
 
 `merchant_clients[].webhooks[]` in `config/application.yml` →
 `vpay_config::oauth::WebhookEndpoint` → `vpay_worker::Endpoint { id, url,

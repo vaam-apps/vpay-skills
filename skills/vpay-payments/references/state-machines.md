@@ -33,7 +33,7 @@ failure state.
 
 ### `next_status`
 
-```
+```text
                       Create   Confirm(Push)  Confirm(Redirect)  Cancel
 requires_payment_method  –      processing     requires_action    canceled
 requires_action          –      –              –                  –
@@ -160,7 +160,7 @@ writes the row, so the CHECK is what answers `409 over_refund`.
 
 ## `InvoiceStatus`
 
-```
+```text
 draft ──finalize──> open ──> paid | void | uncollectible
   └────void────> void        (also: DELETE, which removes it entirely)
 ```

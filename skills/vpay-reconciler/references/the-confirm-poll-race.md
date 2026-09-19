@@ -13,7 +13,7 @@ Fixed 2026-09-04 (Step 8, lane G). Recorded in
 
 `just demo` returned `500` with:
 
-```
+```text
 write_matched_no_row
 no row in charges matched ch_… or it was no longer in the required state
 ```

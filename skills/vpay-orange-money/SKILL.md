@@ -67,7 +67,7 @@ pinned by `a_rail_without_partial_refunds_refuses_a_partial_amount`.
 
 ## `token_url` — OAuth at the host root, payments under a path
 
-```
+```text
 base_url          = https://api.orange.com/orange-money-webpay/dev
 token endpoint    = https://api.orange.com/oauth/v2/token
 payment endpoints = {base_url}/v1/webpayment, {base_url}/v1/transactionstatus
@@ -146,7 +146,7 @@ body we must never log.
 alone does not authorise the read**, which is why `pay_token` must be
 committed before the payer could act (`docs/flows/crash-safety.md`).
 
-```
+```text
 no pay_token in ref_extra  ->  ProviderError::Config   (NOT ChargeStatus::NotFound)
 ```
 

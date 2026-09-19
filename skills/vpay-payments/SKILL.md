@@ -18,7 +18,7 @@ HTTP, Postgres or any rail. `docs/flows/payment-lifecycle.md` is the flow page.
 
 > **`IntentStatus` has no `failed` variant, and it is not an oversight.**
 
-```
+```text
 requires_payment_method | requires_action | processing | succeeded | canceled
 ```
 
@@ -41,7 +41,7 @@ enum and both SDKs' enum, and nothing ties those four together automatically.
 `const fn`, matched exhaustively in both dimensions so that adding a status or
 a verb **fails to compile** rather than falling silently into "illegal".
 
-```
+```text
 requires_payment_method + Confirm(Push)     -> processing
 requires_payment_method + Confirm(Redirect) -> requires_action
 requires_payment_method + Cancel            -> canceled

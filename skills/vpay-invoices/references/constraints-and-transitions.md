@@ -64,7 +64,7 @@ invoice nobody could pay) or at the line write (already committed by then).
 
 ## `NO_LIVE_INTENT` — one payment at a time
 
-```
+```text
 (invoices.payment_intent_id IS NULL OR <the intent is canceled>)
 ```
 

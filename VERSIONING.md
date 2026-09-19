@@ -117,7 +117,7 @@ This repository tags a release whenever a batch of skills is re-verified against
 a newer vpay. A tag is named for the **date of verification and the vpay commit
 it was verified against**, not for a vpay version that does not exist:
 
-```
+```text
 v2026-09-16-f063ee96
 ```
 

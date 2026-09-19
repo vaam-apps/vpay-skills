@@ -45,7 +45,7 @@ relations as of migration 0044. See
 included**, in `_sqlx_migrations.checksum`, and refuses to run against a
 database whose recorded checksum no longer matches:
 
-```
+```text
 migration 28 was previously applied but has been modified
 ```
 

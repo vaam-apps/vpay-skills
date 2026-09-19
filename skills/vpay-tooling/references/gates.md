@@ -26,7 +26,7 @@ when [#201](https://github.com/vaam-apps/vpay/pull/201) appended
 
 `just verify` runs fourteen gates and then one report:
 
-```
+```text
 verify: verify-no-mocks verify-status verify-errors verify-sdk-parity \
         verify-links verify-npm-scope check-schema verify-serde \
         verify-repositories verify-toolchain verify-ui verify-migrations \
