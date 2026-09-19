@@ -5,7 +5,7 @@ description: Configuration, deployment and observability for vpay — the YAML l
 
 # vpay ops
 
-> **Verified against vpay `0799a8d2` (2026-09-18).** Version-sensitive claims below
+> **Verified against vpay `35848b5c` (2026-09-19).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
