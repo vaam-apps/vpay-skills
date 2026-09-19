@@ -220,7 +220,8 @@ read` — it never comments, labels or pushes.
 `namespace` (derive the registry namespace) → `build` (a matrix over images ×
 platforms, amd64 on `ubuntu-latest` and arm64 on `ubuntu-24.04-arm`, uploading
 digests as artifacts) → `merge` (`docker buildx imagetools create` to make the
-manifest list, then keyless `cosign` signing via GitHub OIDC).
+manifest list, then keyless `cosign` signing via GitHub OIDC) → `publish-chart`
+(needs `namespace` and `merge`; tags only — see below).
 
 It groups concurrency by `github.ref` with **`cancel-in-progress: false`** —
 deliberately the opposite of `ci.yml`. A half-cancelled `imagetools create`
@@ -232,5 +233,16 @@ allowed to finish.
 static-linking decision that applied on only one of two published
 architectures would not be a decision (ADR-0014).
 
-`just release-dry-run` is the local rehearsal — it builds all three images for
-the host arch only and then runs `just helm-check`.
+**`publish-chart`, added 2026-09-19 and never run as of this writing**,
+packages `deploy/helm/vpay` and pushes it to
+`oci://ghcr.io/vaam-apps/charts/vpay`, tagged with `Chart.yaml`'s hand-bumped
+`version:` and signed with the same keyless cosign identity as the images.
+Full mechanics — the tags-only/no-`edge` decision, the three-way republish
+guard, and the install/verify commands — belong to `vpay-ops`, not here:
+[`vpay-ops`'s `references/deployment.md`](https://github.com/vaam-apps/vpay-skills/blob/main/skills/vpay-ops/references/deployment.md#publishing-the-chart-to-ghcr--added-2026-09-19-has-never-run).
+
+`just release-dry-run` is the local rehearsal — it builds all three images
+for the host arch only, then packages (but does not push or sign) the chart,
+then runs `just helm-check`. Packaging is the one step of `publish-chart`
+that needs no registry; the already-published guard, the push and the
+signature do not run locally.

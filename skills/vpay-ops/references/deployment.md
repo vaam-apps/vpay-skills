@@ -97,6 +97,104 @@ Deployment passes `args: ["worker"]`.
 
 **It renders no Secret and no database.**
 
+## Publishing the chart to GHCR — added 2026-09-19, has never run
+
+**Read this whole section as a description of code, not of an event.**
+`release.yml` gained a fourth publish job, `publish-chart`
+(`.github/workflows/release.yml:392-527` as of 2026-09-19), between `merge`
+and the SDK-publishing jobs. As of this writing it has never executed: no
+`v*` tag has triggered it, no chart has ever been pushed to a registry,
+nothing has been signed, and no `cosign verify` has been read against a
+chart manifest. Everything below is what the job's own code does, verified
+by reading it and by a local rehearsal against a throwaway `registry:2`
+container — not by a real run.
+
+It pushes this chart to the same registry the three images use, as its own
+OCI artifact: `oci://ghcr.io/vaam-apps/charts/vpay`. Helm has needed no
+separate chart-repository format since 3.8, so this is a publish path, not
+new hosting.
+
+**The artifact's tag is `Chart.yaml`'s hand-bumped `version:` field —
+never the git tag.** `helm push` derives the OCI tag from that field and
+there is no second name to move. `version:` is deliberately not
+release-please's to manage (AGENTS.md § Releasing) and `cargo xtask
+verify-versions` exempts it on purpose; publishing makes that hand-edit
+load-bearing for the first time, which is what the republish guard below
+exists to catch.
+
+**Tags only. There is no `edge` chart** — the one place this job does not
+mirror what §"Images" above describes for the three images. An OCI chart's
+tag is not a label a workflow step can choose independently of
+`Chart.yaml`; an `edge` chart would mean either republishing one version
+over itself on every push to `master`, or inventing accumulating
+`0.2.1-edge.<sha>` strings that `helm search` would then offer as real
+releases. Between releases the chart stays exactly what it has always
+been — a directory in a clone, installed with `helm upgrade --install vpay
+deploy/helm/vpay`, which is what this page and `just helm-check` have
+always exercised. So the job runs only
+`if: startsWith(github.ref, 'refs/tags/v')`.
+
+**`needs: [namespace, merge]`**, not the per-architecture `build` matrix:
+`values.yaml` defaults `images.*.tag` to `.Chart.AppVersion`, so a chart
+published before all three images are merged, signed and pushed would
+resolve to tags GHCR does not have yet. The chart cannot exist before the
+thing it points at.
+
+**The republish guard reads three outcomes, not two.** `helm push` to an
+OCI registry overwrites an existing tag with no error and no warning —
+measured against a throwaway local `registry:2` (2026-09-19): pushing the
+same chart twice returned exit 0 both times. Before pushing, the job runs
+`helm show chart oci://ghcr.io/vaam-apps/charts/vpay --version <chart
+version>` and reads it three ways:
+
+| `helm show chart`                                      | Reads as                    | Job does                                              |
+| ------------------------------------------------------ | --------------------------- | ----------------------------------------------------- |
+| exit 0                                                 | already published           | fails, naming the fix: bump `Chart.yaml`'s `version:` |
+| non-zero, `not found`                                  | never published             | packages and pushes                                   |
+| non-zero, anything else (connection refused, TLS, 5xx) | the registry did not answer | fails rather than pushing past an unanswered question |
+
+A missing chart **name** and a missing **version** return the textually
+identical `not found` message (measured against the same local registry),
+which is why the guard greps for that string instead of trying to tell the
+two apart — either way nothing is published yet, and the job proceeds the
+same way.
+
+**Signed exactly like the images: keyless cosign, GitHub OIDC, the same
+certificate identity** (`release.yml` at that ref). A chart manifest is an
+ordinary OCI artifact to cosign — `cosign triangulate` resolved it against
+the local rehearsal registry — so the same verification shape
+`docs/runbooks/release.md` §3 gives for the images works on the chart with
+only the reference changed:
+
+```bash
+cosign verify \
+  --certificate-identity-regexp '^https://github\.com/vaam-apps/vpay/\.github/workflows/release\.yml@refs/tags/v.*$' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+  ghcr.io/vaam-apps/charts/vpay:<version>
+```
+
+**What to hand a user who wants to install a released chart, once a tag has
+actually run this job (none has, as of 2026-09-19):**
+
+```bash
+helm show chart  oci://ghcr.io/vaam-apps/charts/vpay --version <version>
+helm show values oci://ghcr.io/vaam-apps/charts/vpay --version <version> > my-values.yaml
+
+helm upgrade --install vpay oci://ghcr.io/vaam-apps/charts/vpay \
+  --version <version> -f my-values.yaml
+```
+
+`<version>` is `Chart.yaml`'s `version:` (currently `0.2.1`), not a `v*` git
+tag — say so explicitly if the person reaches for the tag from a release
+notification, because it will not resolve against the chart repository.
+
+**Also unmeasured, same open question the images still carry:** whether
+`ghcr.io/vaam-apps/charts/vpay` will be anonymously pullable. GHCR creates a
+package **private** on first push; making it public is a one-time change a
+human makes in package settings, not something this job does. Do not tell a
+user the install commands above will work for an anonymous caller until
+that change has been made and someone has confirmed it.
+
 ## Surfaces: one image, two tiers (ADR-0022, 2026-09-16)
 
 `deployment.surfaces` in the YAML selects which surfaces a process mounts.

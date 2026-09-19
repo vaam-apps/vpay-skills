@@ -1,7 +1,7 @@
 {
   "//": "The docs<->skills parity map. Checked in BOTH directions by tools/verify-coverage.mjs: a docs/flows page no skill claims fails, and a claimed path that no longer exists in vpay fails. See README.md and CONTRIBUTING.md.",
   "baseline": {
-    "//": "A skill is true of *a* vpay, not of vpay. vpay publishes no release tags and its workspace version has never moved off 0.1.0, so the only honest version identity is a commit and a date. Every SKILL.md is stamped with this same ref and the gate refuses one stamped differently. See VERSIONING.md.",
+    "//": "A skill is true of *a* vpay, not of vpay. vpay publishes no release tags and its workspace version has never moved off 0.1.0, so the only honest version identity is a commit and a date. Every SKILL.md is stamped with at least this ref: the gate requires the stamped commit to CONTAIN the baseline, not to equal it, so a skill re-verified on its own carries a newer stamp than its nineteen siblings. See VERSIONING.md.",
     "vpayRef": "0799a8d27ac6d5069910ed586640f2d18be964b2",
     "vpayRefShort": "0799a8d2",
     "vpayCommitDate": "2026-09-18",
