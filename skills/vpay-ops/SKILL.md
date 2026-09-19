@@ -142,7 +142,8 @@ that show up everywhere:
 - **`USER 65532:65532` is a raw UID**, because `scratch` has no `/etc/passwd`.
 
 Depth: [references/deployment.md](references/deployment.md) — the chart, the
-Secrets, the overlay `subPath` rule and the routing defects.
+Secrets, the overlay `subPath` rule, the routing defects, and — added
+2026-09-19, never run — how `release.yml` publishes the chart itself to GHCR.
 
 ## Observability, in one paragraph
 

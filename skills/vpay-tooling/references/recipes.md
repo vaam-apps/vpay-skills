@@ -26,14 +26,14 @@ workspace and not in a hoisted one.
 
 ## Build
 
-| Recipe                 | Does                                                                                                                                                      | Needs                                          |
-| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
-| `just build`           | `build-rust` + `build-web`                                                                                                                                |                                                |
-| `just build-rust`      | `cargo build --workspace`                                                                                                                                 |                                                |
-| `just build-web`       | `pnpm -r build`                                                                                                                                           | `node_modules`                                 |
-| `just build-dist`      | `cargo build --profile dist --target x86_64-unknown-linux-musl -p vpay-server`                                                                            | `rustup target add x86_64-unknown-linux-musl`  |
-| `just build-storybook` | builds both apps' Storybooks, then greps the built stylesheet asserting `--color-base-100` is **defined**, not merely referenced                          | `node_modules`                                 |
-| `just release-dry-run` | builds the three release images for the **host arch only** (`vpay-server`, `vpay-dashboard`, `vpay-checkout`) with `--push=false`, then `just helm-check` | docker + buildx + helm + kubeconform + network |
+| Recipe                 | Does                                                                                                                                                                                                       | Needs                                          |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| `just build`           | `build-rust` + `build-web`                                                                                                                                                                                 |                                                |
+| `just build-rust`      | `cargo build --workspace`                                                                                                                                                                                  |                                                |
+| `just build-web`       | `pnpm -r build`                                                                                                                                                                                            | `node_modules`                                 |
+| `just build-dist`      | `cargo build --profile dist --target x86_64-unknown-linux-musl -p vpay-server`                                                                                                                             | `rustup target add x86_64-unknown-linux-musl`  |
+| `just build-storybook` | builds both apps' Storybooks, then greps the built stylesheet asserting `--color-base-100` is **defined**, not merely referenced                                                                           | `node_modules`                                 |
+| `just release-dry-run` | builds the three release images for the **host arch only** (`vpay-server`, `vpay-dashboard`, `vpay-checkout`) with `--push=false`, packages (does not push or sign) the Helm chart, then `just helm-check` | docker + buildx + helm + kubeconform + network |
 
 The `build-storybook` grep is not tidiness. PR #135 produced a build that
 referenced `--color-base-100` 22 times and defined it 0 — the `@vaam-apps/ui`
