@@ -143,7 +143,14 @@ Verified against vpay [`f063ee96`](https://github.com/vaam-apps/vpay/commit/f063
 (2026-09-15), the commit that recorded vpay's first settlement against a real
 MTN sandbox.
 
-Twenty skills, covering all 23 pages in vpay's `docs/flows/`.
+~~Twenty skills, covering all 23 pages in vpay's `docs/flows/`.~~
+**Corrected 2026-09-19:** `docs/flows/` has 45 pages (46 counting
+`README.md`), not 23. 23 is `verify-coverage`'s own shallow,
+one-level-deep count — the exact defect this same entry's "Reviewed"
+section below already names as found and fixed before this release
+("`verify-coverage` enumerated `docs/flows` one level deep, seeing 23
+pages of 45, while reporting success"). The gate was fixed; this
+headline sentence, written before that fix, was not.
 
 ### Reviewed
 
