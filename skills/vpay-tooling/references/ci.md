@@ -55,7 +55,7 @@ prettier over the whole repository, so the `web` filter deliberately includes
 Five jobs resolve the compiler from the toolchain file rather than a floating
 `@stable`:
 
-```
+```bash
 sed -n 's/^channel = "\(.*\)"/\1/p' rust-toolchain.toml
 ```
 
