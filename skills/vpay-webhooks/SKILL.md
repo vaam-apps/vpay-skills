@@ -107,7 +107,7 @@ invented.
 `vpay_worker::signing::signature_header` is the only place in the workspace
 that produces the header.
 
-```
+```text
 Vpay-Signature: t=1753401600,v1=<hex>[,v1=<hex>]
 ```
 

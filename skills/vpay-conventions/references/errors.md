@@ -33,7 +33,7 @@ So a composite delegates in **every** `Classify` method — `category`, `code`,
 
 ## The three tiers
 
-```
+```text
  rail / Postgres / YAML / caller input
           │
  TIER 1 — leaf errors, one thiserror enum per crate concern

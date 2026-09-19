@@ -126,7 +126,7 @@ management-only process still needs it populated.
 chart value. Under an HPA that is the binding constraint, and the
 `connection-budget` guard enforces it:
 
-```
+```text
 (server.autoscaling.maxReplicas + management.replicaCount + worker.replicaCount) × 10
   ≤ database.maxConnections − database.reservedConnections
 ```

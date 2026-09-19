@@ -37,7 +37,7 @@ Outputs, all committed:
 
 **Regenerate the Dart side** (from the package root):
 
-```
+```bash
 dart run pigeon --input pigeons/checkout.dart
 ```
 
@@ -84,7 +84,7 @@ deliberate widening (as D8's `mode` field was), not a refactor.
 
 `examples/shop/zenstack/schema.zmodel` is the source. Regenerate with:
 
-```
+```bash
 pnpm --filter @vpay-examples/shop generate
 ```
 

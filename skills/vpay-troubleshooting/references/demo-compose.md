@@ -24,7 +24,7 @@ whole checkout.
 Bringing a second stack up with a different `demo_port` **regenerates the shared
 merchant key pair**:
 
-```
+```text
 gen-demo-keys: .e2e/application-demo.yml was generated for a different demo_port than 18088 — regenerating the pair
 ```
 
@@ -82,7 +82,7 @@ first observation on a tree that carries the fix.**
 
 **Symptom:**
 
-```
+```text
 ✘ orange_money · the payer completes the hosted page — confirm: … vpay API error (500)
 {"level":"ERROR","fields":{"alert":true,"category":"Internal","code":"write_matched_no_row",
  "error":"no row in charges matched ch_… , or it was no longer in the required state"}}

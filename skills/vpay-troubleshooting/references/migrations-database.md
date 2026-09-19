@@ -26,7 +26,7 @@ sqlx hashes the file, comments included, so that one line is a different
 migration as far as every database is concerned. Every stack brought up between
 #37 and #39 then exited 78 on boot with
 
-```
+```text
 migration 28 was previously applied but has been modified
 ```
 

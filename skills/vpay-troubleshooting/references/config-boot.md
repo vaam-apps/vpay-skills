@@ -64,7 +64,7 @@ subscription key otherwise fails much later and much more confusingly."
 Seven variables are referenced by `config/application.yml` and must be supplied
 by **every** deployment, **in every mode**:
 
-```
+```text
 MTN_SUBSCRIPTION_KEY  MTN_API_KEY  MTN_API_USER
 ORANGE_MERCHANT_KEY   ORANGE_CLIENT_ID  ORANGE_CLIENT_SECRET
 MERCHANT_WEBHOOK_SECRET
