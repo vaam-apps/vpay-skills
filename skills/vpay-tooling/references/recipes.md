@@ -1,6 +1,6 @@
 # The recipe inventory
 
-_Verified against vpay `0799a8d2` (2026-09-18). Version-sensitive claims
+_Verified against vpay `67c90ea5` (2026-09-20). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 `justfile` is 4 704 lines, two-thirds of them comment (2026-09-16).
@@ -93,27 +93,28 @@ Subsets: `cargo nextest run -p <crate>`, `cargo nextest run -E 'test(name)'`,
 
 ## Verify, lint and format
 
-| Recipe                | Does                                                                                                           |
-| --------------------- | -------------------------------------------------------------------------------------------------------------- |
-| `just verify`         | the fourteen gates (2026-09-18; twelve until 2026-09-17) + the `verify-docs` report — see [gates.md](gates.md) |
-| `just lint`           | `fmt-check` `clippy` `lint-web`                                                                                |
-| `just fmt`            | `cargo fmt --all`; `pnpm exec prettier --write .`                                                              |
-| `just fmt-check`      | `fmt-check-rust` + `fmt-check-web`                                                                             |
-| `just fmt-check-rust` | `cargo fmt --all -- --check`                                                                                   |
-| `just fmt-check-web`  | `pnpm exec prettier --check .`                                                                                 |
-| `just clippy`         | `cargo clippy --workspace --all-targets -- -D warnings`                                                        |
-| `just lint-web`       | depends on `build-sdk-node`; `pnpm -r typecheck` then `pnpm -r lint`                                           |
-| `just deny`           | `cargo deny check`                                                                                             |
-| `just audit-web`      | two `pnpm audit` runs, `--prod` first then the whole workspace                                                 |
+| Recipe                | Does                                                                                                                                     |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `just verify`         | the fifteen gates (2026-09-20; fourteen until 2026-09-18, twelve until 2026-09-17) + the `verify-docs` report — see [gates.md](gates.md) |
+| `just lint`           | `fmt-check` `clippy` `lint-web`                                                                                                          |
+| `just fmt`            | `cargo fmt --all`; `pnpm exec prettier --write .`                                                                                        |
+| `just fmt-check`      | `fmt-check-rust` + `fmt-check-web`                                                                                                       |
+| `just fmt-check-rust` | `cargo fmt --all -- --check`                                                                                                             |
+| `just fmt-check-web`  | `pnpm exec prettier --check .`                                                                                                           |
+| `just clippy`         | `cargo clippy --workspace --all-targets -- -D warnings`                                                                                  |
+| `just lint-web`       | depends on `build-sdk-node`; `pnpm -r typecheck` then `pnpm -r lint`                                                                     |
+| `just deny`           | `cargo deny check`                                                                                                                       |
+| `just audit-web`      | two `pnpm audit` runs, `--prod` first then the whole workspace                                                                           |
 
 Two recipes joined that list in 2026-09-17/18 and each is runnable on its own,
 offline, in seconds — reach for them directly rather than the whole of
 `just verify`:
 
-| Recipe                          | Does                                                                                         |
-| ------------------------------- | -------------------------------------------------------------------------------------------- |
-| `just verify-versions`          | `cargo xtask verify-versions` — the 13th gate (2026-09-17, #201)                             |
-| `just verify-privacy-inventory` | `cargo xtask verify-privacy-inventory` — the 14th gate (2026-09-18, #187), needs no Postgres |
+| Recipe                          | Does                                                                                                                                                                                   |
+| ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `just verify-versions`          | `cargo xtask verify-versions` — the 13th gate (2026-09-17, #201)                                                                                                                       |
+| `just verify-privacy-inventory` | `cargo xtask verify-privacy-inventory` — the 14th gate (2026-09-18, #187), needs no Postgres                                                                                           |
+| `just verify-doc-counts`        | `cargo xtask verify-doc-counts` — the 15th gate (2026-09-20, #233); checks every `<!-- count:KIND ARG… -->`-marked number against what the tree measures, including its own gate tally |
 
 **`fmt-check-web` walks the working tree, not the index.** An untracked scratch
 `.ts`, `.md` or `.json` left lying about fails it. `.gitignore` it or delete it
@@ -233,11 +234,12 @@ deferred, not silently different from this fix.
 
 ## Docs
 
-| Recipe                      | Does                                                                 | Needs                                                              |
-| --------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------ |
-| `just docs-check`           | `verify-status` + `verify-links` — the short loop while editing docs | nothing                                                            |
-| `just docs-check-citations` | `cargo xtask verify-citations`                                       | network + authenticated `gh`. **Fails**, never skips, without them |
-| `just verify-docs`          | `cargo xtask verify-docs` — a report, exits 0 always                 |                                                                    |
+| Recipe                      | Does                                                                                                                     | Needs                                                              |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------ |
+| `just docs-check`           | `verify-status` + `verify-links` — the short loop while editing docs                                                     | nothing                                                            |
+| `just docs-check-citations` | `cargo xtask verify-citations`                                                                                           | network + authenticated `gh`. **Fails**, never skips, without them |
+| `just verify-doc-counts`    | `cargo xtask verify-doc-counts` — every `<!-- count:KIND ARG… -->`-marked number, checked against what the tree measures | nothing                                                            |
+| `just verify-docs`          | `cargo xtask verify-docs` — a report, exits 0 always                                                                     |                                                                    |
 
 ## Database and migrations
 

@@ -5,7 +5,7 @@ description: How to finish a change in vpay — which status page takes your row
 
 # Finishing a change in vpay
 
-> **Verified against vpay `0799a8d2` (2026-09-18).** Version-sensitive claims below
+> **Verified against vpay `67c90ea5` (2026-09-20).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -52,6 +52,15 @@ Everything else is an archive page under `docs/status/`.
 | An SDK change                               | `docs/status/merchant-sdks.md` **and** `docs/sdks/parity.md` (a gate)                          |
 | A new gate, or a gate that grew a direction | `docs/status/gates.md`, **and** the gate table in `docs/status.md`                             |
 | Your `just ci` evidence                     | a dated page under `docs/status/verification/`, newest first                                   |
+
+**A number you write down — the gate tally above all — may be machine-checked.**
+Since 2026-09-20 (`verify-doc-counts`, the fifteenth gate) a count on the same
+line as an HTML comment of the form `<!-- count:KIND ARG… -->` is re-measured
+by `just verify`, and a cited figure that no longer matches fails the build.
+`docs/status.md`'s gate-tally sentence is the marker this gate was built to
+protect — do not just write the new number there, keep the marker on the same
+line and immediately after the digits. The six `KIND`s and how to add a new
+marker are in **vpay-tooling**'s gate reference, § 15 `verify-doc-counts`.
 
 Six flow pages are an overview **plus a directory** since 2026-09-11. The
 **Status** section stayed on the overview in all six. In `webhooks.md` and

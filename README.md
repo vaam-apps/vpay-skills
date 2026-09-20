@@ -3,8 +3,8 @@
 Agent skills for [vpay](https://github.com/vaam-apps/vpay) — a payment
 orchestrator for Cameroon mobile money rails.
 
-vpay is large and unusually opinionated. It has fourteen machine-enforced gates
-(as of 2026-09-18; twelve until 2026-09-17), a
+vpay is large and unusually opinionated. It has fifteen machine-enforced gates
+(as of 2026-09-20; fourteen until then, twelve until 2026-09-17), a
 documentation tree with three tiers and its own discipline, an adapter port that
 rails must be reached through, and one cardinal rule: **never make the system
 look more finished than it is.** An agent dropped into that repository without
@@ -55,7 +55,7 @@ project that talks to vpay — a merchant integrating the Node SDK gets
 
 And skills must be able to move at a different speed from the code. A skill is
 not documentation-of-record; it is a briefing, and a briefing that has to clear
-vpay's fourteen gates to be corrected is a briefing nobody corrects.
+vpay's fifteen gates to be corrected is a briefing nobody corrects.
 
 The cost of that separation is drift, and drift is what the gate below exists to
 refuse.
