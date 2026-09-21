@@ -1,11 +1,11 @@
 ---
 name: vpay-tooling
-description: How to build, test, lint and gate vpay — the just recipes that matter, the fourteen verify gates and how contributors trip each one, what just ci actually runs, the toolchain pins that must move in lockstep, the compose stacks and ports, and the CI workflows. Load this before running any command in vpay, before adding a test binary or a migration, before bumping a toolchain pin, and whenever a gate fails and the message is not self-explanatory.
+description: How to build, test, lint and gate vpay — the just recipes that matter, the fifteen verify gates and how contributors trip each one, what just ci actually runs, the toolchain pins that must move in lockstep, the compose stacks and ports, and the CI workflows. Load this before running any command in vpay, before adding a test binary or a migration, before bumping a toolchain pin, and whenever a gate fails and the message is not self-explanatory.
 ---
 
 # vpay tooling and gates
 
-> **Verified against vpay `35848b5c` (2026-09-19).** Version-sensitive claims below
+> **Verified against vpay `67c90ea5` (2026-09-20).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -64,7 +64,7 @@ In execution order:
 1. `cargo fmt --all -- --check`
 2. `pnpm exec prettier --check .`
 3. `cargo clippy --workspace --all-targets -- -D warnings`
-4. `just verify` — the fourteen gates plus the `verify-docs` report
+4. `just verify` — the fifteen gates plus the `verify-docs` report
 5. `cargo nextest run --workspace`
 6. `cargo test --doc --workspace` — a **second runner**; nextest runs no doctests
 7. `just verify-ignored` — the suite census
@@ -79,13 +79,15 @@ tree where `pnpm install` has not been run.
 
 `AGENTS.md` requires `just ci` to pass locally before review.
 
-## `just verify` — the fourteen gates
+## `just verify` — the fifteen gates
 
-**Fourteen since 2026-09-18** — thirteen from 2026-09-17 (`verify-versions`,
-PR #201), twelve before that. Twelve are `cargo xtask` subcommands;
-`check-schema` and `verify-ui` are shell in the justfile. The order is chronological by landing date on purpose, so that
-"check-schema is the seventh gate" — which four other files say — stays true
-when a gate is added.
+**Fifteen since 2026-09-20** (`verify-doc-counts`, PR #233) — fourteen from
+2026-09-18 (`verify-privacy-inventory`, PR #187), thirteen from 2026-09-17
+(`verify-versions`, PR #201), twelve before that. Thirteen are `cargo xtask`
+subcommands; `check-schema` and `verify-ui` are shell in the justfile. The
+order is chronological by landing date on purpose, so that "check-schema is
+the seventh gate" — which four other files say — stays true when a gate is
+added.
 
 | Gate                       | Refuses                                                                                                                                                                                                         |
 | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -103,6 +105,7 @@ when a gate is added.
 | `verify-migrations`        | a `backends/migrations/*.sql` whose SHA-256 no longer matches `MANIFEST.sha256`                                                                                                                                 |
 | `verify-versions`          | **13th, 2026-09-17 (#201)** — release-please-owned versions that disagree; an `extra-files` entry with no `x-release-please-version` line; an internal Cargo `version = "…"` pin without one                    |
 | `verify-privacy-inventory` | **14th, 2026-09-18 (#187, issue #144)** — a migrated column with no element in `schemas/privacy-inventory.yaml`, or an inventory copy naming no live column. Both directions                                    |
+| `verify-doc-counts`        | **15th, 2026-09-20 (#233)** — a `<!-- count:KIND ARG… -->`-marked number in a tracked `*.md` that no longer equals what the tree measures, an unknown `KIND`, or no marker found at all                         |
 
 `verify-docs` runs last and is **not** a gate — it exits 0 whatever it finds.
 That is deliberate: the cheapest way to pass a doc-ratio gate is to delete the
@@ -193,9 +196,11 @@ Three facts with no home above, kept short here on purpose — depth is in
 
 ## Further reading
 
-- [references/gates.md](references/gates.md) — the fourteen gates in depth,
+- [references/gates.md](references/gates.md) — the fifteen gates in depth,
   including every `verify-ui` check (its numbering is non-contiguous, so count
-  the recipe's greps rather than trusting its header) and the both-directions gates.
+  the recipe's greps rather than trusting its header), the both-directions
+  gates, and the `<!-- count:KIND ARG… -->` marker convention
+  `verify-doc-counts` reads.
 - [references/recipes.md](references/recipes.md) — the full recipe inventory,
   the compose layering and ports, the demo-stack traps, and the `.env` rules.
 - [references/ci.md](references/ci.md) — the three workflows, `changes` path

@@ -1,14 +1,17 @@
-# The fourteen gates
+# The fifteen gates
 
-_Verified against vpay `0799a8d2` (2026-09-18) — the merge of
-[#187](https://github.com/vaam-apps/vpay/pull/187), with #197, #200, #204 and
-#206 beneath it. Version-sensitive claims carry the date they became true —
-see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
+_Verified against vpay `67c90ea5` (2026-09-20) — the merge of
+[#233](https://github.com/vaam-apps/vpay/pull/233), on top of `0799a8d2`
+(2026-09-18, #187), with #197, #200, #204 and #206 beneath that. Version-
+sensitive claims carry the date they became true — see
+[VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
-**Fourteen as of 2026-09-18.** ~~Twelve.~~ It was twelve until 2026-09-17,
-when [#201](https://github.com/vaam-apps/vpay/pull/201) appended
-`verify-versions`; [#187](https://github.com/vaam-apps/vpay/pull/187) appends
-`verify-privacy-inventory` and makes it fourteen.
+**Fifteen as of 2026-09-20.** ~~Fourteen.~~ ~~Twelve.~~ It was twelve until
+2026-09-17, when [#201](https://github.com/vaam-apps/vpay/pull/201) appended
+`verify-versions`; [#187](https://github.com/vaam-apps/vpay/pull/187) appended
+`verify-privacy-inventory` and made it fourteen on 2026-09-18;
+[#233](https://github.com/vaam-apps/vpay/pull/233) appends `verify-doc-counts`
+and makes it fifteen on 2026-09-20.
 
 > **Read the recipe, not the prose — and here is the authority rule caught in
 > the act.** Measured on `master` `aeb9e242` (2026-09-18), a full day after
@@ -24,16 +27,16 @@ when [#201](https://github.com/vaam-apps/vpay/pull/201) appended
 > a live defect. `AGENTS.md` predicted it about itself: "it has gone stale at
 > nearly every count it has carried".
 
-`just verify` runs fourteen gates and then one report:
+`just verify` runs fifteen gates and then one report:
 
 ```text
 verify: verify-no-mocks verify-status verify-errors verify-sdk-parity \
         verify-links verify-npm-scope check-schema verify-serde \
         verify-repositories verify-toolchain verify-ui verify-migrations \
-        verify-versions verify-privacy-inventory verify-docs
+        verify-versions verify-privacy-inventory verify-doc-counts verify-docs
 ```
 
-Twelve are `cargo xtask` subcommands implemented in `.xtask/src/main.rs`;
+Thirteen are `cargo xtask` subcommands implemented in `.xtask/src/main.rs`;
 `check-schema` and `verify-ui` are shell in the `justfile`. CI's `self-checks`
 job runs exactly this list in exactly this order, and that job has no
 `changes` gating — **it runs on every push and every pull request**.
@@ -47,9 +50,10 @@ on 2026-09-05 and `verify-versions`/`verify-privacy-inventory` did on
 2026-09-17. It is resolved the same way both times: both, in the order they
 landed, and whichever lands second renumbers itself.
 
-`cargo xtask verify-all` chains the twelve xtask gates. It excludes
-`verify-citations` (network) and cannot run `check-schema` or `verify-ui`,
-which are shell. `just verify` is the real list; `verify-all` is a convenience.
+`cargo xtask verify-all` chains the thirteen xtask gates, `verify-doc-counts`
+included since 2026-09-20. It excludes `verify-citations` (network) and cannot
+run `check-schema` or `verify-ui`, which are shell. `just verify` is the real
+list; `verify-all` is a convenience.
 
 ## Both-directions gates
 
@@ -624,6 +628,97 @@ The gate's own behaviour is pinned by **26 mutation cases as of 2026-09-18**
 (16 before the parser hardening the same day) in `mod privacy_inventory_tests`,
 inside `cargo test -p xtask`'s 285.
 
+## 15. `verify-doc-counts`
+
+_The fifteenth gate, 2026-09-20
+([#233](https://github.com/vaam-apps/vpay/pull/233)). Found from a
+documentation survey the same day that turned up **35** checkably-false claims
+in the live docs — **13** of them a number that had drifted since somebody
+last measured it, and **none** of them a claim any other gate reads. It is the
+only gate here that changed a number it is itself responsible for checking:
+adding it to the `verify` recipe is what made the recipe's own tally fifteen,
+and `docs/status.md`'s gate-count sentence is the marker this gate was built
+to protect._
+
+**Refuses:** any `<!-- count:KIND ARG… -->` marker whose measured value
+disagrees with the number cited immediately before it on the same line; an
+unknown `KIND`; a `KIND` given the wrong number of arguments; a marker whose
+path or directory no longer exists; a marker guarding no digits (a count
+spelled out as a word cannot be checked); an unterminated `<!-- count:` with
+no `-->` on the same line; and — the case that matters most — **finding no
+marker at all** in any of the tracked `*.md` files this gate reads, because a
+gate wired into `just verify` and protecting nothing is the exact
+documentation failure it exists to prevent, committed by the gate itself.
+
+**Implements:** `cargo xtask verify-doc-counts`, `verify_doc_counts` in
+`.xtask/src/main.rs`.
+
+### The marker convention
+
+A number a document wants machine-checked carries an HTML comment,
+**on the same line as the digits**, immediately after them:
+
+```markdown
+**27 cases** <!-- count:tokio-tests backends/tests/integration/tests/staff_sign_in.rs -->
+```
+
+Same-line placement is load-bearing and it is safe here because
+`.prettierrc.json` sets `proseWrap: "preserve"` — prettier never reflows prose
+in this repository, so a formatter cannot split a marker from the number it
+guards. The gate reads the **last run of ASCII digits before the marker** on
+that line, so `**27**`, `` `27` `` and `(27)` all read as 27 — but a marker
+parked at the end of a line that happens to end in a date
+(`re-measured 2026-09-20 <!-- … -->`) would guard `20`. Put the marker
+immediately after the number, not at the end of the sentence.
+
+**Six measurers, a closed vocabulary — adding a marker with an unlisted `KIND`
+is a hard failure, not a skip:**
+
+| `KIND`              | Arguments                      | Measures                                                        |
+| ------------------- | ------------------------------ | --------------------------------------------------------------- |
+| `tokio-tests`       | a path to a Rust test file     | lines starting `#[tokio::test]`                                 |
+| `files-with-suffix` | a directory, a filename suffix | files directly in that directory ending in the suffix           |
+| `env-vars`          | a path to a configuration file | distinct `${UPPER_SNAKE_CASE}` references, outside `#` comments |
+| `pub-async-fn`      | a path to a Rust source file   | occurrences of the literal text `pub async fn`                  |
+| `dir-entries`       | a directory                    | direct subdirectories                                           |
+| `verify-gates`      | none                           | the `verify:` recipe's dependency count, minus `verify-docs`    |
+
+`verify-gates` is the self-referential one: it greps the `justfile`'s
+`verify:` line rather than any list kept beside it, and subtracts
+`verify-docs` exactly the way the recipe's own closing `@echo` does — so
+`docs/status.md`'s "the gate tally" sentence in **vpay itself** (not this
+skills repository, which `verify-doc-counts` never reads) carries
+`count:verify-gates` and must read fifteen.
+
+**Frozen archives are skipped entirely, by directory name:** `docs/plans/`
+and `docs/status/verification/` — dated records where a number that was true
+the day it was written stays correct — plus `.claude/worktrees/` (nested
+checkouts). A marker inside one of those is never read, so do not add one
+there expecting it to be enforced.
+
+**What it deliberately does not check:** a count spelled out as a word
+("fourteen gates") is invisible to it — a document that wants a count
+protected has to switch to digits; the `justfile`'s own closing `@echo`
+string, which is prose in a file this gate does not scan (`*.md` only); and
+any `#anchor`-style claim that is not a bare number.
+
+**To add a new machine-checked count to a vpay document:** write the number in
+digits, immediately follow it on the same line with
+`<!-- count:KIND ARG… -->` using one of the six kinds above, and run
+`cargo xtask verify-doc-counts` (or `just verify-doc-counts`) before
+committing — it prints the shell command (`grep`, `ls`, `find`, …) that
+reproduces the measurement, so you can sanity-check it by hand. If the count
+you need does not fit any of the six kinds, it is not something this gate can
+protect yet — do not invent a seventh kind by hand-waving the syntax; a
+measurer has to be added to `measure_count` in vpay's `.xtask/src/main.rs`
+first.
+
+**How you trip it:** editing something that changes a count (adding a gate,
+adding a migration, adding an env var) without re-running the marker's own
+measurement — the exact drift this gate exists to catch; or writing a new
+marker with the wrong arity, an unreadable path, or no digits before it on the
+line.
+
 ## The report: `verify-docs`
 
 `cargo xtask verify-docs` runs last in `just verify` and **exits 0 whatever it
@@ -637,19 +732,21 @@ the `# Errors` and `# Panics` sections** that ADR-0011 and rustdoc depend on. A
 number that is read is worth more here than a number that is enforced.
 
 It is last so the report a human reads is the final thing on the terminal. The
-`verify: ok` line the recipe prints afterwards means the fourteen gates passed
+`verify: ok` line the recipe prints afterwards means the fifteen gates passed
 and says nothing about the numbers `verify-docs` printed.
 
-## `verify-citations` — a gate, but not one of the fourteen
+## `verify-citations` — a gate, but not one of the fifteen
 
 `just docs-check-citations` → `cargo xtask verify-citations`. ~~The thirteenth
 gate.~~ **Renumbered 2026-09-18:** `verify-versions` and
 `verify-privacy-inventory` took the thirteenth and fourteenth places, and this
-one was never in the list they are in anyway. `justfile`'s own header calls it
-"a sixteenth check", counting `verify-docs` as the fifteenth thing `just
-verify` prints. It is **not** in `just verify` and **not** in `just ci`,
-because it needs the network and an authenticated `gh`. It is deliberately excluded from `cargo xtask verify-all`
-too.
+one was never in the list they are in anyway. **Renumbered again 2026-09-20:**
+`verify-doc-counts` took the fifteenth place, pushing `verify-docs` — the
+report, not a gate — to being the **sixteenth** thing `just verify` prints,
+and `verify-citations` to the **seventeenth**, exactly as `justfile`'s own
+header now says. It is **not** in `just verify` and **not** in `just ci`,
+because it needs the network and an authenticated `gh`. It is deliberately
+excluded from `cargo xtask verify-all` too.
 
 It resolves every workflow-run id, pull request and issue that a tracked `*.md`
 cites as evidence — `run 33929374661`, `PR #31`, `Issue #11` — against this
