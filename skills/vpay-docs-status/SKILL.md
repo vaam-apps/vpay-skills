@@ -76,7 +76,7 @@ a bullet under `docs/status.md` § "Unimplemented items tracked by
 fails, and so does a bullet naming code that no longer carries one.
 
 **The bullet must not start with a backticked path.** The gate reads exactly
-that shape — `- ` then a backtick — as a declared token. A bullet that opens
+that shape — a hyphen, a space, then a backtick — as a declared token. A bullet that opens
 with a backtick but names no shipping token fails the docs→code half. So open
 every bullet with a noun:
 
