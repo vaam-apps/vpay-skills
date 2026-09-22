@@ -1,6 +1,6 @@
 ---
 name: vpay-sdks
-description: The five packages under sdks/ and the parity rule that binds the two merchant SDKs — add a capability to one and you add it to all, or you write a dated gap row. Covers what each SDK is and which are published, how a parity row is written and all three directions of cargo xtask verify-sdk-parity with the measured holes that motivated each, the Stripe SDK compatibility story, the five refund methods and the destination[<rail>][msisdn] payee whose leading + no SDK may add for you, the Flutter payer plugin, and the generated code that exists (pigeon, ZenStack) versus the OpenAPI codegen that does not. Load before adding, renaming or removing any SDK method or test.
+description: "The six packages under sdks/ and the parity rule that binds the two merchant SDKs — add a capability to one and you add it to all, or you write a dated gap row. Covers what each SDK is and which are published, how a parity row is written and all three directions of cargo xtask verify-sdk-parity with the measured holes that motivated each, the Stripe SDK compatibility story, the five refund methods and the destination[<rail>][msisdn] payee whose leading + no SDK may add for you, the three payer surfaces — browser, Flutter and the Tauri v2 plugin whose Rust half no root gate compiles — and the generated code that exists (pigeon, ZenStack) versus the OpenAPI codegen that does not. Load before adding, renaming or removing any SDK method or test, and before touching anything under sdks/tauri."
 ---
 
 # vpay SDKs
@@ -10,8 +10,16 @@ description: The five packages under sdks/ and the parity rule that binds the tw
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
 
-`sdks/` holds five packages. Two are merchant SDKs, two are payer surfaces, and
-one is evidence rather than an SDK.
+> **Describes vpay pull request #238 (`claude/tauri-v2-sdk-multiplatform-ca900b`), unmerged at the time of writing (2026-09-22).** Until it merges, `node tools/verify-coverage.mjs` against `master` fails on the paths it adds; run it against that branch's checkout.
+
+The stamp above is deliberately **not** moved onto that branch: VERSIONING.md
+§ "Stamp to a commit that will still exist" (measured 2026-09-18) — a stamp on
+an unmerged feature branch passes until the branch is deleted, then fails
+claiming the stamp is "older or unrelated". Restamp when the PR merges.
+
+`sdks/` holds **six** packages as of 2026-09-22 (five until then). Two are
+merchant SDKs, **three** are payer surfaces, and one is evidence rather than an
+SDK.
 
 ## The rule, before anything else
 
@@ -51,18 +59,23 @@ gate refuses: `references/parity.md`. Read it before editing
 
 ## The packages
 
-| Path                                 | Name                            | What it is                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | Published                                                                                                                                            |
-| ------------------------------------ | ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `sdks/nodejs`                        | `@vaam-apps/vpay-sdk`           | **Merchant** SDK for `/v1`. `private_key_jwt` auth, the single-401 re-auth, the form encoder, `verifyWebhook`, and nine resources. Second entry point `./stripe` exports `createStripeAuthenticator`, with `stripe` as an **optional** peer                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | yes, public                                                                                                                                          |
-| `sdks/rust`                          | `vpay-sdk`                      | The Rust twin. Same nine resources, same wire                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | **`publish = false`, deliberately** — "publishing a client for an API nobody can reach would be actively misleading". Flip it once `/v1` is deployed |
-| `sdks/stripe-js`                     | `@vaam-apps/vpay-stripe-js`     | The browser **payer** surface, Stripe.js-shaped. `loadStripe`, `initEmbeddedCheckout`, `openCheckoutPopup`, `notifyCheckoutOpener`. **Zero runtime dependencies**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | yes, public                                                                                                                                          |
-| `sdks/flutter/vpay_checkout_flutter` | `vpay_checkout_flutter`         | The mobile **payer** surface. **Renders the checkout as a native Flutter sheet** (`VpayCheckoutSheet`, driven by the session's server-sent `rails`) since 2026-09-17 (#189 lane 2). The payer's own browser (Custom Tab / `SFSafariViewController`, since 2026-09-16) is no longer the checkout: the **only** thing it opens is a `redirect` rail's leg, and since 2026-09-18 (#195/#200) that is vpay's own `/c/{id}/redirect` page on the checkout origin — never the hosted page, and never the rail's own URL. **Material 3 since 2026-09-17** ([vpay#198](https://github.com/vaam-apps/vpay/pull/198)), themed through `VpayCheckoutTheme` — the sheet still paints no palette of its own, but a deployment's `primary_color` may now seed its `ColorScheme`. Reports a typed result once the intent actually settles | **`publish_to: none`** (2026-09-13)                                                                                                                  |
-| `sdks/stripe-compat`                 | `@vaam-apps/vpay-stripe-compat` | **Evidence, not an SDK.** Drives the real `stripe@22.6.1` package against a live compose stack. `private: true`, ships nothing, and **gets no rows in the parity matrix** — "the compat suite proves claims rather than making them"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | never                                                                                                                                                |
+| Path                                    | Name                                                                          | What it is                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | Published                                                                                                                                            |
+| --------------------------------------- | ----------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `sdks/nodejs`                           | `@vaam-apps/vpay-sdk`                                                         | **Merchant** SDK for `/v1`. `private_key_jwt` auth, the single-401 re-auth, the form encoder, `verifyWebhook`, and nine resources. Second entry point `./stripe` exports `createStripeAuthenticator`, with `stripe` as an **optional** peer                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | yes, public                                                                                                                                          |
+| `sdks/rust`                             | `vpay-sdk`                                                                    | The Rust twin. Same nine resources, same wire                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | **`publish = false`, deliberately** — "publishing a client for an API nobody can reach would be actively misleading". Flip it once `/v1` is deployed |
+| `sdks/stripe-js`                        | `@vaam-apps/vpay-stripe-js`                                                   | The browser **payer** surface, Stripe.js-shaped. `loadStripe`, `initEmbeddedCheckout`, `openCheckoutPopup`, `notifyCheckoutOpener`. **Zero runtime dependencies**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | yes, public                                                                                                                                          |
+| `sdks/flutter/vpay_checkout_flutter`    | `vpay_checkout_flutter`                                                       | The mobile **payer** surface. **Renders the checkout as a native Flutter sheet** (`VpayCheckoutSheet`, driven by the session's server-sent `rails`) since 2026-09-17 (#189 lane 2). The payer's own browser (Custom Tab / `SFSafariViewController`, since 2026-09-16) is no longer the checkout: the **only** thing it opens is a `redirect` rail's leg, and since 2026-09-18 (#195/#200) that is vpay's own `/c/{id}/redirect` page on the checkout origin — never the hosted page, and never the rail's own URL. **Material 3 since 2026-09-17** ([vpay#198](https://github.com/vaam-apps/vpay/pull/198)), themed through `VpayCheckoutTheme` — the sheet still paints no palette of its own, but a deployment's `primary_color` may now seed its `ColorScheme`. Reports a typed result once the intent actually settles | **`publish_to: none`** (2026-09-13)                                                                                                                  |
+| `sdks/tauri/tauri-plugin-vpay-checkout` | `tauri-plugin-vpay-checkout` (crate) + `@vaam-apps/vpay-tauri-checkout` (npm) | The **Tauri v2 payer** surface, new 2026-09-22 (ADR-0023, T1–T7; it inherits ADR-0021's D1–D9 unchanged). One guest-JS state machine, three deliberately stupid hosts: a partial Custom Tab on Android, an `SFSafariViewController` on iOS, the default browser on desktop — and the **same package** is a `window.open` popup host outside Tauri, which is what "android + ios + web" meant. **The crate is its own Cargo workspace (T2), so no root gate compiles it** — see the section below before touching anything here                                                                                                                                                                                                                                                                                             | crate **`publish = false`** with a stated reason; npm package publish-ready and **published by nothing** (2026-09-22)                                |
+| `sdks/stripe-compat`                    | `@vaam-apps/vpay-stripe-compat`                                               | **Evidence, not an SDK.** Drives the real `stripe@22.6.1` package against a live compose stack. `private: true`, ships nothing, and **gets no rows in the parity matrix** — "the compat suite proves claims rather than making them"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | never                                                                                                                                                |
 
-The two payer surfaces are **not** a third and fourth merchant SDK. They
+The **three** payer surfaces are **not** additional merchant SDKs. They
 authenticate a payer's _device_ with a publishable key and a per-session
 `client_secret`, speak `/v1/browser`, and share **no capability row** with the
-merchant tables. Each has its own table in `docs/sdks/parity.md`.
+merchant tables. Each has its own table in `docs/sdks/parity.md`, and the
+Tauri plugin's is a **single-column** one for the same reason the Flutter
+plugin's is: there is no second implementation to diverge from, so the table's
+job is the other direction — a `✅` names a test that exists, and everything
+without one is a dated `⛔`.
 
 **Nine** merchant resources as of 2026-09-16, in both languages:
 `payment_intents`, `checkout.sessions`, `customers`, `invoices`,
@@ -175,6 +188,68 @@ keeps them in step — there is no generator to re-run and no spec to edit.
 Generated code that _does_ exist (pigeon, ZenStack) and how to regenerate it is
 in `references/generated-code.md`.
 
+## The Tauri plugin: what an agent must know before touching it
+
+All 2026-09-22, and all caveat rather than tour — the tour is
+`references/tauri-plugin.md`, which you should read before editing anything
+under `sdks/tauri/`.
+
+- **No root gate compiles the Rust, and none compiles the Kotlin or the Swift
+  either.** The crate carries its own empty `[workspace]` table (T2), so
+  `cargo nextest run --workspace`, `just clippy`, `just deny`,
+  `verify-no-mocks`'s `cargo metadata` sweep and `verify-serde` (which scans
+  `backends/crates` only) all walk past it. The only commands in the
+  repository that build it are `just test-tauri-rust`,
+  `just clippy-tauri-rust` and `just check-tauri-mobile` — each driving cargo
+  through `--manifest-path`, and **none of the three in `just ci` or
+  `just verify`** (T7: the CI image has no `libwebkit2gtk-4.1-dev`, no Android
+  SDK/NDK and no Xcode). `just test-tauri-js` is a scoped convenience. The
+  **TypeScript** half is the one genuinely gated part: `pnpm-workspace.yaml`
+  names `sdks/tauri/*`, so `pnpm -r typecheck|lint|test` reaches it through
+  `just lint-web`/`just test-web` with no recipe change. The Kotlin and the
+  Swift **do** now compile and link — but only inside `examples/tauri-checkout`
+  (`tauri android build` / `tauri ios build`, both exit 0 on 2026-09-22), run
+  by a human, never by a gate.
+- **The state machine is guest-JS (T1)**, so **a change to D1 or D4 behaviour
+  is a TypeScript change.** The Rust, Kotlin and Swift hosts hold no rule
+  about money; their whole vocabulary is
+  `{ outcome: "dismissed" | "stopUrlReached", reachedUrl }`, once per `show`,
+  with no `succeeded`/`canceled`/`failed` on that wire at all.
+- **iOS cannot produce `stopUrlReached` (T6)** — not "unverified",
+  unreachable. tauri-v2.11.6's Swift `Plugin` base class exposes no
+  app-delegate hook, and Tauri's own `deep-link` plugin ships no `ios/` at
+  all. **Every iOS checkout ends `dismissed`**, which D1/D4 make correct;
+  `matchesStopUrl`/`handleUniversalLink` exist and nothing calls them. Do not
+  "fix" this by deleting them or by inventing a hook.
+- **Desktop has no dismissal signal at all (T4)**, by decision. `dismiss()` is
+  the only trigger. The Flutter macOS host shipped a focus-regained signal
+  once and removed it on 2026-09-16; do not re-invent it here.
+- **`verify-sdk-parity` cannot cite a test whose title contains `|`.** Its
+  table reader splits a row on every raw `|` with no escape handling, and two
+  live cases in `guest-js/host-tauri.test.ts` assert the invoke names
+  `plugin:vpay-checkout|show` / `|dismiss`. Both pass; neither can appear in a
+  cell, and the parity table says so in prose instead. **Do not rename a test
+  to suit the parser.**
+- **`permissions/autogenerated/` and `permissions/schemas/` are tracked build
+  output.** `tauri_plugin::Builder` rewrites them on **every** `cargo build`,
+  and they are in `.prettierignore` because a formatted copy is un-formatted
+  again by the next build. Commit what the generator wrote.
+- **swift-rs compiles the Swift for iOS 13.0** unless
+  `IPHONEOS_DEPLOYMENT_TARGET` or a consuming app's
+  `bundle.iOS.minimumSystemVersion` says otherwise, and the host needs 15.0
+  for `sheetPresentationController`: `cargo check --target aarch64-apple-ios`
+  failed **exit 101** until an `if #available(iOS 15.0, *)` guard landed in
+  `VpayCheckoutExternalBrowserSession.swift`. **That guard is load-bearing.**
+- **The guest-JS depends on `@vaam-apps/vpay-stripe-js`** (`workspace:*`, T3)
+  and every npm script chains a `deps` script that builds it first — its types
+  resolve through `exports` to `dist/`. A bare `tsc` there fails for that
+  reason and no other.
+- **Quote `VITE_VPAY_SESSION_URL` in any dotenv file.** A session URL's
+  fragment **is** the session secret, and vite reads an unquoted `#` as a
+  comment and silently drops it — the symptom is `unresolved` with
+  `invalid_request` and nothing reaching the server, which reads as a broken
+  plugin and is a broken `.env` line (2026-09-22).
+
 ## More
 
 - `references/parity.md` — how to write a row, all three directions of the
@@ -185,5 +260,9 @@ in `references/generated-code.md`.
 - `references/flutter-plugin.md` — the payer plugin's three architectures
   (WebView → payer's browser → native sheet), which one is current, the
   screen machine and what still has no native analogue.
+- `references/tauri-plugin.md` — the Tauri v2 payer plugin: the shape, the
+  wire between guest-JS and the four hosts, T1–T7 with the reason for each,
+  the dated gaps, and which `just` recipe proves what. **Read it before
+  editing anything under `sdks/tauri/`.**
 - `references/generated-code.md` — pigeon and ZenStack, and the hand-added line
   that regeneration will silently drop.

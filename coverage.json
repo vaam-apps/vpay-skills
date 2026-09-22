@@ -272,7 +272,15 @@
         "sdks/rust",
         "sdks/stripe-js",
         "sdks/stripe-compat",
-        "sdks/flutter/vpay_checkout_flutter"
+        "sdks/flutter/vpay_checkout_flutter",
+        "sdks/tauri",
+        "sdks/tauri/tauri-plugin-vpay-checkout",
+        "examples/tauri-checkout",
+        "docs/flows/tauri-checkout.md",
+        "docs/adr/0023-tauri-checkout-plugin.md",
+        "docs/status/mobile-tauri-plugin.md",
+        "docs/plans/2026-09-22-tauri-plugin.md",
+        "docs/plans/2026-09-22-tauri-plugin-brief.md"
       ]
     },
     "vpay-ops": {
