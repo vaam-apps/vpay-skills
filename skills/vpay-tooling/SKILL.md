@@ -169,9 +169,9 @@ to 1.98.0 and the Dockerfile left on 1.95.0, the whole of `just ci` was green.
 CI reads the channel out of `rust-toolchain.toml` with an **anchored `sed`** in
 five jobs, so reformatting that line breaks CI.
 
-## Flutter, `.agents/skills/`, and a dead MSISDN convention
+## Flutter, Tauri, `.agents/skills/`, and a dead MSISDN convention
 
-Three facts with no home above, kept short here on purpose — depth is in
+Four facts with no home above, kept short here on purpose — depth is in
 [references/recipes.md](references/recipes.md).
 
 - **Six `*flutter*` recipes** (`install-flutter`, `analyze-flutter`,
@@ -182,6 +182,24 @@ Three facts with no home above, kept short here on purpose — depth is in
   quoted for this package is a human running the recipe by hand.
   `flutter-toolchain.toml` pins Flutter 3.47.2 / Dart 3.13.2, unenforced
   (see the Lockstep table above).
+- **Four `*-tauri-*` recipes** (`test-tauri-rust`, `clippy-tauri-rust`,
+  `test-tauri-js`, `check-tauri-mobile`) build and test
+  `tauri-plugin-vpay-checkout`, the Tauri v2 payer plugin — **new 2026-09-22,
+  and arriving with vpay pull request #238 (`claude/tauri-v2-sdk-multiplatform-ca900b`),
+  which was unmerged when this bullet was written**, so they are absent from
+  any `master` checkout older than that merge. All four share one
+  `_tauri-preflight`, and all four pass `--manifest-path` rather than `-p`
+  because the crate is its **own Cargo workspace** (ADR-0023 T2) — the root's
+  `cargo clippy --workspace`, `cargo nextest run --workspace` and `cargo deny`
+  cannot see it at all. **None of the three Rust ones is in `just ci` or
+  `just verify`** (T7: the CI image has no `libwebkit2gtk-4.1-dev`, no Android
+  SDK/NDK and no Xcode), and the justfile's gate tally is unchanged at
+  fifteen. The package's **TypeScript** half is gated regardless:
+  `pnpm-workspace.yaml` names `sdks/tauri/*`, so `lint-web`, `test-web` and
+  `fmt-check-web` reach it with no recipe change. `vpay-sdks` owns what the
+  plugin does; `check-tauri-mobile` needs
+  `rustup target add aarch64-linux-android aarch64-apple-ios` and proves
+  nothing about the Kotlin or the Swift.
 - **`.prettierignore`'s `.agents/skills/` entry** excludes vpay's own
   vendored agent skills (installed by issue #188 from
   `cratestack/cratestack-skills`, hash-pinned in vpay's `skills-lock.json`)

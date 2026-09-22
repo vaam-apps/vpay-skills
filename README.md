@@ -21,28 +21,28 @@ Start with `vpay`. It is the orientation skill and it routes to the rest.
 
 ## The skills
 
-| Skill                                                      | Load it when                                                              |
-| ---------------------------------------------------------- | ------------------------------------------------------------------------- |
-| [`vpay`](skills/vpay/)                                     | Anything in the repo. Orientation, the two rules, the map to these others |
-| [`vpay-conventions`](skills/vpay-conventions/)             | Writing Rust or TypeScript here — errors, serde, lints, architecture      |
-| [`vpay-tooling`](skills/vpay-tooling/)                     | Running anything — `just`, the gates, xtask, CI, the toolchain pins       |
-| [`vpay-troubleshooting`](skills/vpay-troubleshooting/)     | Something broke and the message is not the cause                          |
-| [`vpay-docs-status`](skills/vpay-docs-status/)             | Finishing a change — status pages, flow docs, ADRs, the parity rule       |
-| [`vpay-payments`](skills/vpay-payments/)                   | PaymentIntent states, money, the ledger, crash safety                     |
-| [`vpay-reconciler`](skills/vpay-reconciler/)               | The worker — job loop, retry ladders, leases, crash recovery, SIGTERM     |
-| [`vpay-merchant-api`](skills/vpay-merchant-api/)           | The `/v1` wire contract, merchant auth, idempotency                       |
-| [`vpay-webhooks`](skills/vpay-webhooks/)                   | Events, the outbox, the signature scheme, delivery                        |
-| [`vpay-provider-adapters`](skills/vpay-provider-adapters/) | The port, the failure taxonomy, conformance — and adding a rail           |
-| [`vpay-mtn-momo`](skills/vpay-mtn-momo/)                   | MTN MoMo specifics — the push flow, tokens, the sandbox                   |
-| [`vpay-orange-money`](skills/vpay-orange-money/)           | Orange Money specifics — the redirect flow and the payer window           |
-| [`vpay-frontend`](skills/vpay-frontend/)                   | The web workspace, Tailwind v4 + daisyUI 5, and the `verify-ui` gate      |
-| [`vpay-checkout`](skills/vpay-checkout/)                   | The payer-facing surfaces: hosted, browser, mobile                        |
-| [`vpay-dashboard`](skills/vpay-dashboard/)                 | The merchant dashboard, `/dash/v1`, staff auth, the BFF                   |
-| [`vpay-customers`](skills/vpay-customers/)                 | The Customer object, addresses, erasure, retention, name lookup           |
-| [`vpay-invoices`](skills/vpay-invoices/)                   | Invoices and invoice items                                                |
-| [`vpay-data-layer`](skills/vpay-data-layer/)               | CrateStack, migrations, repositories, sqlx, Postgres tests                |
-| [`vpay-sdks`](skills/vpay-sdks/)                           | The merchant SDKs and the parity rule that binds them                     |
-| [`vpay-ops`](skills/vpay-ops/)                             | Configuration, deployment, the reconciler, observability                  |
+| Skill                                                      | Load it when                                                                                  |
+| ---------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| [`vpay`](skills/vpay/)                                     | Anything in the repo. Orientation, the two rules, the map to these others                     |
+| [`vpay-conventions`](skills/vpay-conventions/)             | Writing Rust or TypeScript here — errors, serde, lints, architecture                          |
+| [`vpay-tooling`](skills/vpay-tooling/)                     | Running anything — `just`, the gates, xtask, CI, the toolchain pins                           |
+| [`vpay-troubleshooting`](skills/vpay-troubleshooting/)     | Something broke and the message is not the cause                                              |
+| [`vpay-docs-status`](skills/vpay-docs-status/)             | Finishing a change — status pages, flow docs, ADRs, the parity rule                           |
+| [`vpay-payments`](skills/vpay-payments/)                   | PaymentIntent states, money, the ledger, crash safety                                         |
+| [`vpay-reconciler`](skills/vpay-reconciler/)               | The worker — job loop, retry ladders, leases, crash recovery, SIGTERM                         |
+| [`vpay-merchant-api`](skills/vpay-merchant-api/)           | The `/v1` wire contract, merchant auth, idempotency                                           |
+| [`vpay-webhooks`](skills/vpay-webhooks/)                   | Events, the outbox, the signature scheme, delivery                                            |
+| [`vpay-provider-adapters`](skills/vpay-provider-adapters/) | The port, the failure taxonomy, conformance — and adding a rail                               |
+| [`vpay-mtn-momo`](skills/vpay-mtn-momo/)                   | MTN MoMo specifics — the push flow, tokens, the sandbox                                       |
+| [`vpay-orange-money`](skills/vpay-orange-money/)           | Orange Money specifics — the redirect flow and the payer window                               |
+| [`vpay-frontend`](skills/vpay-frontend/)                   | The web workspace, Tailwind v4 + daisyUI 5, and the `verify-ui` gate                          |
+| [`vpay-checkout`](skills/vpay-checkout/)                   | The payer-facing surfaces: hosted, browser, mobile                                            |
+| [`vpay-dashboard`](skills/vpay-dashboard/)                 | The merchant dashboard, `/dash/v1`, staff auth, the BFF                                       |
+| [`vpay-customers`](skills/vpay-customers/)                 | The Customer object, addresses, erasure, retention, name lookup                               |
+| [`vpay-invoices`](skills/vpay-invoices/)                   | Invoices and invoice items                                                                    |
+| [`vpay-data-layer`](skills/vpay-data-layer/)               | CrateStack, migrations, repositories, sqlx, Postgres tests                                    |
+| [`vpay-sdks`](skills/vpay-sdks/)                           | The merchant SDKs, the payer plugins (Flutter, Tauri v2), and the parity rule that binds them |
+| [`vpay-ops`](skills/vpay-ops/)                             | Configuration, deployment, the reconciler, observability                                      |
 
 ## Why a separate repository
 
