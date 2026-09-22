@@ -5,17 +5,18 @@ description: "The six packages under sdks/ and the parity rule that binds the tw
 
 # vpay SDKs
 
-> **Verified against vpay `0799a8d2` (2026-09-18).** Version-sensitive claims below
+> **Verified against vpay `999a23f9` (2026-09-22).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
 
-> **Describes vpay pull request #238 (`claude/tauri-v2-sdk-multiplatform-ca900b`), unmerged at the time of writing (2026-09-22).** Until it merges, `node tools/verify-coverage.mjs` against `master` fails on the paths it adds; run it against that branch's checkout.
-
-The stamp above is deliberately **not** moved onto that branch: VERSIONING.md
-§ "Stamp to a commit that will still exist" (measured 2026-09-18) — a stamp on
-an unmerged feature branch passes until the branch is deleted, then fails
-claiming the stamp is "older or unrelated". Restamp when the PR merges.
+The Tauri payer plugin arrived with
+[vpay#238](https://github.com/vaam-apps/vpay/pull/238), merged 2026-09-22 as
+`999a23f9`; it is absent from any `master` checkout older than that.
+~~This page carried a note that #238 was unmerged and that
+`node tools/verify-coverage.mjs` therefore failed against `master`.~~
+**Corrected 2026-09-22:** it merged, the stamp above moved onto the merge
+commit, and the gate passes against `master`.
 
 `sdks/` holds **six** packages as of 2026-09-22 (five until then). Two are
 merchant SDKs, **three** are payer surfaces, and one is evidence rather than an

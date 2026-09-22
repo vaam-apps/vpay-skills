@@ -185,9 +185,12 @@ Four facts with no home above, kept short here on purpose — depth is in
 - **Four `*-tauri-*` recipes** (`test-tauri-rust`, `clippy-tauri-rust`,
   `test-tauri-js`, `check-tauri-mobile`) build and test
   `tauri-plugin-vpay-checkout`, the Tauri v2 payer plugin — **new 2026-09-22,
-  and arriving with vpay pull request #238 (`claude/tauri-v2-sdk-multiplatform-ca900b`),
-  which was unmerged when this bullet was written**, so they are absent from
-  any `master` checkout older than that merge. All four share one
+  merged as `999a23f9` ([#238](https://github.com/vaam-apps/vpay/pull/238))**,
+  so they are absent from any `master` checkout older than that merge. (This
+  bullet was written while #238 was still unmerged and said so; the caveat
+  came off 2026-09-22, when it merged. The stamp above stays at `67c90ea5`:
+  only this bullet was re-verified against the merge, not the whole page.)
+  All four share one
   `_tauri-preflight`, and all four pass `--manifest-path` rather than `-p`
   because the crate is its **own Cargo workspace** (ADR-0023 T2) — the root's
   `cargo clippy --workspace`, `cargo nextest run --workspace` and `cargo deny`

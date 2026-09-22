@@ -1,9 +1,11 @@
 # `sdks/tauri/tauri-plugin-vpay-checkout`
 
-_Verified against vpay `0799a8d2` (2026-09-18). Version-sensitive claims
+_Verified against vpay `999a23f9` (2026-09-22). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
-> **Describes vpay pull request #238 (`claude/tauri-v2-sdk-multiplatform-ca900b`), unmerged at the time of writing (2026-09-22).** Until it merges, `node tools/verify-coverage.mjs` against `master` fails on the paths it adds; run it against that branch's checkout.
+Arrived with [vpay#238](https://github.com/vaam-apps/vpay/pull/238), merged
+2026-09-22 as `999a23f9` — nothing described below exists on a `master`
+checkout older than that.
 
 A **payer** surface, like `@vaam-apps/vpay-stripe-js` and
 `sdks/flutter/vpay_checkout_flutter` — not a third merchant SDK. It
