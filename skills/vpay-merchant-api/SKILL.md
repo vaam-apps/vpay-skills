@@ -128,6 +128,48 @@ merchant's retry and a second payout.** Unlike a charge, which
 refunds of one intent — two partial refunds are a legitimate thing a merchant
 does. Do not weaken or bypass the claim on that route.
 
+## `customer` on the lists — a filter, never a lookup
+
+Since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged <pending>; ADR-0024
+D1–D4, D12), `GET /v1/payment_intents`, `GET /v1/checkout/sessions` and
+`GET /v1/refunds` take `customer=cus_…`. `GET /v1/invoices` always did. On an
+older server the parameter is **silently ignored and the whole list comes
+back** — no vpay release up to and including `v0.5.0` has it (as of
+2026-09-23), so a client must not treat an unfiltered page as "this customer's
+rows".
+
+- **It is in the same `WHERE` as `merchant_id`, and that is the whole
+  security property.** Another merchant's real `cus_…`, an id that never
+  existed, and one of yours with no rows are the same `200` empty page. A
+  `404` or any different answer for a foreign id would be an existence oracle
+  over another tenant's payers. Checked for **shape only**.
+- **A malformed value is one `400` naming `customer`**, from one helper,
+  `vpay_api::v1::customers::filter_param`, which `GET /v1/invoices` now calls
+  too. Do not write a second validator.
+- **Cursors page inside the filtered set**, as `GET /v1/invoices?customer=`
+  does: a cursor naming a row outside the filter pages from that row's
+  position in the merchant's whole list.
+- **Each list compares a different column**: intents their own
+  `customer_id`; sessions their **own** `customer_id` (D12); refunds, which
+  have no customer column, their intent's, inside the join the tenant
+  predicate already makes.
+- **So one payment can be in one list and not the others.** A session created
+  with `customer=X` on an intent with no customer stores `X` on the session
+  only: its payment is listed by `GET /v1/checkout/sessions?customer=X` and
+  **not** by the intent or refund filters. Whether a session's customer
+  should be written onto such an intent is ADR-0024's **open question 3** —
+  do not "fix" it by changing checkout-session creation.
+- **`GET /v1/customers` stays unfiltered**, deliberately (D4): a filter on a
+  payer identifier turns a list into a lookup. `customer` filters _by_ an id
+  the merchant already holds.
+- **`GET /dash/v1/payment_intents` refuses `customer` with a `400`**; before
+  step A it silently ignored it and answered every customer's intents. See
+  `vpay-dashboard`.
+
+No route was added: 23 paths, 37 methods, as on 2026-09-16. The out-of-band
+`pay` is new parameters on an existing route (`paid_out_of_band=true`,
+`out_of_band[…]`) — see the `vpay-invoices` skill.
+
 ## Body limits
 
 64 KiB on `/v1` and `/dash/v1` (`V1_BODY_LIMIT_BYTES`), 16 KiB on `/provider`

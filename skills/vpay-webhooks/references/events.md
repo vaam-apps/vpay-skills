@@ -31,23 +31,23 @@ rule exists.
 
 ## Who writes what
 
-| Type                            | Written by                                                                                        | Since                   |
-| ------------------------------- | ------------------------------------------------------------------------------------------------- | ----------------------- |
-| `payment_intent.created`        | **— nothing**                                                                                     | —                       |
-| `payment_intent.processing`     | **— nothing**                                                                                     | —                       |
-| `payment_intent.succeeded`      | `Settlement::apply_succeeded`                                                                     | 2026-09-03              |
-| `payment_intent.payment_failed` | `vpay_db::settlement::apply_failed` **and** `vpay_api::v1::payment_intents::persist_decline`      | 2026-09-03 / 2026-09-10 |
-| `payment_intent.canceled`       | `vpay_api::v1::payment_intents::cancel_with_event`                                                | 2026-09-10              |
-| `charge.refunded`               | `vpay_api::v1::refunds::write_pending_refund`                                                     | 2026-09-16              |
-| `charge.refund.updated`         | `vpay_api::v1::refunds` — `cancel_once`, `update_once`, `fail_with_event`                         | 2026-09-16              |
-| `checkout.session.expired`      | `vpay_db::checkout_sessions::expire_due` (the hourly sweep only)                                  | 2026-09-04              |
-| `customer.created`              | `vpay_api::v1::customers::create_with_event`                                                      | 2026-09-10              |
-| `customer.updated`              | `vpay_api::v1::customers::update_once`, under the row's lock                                      | 2026-09-10              |
-| `customer.deleted`              | `vpay_db::customers::erase_idle` (retention sweep) **and** `vpay_api::v1::customers::delete_once` | 2026-09-06 / 2026-09-10 |
-| `invoice.created`               | `vpay_api::v1::invoices::write_with_event`                                                        | 2026-09-07              |
-| `invoice.finalized`             | `vpay_api::v1::invoices::write_with_event`                                                        | 2026-09-07              |
-| `invoice.paid`                  | `Settlement::apply_succeeded`                                                                     | 2026-09-07              |
-| `invoice.voided`                | `vpay_api::v1::invoices::write_with_event`                                                        | 2026-09-07              |
+| Type                            | Written by                                                                                                                     | Since                   |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | ----------------------- |
+| `payment_intent.created`        | **— nothing**                                                                                                                  | —                       |
+| `payment_intent.processing`     | **— nothing**                                                                                                                  | —                       |
+| `payment_intent.succeeded`      | `Settlement::apply_succeeded`                                                                                                  | 2026-09-03              |
+| `payment_intent.payment_failed` | `vpay_db::settlement::apply_failed` **and** `vpay_api::v1::payment_intents::persist_decline`                                   | 2026-09-03 / 2026-09-10 |
+| `payment_intent.canceled`       | `vpay_api::v1::payment_intents::cancel_with_event`                                                                             | 2026-09-10              |
+| `charge.refunded`               | `vpay_api::v1::refunds::write_pending_refund`                                                                                  | 2026-09-16              |
+| `charge.refund.updated`         | `vpay_api::v1::refunds` — `cancel_once`, `update_once`, `fail_with_event`                                                      | 2026-09-16              |
+| `checkout.session.expired`      | `vpay_db::checkout_sessions::expire_due` (the hourly sweep only)                                                               | 2026-09-04              |
+| `customer.created`              | `vpay_api::v1::customers::create_with_event`                                                                                   | 2026-09-10              |
+| `customer.updated`              | `vpay_api::v1::customers::update_once`, under the row's lock                                                                   | 2026-09-10              |
+| `customer.deleted`              | `vpay_db::customers::erase_idle` (retention sweep) **and** `vpay_api::v1::customers::delete_once`                              | 2026-09-06 / 2026-09-10 |
+| `invoice.created`               | `vpay_api::v1::invoices::write_with_event`                                                                                     | 2026-09-07              |
+| `invoice.finalized`             | `vpay_api::v1::invoices::write_with_event`                                                                                     | 2026-09-07              |
+| `invoice.paid`                  | `Settlement::apply_succeeded` **and**, since vpay step A, `vpay_api::v1::invoices::write_with_event` for the out-of-band `pay` | 2026-09-07 / step A     |
+| `invoice.voided`                | `vpay_api::v1::invoices::write_with_event`                                                                                     | 2026-09-07              |
 
 ### The two with no writer
 
@@ -167,6 +167,17 @@ Consequences worth knowing before you add one:
   thing.
 - `invoice.paid` is **not re-emitted** if a settlement lands on an invoice that
   is no longer `open` — that is a `WARN`, not a second event.
+- **`invoice.paid` has a second writer since vaam-apps/vpay step A (RFC-0004
+  §§ 5–6, merged <pending>)**: `POST /v1/invoices/{id}/pay` with
+  `paid_out_of_band=true` writes it in the transition's own transaction. No
+  vocabulary change was needed — the label has been in
+  `type_is_a_documented_event` since `0036`. **A merchant tells the two apart
+  only by the body**: `paid_out_of_band: true` and a filled
+  `out_of_band_payment` on the out-of-band writer's, `false`/`null` on the
+  settlement's. The out-of-band one is **not** evidence that money moved.
+  Its `out_of_band_payment.reference` is personal data: the customer erasure
+  rewrites it in stored `invoice.*` bodies and clears the live deliveries'
+  `payload_sha256` for the same re-render reason as the `customer.*` bodies.
 - `cancel` writes no event when its compare-and-swap refuses (a status that
   forbids it, or a charge the rail may still be acting on).
 - The pooled, non-transactional `vpay_db::PaymentIntents::cancel` was

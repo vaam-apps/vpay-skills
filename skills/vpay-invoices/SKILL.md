@@ -1,6 +1,6 @@
 ---
 name: vpay-invoices
-description: vpay's Invoice and invoice-line objects — the nineteen-key wire shape, the draft/open/paid/void/uncollectible state machine that is enforced by compare-and-swap UPDATE statements and five multi-column CHECKs rather than by any can_transition_to method, the per-merchant document number that burns no holes, the eight routes (POST and PATCH on /v1/invoices/{id} are one handler), the invoice.* webhook bodies that carry lines.data EMPTY, and the long list of things deliberately not built — no PDF, no e-mail, no tax, no credit note, no dunning, no subscription. Load this before touching /v1/invoices, /v1/invoice_items, the settlement's invoice flip, or migrations 0036/0042.
+description: vpay's Invoice and invoice-line objects — the wire shape (twenty-one keys since vpay step A, nineteen before), the draft/open/paid/void/uncollectible state machine that is enforced by compare-and-swap UPDATE statements and multi-column CHECKs rather than by any can_transition_to method, the two writers of paid (the settlement, and pay with paid_out_of_band=true, which records a merchant's unverifiable statement and posts nothing to the ledger), the per-merchant document number that burns no holes, the eight routes (POST and PATCH on /v1/invoices/{id} are one handler), the invoice.* webhook bodies that carry lines.data EMPTY, and the long list of things deliberately not built — no PDF, no e-mail, no tax, no credit note, no dunning, no subscription. Load this before touching /v1/invoices, /v1/invoice_items, the settlement's invoice flip, manual_payments, or migrations 0036/0042/0049.
 ---
 
 # Invoices and invoice items
@@ -23,6 +23,13 @@ is 16 cases, `vpay-db`'s `tests/repositories.rs` adds 10, `postgres_smoke.rs`
 pins the multi-column CHECK inventory). Both merchant SDKs ship 13 methods each
 with a live suite against a real `vpay-server`.
 
+**Since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged <pending>): manual
+payments** — migration `0049`, `manual_payments` (`mp_…`), two new object
+keys, a second writer of `paid` and `invoice.paid`, nothing on the ledger. On an
+older `master` none of it exists. On the branch, 2026-09-23: `invoices.rs` 29
+cases, 29 passed, 0 ignored; `tests/repositories.rs` twelve on invoices.
+[§ Paid out of band](#paid-out-of-band--a-statement-not-a-payment).
+
 **The "What is not built" list is the whole reason the flow page exists** —
 read it before assuming anything:
 [references/not-built.md](references/not-built.md). Short version: no PDF, no
@@ -31,14 +38,24 @@ dunning, no subscription, no partial payment, no dashboard screen, and
 `amount_refunded` is `0` on every invoice in every deployment.
 
 > **Proposed on 2026-09-23, not built:** RFC-0004 (billing on top of
-> invoices: products and prices, subscriptions, pending invoice items, manual
-> payments, taxes, coupons, PDFs), RFC-0005 (prepaid customer balances) and a
-> usage-metering service brief, merged by vaam-apps/vpay#244 as `7997536b`
-> (`docs/rfc/0004…`, `0005…`, `docs/plans/2026-09-23-metering-service.md`), all **Draft**
-> with open questions. Every item in the list above is still true. Do not
-> implement one of those features from the RFC as though it were decided,
-> and do not describe any of it in the present tense. The list of what the
-> RFCs would change is in [references/not-built.md](references/not-built.md).
+> invoices: products and prices, subscriptions, pending invoice items,
+> ~~manual payments,~~ taxes, coupons, PDFs), RFC-0005 (prepaid customer
+> balances) and a usage-metering service brief, merged by vaam-apps/vpay#244
+> as `7997536b` (`docs/rfc/0004…`, `0005…`,
+> `docs/plans/2026-09-23-metering-service.md`), all **Draft** with open
+> questions. Every item in the list above is still true. Do not implement one
+> of those features from the RFC as though it were decided, and do not
+> describe any of it in the present tense. The list of what the RFCs would
+> change is in [references/not-built.md](references/not-built.md).
+>
+> **Corrected 2026-09-23:** this block listed manual payments as proposed.
+> Since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged <pending>), RFC-0004 is
+> **Draft except § 5's `customer` filters and § 6, manual payments**, which
+> are accepted through ADR-0024
+> (`docs/adr/0024-customer-filters-and-manual-payments.md`, D1–D19) and built.
+> Everything else the RFC names — the invoice preview in § 5,
+> `/v1/subscriptions`, products, prices, taxes, coupons, PDFs — is still Draft
+> and unbuilt.
 
 > **The reason `amount_refunded` is `0` changed on 2026-09-16, and the new one
 > is narrower.** ~~No vpay rail can refund, and `POST /v1/refunds` is
@@ -55,14 +72,24 @@ dunning, no subscription, no partial payment, no dashboard screen, and
 
 ## The two objects
 
-**Invoice — `in_…`, nineteen keys**, held by
-`the_invoice_object_is_the_documented_nineteen_keys` in `vpay_api::model`
-(eighteen until `0042` added `amount_refunded`):
+**Invoice — `in_…`, twenty-one keys since vaam-apps/vpay step A (RFC-0004
+§§ 5–6, merged <pending>)**, held by
+`the_invoice_object_is_the_documented_twenty_one_keys` in `vpay_api::model`.
+~~Nineteen keys, held by `the_invoice_object_is_the_documented_nineteen_keys`~~
+— this page said that until 2026-09-23, and it is still true of any `master`
+older than that merge. Eighteen until `0042` added `amount_refunded`:
 
 `id`, `object`, `customer`, `currency`, `status`, `number`, `amount_due`,
-`amount_paid`, `amount_remaining`, `amount_refunded`, `due_date`,
-`description`, `metadata`, `payment_intent`, `hosted_invoice_url`, `lines`,
-`status_transitions`, `created`, `livemode`.
+`amount_paid`, `amount_remaining`, `amount_refunded`, `paid_out_of_band`,
+`out_of_band_payment`, `due_date`, `description`, `metadata`,
+`payment_intent`, `hosted_invoice_url`, `lines`, `status_transitions`,
+`created`, `livemode`.
+
+`paid_out_of_band` is Stripe's bool; `out_of_band_payment` is vpay's own —
+`null`, or four keys and no `object`: `{id: "mp_…", method, reference,
+received_at}`. They agree by construction (true ⇔ a record). Both SDKs decode
+them with a default, so a client of the new shape still reads an older
+server.
 
 The same test names the internals that must never reach the wire — `seq`,
 `merchant_id`, `updated_at`, `currency_code` — because every key here is signed
@@ -98,12 +125,23 @@ statement.
 
 ```text
 draft --finalize--> open --> paid | void | uncollectible
-  |
+  |                           ^
+  |                           +-- the settlement of its own intent, or
+  |                           +-- pay with paid_out_of_band=true (step A)
   +-- DELETE /v1/invoices/{id} --> gone, lines and all
 ```
 
 Every right-hand state is terminal. Nothing in vpay moves an invoice out of
-`paid`, `void` or `uncollectible`, and no route tries.
+`paid`, `void` or `uncollectible`, and no route tries — so an out-of-band
+payment recorded in error **cannot be undone**; there is no route for it and
+none is planned by ADR-0024.
+
+**`open → paid` has two writers since vaam-apps/vpay step A (RFC-0004 §§ 5–6,
+merged <pending>)**: the settlement transaction, and the out-of-band
+compare-and-swap. Both match `status = 'open'`; the second also carries
+`NO_LIVE_INTENT`, so a settlement and an out-of-band payment cannot both win.
+Before that merge the settlement was the only writer, and code or prose that
+assumes `paid` implies "a rail collected money" is wrong from then on.
 
 **There is deliberately no `can_transition_to` method** — not on
 `vpay_core::InvoiceStatus`, not anywhere in the codebase. Every transition is a
@@ -125,7 +163,7 @@ lock. If you add a transition, add a statement — not a predicate.
 A voided invoice **keeps its number** — for the same constraint, and because a
 number that vanished is a hole an accountant reads as a destroyed document.
 
-Details of the five CHECKs, the numbering, `NO_LIVE_INTENT`, and the
+Details of the CHECKs (five in `0036`, more since), the numbering, `NO_LIVE_INTENT`, and the
 settlement: [references/constraints-and-transitions.md](references/constraints-and-transitions.md).
 
 ## `paid_means_nothing_remaining` and the amounts
@@ -140,6 +178,9 @@ All amounts are integer minor units (`docs/flows/money.md`).
 | `only_a_live_invoice_has_an_intent`                              | `status <> 'draft' OR payment_intent_id IS NULL`                                                                          |
 | `amount_is_the_product` (on `invoice_items`)                     | `amount = quantity * unit_amount`                                                                                         |
 | `refunded_at_most_paid`, `amount_refunded_non_negative` (`0042`) | over-refund, and a rebate                                                                                                 |
+| `paid_out_of_band_means_paid` (`0049`, step A)                   | the flag on anything but a `paid` row                                                                                     |
+| `paid_names_how` (`0049`, step A)                                | a `paid` row with neither an intent nor the flag — storable before `0049`, when only the settlement wrote `paid`          |
+| `paid_out_of_band_is_never_refunded` (`0049`, step A)            | `amount_refunded > 0` on an invoice paid out of band                                                                      |
 
 `amount_refunded` is **gross and sits beside the arithmetic, not inside it**:
 it is not subtracted from `amount_paid` and takes no part in `amounts_add_up`.
@@ -154,16 +195,16 @@ each one exists to refuse, straight past the API and the repository.
 
 ## The eight routes
 
-| Route                                  | Methods                          | Notes                                                                     |
-| -------------------------------------- | -------------------------------- | ------------------------------------------------------------------------- |
-| `/v1/invoices`                         | `POST`, `GET`                    | list takes `customer`, `status`, standard cursor                          |
-| `/v1/invoices/{id}`                    | `GET`, `POST`, `PATCH`, `DELETE` | `POST`/`PATCH` are **one handler**; both draft-only, as is `DELETE`       |
-| `/v1/invoices/{id}/finalize`           | `POST`                           |                                                                           |
-| `/v1/invoices/{id}/void`               | `POST`                           | open only                                                                 |
-| `/v1/invoices/{id}/mark_uncollectible` | `POST`                           |                                                                           |
-| `/v1/invoices/{id}/pay`                | `POST`                           | `success_url`, `cancel_url` — sent, or from `merchant_clients[].invoices` |
-| `/v1/invoice_items`                    | `POST`                           | **no collection `GET`**                                                   |
-| `/v1/invoice_items/{id}`               | `GET`, `POST`, `PATCH`, `DELETE` | writes are draft-parent-only                                              |
+| Route                                  | Methods                          | Notes                                                                                                                                           |
+| -------------------------------------- | -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/v1/invoices`                         | `POST`, `GET`                    | list takes `customer`, `status`, standard cursor                                                                                                |
+| `/v1/invoices/{id}`                    | `GET`, `POST`, `PATCH`, `DELETE` | `POST`/`PATCH` are **one handler**; both draft-only, as is `DELETE`                                                                             |
+| `/v1/invoices/{id}/finalize`           | `POST`                           |                                                                                                                                                 |
+| `/v1/invoices/{id}/void`               | `POST`                           | open only                                                                                                                                       |
+| `/v1/invoices/{id}/mark_uncollectible` | `POST`                           |                                                                                                                                                 |
+| `/v1/invoices/{id}/pay`                | `POST`                           | `success_url`, `cancel_url` — sent, or from `merchant_clients[].invoices`; **or**, since step A, `paid_out_of_band=true` and no URL — see below |
+| `/v1/invoice_items`                    | `POST`                           | **no collection `GET`**                                                                                                                         |
+| `/v1/invoice_items/{id}`               | `GET`, `POST`, `PATCH`, `DELETE` | writes are draft-parent-only                                                                                                                    |
 
 `POST` and `PATCH` are `invoices::update` mounted twice, so the two cannot
 answer differently. Stripe has no `PATCH` and the real `stripe` package sends
@@ -178,13 +219,38 @@ never existed **on every route including the transitions**, which is what stops
 a `409` naming a status being an existence oracle. All four writes take an
 `Idempotency-Key`, `DELETE` included.
 
+## Paid out of band — a statement, not a payment
+
+Since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged <pending>).
+`POST /v1/invoices/{id}/pay` with `paid_out_of_band=true` and optional
+`out_of_band[method|reference|received_at]` (`method` defaults to `other`, so
+Stripe's bare flag works) moves an `open` invoice to `paid`. What an agent must
+not get wrong:
+
+- **Nothing is posted to the ledger, and nothing verifies it.** It is the
+  merchant's word. Never add a posting "for completeness", never describe it
+  as money vpay saw, and never read `status = 'paid'` as "a rail collected".
+- **Refused while a live intent is attached** (`NO_LIVE_INTENT`, the same
+  `409` as `void`), and **terminal**: there is no undo.
+- **Only `/v1` writes it**; no operator can. `bank_transfer` is a label, not a
+  rail — matching transfers is RFC-0007, Draft.
+- **`reference` is personal data**, redacted by customer erasure everywhere it
+  was copied (`vpay-customers`).
+
+Every refusal, the composite foreign key, the canceled-intent consequence and
+the evidence: [references/paid-out-of-band.md](references/paid-out-of-band.md).
+
 ## The four events, and the divergence that will bite a merchant
 
 `invoice.created`, `invoice.finalized`, `invoice.paid` (**the settlement
-transaction**, not a write afterwards) and `invoice.voided`, each written
-inside the transaction of the transition it describes; a refused transition
-writes none. All four entered `type_is_a_documented_event` in `0036` **with
-their writer in the same commit**.
+transaction**, not a write afterwards — and, since vaam-apps/vpay step A
+(RFC-0004 §§ 5–6, merged <pending>), also the out-of-band `pay`, in its own
+transaction) and `invoice.voided`, each written inside the transaction of the
+transition it describes; a refused transition writes none. All four entered
+`type_is_a_documented_event` in `0036` **with their writer in the same
+commit**; the second writer of `invoice.paid` needed no vocabulary change. A
+merchant tells the two apart by the body: `paid_out_of_band: true` and a
+filled `out_of_band_payment` on the out-of-band writer's.
 
 > **`invoice.*` webhook bodies carry `lines.data` EMPTY**, while
 > `GET /v1/invoices/{id}` carries them. Deliberate: the body is rendered inside
@@ -201,9 +267,12 @@ emits nothing on it; the merchant learns from `payment_intent.payment_failed`.
 
 ## Two documentation defects in the flow page itself
 
-Verified 2026-09-16, both ungated. **`docs/flows/invoices.md` is missing from
-the table in `docs/flows/README.md`** — every other flow page is listed, and
-nothing checks that table. And **the page's own
+Verified 2026-09-16, both ungated. ~~**`docs/flows/invoices.md` is missing
+from the table in `docs/flows/README.md`** — every other flow page is listed,
+and nothing checks that table.~~ **Corrected 2026-09-23:** vaam-apps/vpay
+step A (RFC-0004 §§ 5–6, merged <pending>) adds the row; on an older `master`
+it is still missing, and nothing checks that table either way. And **the
+page's own
 `[What is not built](#what-is-not-built)` link is a dead anchor**: there is no
 such heading, the list is bold prose under `## Status`, and
 `cargo xtask verify-links` resolves destination _paths_ only ("anchors and

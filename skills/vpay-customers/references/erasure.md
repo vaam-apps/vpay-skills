@@ -39,14 +39,28 @@ was taken from, because that is the record a dispute is settled with.
 An erasure that only rewrites `customers` is the characteristic defect here.
 `erase_in_tx` writes all of these **in the transaction that erases the row**:
 
-| Table                                         | What was in it                                                                                         |
-| --------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| `customers`                                   | the eleven identifier columns                                                                          |
-| `events.data`                                 | **every** `customer.*` body ever written stores the whole rendered object, and nothing prunes `events` |
-| `charges.payer_ref` / `payer_ref_masked`      | the payer's MSISDN as the rail was given it — reachable from a customer only _through_ an intent       |
-| `charges.failure_raw` / `refunds.failure_raw` | the rail's own words, verbatim: a decline may quote the subscriber's number back                       |
-| `idempotency_keys.response_body`              | the exact JSON a `POST /v1/customers` answered, kept 24 hours to replay                                |
-| `webhook_deliveries.payload_sha256`           | cleared — see below; this one protects a delivery, not the payer                                       |
+| Table                                         | What was in it                                                                                                                                                 |
+| --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `customers`                                   | the eleven identifier columns                                                                                                                                  |
+| `events.data`                                 | **every** `customer.*` body ever written stores the whole rendered object, and nothing prunes `events`                                                         |
+| `charges.payer_ref` / `payer_ref_masked`      | the payer's MSISDN as the rail was given it — reachable from a customer only _through_ an intent                                                               |
+| `charges.failure_raw` / `refunds.failure_raw` | the rail's own words, verbatim: a decline may quote the subscriber's number back                                                                               |
+| `idempotency_keys.response_body`              | the exact JSON a `POST /v1/customers` answered, kept 24 hours to replay                                                                                        |
+| `webhook_deliveries.payload_sha256`           | cleared — see below; this one protects a delivery, not the payer                                                                                               |
+| `manual_payments.reference` (step A)          | the merchant's out-of-band payment reference; also its copies in `invoice.*` bodies, their live deliveries' digests and excerpts, and stored invoice responses |
+
+The last row exists since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged
+<pending>; migration `0049`), written by `redact_out_of_band_references` in the
+erasure's transaction. It is the first copy in this table that the
+**merchant** typed rather than vpay derived, and it is still `subject: payer`:
+a reference exists to say how the payer paid. The whole-database scan now
+seeds a paid-out-of-band invoice whose reference names the payer and expects
+`manual_payments.reference` among the places it finds the literal before the
+erasure. _(This table is as verified on 2026-09-16 plus that row; the
+`payment_intents.last_payment_error_*` and `webhook_deliveries.response_excerpt`
+statements added on 2026-09-18 are not in it — see vpay's
+`docs/reference/personal-data-inventory.md`. The count "six" is not restated
+here for that reason.)_
 
 `provider_requests` needs no statement, and that is a property of its schema
 (`0016`: a status code and an attempt number, no bodies) rather than an
@@ -173,6 +187,21 @@ rounds fail with the payer's name in the stored body.
 **If you add a fourth customer write route, it must pass
 `ResponseSubject::Customer`.** Nothing greps for that.
 
+**A third variant since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged
+<pending>): `ResponseSubject::OutOfBandInvoice { customer_id }`.** The
+out-of-band `pay` and a `POST /v1/invoices/{id}` on an invoice paid out of band
+pass it, because their stored body carries `out_of_band_payment.reference`.
+Same mechanism, keyed on the invoice's customer; it runs the same
+redaction statement the erasure runs.
+`a_stored_invoice_response_written_after_an_erasure_is_redacted_as_it_lands`
+drives the late-write branch. **A new invoice write whose response can carry a
+reference must pass it too** — nothing greps for that either.
+
+The paying transaction's lock order is what makes the _refusal_ of a new
+reference on an erased payer's invoice race-free: `FOR SHARE` on the customer
+first, where every erasure takes `FOR UPDATE` first; the settlement, `void`,
+`attach_intent` and the other invoice writes take no customer lock at all.
+
 ## What is NOT closed, and is a maintainer's decision
 
 **vpay cannot erase the merchant's own copy, and there is deliberately no
@@ -197,4 +226,6 @@ Also open by choice rather than by gap: **an erased customer is still listed by
 `GET /v1/customers`** (filtering would make `has_more` describe a different set
 from the rows, and would make the list deny a `cus_…` the retrieve answers),
 and there is **no `email` filter on the list** — a filter on a payer identifier
-turns the list into a lookup.
+turns the list into a lookup. ADR-0024 D4 reaffirmed that on 2026-09-23 while
+adding `customer=` to the intent, session and refund lists (step A): a filter
+by the merchant's own `cus_…` is not this gap closed.

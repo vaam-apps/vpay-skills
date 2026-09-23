@@ -90,6 +90,24 @@ read cookies.
 All four procedure-backed lists are Server Components reading through
 `readProcedurePage`, and all four share `src/components/procedure-table.tsx`.
 
+**`GET /dash/v1/payment_intents` refuses `customer` with a `400` naming it**,
+since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged <pending>;
+`refuse_customer` in `vpay_api::dash::payment_intents`). `/v1` gained that
+filter in the same change; before it, the dashboard's `ListParams` dropped the
+unknown key and **answered every customer's intents** — which an operator, or
+the BFF copying a `/v1` query, would read as the filtered answer. It is a
+refusal and not a filter because the console has no customer view to filter
+from, and a parameter no screen sends is untested surface. **Only `customer`
+is refused**: `ListParams` still has no `deny_unknown_fields`, so any other
+key `/dash/v1` does not know is still silently ignored. If you give this list
+a customer filter, it is a new capability with its own test, not the removal
+of the refusal.
+
+**No screen shows or records an out-of-band invoice payment.** Step A built
+one (`POST /v1/invoices/{id}/pay` with `paid_out_of_band=true`); only the
+merchant `/v1` surface writes it, because `/dash/v1` refuses every non-`GET`
+and ADR-0008's dashboard writes and their audit log do not exist.
+
 **`/refunds` can show rows from 2026-09-16** and never could before: nothing
 wrote a `refunds` row until `vpay_db::Refunds::create` landed (RFC-0003,
 vpay#178). If you are reasoning about that screen, it is no longer safe to

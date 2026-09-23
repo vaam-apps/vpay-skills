@@ -219,6 +219,18 @@ agree, the one outcome it must not silently accept — and then three
 | `EXPECTED_DRIFTED_RELATIONS`  | **25**             | tables/views the drift is spread over           |
 | `EXPECTED_UNMAPPABLE_COLUMNS` | (pinned)           | live columns cratestack **declines to compare** |
 
+**Moved since that column, 2026-09-23:** 190 → 192 → **194** on 2026-09-15
+(migrations `0045`, `0046`; `master` before step A), then 194 → 199 → **201**
+over **26** relations since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged
+<pending>), with `EXPECTED_UNMAPPABLE_COLUMNS` at **19**, unmoved. The step A
++7 is five `manual_payments` lines (four hand-named single-column CHECKs and
+the permanent `method` type line), one `records_an_out_of_band_payment` CHECK
+line, and one undeclarable `invoices_payment_record_key` index line; the
+composite foreign key costs nothing, because 0.12.0 introspects none. It was
+derived from the shape first while the host's Docker was down and then
+measured — the order this test is built to force. `docs/status/cratestack.md`
+has the derivation.
+
 Plus the **exact sorted set** of tables the live database has and the schema
 does not.
 

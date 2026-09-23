@@ -168,7 +168,13 @@ When you **rename** a test, edit the cell in the same commit. When you
   field is `payment_method_type` (snake_case)**, like every other params type
   in that package and like the wire. The issue's original sketch said
   `paymentMethodType`; following it would have made that the only camelCase
-  request field in the SDK.
+  request field in the SDK. **Corrected 2026-09-23:** since vaam-apps/vpay
+  step A (RFC-0004 §§ 5–6, merged <pending>) there **are** camelCase request
+  fields — `invoices.pay`'s `outOfBand` object and its `receivedAt` — by the
+  maintainer's decision, recorded in `docs/sdks/parity.md` under the
+  `/v1` resource table. Rust spells them `out_of_band` / `received_at`; the
+  wire bytes are identical. It is a decided exception, not a new rule: every
+  other Node params field still follows the wire.
 - **`del`, not `delete`** — in both SDKs, because `delete` is a reserved word
   in older JavaScript object literals and that is why Stripe's own SDKs spell
   it that way. Rust matches even though `delete` is legal in Rust: the _name_
@@ -180,6 +186,36 @@ When you **rename** a test, edit the cell in the same commit. When you
   proving tests assert the four are known **and** that those two are not.
 - **`invoice_items` is the route and `InvoiceLine` is the type.** Stripe has
   two objects where vpay has one. Both spellings are the wire's.
+
+## Step A: the rows it moved
+
+Since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged <pending>). No SDK
+method was added, so the method count did not move: `verify-sdk-parity`
+printed **757 proving tests, 45 dated gaps, 35 methods across 40 rows** on the
+branch (`docs/status/verification/2026-09-23-manual-payments.md`) — one new
+row, the out-of-band `invoices.pay`, and `customer` added to the three
+`*.list` rows.
+
+- **`customer`.** Rust: `ListPaymentIntentsParams`,
+  `ListCheckoutSessionsParams`, `ListRefundsParams` each gain
+  `customer: Option<String>`. Node: `ListCheckoutSessionsParams` and
+  `ListRefundsParams` gain `customer?`, and `paymentIntents.list` takes a new
+  exported `ListPaymentIntentsParams` (`ListParams` stays, unchanged). Proven
+  by exact-query-string cases in both; the Rust integration case for intents
+  also drives it through `vpay-sdk` against a real server. No live-suite case.
+- **Out of band.** Rust `PayInvoiceParams.out_of_band` or
+  `PayInvoiceParams::out_of_band(…)`; Node
+  `pay(id, { outOfBand: { method?, reference?, receivedAt? } })`, where
+  `PayInvoiceParams` became a union whose hosted arm is the old shape. An
+  empty object is Stripe's bare flag. A URL beside it is refused before any
+  request (`Error::InvalidParams` / `TypeError`): the Node type makes it
+  unrepresentable, the Rust struct cannot, so Rust relies on the runtime check.
+  Both `Invoice` types decode `paid_out_of_band` and `out_of_band_payment`
+  with a default, so an older server still decodes. Each live suite gained a
+  case and ran green against a compose stack (`just sdk-live`, 2026-09-23:
+  Rust 5 passed, Node 6).
+- **Counts on the branch, 2026-09-23:** `sdks/rust` 183 passed, 0 skipped;
+  `sdks/nodejs` 226 passed, 0 skipped.
 
 ## What the matrix does not claim
 

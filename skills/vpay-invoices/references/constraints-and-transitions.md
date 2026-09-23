@@ -8,7 +8,8 @@ Code: `backends/crates/vpay-db/src/invoices.rs` (the statements),
 `backends/crates/vpay-db/src/settlement.rs` (`flip_invoice`,
 `apply_refund_succeeded`), `backends/crates/vpay-core/src/state.rs`
 (`InvoiceStatus`). Schema: `0036_create-invoices.sql`,
-`0042_invoices-amount-refunded.sql`.
+`0042_invoices-amount-refunded.sql`, and — since vaam-apps/vpay step A
+(RFC-0004 §§ 5–6, merged <pending>) — `0049_manual-payments.sql`.
 
 ## Three enforcers, and none of them is a validation function
 
@@ -24,7 +25,11 @@ Code: `backends/crates/vpay-db/src/invoices.rs` (the statements),
    whether the answer is a `404` or a `409`.
 3. **Five multi-column CHECKs** make the combinations a broken transition would
    produce unstorable. They are the guard that survives a future writer who
-   forgets rule 2.
+   forgets rule 2. `0042` added a sixth (`refunded_at_most_paid`), and since
+   step A `0049` adds three more on `invoices` — `paid_out_of_band_means_paid`,
+   `paid_names_how`, `paid_out_of_band_is_never_refunded` — plus
+   `received_before_recorded` on `manual_payments` and a composite foreign key
+   (`manual_payments_agree_with_their_invoice`).
 
 All of rule 3's constraints — and `0042`'s two — are **invisible to
 `cratestack migrate baseline` in both directions** (the introspector filters
@@ -36,14 +41,15 @@ carries the inventory of every multi-column CHECK in the schema.
 
 ## What each transition's statement actually names
 
-| Route                   | Statement            | `WHERE status =`                      | Extra                                                                                 |
-| ----------------------- | -------------------- | ------------------------------------- | ------------------------------------------------------------------------------------- |
-| `finalize`              | `finalize_in_tx`     | `'draft'`                             | takes the number under the sequence row's lock, freezes lines, sums `amount_due` once |
-| `void`                  | `void_in_tx`         | `'open'` **only**                     | `AND NO_LIVE_INTENT`                                                                  |
-| `mark_uncollectible`    | `mark_uncollectible` | `'open'`                              | `AND NO_LIVE_INTENT`                                                                  |
-| `pay` → `attach_intent` | `attach_intent`      | `'open'`                              | `AND NO_LIVE_INTENT`                                                                  |
-| `DELETE`                | `delete_draft`       | `'draft'`                             | removes the invoice and its lines                                                     |
-| settlement              | `flip_invoice`       | `'open'`, keyed on **its own intent** | emits `invoice.paid` in the same transaction                                          |
+| Route                                    | Statement               | `WHERE status =`                      | Extra                                                                                                        |
+| ---------------------------------------- | ----------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `finalize`                               | `finalize_in_tx`        | `'draft'`                             | takes the number under the sequence row's lock, freezes lines, sums `amount_due` once                        |
+| `void`                                   | `void_in_tx`            | `'open'` **only**                     | `AND NO_LIVE_INTENT`                                                                                         |
+| `mark_uncollectible`                     | `mark_uncollectible`    | `'open'`                              | `AND NO_LIVE_INTENT`                                                                                         |
+| `pay` → `attach_intent`                  | `attach_intent`         | `'open'`                              | `AND NO_LIVE_INTENT`                                                                                         |
+| `DELETE`                                 | `delete_draft`          | `'draft'`                             | removes the invoice and its lines                                                                            |
+| settlement                               | `flip_invoice`          | `'open'`, keyed on **its own intent** | emits `invoice.paid` in the same transaction                                                                 |
+| `pay` + `paid_out_of_band=true` (step A) | `pay_out_of_band_in_tx` | `'open'`                              | `AND NO_LIVE_INTENT`; `FOR SHARE` on the customer **first**; inserts `manual_payments`; emits `invoice.paid` |
 
 **A draft cannot be voided** — see the SKILL.md warning; two doc comments in
 the repository claim otherwise and are stale.
@@ -52,7 +58,11 @@ the repository claim otherwise and are stale.
 deliberate divergence from Stripe, which finalizes a zero-amount invoice and
 marks it paid: vpay has no "paid without a payment" transition, and a
 zero-amount `open` invoice would be a document nobody can pay because `pay`
-would have to mint an intent for zero.
+would have to mint an intent for zero. (Since step A an `open` invoice can be
+marked paid **without a rail payment** — out of band — but only as a
+merchant's statement about money that did exist; it does not make a
+zero-line finalize meaningful, and `manual_payments.amount_positive` refuses a
+zero record.)
 
 **`finalize` refuses above `2^53 - 1` minor units**, naming `invoice`. `pay`
 mints its intent through `PaymentIntents::insert` rather than
@@ -69,7 +79,10 @@ invoice nobody could pay) or at the line write (already committed by then).
 ```
 
 While an intent is attached and **not `canceled`**, `pay`, `void` and
-`mark_uncollectible` all answer `409` naming the intent. The way back is
+`mark_uncollectible` all answer `409` naming the intent — and so does `pay`
+with `paid_out_of_band=true`, since step A (the fourth call site of the
+condition). A canceled intent **stays attached** after an out-of-band payment
+(ADR-0024 D15). The way back is
 `POST /v1/payment_intents/{id}/cancel`.
 
 The condition is `canceled` and deliberately **not** "not `processing`": a
@@ -141,6 +154,11 @@ decides where a payer may be sent.
 
 ## The settlement flip
 
+**Since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged <pending>) this is one
+of two writers of `paid`**; before it, the only one. It is still the only
+writer that follows **money a rail moved**, and the only one that posts to the
+ledger.
+
 The settlement transaction — the one that takes the charge terminal — marks the
 invoice `paid` and emits `invoice.paid` **inside itself**. Not a second write
 afterwards: that would leave a window in which the intent is `succeeded` and
@@ -167,4 +185,7 @@ expression over the row's own column, not a total read first — so two
 concurrent refunds add up and `refunded_at_most_paid` refuses the over-refund
 rather than clamping it. `invoice.paid` is **not** re-emitted: the invoice did
 not transition. None of this path is reachable today (see
-[not-built.md](not-built.md)).
+[not-built.md](not-built.md)). Since step A the refund counter
+(`add_refund_for_intent_in_tx`) carries `AND NOT paid_out_of_band`, because an
+out-of-band-paid invoice may still name a canceled intent that collected
+nothing for it; `paid_out_of_band_is_never_refunded` is the backstop.

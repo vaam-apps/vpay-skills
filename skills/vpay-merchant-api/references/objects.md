@@ -33,19 +33,20 @@ breaks its tripwire test on purpose** — update the count and the SDKs together
 `vpay_core::ids` owns all of them, with `is_well_formed(prefix, id)` and a
 minting function per type.
 
-| Prefix  | Object                                                              |
-| ------- | ------------------------------------------------------------------- |
-| `pi_`   | PaymentIntent                                                       |
-| `ch_`   | Charge (internal — never on the wire)                               |
-| `re_`   | Refund                                                              |
-| `evt_`  | Event                                                               |
-| `cs_`   | CheckoutSession                                                     |
-| `cus_`  | Customer                                                            |
-| `in_`   | Invoice                                                             |
-| `ii_`   | InvoiceItem                                                         |
-| `stf_`  | Staff member                                                        |
-| `cred_` | Credential                                                          |
-| `lt_`   | Ledger transaction (internal — never on the wire; added 2026-09-15) |
+| Prefix  | Object                                                                                                                                               |
+| ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pi_`   | PaymentIntent                                                                                                                                        |
+| `ch_`   | Charge (internal — never on the wire)                                                                                                                |
+| `re_`   | Refund                                                                                                                                               |
+| `evt_`  | Event                                                                                                                                                |
+| `cs_`   | CheckoutSession                                                                                                                                      |
+| `cus_`  | Customer                                                                                                                                             |
+| `in_`   | Invoice                                                                                                                                              |
+| `ii_`   | InvoiceItem                                                                                                                                          |
+| `stf_`  | Staff member                                                                                                                                         |
+| `cred_` | Credential                                                                                                                                           |
+| `lt_`   | Ledger transaction (internal — never on the wire; added 2026-09-15)                                                                                  |
+| `mp_`   | Manual (out-of-band) payment — on the wire only as `invoice.out_of_band_payment.id`; since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged <pending>) |
 
 Also in `ids`: `CLIENT_SECRET_INFIX` (`_secret_`), `client_secret_suffix()`
 (160 bits from the OS CSPRNG), `client_secret(id, suffix)`, and
@@ -182,9 +183,19 @@ microdegrees, consistent with the no-float rule.
 
 `id` (`in_…`), `object`, `customer`, `currency`, `status`
 (`vpay_core::InvoiceStatus`), `number`, `amount_due`, `amount_paid`,
-`amount_remaining`, `amount_refunded`, `due_date`, `description`, `metadata`,
+`amount_remaining`, `amount_refunded`, `paid_out_of_band`,
+`out_of_band_payment`, `due_date`, `description`, `metadata`,
 `payment_intent`, `hosted_invoice_url`, `lines`, `status_transitions`,
-`created`, `livemode`.
+`created`, `livemode` — **twenty-one keys** since vaam-apps/vpay step A
+(RFC-0004 §§ 5–6, merged <pending>), pinned by
+`the_invoice_object_is_the_documented_twenty_one_keys`. This list had nineteen
+until 2026-09-23 (no `paid_out_of_band`, no `out_of_band_payment`), which is
+still the shape of any older `master`.
+
+`out_of_band_payment` is `null`, or `{id, method, reference, received_at}` —
+four keys and **no `object`**. `method` is `cash | cheque | bank_transfer |
+other`; `reference` is `[redacted]` once the invoice's customer is erased.
+**Nothing in vpay verified it**; it is the merchant's statement, echoed.
 
 `lines` is a `ListObject<InvoiceLineObject>` with `has_more` always `false` and
 a `url` of `/v1/invoice_items` — a route that exists — rather than Stripe's
@@ -235,17 +246,19 @@ the procedure.
 
 Enforced in `vpay_api::v1::payment_intents` and shared by the other handlers:
 
-| Bound                        | Value                        |
-| ---------------------------- | ---------------------------- |
-| `MAX_AMOUNT`                 | `(1 << 53) - 1` (safe in JS) |
-| metadata key                 | 40 chars                     |
-| metadata value               | 500 chars                    |
-| `description`                | 1000 chars                   |
-| `return_url`                 | 2048 chars                   |
-| `last_payment_error.message` | 512 chars                    |
-| raw rail failure text stored | 2000 chars                   |
-| form nesting depth           | 8 (`vpay_api::form`)         |
-| request body (`/v1`)         | 64 KiB                       |
+| Bound                        | Value                                                     |
+| ---------------------------- | --------------------------------------------------------- |
+| `MAX_AMOUNT`                 | `(1 << 53) - 1` (safe in JS)                              |
+| metadata key                 | 40 chars                                                  |
+| metadata value               | 500 chars                                                 |
+| `description`                | 1000 chars                                                |
+| `out_of_band[reference]`     | 1–500 chars (step A, D13)                                 |
+| `out_of_band[received_at]`   | ≤ now + 30 s, ≥ `finalized_at`'s second (step A, D11/D14) |
+| `return_url`                 | 2048 chars                                                |
+| `last_payment_error.message` | 512 chars                                                 |
+| raw rail failure text stored | 2000 chars                                                |
+| form nesting depth           | 8 (`vpay_api::form`)                                      |
+| request body (`/v1`)         | 64 KiB                                                    |
 
 Request encoding is `application/x-www-form-urlencoded`, Stripe-shaped:
 `metadata[order_id]=1234`, `payment_method_data[mtn_momo][msisdn]=…`, and

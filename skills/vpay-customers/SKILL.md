@@ -106,6 +106,25 @@ tables, not one.** Getting this wrong is the most damaging defect available in
 this area. Details, the marker CHECK's `IS NOT DISTINCT FROM` subtlety, and
 the closed idempotency race: [references/erasure.md](references/erasure.md).
 
+**Since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged <pending>) there is a
+copy a _merchant_ writes: the out-of-band payment reference.**
+`out_of_band[reference]` on `POST /v1/invoices/{id}/pay` — a cheque number
+beside the drawer's name, a transfer reference carrying the payer's — lands in
+`manual_payments.reference`, the `invoice.paid` body in `events.data`, and the
+stored `pay` response. It is classified `payment_reference`, `subject: payer`,
+`control: redact` — unlike `invoices.description`, which is the merchant's
+note about their own bill and stays. The erasure redacts all of them in its own
+transaction (`vpay_db::customers::redact_out_of_band_references`), and a
+**new** reference on an erased payer's invoice is a `400` naming
+`out_of_band[reference]` (the payment without one still records). That
+refusal is race-free only because of a **lock order**: the paying transaction
+takes `FOR SHARE` on the customer row as its first statement, every erasure
+takes `FOR UPDATE` on it first, and nothing takes an invoice lock and then a
+customer lock. Add a writer that locks an invoice before its customer and you
+have a deadlock the suite's race case
+(`an_erasure_racing_an_out_of_band_payment_neither_deadlocks_nor_leaves_the_reference`)
+exists to catch.
+
 ## The twelve-month retention sweep
 
 `vpay_worker::handlers::sweep_idle_customers` — its own `jobs.kind`
@@ -122,6 +141,13 @@ fail loudly: it makes a live customer look idle and erases it twelve months
 later with nothing in any log.** If you add a path that names a customer, stamp
 the clock. The stamp is monotonic (`WHERE last_used_at < now`) so a process
 with a slow clock cannot rewind it.
+
+**Paying an invoice does not stamp it** — hosted `pay` never did, and the
+out-of-band `pay` added by vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged
+<pending>) does not either; only creating the invoice does, through
+`resolve_for_attachment`. `docs/flows/invoices.md` lists it as an existing
+gap. Listing by `customer=` stamps nothing either, correctly: a read is not a
+use.
 
 The sweep's guard is `anonymized_at IS NULL`. Without it an anonymised
 customer stays idle for ever and the job emits an hourly `customer.deleted`
@@ -156,13 +182,25 @@ named tests.
 
 ## The routes
 
-| Method   | Path                 | Notes                                                                  |
-| -------- | -------------------- | ---------------------------------------------------------------------- |
-| `POST`   | `/v1/customers`      | `name`, `email`, `phone`, `address[…]`, `metadata[…]`                  |
-| `GET`    | `/v1/customers/{id}` | answers an erased customer too, with `deleted: true`                   |
-| `POST`   | `/v1/customers/{id}` | the update. **There is no `PATCH`** — unlike `/v1/invoices/{id}`       |
-| `GET`    | `/v1/customers`      | `limit`, `starting_after`, `ending_before`; erased rows **are** listed |
-| `DELETE` | `/v1/customers/{id}` | `{"id":…,"object":"customer","deleted":true}`, or a `404`              |
+| Method   | Path                 | Notes                                                                                 |
+| -------- | -------------------- | ------------------------------------------------------------------------------------- |
+| `POST`   | `/v1/customers`      | `name`, `email`, `phone`, `address[…]`, `metadata[…]`                                 |
+| `GET`    | `/v1/customers/{id}` | answers an erased customer too, with `deleted: true`                                  |
+| `POST`   | `/v1/customers/{id}` | the update. **There is no `PATCH`** — unlike `/v1/invoices/{id}`                      |
+| `GET`    | `/v1/customers`      | `limit`, `starting_after`, `ending_before`; erased rows **are** listed; **no filter** |
+| `DELETE` | `/v1/customers/{id}` | `{"id":…,"object":"customer","deleted":true}`, or a `404`                             |
+
+**Listing a customer's payments is a filter on the _other_ lists, not a
+route here.** Since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged
+<pending>), `customer=cus_…` filters `GET /v1/payment_intents`,
+`GET /v1/checkout/sessions` and `GET /v1/refunds` (and `GET /v1/invoices`
+always did), inside the same `WHERE` as `merchant_id`, so a foreign or unknown
+`cus_…` is an empty page and never a `404`. An erased customer keeps its
+`cus_…` and the filter still finds everything that names it. **`GET
+/v1/customers` stays unfiltered** (ADR-0024 D4): a filter _by_ an id the
+merchant holds is not a search _for_ a payer. Rules and the one consequence
+(a session-named customer on a customer-less intent is invisible to the intent
+and refund filters, ADR-0024 open question 3): `vpay-merchant-api`.
 
 Update has three states per field: absent leaves it, a value sets it, the
 empty string (`name=`) clears it. `metadata` has **two** — merged key-wise, a
@@ -178,6 +216,11 @@ missing header. (The refusal's own sentence says "required on every POST to
 unique to this resource is that its three write routes pass
 `ResponseSubject::Customer { id }` to `vpay_db::Idempotency::store` where every
 other route passes `Verbatim` — see [references/erasure.md](references/erasure.md).
+_(Qualified 2026-09-23: since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged
+<pending>) a third variant, `ResponseSubject::OutOfBandInvoice { customer_id }`,
+covers the out-of-band `pay` and a `POST /v1/invoices/{id}` on an invoice paid
+out of band — the same issue-#111 race on a body carrying a reference. The
+customer routes are no longer the only non-`Verbatim` callers.)_
 
 ## `GET /v1/account_holders`
 
