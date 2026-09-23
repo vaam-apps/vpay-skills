@@ -5,7 +5,7 @@ description: vpay's payment domain model — the PaymentIntent lifecycle (which 
 
 # The payment domain
 
-> **Verified against vpay `0799a8d2` (2026-09-18).** Version-sensitive claims below
+> **Verified against vpay `7997536b` (2026-09-23).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -54,9 +54,17 @@ Three things to take from that shape:
   `Confirm(ProviderFlow)`, `Cancel`. `Create` answers `None` for every status
   because it has no _source_ status: a new intent is born at
   `IntentStatus::INITIAL`.
-- **Rail-driven edges are not here.** `processing → succeeded` and
-  `processing → requires_payment_method + last_payment_error` are moved by the
-  reconciler from an authenticated status query, never by a request. If you
+- **Rail-driven edges are not here.** They are moved by the reconciler from
+  an authenticated status query, never by a request. The settlement lands on
+  an intent in **any of** `processing`, `requires_action` or
+  `requires_payment_method` (`SETTLEABLE_STATUSES` in
+  `vpay_db::payment_intents`). A redirect intent settles straight from
+  `requires_action`, with no `processing` in between, and the third status is
+  how a confirm that crashed before moving the intent gets resolved. _(This
+  named only the two `processing` edges until 2026-09-23. That was
+  incomplete, though no code changed: `docs/flows/payment-lifecycle.md`'s
+  diagram drew a `requires_action → processing` edge the code never makes
+  until vpay#243 corrected it.)_ If you
   find yourself wanting `next_status` to answer for them, you are about to let
   an HTTP request move money.
 - **The flow, not the rail's name, selects the next status**
@@ -250,7 +258,8 @@ can express. (`vpay-invoices` owns the resource; this is the state rule.)
 Full tables, the charge lifecycle, the crash-safety ordering rule and the
 failure taxonomy: [references/state-machines.md](references/state-machines.md).
 
-**Proposed, not built (2026-09-23):** vaam-apps/vpay#244's Draft RFCs would
+**Proposed, not built (2026-09-23):** the Draft RFCs vaam-apps/vpay#244
+merged as `7997536b` (`docs/rfc/0004`–`0008`) would
 add three things: new writers of `paid` (out-of-band payments, and in RFC-0005
 a prepaid balance applied at finalize); a statement matcher that calls the
 ordinary settlement transaction (RFC-0007); and a router choosing between
@@ -265,9 +274,12 @@ transaction are real and tested. A merchant can create a refund and the ledger
 records a capture — ~~the ledger posts nothing and nothing writes a refund~~,
 corrected 2026-09-16.
 
-What has **not** changed is the line that matters: exactly **one** real rail
-call has ever been made — a EUR `mtn_momo` intent settled against MTN's
-sandbox on 2026-09-15. MTN's Disbursements product has never been called at
+What has **not** changed is the line that matters: exactly **one** payment
+has ever settled against a real rail — a EUR `mtn_momo` intent against MTN's
+sandbox on 2026-09-15, in the third of three runs that day (the first two
+stopped at the token mint on adapter bugs). _(This said "exactly one real
+rail call has ever been made" until 2026-09-23. Three runs means more than
+one call.)_ MTN's Disbursements product has never been called at
 all, Orange's redirect rail has never been called, no real payer has ever been
 prompted, and **no money has moved in either direction**. Mounting a route is
 not a rail call; `docs/status.md`'s load-bearing banner is unchanged, and a

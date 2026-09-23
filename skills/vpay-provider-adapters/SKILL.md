@@ -5,7 +5,7 @@ description: The vpay provider port (`vpay-provider`) and how to add a payment r
 
 # The provider port, and adding a rail
 
-> **Verified against vpay `0799a8d2` (2026-09-18).** Version-sensitive claims below
+> **Verified against vpay `7997536b` (2026-09-23).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -267,7 +267,8 @@ in a raw `serde_json::Map` that has none of its own. Keep it that way.
 
 ## Proposed port changes that do not exist (2026-09-23)
 
-vaam-apps/vpay#244 carries four Draft RFCs that would change this port.
+Four Draft RFCs, merged by vaam-apps/vpay#244 as `7997536b`
+(`docs/rfc/0004`, `0006`, `0007`, `0008`), would change this port.
 **None of it is built, and the capability list above is complete as of
 2026-09-23.** Do not write an adapter against any of the following, and do
 not treat a Draft section as a decision:
@@ -293,7 +294,7 @@ not treat a Draft section as a decision:
   `backends/crates/vpay-api/src/browser/checkout_sessions.rs`).
 
 A card PSP adapter is not blocked on engineering. The 2026-09-23 desk
-evaluation (`docs/plans/2026-09-23-card-provider-evaluation.md` in that PR,
+evaluation (`docs/plans/2026-09-23-card-provider-evaluation.md`,
 public documentation only) found **no provider shown to accept Visa and
 Mastercard for a Cameroon merchant on a hosted page**. The providers' written
 answers come first.
