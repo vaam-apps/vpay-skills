@@ -16,8 +16,9 @@ _required and nullable_ and an absent key never means "unknown". `name: null`
 on an `account_holder` is a **meaningful answer** — "the rail does not know
 this number" — which an omitted key could not express.
 
-The module header says there is none "anywhere below". There are **four**
-sites, all on the payer surface or an erased customer, each argued in place:
+The module header says there is none "anywhere below". There are **five**
+attributes on **four** types in `vpay-api/src/model.rs`, all on the payer
+surface or an erased customer, each argued in place:
 
 - `CheckoutSessionForPayer::merchant` — present only on the payer surface;
 - `RailSpec::display_name`, and both of `RailDisplayName`'s `en`/`fr` — the
@@ -25,8 +26,14 @@ sites, all on the payer surface or an erased customer, each argued in place:
   when the deployment configured no name, "matching `merchant`'s convention";
 - `CustomerObject::deleted` — present only on an erased customer.
 
-_(This said "two exceptions" until 2026-09-23. The `RailSpec` pair postdates
-the `d3a8810b` stamp.)_
+_(This said "two exceptions" until 2026-09-23, when the restamp first wrote
+"four sites". That counted types, not attributes; `RailDisplayName` carries
+two. The `RailSpec` and `RailDisplayName` attributes postdate the `d3a8810b`
+stamp.)_
+
+The staff surface (`vpay-api/src/staff/mod.rs`) has four more:
+`otpauth_uri`, `enrolment`, `access_token` and `access_token_expires_at`,
+each on a sign-in or enrolment response rather than a `/v1` object.
 
 If you add a field, add it unconditionally. `cargo xtask verify-serde` checks
 the _naming_ convention (snake_case on the wire, with a table of exemptions in
