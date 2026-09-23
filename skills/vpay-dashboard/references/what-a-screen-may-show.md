@@ -99,7 +99,9 @@ As of 2026-09-16:
   pending states — it exists because an earlier draft dropped the `<main>`
   landmark, `region` went 0 → 1 violation, and every other gate stayed green.
   Colour is answered only by `just test-storybook`, in a real Chromium.
-- **Anything through the BFF.** No page and no component calls it.
+- **Most reads through the BFF.** Only the payments list and the payment
+  detail call it, and only for reads after their first render (since 2026-09-12;
+  this line said "No page and no component calls it" until 2026-09-23).
 
 ## Testing notes
 

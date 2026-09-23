@@ -1,6 +1,6 @@
 ---
 name: vpay-dashboard
-description: The staff operator console at frontends/apps/dashboard — it is the OAuth client and runs the code leg in its own process, the /dash/v1 read seam over two transports, the BFF that exists and that nothing calls, navigation enforced as a gate rather than a comment, and the honest-absence rules that decide what a screen may and may not show. Load before adding a page, a column, a nav entry, a CrateStack procedure or any read, and before assuming a row you see is backed by a column something writes.
+description: The staff operator console at frontends/apps/dashboard — it is the OAuth client and runs the code leg in its own process, the /dash/v1 read seam over two transports, the BFF that only the payments screens call, and only after their first render, navigation enforced as a gate rather than a comment, and the honest-absence rules that decide what a screen may and may not show. Load before adding a page, a column, a nav entry, a CrateStack procedure or any read, and before assuming a row you see is backed by a column something writes.
 ---
 
 # vpay dashboard
@@ -37,13 +37,22 @@ that string is an identifier the two OAuth legs must spell identically —
 matched byte for byte by `ClientRegistration::allows_redirect_uri`, no prefix,
 no wildcard — and not a page. A route there would be a page nobody can reach.
 
-**Nothing in this app calls the BFF, and that is a maintainer decision.** The
-handlers under `app/api/dash/` are real and tested and no page, component or
-test but their own touches them. They exist so a client-side data layer has a
-transport when one is written. Whether this app should have an authenticated
-browser-reachable surface at all **reverses a stated property of its security
-model** and is RD5 in the Refine plan — not this code's call. Deleting the
-route files and `src/server/bff.ts` breaks nothing else.
+**Two screens call the BFF, and only after their first render (since
+2026-09-12, vaam-apps/vpay#138).** The payments list and the payment detail are
+Refine screens. Their first render is read on the server and handed to Refine
+as `initialData`. Their _later_ reads, paging and refetches, go through
+`dashDataProvider("/api/dash")` in `app/(dash)/layout.tsx`, to
+`/api/dash/payment_intents` and `/api/dash/payment_intents/{id}`. There are six
+handlers under `app/api/dash/`; the four added 2026-09-14 (`refunds`,
+`deliveries`, `customers`, `checkouts`) have no caller, because those four
+screens render on the server and use no client data layer. So **deleting the
+route files and `src/server/bff.ts` now breaks the payments screens' paging.**
+Whether this app should have an authenticated browser-reachable surface at all
+still **reverses a stated property of its security model** and is RD5 in the
+Refine plan — a maintainer's call, not this code's. _(This said "Nothing in
+this app calls the BFF … Deleting the route files … breaks nothing else" until
+2026-09-23, and had been wrong since 2026-09-12. vpay's own README said the
+same until vaam-apps/vpay#247.)_
 
 **The `$procs` transport mounts five procedures, and three places in the Rust
 say it mounts one.** Code wins — five are mounted, and only
