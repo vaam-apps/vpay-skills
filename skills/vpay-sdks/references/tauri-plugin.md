@@ -16,7 +16,14 @@ single-column table in `docs/sdks/parity.md`.
 
 Two artefacts from one directory: the Rust crate `tauri-plugin-vpay-checkout`
 (`publish = false`) and the npm package `@vaam-apps/vpay-tauri-checkout`
-(publish-ready, published by nothing). Both `0.4.0` as of 2026-09-22.
+(publish-ready, published by nothing). ~~Both `0.4.0` as of 2026-09-22.~~
+**Corrected 2026-09-23: both are `0.4.1`**, and have been since
+[vpay#240](https://github.com/vaam-apps/vpay/pull/240) (`078fa3d`). #238's
+branch forked at `7134ecb`, before release-please's 0.4.0 → 0.4.1 bump
+([#236](https://github.com/vaam-apps/vpay/pull/236)) landed on `master`, so
+the branch was internally consistent with itself and wrong about the tree it
+merged into — the merge was clean and the version was stale. This page
+faithfully mirrored the branch.
 
 Design: `docs/plans/2026-09-22-tauri-plugin.md` (T1–T7). Contract the parallel
 lanes built against: `docs/plans/2026-09-22-tauri-plugin-brief.md`. Decisions:
@@ -186,7 +193,32 @@ session's` is the case that pins it.
   `# x-release-please-version`) and a `json` one at `$.version` for
   `package.json`. Neither is a bare string, for the reason #203/#204 wrote
   down. `cargo xtask verify-versions` counts **24** references as of
-  2026-09-22, all `0.4.0`; it was 22 before.
+  2026-09-22; it was 22 before. ~~All `0.4.0`.~~ **Corrected 2026-09-23:**
+  the gate prints `24 version references all say 0.4.1`. The count was right
+  and the version was not, for the fork-point reason at the top of this page
+  — [vpay#240](https://github.com/vaam-apps/vpay/pull/240) moved all 24
+  together, which is what a single wrong version reference would have
+  failed on.
+- **The example's `Cargo.lock` records the plugin's version even though the
+  dependency is by path, and nothing gates it (2026-09-23).** A path
+  dependency still gets a `version` line in
+  `examples/tauri-checkout/src-tauri/Cargo.lock`, and **no gate in this
+  repository builds that crate**: `--locked` appears in vpay only on
+  `cargo install` lines (`release-please.yml`'s own comment says so),
+  `verify-versions` reads manifests and config, never a lockfile, and the
+  example's `src-tauri/` carries its **own `[workspace]`** the way the plugin
+  does (T2), so no root cargo command resolves it. This is not hypothetical:
+  [vpay#240](https://github.com/vaam-apps/vpay/pull/240) moved the manifest
+  to `0.4.1` and **stranded that lockfile at `0.4.0`**, green the whole way,
+  until [vpay#241](https://github.com/vaam-apps/vpay/pull/241) repaired it by
+  hand. The **release** path self-heals — `release-please.yml`'s "Refresh
+  `Cargo.lock`" step globs `git ls-files '*Cargo.lock'` and runs
+  `cargo metadata` in each directory, so a release-please bump picks this
+  file up — **so the exposure is the manual bump only**, which is exactly
+  what #240 was. If you bump this crate's version by hand: run
+  `cargo metadata --format-version 1` in
+  `examples/tauri-checkout/src-tauri/` and commit the lockfile in the same
+  change.
 - **A merchant must grant `vpay-checkout:default`** in
   `src-tauri/capabilities/default.json`, or Tauri's capability system denies
   both commands and `start` answers `unresolved` with `platform_window_failed`
@@ -225,7 +257,18 @@ rows, re-run in the docs lane's own pass through the `just` recipes):
 | The mobile targets              | `cargo check` exits 0 for `aarch64-linux-android` (no NDK needed) and `aarch64-apple-ios` (no env var needed)  |
 | The guest-JS package            | typecheck, lint at `--max-warnings 0`, build, and **71 vitest cases across 8 files, 0 skipped** — all exit 0   |
 | The Swift                       | `swift build --sdk iphonesimulator -target arm64-apple-ios15.0-simulator` exit 0; `xcodebuild` BUILD SUCCEEDED |
-| `cargo xtask verify-sdk-parity` | 0 — **750 proving tests, 44 dated gaps, 39 rows** (was 662 / 37)                                               |
+| `cargo xtask verify-sdk-parity` | 0 — **750 proving tests, 45 dated gaps, 39 rows** (was 662 / 37) — ~~44~~, see below                           |
+
+~~**44** dated gaps.~~ **Corrected 2026-09-23: the gate prints
+`45 dated gap(s)`**, and the 44 was wrong on the day it was written rather
+than overtaken by anything. The Tauri pass added **8** `⛔` rows — the eight
+listed immediately below, and `docs/sdks/parity.md`'s Tauri table carries
+exactly eight — so 37 + 8 = 45, not 7 and 44. This page mirrored the figure
+out of vpay's own
+`docs/status/verification/2026-09-22-tauri-plugin.md`, which still said 44
+when this correction was written; a companion vpay PR is fixing that page in
+the same breath. `750 proving test(s)`, `35 SDK method(s)` and `39 row(s)`
+were and are correct — only the gap count was mis-transcribed on arrival.
 
 **The dated `⛔` gaps, all 2026-09-22, each a row in `docs/sdks/parity.md`:**
 
@@ -270,6 +313,33 @@ rows, re-run in the docs lane's own pass through the `just` recipes):
 `[workspace]` and a **path** dependency on the plugin. It exists because
 **nothing inside `sdks/tauri/` can compile the Kotlin or the Swift** — those
 need a consuming app's Gradle and Xcode — and no gate anywhere does.
+
+### What a gate does and does not reach in the example (2026-09-23)
+
+Not "nothing builds it", which is the easy thing to assume and is wrong.
+`pnpm-workspace.yaml` globs `examples/*`, so the example is a workspace
+package and its `typecheck`, `lint` and `test` scripts **do** run in
+`just ci` through `pnpm -r` — and each of those scripts chains the same
+`deps` step that builds the guest-JS first, so the TypeScript half is
+genuinely covered.
+
+**The ungated slice is exactly `src-tauri/` — the Rust, and with it every
+route to the Kotlin and the Swift — plus any script `pnpm -r` never calls,
+which today is `dev`.** It appears in **0** justfile recipes, **0** files
+under `.github/workflows/`, and **0** places in `.xtask/src/` (measured
+2026-09-23 against `dd1a48b`). Those two are precisely what
+[vpay#241](https://github.com/vaam-apps/vpay/pull/241) had to repair: a
+`Cargo.lock` under `src-tauri/` left at `0.4.0` by #240, and a `dev` script
+that was a bare `"vite"` with no `pnpm run deps &&`, so a clean checkout
+could not run the example by following its own README. Neither could go red
+anywhere.
+
+Why that particular hole matters more than its size suggests: this example
+is the **only** thing in the vpay repository that can compile the Kotlin and
+the Swift at all. The artefact the whole Android and iOS evidence story
+rests on is the one nothing protects. Treat a change under
+`examples/tauri-checkout/src-tauri/` the way you would treat a change with
+no test — because that is what it is.
 
 **The builds, and they retired the largest caveat this plugin had.** All on
 `docs/status/verification/2026-09-22-tauri-plugin.md` § "Lane D":
