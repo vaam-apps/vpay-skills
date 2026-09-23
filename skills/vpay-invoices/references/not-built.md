@@ -178,3 +178,33 @@ migration's whole bytes and `just verify-migrations` pins them — and
 `verify-links` does not read `.sql`, so nothing but a reader was ever going to
 catch it. The same rule is why `0006`, `0013` and `0017` carry their
 corrections in the flow docs rather than in the files.
+
+## Proposed, not built: RFC-0004 and RFC-0005 (2026-09-23)
+
+vaam-apps/vpay#244 proposes closing most of this page. **Nothing in it is built
+or decided as of 2026-09-23.** Each RFC is Draft, and each ends with numbered
+open questions that name who owns them. Until an RFC is accepted and its
+code lands, every gap above stands.
+
+What an agent is most likely to get wrong from reading them:
+
+- **Subscriptions do not collect money on mobile money, even as proposed.**
+  RFC-0004 § 2 makes a subscription a schedule that issues invoices.
+  `charge_automatically` is refused unless the rail declares
+  `supports_off_session`, a capability **no rail has** and the port does not
+  define.
+- **The pending-charge inbox is proposed, and it reverses a sentence in
+  `docs/flows/invoices.md`.** Until it lands, `POST /v1/invoice_items` still
+  writes only onto a named draft, and `invoice_items` still has no
+  `subscription` column.
+- **`paid_out_of_band` is proposed** (RFC-0004 § 6). Today the only writer of
+  `paid` is the settlement transaction. A merchant paid in cash still has only
+  `void` and `mark_uncollectible`.
+- **PDFs are proposed through a renderer port** (embedded Typst, or an
+  external HTTP renderer), with nothing stored (RFC-0004 § 10). Typst's fonts
+  need a `deny.toml` exception that does not exist.
+- **Prepaid balances (RFC-0005) are blocked on counsel**, not on
+  engineering: stored value may be e-money under BEAC/COBAC rules. Do not
+  start it.
+- **The invoice wire object is still nineteen keys.** The RFC's new keys
+  (`subscription`, `paid_out_of_band`, `invoice_pdf`, `tax`, …) are not on it.

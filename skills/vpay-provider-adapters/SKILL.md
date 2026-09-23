@@ -265,6 +265,39 @@ redacting `Debug` impls. So do both adapters' credential and wire types, and
 so does `vpay_api::v1::refunds`' `CreateParams` — which holds a payee's number
 in a raw `serde_json::Map` that has none of its own. Keep it that way.
 
+## Proposed port changes that do not exist (2026-09-23)
+
+vaam-apps/vpay#244 carries four Draft RFCs that would change this port.
+**None of it is built, and the capability list above is complete as of
+2026-09-23.** Do not write an adapter against any of the following, and do
+not treat a Draft section as a decision:
+
+- **RFC-0004 § 7 — one adapter per provider.** Every card or bank PSP that
+  meets four hard rules gets its own adapter. The rules: vpay never holds the
+  money; no card number reaches `vpay-server`; a secret-authenticated status
+  query; a stub-able contract. Refunds, off-session charging and bank
+  transfer become capabilities. It would add `supports_off_session`,
+  `charge_stored`, `method_types`, `amount_limits` and
+  `ProviderFlow::Instructions`. **None of those identifiers exists.**
+- **RFC-0006 — card processing without a PSP.** A separately deployed card
+  vault (`vpay-vault`), never linked into `vpay-server`, which appears to the
+  core as one more rail (`vpay_vault`). It would also add
+  `ProviderFlow::Embedded`, later.
+- **RFC-0007 — bank transfers reconciled from statements.** It leaves open
+  whether `bank_transfer` is an adapter whose `query_status` answers
+  `Unsupported`, or a new kind of settlement source.
+- **RFC-0008 — routing.** It separates the method type (`card`) from the rail
+  (`flutterwave`), so that `payment_method_types` would accept method types.
+  **Today `payment_method_types` holds rail codes**, and the checkout lists
+  rails in the order the merchant gave (`build_rails` in
+  `backends/crates/vpay-api/src/browser/checkout_sessions.rs`).
+
+A card PSP adapter is not blocked on engineering. The 2026-09-23 desk
+evaluation (`docs/plans/2026-09-23-card-provider-evaluation.md` in that PR,
+public documentation only) found **no provider shown to accept Visa and
+Mastercard for a Cameroon merchant on a hosted page**. The providers' written
+answers come first.
+
 ## Where to go next
 
 - [references/adding-a-rail.md](references/adding-a-rail.md) — the full
