@@ -52,6 +52,23 @@ router's source rather than a description of it.
 | POST                     | `/v1/invoice_items`                    | `invoice_items::create`                             |
 | GET, POST, PATCH, DELETE | `/v1/invoice_items/{id}`               | `invoice_items::{retrieve, update, update, delete}` |
 
+**Since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged in vaam-apps/vpay#251), no row is
+added** — only parameters, on rows that exist:
+
+| Route                          | Takes                                                                                                                  | Since               |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------- | ------------------- |
+| `GET /v1/payment_intents`      | `limit`, `starting_after`, `ending_before`, **`customer`** (the intent's own)                                          | `customer`: step A  |
+| `GET /v1/checkout/sessions`    | cursor, `payment_intent`, **`customer`** (the **session's** own, ADR-0024 D12)                                         | `customer`: step A  |
+| `GET /v1/refunds`              | cursor, `payment_intent`, **`customer`** (through the refund's intent)                                                 | `customer`: step A  |
+| `GET /v1/invoices`             | cursor, `customer`, `status`                                                                                           | 2026-09-07          |
+| `GET /v1/customers`            | cursor only — **no filter, deliberately** (ADR-0024 D4)                                                                | —                   |
+| `POST /v1/invoices/{id}/pay`   | `success_url`, `cancel_url`; **or** `paid_out_of_band=true` + `out_of_band[method\|reference\|received_at]` and no URL | out of band: step A |
+| `GET /dash/v1/payment_intents` | `status`, `created_gte`, `created_lte`; **`customer` is a `400`**                                                      | refusal: step A     |
+
+Before step A, `customer` on the first three and on `/dash/v1` was **silently
+ignored** — the answer was the unfiltered list. The oracle rule, the one
+shared `400` and the D12 consequence are in the SKILL page.
+
 Things about this table that are decisions rather than accidents:
 
 - **`POST` is Stripe's update.** Stripe's API has no `PATCH`, so a merchant's
@@ -195,23 +212,23 @@ both a `dashboard_validator` and a `dashboard` binding; a deployment with no
 `dashboard_client` mounts nothing and every `/dash/v1/…` path falls through to
 the outer honest 404.
 
-| Method | Path                                      | Notes                                           |
-| ------ | ----------------------------------------- | ----------------------------------------------- |
-| GET    | `/dash/v1/payment_intents`                | `DASH_ROUTES`, behind `require_dashboard_token` |
-| GET    | `/dash/v1/payment_intents/{id}`           | same                                            |
-| POST   | `/dash/v1/staff/login`                    | `STAFF_ROUTES`, outside the token layer         |
-| POST   | `/dash/v1/staff/totp`                     | same                                            |
-| POST   | `/dash/v1/staff/password`                 | same                                            |
-| GET    | `/dash/v1/staff/session`                  | same                                            |
-| GET    | `/dash/v1/staff/session/stage`            | same                                            |
-| POST   | `/dash/v1/staff/logout`                   | same                                            |
-| GET    | `/dash/v1/oauth/authorize`                | same                                            |
-| POST   | `/dash/v1/oauth/token`                    | same                                            |
-| POST   | `/dash/v1/$procs/searchPaymentIntents`    | CrateStack transport                            |
-| POST   | `/dash/v1/$procs/searchRefunds`           | CrateStack transport                            |
-| POST   | `/dash/v1/$procs/searchWebhookDeliveries` | CrateStack transport                            |
-| POST   | `/dash/v1/$procs/searchCustomers`         | CrateStack transport                            |
-| POST   | `/dash/v1/$procs/searchCheckoutSessions`  | CrateStack transport                            |
+| Method | Path                                      | Notes                                                                            |
+| ------ | ----------------------------------------- | -------------------------------------------------------------------------------- |
+| GET    | `/dash/v1/payment_intents`                | `DASH_ROUTES`, behind `require_dashboard_token`; refuses `customer` since step A |
+| GET    | `/dash/v1/payment_intents/{id}`           | same                                                                             |
+| POST   | `/dash/v1/staff/login`                    | `STAFF_ROUTES`, outside the token layer                                          |
+| POST   | `/dash/v1/staff/totp`                     | same                                                                             |
+| POST   | `/dash/v1/staff/password`                 | same                                                                             |
+| GET    | `/dash/v1/staff/session`                  | same                                                                             |
+| GET    | `/dash/v1/staff/session/stage`            | same                                                                             |
+| POST   | `/dash/v1/staff/logout`                   | same                                                                             |
+| GET    | `/dash/v1/oauth/authorize`                | same                                                                             |
+| POST   | `/dash/v1/oauth/token`                    | same                                                                             |
+| POST   | `/dash/v1/$procs/searchPaymentIntents`    | CrateStack transport                                                             |
+| POST   | `/dash/v1/$procs/searchRefunds`           | CrateStack transport                                                             |
+| POST   | `/dash/v1/$procs/searchWebhookDeliveries` | CrateStack transport                                                             |
+| POST   | `/dash/v1/$procs/searchCustomers`         | CrateStack transport                                                             |
+| POST   | `/dash/v1/$procs/searchCheckoutSessions`  | CrateStack transport                                                             |
 
 `/dash/v1` is **read-only structurally, not by promise**:
 `require_dashboard_token` refuses any method that is not `GET`/`HEAD` with a

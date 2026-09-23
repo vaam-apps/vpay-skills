@@ -273,6 +273,16 @@ Four Draft RFCs, merged by vaam-apps/vpay#244 as `7997536b`
 2026-09-23.** Do not write an adapter against any of the following, and do
 not treat a Draft section as a decision:
 
+> **Qualified 2026-09-23.** Since vaam-apps/vpay step A (RFC-0004 §§ 5–6,
+> merged in vaam-apps/vpay#251), RFC-0004 is Draft **except** § 5's `customer` list filters
+> and § 6's manual payments, accepted through ADR-0024 and built. **Neither
+> touches this port**: no capability, no adapter method, no `ProviderFlow`.
+> Everything below — § 7 included — is still Draft. One name collides: step
+> A's `out_of_band[method]=bank_transfer` is a **label a merchant sends** when
+> recording an invoice paid outside vpay. It is not a rail, reaches no
+> adapter, and is not RFC-0007's `bank_transfer`, whose shape below is still
+> an open question.
+
 - **RFC-0004 § 7 — one adapter per provider.** Every card or bank PSP that
   meets four hard rules gets its own adapter. The rules: vpay never holds the
   money; no card number reaches `vpay-server`; a secret-authenticated status

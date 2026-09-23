@@ -157,6 +157,16 @@ prevent.
   `stripe.refunds.retrieve()` working is **untested rather than known**,
   exactly as `stripe.events.list()` is.
 
+- **Two Stripe spellings started to mean something** since vaam-apps/vpay
+  step A (RFC-0004 §§ 5–6, merged in vaam-apps/vpay#251): `customer` on
+  `paymentIntents.list`, `checkout.sessions.list` and `refunds.list` now
+  filters (it was ignored, answering the whole list), and
+  `invoices.pay(id, { paid_out_of_band: true })` records the invoice paid out
+  of band — ADR-0024 D5 chose Stripe's spelling so that exactly this call
+  works. **Neither is driven through stripe-node** by `sdks/stripe-compat` as
+  of 2026-09-23, which has no invoice or list-filter case, so both are
+  untested rather than known from that side.
+
 ### Refunds: two divergences a Stripe-shaped client meets, and one it cannot
 
 Neither divergence is Stripe's and both are deliberate.

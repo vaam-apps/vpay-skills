@@ -133,6 +133,33 @@ its params are an object literal the merchant allocated, so `util.inspect` and
 because the row above it was `✅/✅` on a title naming `inspect` while neither
 Node test checked it.
 
+## Step A: two new parameters, one source break in Rust
+
+Since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged in vaam-apps/vpay#251). **No method
+was added**; two existing ones take more:
+
+- **`customer` on `payment_intents.list`, `checkout.sessions.list` and
+  `refunds.list`**, in both SDKs, validated by neither. An older server ignores
+  it and returns the **unfiltered** list; both SDKs' doc comments say so.
+- **`invoices.pay` takes one optional out-of-band object** (ADR-0024 D19) —
+  Rust `out_of_band: Option<OutOfBandParams>`, Node `outOfBand` — whose
+  presence puts `paid_out_of_band=true` and `out_of_band[…]` on the wire and
+  no URL. A URL beside it is refused before any request.
+
+> **BREAKING in `sdks/rust` — source, not wire.** `ListPaymentIntentsParams`,
+> `ListCheckoutSessionsParams`, `ListRefundsParams` and `PayInvoiceParams`
+> each gained a public field, so a struct literal naming every field with no
+> `..Default::default()` stops compiling (`E0063`). A three-field
+> `ListPaymentIntentsParams { … }` literal is the likeliest casualty.
+> Constructors, `Default::default()` and `..Default::default()` are
+> unaffected, and the bytes on the wire are the same. **`sdks/nodejs` is not
+> breaking.** Recorded in `sdks/rust/README.md` § Status.
+
+**Node's first camelCase request fields are deliberate:** `outOfBand` and
+`receivedAt`, by the maintainer's decision of 2026-09-23. Do not "fix" either
+SDK to match the other. Shapes, counts and the corrected parity note:
+[references/parity.md](references/parity.md) § "Step A".
+
 ## Parity is per capability, not per method name or per shape
 
 ADR-0015 decision 1. Two deliberate asymmetries you will meet:

@@ -247,6 +247,20 @@ rather than voided. Two doc comments in vpay say otherwise and are stale; see
 `DELETE` that removes a draft entirely. `paid` is only reachable with
 `amount_remaining = 0` (`paid_means_nothing_remaining`, migration `0036`).
 
+**`paid` has two writers since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged
+in vaam-apps/vpay#251)** — before it, one. The settlement transaction of a succeeded
+intent, and `POST /v1/invoices/{id}/pay` with `paid_out_of_band=true`, a
+compare-and-swap `open → paid` under `NO_LIVE_INTENT` that records a
+merchant's statement in `manual_payments`. **The second moves no money and
+posts nothing to the ledger**: no rail saw the money, and under pass-through
+vpay has no account it arrived in (ADR-0024 D8). So from that merge on,
+`status = 'paid'` on an invoice no longer implies a charge, a settlement or a
+ledger entry — `paid_out_of_band` says which. Migration `0049`'s
+`paid_names_how` makes a `paid` row with neither an intent nor the flag
+unstorable, and `paid_out_of_band_is_never_refunded` keeps refunds off it. The
+intent state machine is untouched: no intent is created, and an attached
+canceled intent stays canceled and attached.
+
 **There is deliberately no `can_transition_to` on `InvoiceStatus`.** A method
 there would be a second copy of a rule that has to be in the statement to be
 enforced at all — every transition in `vpay_db::invoices` is a compare-and-swap
@@ -260,12 +274,18 @@ failure taxonomy: [references/state-machines.md](references/state-machines.md).
 
 **Proposed, not built (2026-09-23):** the Draft RFCs vaam-apps/vpay#244
 merged as `7997536b` (`docs/rfc/0004`–`0008`) would
-add three things: new writers of `paid` (out-of-band payments, and in RFC-0005
-a prepaid balance applied at finalize); a statement matcher that calls the
-ordinary settlement transaction (RFC-0007); and a router choosing between
-rails (RFC-0008). **Each keeps one charge per intent.** RFC-0008 explicitly
-refuses to retry a declined intent on another rail. None of it exists. See
-`vpay-invoices` and `vpay-provider-adapters`.
+add three things: new writers of `paid` (~~out-of-band payments, and~~ in
+RFC-0005 a prepaid balance applied at finalize); a statement matcher that
+calls the ordinary settlement transaction (RFC-0007); and a router choosing
+between rails (RFC-0008). **Each keeps one charge per intent.** RFC-0008
+explicitly refuses to retry a declined intent on another rail. None of it
+exists. See `vpay-invoices` and `vpay-provider-adapters`.
+**Corrected 2026-09-23:** this paragraph listed out-of-band payments as
+proposed. They are built since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged
+in vaam-apps/vpay#251; ADR-0024), as the second writer of `paid` described above. The
+prepaid balance, the statement matcher and the router are still Draft and
+unbuilt, and out-of-band `bank_transfer` is a label a merchant sends, not
+RFC-0007's matcher.
 
 ## Status, as of 2026-09-16
 

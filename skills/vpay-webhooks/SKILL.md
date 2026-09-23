@@ -77,7 +77,10 @@ Do not write code that waits for either of those two. Full writer table:
 There is no other shape in this repository. `Settlement::apply_succeeded` (in `vpay-db`'s `settlement` module)
 moves the charge to `succeeded`, moves the intent, writes the
 `payment_intent.succeeded` row and — if the intent pays one — the invoice and
-its `invoice.paid`, all in **one** transaction; the customer erasure writes the
+its `invoice.paid`, all in **one** transaction (since vaam-apps/vpay step A,
+RFC-0004 §§ 5–6, merged in vaam-apps/vpay#251, the out-of-band `pay` is a second writer of
+`invoice.paid`, in its own single transaction with the `open → paid`
+compare-and-swap and the `manual_payments` row); the customer erasure writes the
 anonymisation and the `customer.deleted` in one; the checkout sweep flips
 `status` and writes `checkout.session.expired` in one. The two refund types
 follow the same shape since 2026-09-16: `POST /v1/refunds` writes the `refunds`

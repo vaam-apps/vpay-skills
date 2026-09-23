@@ -18,7 +18,10 @@ workspace may name a `PgPool`, a `sqlx::Transaction`, or a CrateStack handle.
 **`backends/migrations/*.sql` is the schema.** 48 files as of 2026-09-16 —
 this page said **44** until `0045`–`0048` landed the same day (RFC-0003,
 vpay#178); `0045` adds `ledger_entries.merchant_id`, `0046` widens the ledger
-id, and `0047`–`0048` are comment-only corrections to `refunds`. Counted
+id, and `0047`–`0048` are comment-only corrections to `refunds`. **49 since
+vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged in vaam-apps/vpay#251)**:
+`0049_manual-payments.sql` adds `invoices.paid_out_of_band` and the
+`manual_payments` table — see below. Counted
 off the directory, which is the only authority: they are
 applied in filename order by `sqlx::migrate!("../../migrations")` from
 `vpay_db::migrations::Migrations::run_migrations`, which both binaries call
@@ -28,16 +31,66 @@ at boot and every container-backed suite runs.
 database. It compiles into `vpay-db` on every build, so a syntax or type
 error there is a build failure. But:
 
-> **Compiled is not used.** Of its nineteen models, **five** carry real
+> **Compiled is not used.** Of its nineteen models (twenty since vpay step A,
+> which adds `model ManualPayment` with one real read — see below; not counted
+> in the five), **five** carry real
 > queries — `DisabledClient`, `Currency`, `Provider`, `Event`,
 > `WebhookDelivery`. Every other model is a design sketch that happens to be
 > type-checked by a compiler as well as by the CLI. No code reads or writes
 > through any of them, and several **do not match the live table at all**.
 
 Nothing generates DDL from the `.cstack` file and it drives no migration. The
-gap between the two is **counted, not closed** — 190 pending changes over 25
-relations as of migration 0044. See
+gap between the two is **counted, not closed** — ~~190 pending changes over 25
+relations as of migration 0044~~, which this page said until 2026-09-23 and
+which had been stale since 2026-09-15: `0045` and `0046` moved it to 192 and
+then **194 over 25**, the value on `master` before step A. **201 over 26
+relations since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged in vaam-apps/vpay#251)**,
+19 unmappable columns unmoved — `EXPECTED_DRIFT_CHANGES`,
+`EXPECTED_DRIFTED_RELATIONS` and `EXPECTED_UNMAPPABLE_COLUMNS` in
+`postgres_smoke.rs`, measured on the branch at cratestack 0.12.0. See
 [references/cratestack.md](references/cratestack.md).
+
+## Migration `0049` (step A): the database says what a CHECK cannot
+
+Since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged in vaam-apps/vpay#251). The pattern is
+reusable, and the traps are specific:
+
+- **A cross-table invariant is a composite foreign key, not a CHECK.** A CHECK
+  sees one row of one table. `manual_payments_agree_with_their_invoice` points
+  `manual_payments (invoice_id, merchant_id, livemode, currency_code, amount,
+paid_out_of_band)` at `invoices_payment_record_key`, a six-column `UNIQUE`
+  on `invoices` that exists only to be its target; `manual_payments.paid_out_of_band`
+  is pinned `true` by `records_an_out_of_band_payment`. So a record exists only
+  for an invoice flagged paid out of band, with that invoice's amount, tenant,
+  mode and currency, and `NO ACTION` freezes those invoice columns once a
+  record exists. The writer never needs the key — it copies the values off the
+  invoice inside `INSERT … SELECT` — and the key is the guard that survives a
+  writer who does not.
+- **CrateStack 0.12.0 introspects no foreign key**, so the drift report cannot
+  see that key at all, and a six-column `@@unique` would generate an index
+  name past Postgres's 63-byte limit, so `invoices_payment_record_key` cannot
+  be declared: it is one permanent `[safe] index` line in the drift.
+  `the_out_of_band_invariants_are_enforced_by_the_database_itself` writes each
+  refused row straight past the API — that test, not the drift count, is the
+  guard for every multi-column constraint here.
+- **`model ManualPayment` was born with the table**, in `invoice_items`'
+  shape (no `jsonb`, `bytea`, native enum, `int4`, or writer-named DEFAULT),
+  so every column is compared. Its CHECK and unique index are created under
+  CrateStack's generated names (`manual_payments_method_enum_check`,
+  `manual_payments_invoice_id_key`) so declaration and live object are one
+  object to the diff engine. One read runs through it
+  (`Invoices::manual_payment_for_invoice`, a generated `find_many` behind
+  `@@allow("read", auth().isSystem())`); the write is hand-written, because a
+  generated `create` takes values and the amount must be copied in the
+  statement. Losing that `@@allow` arm makes every render of an out-of-band
+  invoice a `500` (`every_action_this_module_calls_has_an_allow_arm`).
+- **`0049` was edited in place, and that was legal**: review added the
+  composite key while the migration was unshipped, and the manifest line was
+  re-derived. The rule is "a **shipped** migration is never edited". Once
+  step A merges, `0049` is shipped — the next change is `0050`.
+- **The ADD COLUMN backfills with a DEFAULT and drops it in the next
+  statement** (`0042`'s device), which is why `model Invoice.paid_out_of_band`
+  carries no `@default` and costs the drift nothing.
 
 ## The migration rule: a shipped migration is never edited
 
@@ -62,7 +115,12 @@ whitespace. Not a line reflow by a formatter.
 rather than at production boot. Adding a migration:
 
 1. Write `NNNN_short-name.sql`, numbered one above the current highest.
-2. `just migrations-manifest` — **appends** its SHA-256 line.
+2. `just migrations-manifest` — **appends** its SHA-256 line. **It fails on
+   macOS** (`find: -printf: unknown primary or operator`): the recipe uses GNU
+   `find -printf`. Step A's `0049` line was appended by hand with
+   `shasum -a 256` and `verify-migrations` accepted it (recorded in vpay's
+   `docs/status/infrastructure.md` on that branch, 2026-09-23). Use Linux or
+   GNU `find`, or append by hand and let the gate check it.
 3. Commit the `.sql` **and** `MANIFEST.sha256` in the same commit.
 
 `just migrations-manifest` **refuses to rewrite an existing line** (it errors
