@@ -1,11 +1,11 @@
 ---
 name: vpay-data-layer
-description: vpay's persistence layer — `backends/migrations/*.sql` as the authoritative schema and the rule that a shipped migration is never edited, the CrateStack `.cstack` file that compiles but is mostly a type-checked design sketch, the repository traits and why their implementations may never be named outside `vpay-db`, sqlx with no offline mode and no query macros, and the drift and testcontainer machinery. Load before adding a migration, touching `backends/crates/vpay-db`, editing `schemas/vpay.cstack`, or writing any SQL.
+description: vpay's persistence layer — `backends/migrations/*.sql` as the authoritative schema and the rule that a shipped migration is never edited, the CrateStack `.cstack` file that compiles and runs real queries for fourteen of its twenty models while six stay a type-checked design sketch, the repository traits and why their implementations may never be named outside `vpay-db`, sqlx with no offline mode and no query macros, and the drift and testcontainer machinery. Load before adding a migration, touching `backends/crates/vpay-db`, editing `schemas/vpay.cstack`, or writing any SQL.
 ---
 
 # The data layer
 
-> **Verified against vpay `0799a8d2` (2026-09-18).** Version-sensitive claims below
+> **Verified against vpay `b747e5d5` (2026-09-23).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -22,22 +22,45 @@ id, and `0047`–`0048` are comment-only corrections to `refunds`. **49 since
 vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged in vaam-apps/vpay#251)**:
 `0049_manual-payments.sql` adds `invoices.paid_out_of_band` and the
 `manual_payments` table — see below. Counted
-off the directory, which is the only authority: they are
-applied in filename order by `sqlx::migrate!("../../migrations")` from
-`vpay_db::migrations::Migrations::run_migrations`, which both binaries call
-at boot and every container-backed suite runs.
+off the directory, which is the only authority (`cargo xtask
+verify-migrations` printed 49 on `b747e5d5`): they are applied in filename
+order by `sqlx::migrate!("../../migrations")` from
+`vpay_db::migrations::Migrations::run_migrations`, which every mode of the one
+`vpay-server` binary — `serve`, `worker`, `staff add` — calls at boot through
+`vpay_api::boot::open_migrated_database`, and every container-backed suite
+runs. _(This said "which both binaries call" until 2026-09-23; there has been
+one binary since 2026-09-07, issue #77. vpay's own
+`backends/migrations/README.md` and `open_migrated_database`'s doc comment
+still say "both binaries" as of `b747e5d5`.)_
 
 `schemas/vpay.cstack` is a **second, partial** description of the same
 database. It compiles into `vpay-db` on every build, so a syntax or type
 error there is a build failure. But:
 
-> **Compiled is not used.** Of its nineteen models (twenty since vpay step A,
-> which adds `model ManualPayment` with one real read — see below; not counted
-> in the five), **five** carry real
-> queries — `DisabledClient`, `Currency`, `Provider`, `Event`,
-> `WebhookDelivery`. Every other model is a design sketch that happens to be
-> type-checked by a compiler as well as by the CLI. No code reads or writes
-> through any of them, and several **do not match the live table at all**.
+> **Compiled is not used — for six of its twenty models.** As of vpay
+> `b747e5d5` (2026-09-23), **fourteen** models carry production statements,
+> thirty-six between them: `DisabledClient`, `Currency`, `Provider`, `Event`,
+> `WebhookDelivery` (all since 2026-09-06), `Customer` (2026-09-06),
+> `CheckoutSession`, `Invoice`, `InvoiceItem`, `StaffMember`, `StaffSession`,
+> `OauthAuthorizationCode` (2026-09-07), `Credential` (2026-09-13) and
+> `ManualPayment` (one read, 2026-09-23, step A). **Six carry none** —
+> `PaymentIntent`, `Charge`, `Refund`, `LedgerTransaction`, `LedgerEntry`,
+> `RateLimitWindow` — and those are the design sketch: type-checked by a
+> compiler as well as by the CLI, read and written by no code, and several
+> **do not match the live table at all**.
+>
+> ~~Of its nineteen models … **five** carry real queries … Every other model is
+> a design sketch.~~ **Corrected 2026-09-23.** "Five" had been wrong since
+> 2026-09-06, when `Customer` joined the first five the same day — it is the figure in `schemas/vpay.cstack`'s own header box,
+> which still says it on `b747e5d5`; vpay's `docs/status/infrastructure.md`
+> corrected it to "twelve of seventeen" on 2026-09-10 (issue #87), before
+> `Credential` and `ManualPayment` arrived. **Re-derive it rather than trust
+> any of these numbers**: count the `find_unique`/`find_many`/`create`/
+> `upsert`/`update_many`/`delete_many` chains in
+> `backends/crates/vpay-db/src/*.rs` outside `#[cfg(test)]` that end in one
+> `run(..)` or `run_in_tx(..)`, attributed to the accessor's model. The five
+> `procedure search*` bodies under `src/schema/` are hand-written SQL and do
+> not count.
 
 Nothing generates DDL from the `.cstack` file and it drives no migration. The
 gap between the two is **counted, not closed** — ~~190 pending changes over 25
@@ -47,7 +70,8 @@ then **194 over 25**, the value on `master` before step A. **201 over 26
 relations since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged in vaam-apps/vpay#251)**,
 19 unmappable columns unmoved — `EXPECTED_DRIFT_CHANGES`,
 `EXPECTED_DRIFTED_RELATIONS` and `EXPECTED_UNMAPPABLE_COLUMNS` in
-`postgres_smoke.rs`, measured on the branch at cratestack 0.12.0. See
+`postgres_smoke.rs`, measured at cratestack 0.12.0 and unchanged on vpay
+`master` at `b747e5d5`. See
 [references/cratestack.md](references/cratestack.md).
 
 ## Migration `0049` (step A): the database says what a CHECK cannot
@@ -86,8 +110,10 @@ paid_out_of_band)` at `invoices_payment_record_key`, a six-column `UNIQUE`
   invoice a `500` (`every_action_this_module_calls_has_an_allow_arm`).
 - **`0049` was edited in place, and that was legal**: review added the
   composite key while the migration was unshipped, and the manifest line was
-  re-derived. The rule is "a **shipped** migration is never edited". Once
-  step A merges, `0049` is shipped — the next change is `0050`.
+  re-derived. The rule is "a **shipped** migration is never edited".
+  ~~Once step A merges, `0049` is shipped.~~ **It merged on 2026-09-23
+  (#251): `0049` is shipped, and not a byte of it may change.** The next
+  change is `0050`.
 - **The ADD COLUMN backfills with a DEFAULT and drops it in the next
   statement** (`0042`'s device), which is why `model Invoice.paid_out_of_band`
   carries no `@default` and costs the drift nothing.
@@ -116,11 +142,14 @@ rather than at production boot. Adding a migration:
 
 1. Write `NNNN_short-name.sql`, numbered one above the current highest.
 2. `just migrations-manifest` — **appends** its SHA-256 line. **It fails on
-   macOS** (`find: -printf: unknown primary or operator`): the recipe uses GNU
-   `find -printf`. Step A's `0049` line was appended by hand with
-   `shasum -a 256` and `verify-migrations` accepted it (recorded in vpay's
-   `docs/status/infrastructure.md` on that branch, 2026-09-23). Use Linux or
-   GNU `find`, or append by hand and let the gate check it.
+   macOS** as of vpay `b747e5d5` (`find: -printf: unknown primary or
+operator`): the recipe uses GNU `find -printf`. Step A's `0049` line was
+   appended by hand with `shasum -a 256` and `verify-migrations` accepted it
+   (recorded in vpay's `docs/status/infrastructure.md`, 2026-09-23). Use
+   Linux or GNU `find`, or append by hand and let the gate check it.
+   [vaam-apps/vpay#252](https://github.com/vaam-apps/vpay/pull/252) makes the
+   recipe run on macOS; it is **open and not merged** as of 2026-09-23, so on
+   `b747e5d5` and every older tree the recipe still fails there.
 3. Commit the `.sql` **and** `MANIFEST.sha256` in the same commit.
 
 `just migrations-manifest` **refuses to rewrite an existing line** (it errors
@@ -178,8 +207,9 @@ in the workspace. Everything is the runtime API (`sqlx::query(..)`,
 name typo is a runtime error a container test finds, or nothing finds.
 
 sqlx 0.9 accepts a statement only as a `&'static str` or wrapped in
-`sqlx::AssertSqlSafe`. `vpay-db` wraps at **61** call sites
-(`EXPECTED_ASSERT_SITES`, asserted exactly) — and a wrapper whose contract is
+`sqlx::AssertSqlSafe`. `vpay-db` wraps at **71** call sites as of 2026-09-23
+(`EXPECTED_ASSERT_SITES`, asserted exactly). _(This said **61** — the value
+from 2026-09-11 to 2026-09-16; #178 moved it to 69 and step A to 71.)_ — and a wrapper whose contract is
 discharged by a comment is discharged by whoever last read the comment. So
 the contract is a test, `src/sql_audit.rs`:
 

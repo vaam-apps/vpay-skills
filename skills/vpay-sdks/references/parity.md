@@ -1,6 +1,6 @@
 # `docs/sdks/parity.md` and `cargo xtask verify-sdk-parity`
 
-_Verified against vpay `d3a8810b` (2026-09-16). Version-sensitive claims
+_Verified against vpay `b747e5d5` (2026-09-23). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 The record ADR-0015 requires: one row per capability, one column per SDK, and a
@@ -14,7 +14,8 @@ inside `just ci`.
 
 Success line:
 `verify-sdk-parity: ok — N proving test(s) … all exist, M dated gap(s), K SDK
-method(s) enumerated across R row(s)`.
+method(s) enumerated across R row(s)`. On vpay `b747e5d5` (2026-09-23) it
+prints **767 proving tests, 45 dated gaps, 35 methods across 40 rows**.
 
 ## How a table is recognised
 
@@ -27,8 +28,9 @@ prose or force the prose out of the document.
 The remaining header cells are the SDK roots the table compares, written as
 **code spans holding repo-relative paths** — `` `sdks/rust` ``,
 `` `sdks/nodejs` ``, `` `sdks/stripe-js` ``,
-`` `sdks/flutter/vpay_checkout_flutter` ``. Each must be a real directory or
-the gate fails naming the line.
+`` `sdks/flutter/vpay_checkout_flutter` `` and, since 2026-09-22,
+`` `sdks/tauri/tauri-plugin-vpay-checkout` `` (a single-column table of its
+own). Each must be a real directory or the gate fails naming the line.
 
 ## How a capability row is named — and why the leading span is load-bearing
 
@@ -190,11 +192,13 @@ When you **rename** a test, edit the cell in the same commit. When you
 ## Step A: the rows it moved
 
 Since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged in vaam-apps/vpay#251). No SDK
-method was added, so the method count did not move: `verify-sdk-parity`
-printed **757 proving tests, 45 dated gaps, 35 methods across 40 rows** on the
-branch (`docs/status/verification/2026-09-23-manual-payments.md`) — one new
-row, the out-of-band `invoices.pay`, and `customer` added to the three
-`*.list` rows.
+method was added, so the method count did not move. One new row (the
+out-of-band `invoices.pay`) and `customer` added to the three `*.list` rows.
+~~`verify-sdk-parity` printed **757 proving tests**, 45 dated gaps, 35
+methods across 40 rows.~~ **Corrected 2026-09-23:** 757 is what
+`docs/status/verification/2026-09-23-manual-payments.md` recorded on the
+branch; on the merged tree, vpay `b747e5d5`, the gate prints **767** proving
+tests (45 / 35 / 40 unchanged). Quote the gate, not the page.
 
 - **`customer`.** Rust: `ListPaymentIntentsParams`,
   `ListCheckoutSessionsParams`, `ListRefundsParams` each gain
@@ -239,13 +243,23 @@ row, the out-of-band `invoices.pay`, and `customer` added to the three
 
 The bottom of `docs/sdks/parity.md` is a list of standing gaps, with closed
 ones **struck through and dated** rather than deleted. Open entries as of
-2026-09-16 include: no CI-gated real-OP conformance for the Node assertion;
+2026-09-23 include: no CI-gated real-OP conformance for the Node assertion;
 `token_type` not validated on the Rust token response; `invalidate()` with no
 compare-and-swap; no retry policy beyond the single 401; `request-id` not
 surfaced; `stripe-should-retry` not read; the browser package never run against
-a live stack; the popup surface never driven by a real browser; and, for the
-Flutter plugin, that none of its `just` recipes is in `just ci` and that iOS
-and macOS are compiled by nobody.
+a live stack; the popup surface never driven by a real browser; for the
+Flutter plugin, that none of its `just` recipes is in `just ci`; and, since
+2026-09-22, the Tauri plugin's five (no gate compiles its Rust/Kotlin/Swift,
+iOS cannot reach `stopUrlReached`, desktop has no dismissal signal, no deep
+link ever observed, Chrome declined the partial Custom Tab).
+
+**The ledger's "iOS and macOS hosts … compiled by nobody" line is stale for
+iOS and nobody has struck it** (as of `b747e5d5`). The Flutter table's own
+row was narrowed on 2026-09-16 — the iOS host was built and driven on an
+iOS Simulator that day — and `docs/status/mobile-flutter-plugin.md` was
+corrected on 2026-09-20; only macOS is still compiled by nobody. Trust the
+table row over the ledger line. _(This page repeated the ledger's wording
+until 2026-09-23.)_
 
 Keep the strikethroughs. They are the only signal a reader has about which
 sentences on the page have been checked recently.

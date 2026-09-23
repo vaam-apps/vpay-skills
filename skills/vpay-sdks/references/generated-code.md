@@ -1,14 +1,17 @@
 # Generated code in this repository, and how to regenerate it
 
-_Verified against vpay `d3a8810b` (2026-09-16). Version-sensitive claims
+_Verified against vpay `b747e5d5` (2026-09-23). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 ## There is no OpenAPI spec and no OpenAPI codegen
 
 Say this out loud before reaching for a generator. Searching the `justfile` for
-`openapi` returns nothing, and `schemas/` holds one file — `vpay.cstack`, the
-CrateStack schema that compiles into `vpay-db`, which is a _database_ schema and
-not an SDK input.
+`openapi` returns nothing, and `schemas/` holds two files as of 2026-09-23 —
+`vpay.cstack`, the CrateStack schema that compiles into `vpay-db`, which is a
+_database_ schema, and `privacy-inventory.yaml`, the personal-data
+classification `verify-privacy-inventory` checks against the migrations
+(since 2026-09-18, vpay#187). Neither is an SDK input. _(This said "one file"
+until 2026-09-23.)_
 
 **Both merchant SDKs are hand-written** against the wire contract in
 `docs/flows/merchant-auth.md` and the flow documents.
@@ -96,8 +99,11 @@ Migrations live in `examples/shop/zenstack/migrations/` with a
 are `backends/migrations/`, whose bytes are checksummed and which are
 prettier-ignored for that reason (issue #76). Do not reformat either set.
 
-Two root-`package.json` overrides exist because of this generator, and their
-dated prose in the `"//pnpm"` array explains why: `@prisma/config>deepmerge-ts`
+Two pnpm overrides exist because of this generator, and their dated prose
+explains why. ~~in the root `package.json`'s `"//pnpm"` array~~ — **moved
+2026-09-19** (vpay#217, which also pinned pnpm 11): the `overrides:` block and
+its reasons are in `pnpm-workspace.yaml` now, the reasons as `#` comments
+above it. The two: `@prisma/config>deepmerge-ts`
 (a `--prod` advisory, because `@prisma/client` is a production dependency of
 `examples/shop`) and three scoped `*>lodash` entries under `chevrotain`, which
 arrives through `zenstack > @zenstackhq/language > langium > chevrotain`. The
@@ -114,6 +120,9 @@ depend on them existing:
 - `@vpay/checkout`'s `deps` script and `examples/shop`'s `build:deps`
 - `@vpay/e2e`'s `deps` script
 - `sdks/stripe-compat`'s `deps` script
+- since 2026-09-22, `@vaam-apps/vpay-tauri-checkout`'s `deps` script (it
+  builds `@vaam-apps/vpay-stripe-js`), and `examples/tauri-checkout`'s,
+  which builds the plugin in turn
 - `just lint-web`, which depends on `build-sdk-node` — because
   `sdks/stripe-compat` imports `@vaam-apps/vpay-sdk/stripe`, whose types
   resolve through the package's `exports` map to `dist/stripe-auth.d.ts`.

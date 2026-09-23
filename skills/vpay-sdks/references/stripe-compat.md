@@ -1,6 +1,6 @@
 # Using the official Stripe SDKs against vpay
 
-_Verified against vpay `d3a8810b` (2026-09-16). Version-sensitive claims
+_Verified against vpay `b747e5d5` (2026-09-23). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 Source of record: `docs/flows/stripe-sdk-compat.md`. Evidence:
@@ -121,10 +121,20 @@ prevent.
   `ConfirmParams` has `deny_unknown_fields`, because a `400` per field a Stripe
   SDK adds of its own accord would make vpay unusable from the SDKs this work
   exists to support. `setup_future_usage`, `confirmation_method`,
-  `receipt_email`, `statement_descriptor`, `customer`, `expand` and `metadata`
-  all leave the payment as requested (`metadata` is stored; the rest dropped).
-  The line between the two halves is whether the absence is visible in the
-  response.
+  `receipt_email`, `statement_descriptor`, `expand` and `metadata` all leave
+  the payment as requested (`metadata` is stored; the rest dropped). The line
+  between the two halves is whether the absence is visible in the response.
+- ~~`customer` … dropped.~~ **Corrected 2026-09-23: `customer` on
+  `paymentIntents.create` has been accepted and _stored_ since 2026-09-06**
+  (migration `0034`, vpay `0fc5dcf`): it resolves through
+  `vpay_api::v1::customers::resolve_for_attachment`, stamps the customer's
+  retention clock, and renders back as the intent's `customer`. So it is
+  neither ignored nor harmless to copy: a `cus_…` that is not this merchant's
+  is a `400` naming `customer` (never a `404` — the uniform answer keeps it
+  from being an oracle), where Stripe would take a Stripe customer id. This
+  page listed it among the dropped fields because vpay's own
+  `docs/flows/stripe-sdk-compat.md` still does, as of `b747e5d5`; the code
+  (`CreateParams::customer`'s doc comment) is right and the flow doc is stale.
 - **`client_secret` is on `create` and `retrieve` only.** Absent from
   `confirm`, `cancel`, `list` and every webhook body. `amount_received`,
   `capture_method` and `confirmation_method` are genuinely absent although

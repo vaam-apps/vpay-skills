@@ -17,19 +17,51 @@ reproduces.
 
 ## What a vpay "version" actually is
 
-**There is none, in the usual sense.** As of 2026-09-16:
+~~**There is none, in the usual sense.** As of 2026-09-16: `Cargo.toml`'s
+workspace `version` is `0.1.0` and has never moved; the repository carries
+**no release tags**; images are published by digest and by `github.sha`.~~
 
-- `Cargo.toml`'s workspace `version` is `0.1.0` and has never moved.
-- The repository carries **no release tags** — the only tags are two working
-  refs from a rebase.
-- Images are published by digest and by `github.sha`.
+**Corrected 2026-09-23 — vpay has real releases now, and has since
+2026-09-17.** That paragraph was true when it was written and stopped being
+true the next day. Measured against vpay `b747e5d5`:
 
-So a vpay version is **a commit**, and the only honest way to date a claim is
-the calendar. That is not a workaround; it is why vpay's own documents are
-written the way they are, in dated sentences like "the one shipping binary
-since 2026-09-07 (issue #77)" and "this said X until date Y and was wrong".
+- **Nine release tags**, `v0.1.1` (2026-09-17) through `v0.5.0`
+  (2026-09-23), every one on `master`. They are cut by release-please
+  (`release-please.yml`, since vpay#201, 2026-09-17) from Conventional-Commit
+  history, and they are **lightweight** tags — `git cat-file -t v0.5.0` says
+  `commit`.
+- `Cargo.toml`'s workspace `version` is `0.5.0`, and release-please moves all
+  twenty-four annotated version lines together (`cargo xtask verify-versions`
+  fails if one disagrees) — the SDKs, the Flutter and Tauri plugins and the
+  Helm chart carry the same number.
+- A `v*` tag makes `release.yml` publish images under the version and its
+  `major.minor` (`0.5.0`, `0.5`) beside `sha-<40 hex>`; a push to `master`
+  publishes `edge`.
 
-**Follow that convention here.** It is the whole mechanism.
+**So a vpay version is still a commit for the purpose of stamping, and the
+calendar is still how a claim is dated** — but for reasons that survive the
+tags, not because there are none:
+
+- **Skills are verified against `master`, which is between tags most of the
+  time.** `b747e5d5`, the commit this correction was verified against, is four
+  commits after `v0.5.0` and in no release (`git describe --tags b747e5d5` →
+  `v0.5.0-4-gb747e5d`). A tag-only stamp could not name the tree that was read.
+- **A commit on `master` cannot move; a lightweight tag can** be deleted or
+  re-pointed with no trace in history. The gate's `merge-base --is-ancestor`
+  check is only as stable as the ref it is given.
+- **A reader's checkout is between tags as well.** A dated claim ("since
+  2026-09-17") answers them directly; a tag answers them only after they work
+  out which tag contains their commit.
+
+What the tags **do** buy is a human-readable anchor. When a stamp or a
+changelog entry is written, it is fine — and useful — to say where the commit
+sits: "vpay `b747e5d5` (after `v0.5.0`)". `git describe --tags <commit>` gives
+that in one line, and `git tag --contains <commit>` tells a reader which
+releases include a claim's commit. The machine-checked stamp stays the commit.
+
+vpay's own documents are written the same way, in dated sentences like "the
+one shipping binary since 2026-09-07 (issue #77)" and "this said X until date
+Y and was wrong". **Follow that convention here.** It is the whole mechanism.
 
 ## The three rules
 
@@ -115,7 +147,11 @@ belief they were about to form.
 
 This repository tags a release whenever a batch of skills is re-verified against
 a newer vpay. A tag is named for the **date of verification and the vpay commit
-it was verified against**, not for a vpay version that does not exist:
+it was verified against** — not for a vpay release tag, because the commit
+verified against is usually between two of them (see above). ~~…not for a vpay
+version that does not exist~~ _(corrected 2026-09-23: vpay has had release
+tags since 2026-09-17)_. A `CHANGELOG.md` entry may name the nearest vpay tag
+beside the commit:
 
 ```text
 v2026-09-16-f063ee96

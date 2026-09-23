@@ -134,9 +134,12 @@ exist there yet. That is not a bug; it is the tool telling you these skills are
 newer than that tree.
 
 Inside the prose, the mechanism is **dated claims** — "one shipping binary since
-2026-09-07 (issue #77); it was two before that". vpay has no release tags and
-its workspace version has never moved off `0.1.0`, so a commit and a date are
-the only honest version identity available.
+2026-09-07 (issue #77); it was two before that". vpay has had release tags
+since 2026-09-17 (`v0.1.1` through `v0.5.0` as of 2026-09-23), but skills are
+verified against `master` between them, so a commit and a date are still the
+precise version identity. See [VERSIONING.md](VERSIONING.md). _(This said
+"vpay has no release tags and its workspace version has never moved off
+`0.1.0`" until 2026-09-23, and had been wrong since 2026-09-17.)_
 
 Full policy, release naming, and how to write a version-sensitive claim:
 [VERSIONING.md](VERSIONING.md). What changed between releases, including any
