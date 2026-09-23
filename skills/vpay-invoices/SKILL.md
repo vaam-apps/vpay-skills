@@ -5,7 +5,7 @@ description: vpay's Invoice and invoice-line objects — the nineteen-key wire s
 
 # Invoices and invoice items
 
-> **Verified against vpay `0799a8d2` (2026-09-18).** Version-sensitive claims below
+> **Verified against vpay `7997536b` (2026-09-23).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -33,7 +33,8 @@ dunning, no subscription, no partial payment, no dashboard screen, and
 > **Proposed on 2026-09-23, not built:** RFC-0004 (billing on top of
 > invoices: products and prices, subscriptions, pending invoice items, manual
 > payments, taxes, coupons, PDFs), RFC-0005 (prepaid customer balances) and a
-> usage-metering service brief, all in vaam-apps/vpay#244 and all **Draft**
+> usage-metering service brief, merged by vaam-apps/vpay#244 as `7997536b`
+> (`docs/rfc/0004…`, `0005…`, `docs/plans/2026-09-23-metering-service.md`), all **Draft**
 > with open questions. Every item in the list above is still true. Do not
 > implement one of those features from the RFC as though it were decided,
 > and do not describe any of it in the present tense. The list of what the

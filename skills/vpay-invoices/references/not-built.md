@@ -181,7 +181,9 @@ corrections in the flow docs rather than in the files.
 
 ## Proposed, not built: RFC-0004 and RFC-0005 (2026-09-23)
 
-vaam-apps/vpay#244 proposes closing most of this page. **Nothing in it is built
+vaam-apps/vpay#244 (merged as `7997536b`) proposes closing most of this page,
+in `docs/rfc/0004-billing-on-top-of-invoices.md` and
+`docs/rfc/0005-prepaid-customer-balances.md`. **Nothing in it is built
 or decided as of 2026-09-23.** Each RFC is Draft, and each ends with numbered
 open questions that name who owns them. Until an RFC is accepted and its
 code lands, every gap above stands.

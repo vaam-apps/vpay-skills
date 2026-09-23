@@ -43,7 +43,10 @@ canceled                 –      –              –                  –
 ```
 
 `–` is `None`, which means **"that request is not legal from that status"** —
-it does **not** mean the intent is stuck. `processing → succeeded` is a real
+it does **not** mean the intent is stuck. _(Corrected 2026-09-23: the
+settlement also lands straight on `requires_action` and on
+`requires_payment_method`, per `SETTLEABLE_STATUSES` in
+`vpay_db::payment_intents`, not only on `processing`.)_ `processing → succeeded` is a real
 edge; it is just not a _merchant verb_, so it is not in this table.
 
 Two `None`s that surprise people:
