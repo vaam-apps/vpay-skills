@@ -234,8 +234,11 @@ rather than repeating either number.
 
 `Sec-Fetch-Site` is not merely "a pre-2020 browser" question — **Safari has
 sent it only since 16.4 (March 2023)**, so this surface answers `403` to every
-older WebKit. That costs nothing while nothing calls it, and is a decision for
-whatever eventually does.
+older WebKit. ~~That costs nothing while nothing calls it~~ (true until
+2026-09-12). Since the payments screens began making their reads after the
+first render through it, it means, by the code's own logic, that on a Safari
+older than 16.4 those screens render their first page but their paging and
+refetches are refused. Nobody has measured it in such a browser.
 
 ### Browser evidence
 
