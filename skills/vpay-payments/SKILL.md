@@ -250,6 +250,14 @@ can express. (`vpay-invoices` owns the resource; this is the state rule.)
 Full tables, the charge lifecycle, the crash-safety ordering rule and the
 failure taxonomy: [references/state-machines.md](references/state-machines.md).
 
+**Proposed, not built (2026-09-23):** vaam-apps/vpay#244's Draft RFCs would
+add three things: new writers of `paid` (out-of-band payments, and in RFC-0005
+a prepaid balance applied at finalize); a statement matcher that calls the
+ordinary settlement transaction (RFC-0007); and a router choosing between
+rails (RFC-0008). **Each keeps one charge per intent.** RFC-0008 explicitly
+refuses to retry a declined intent on another rail. None of it exists. See
+`vpay-invoices` and `vpay-provider-adapters`.
+
 ## Status, as of 2026-09-16
 
 The state functions, `Money`, the failure taxonomy and the settlement

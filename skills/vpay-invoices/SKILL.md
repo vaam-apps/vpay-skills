@@ -30,6 +30,15 @@ e-mail, no hosted invoice page, no tax, no discount, no credit note, no
 dunning, no subscription, no partial payment, no dashboard screen, and
 `amount_refunded` is `0` on every invoice in every deployment.
 
+> **Proposed on 2026-09-23, not built:** RFC-0004 (billing on top of
+> invoices: products and prices, subscriptions, pending invoice items, manual
+> payments, taxes, coupons, PDFs), RFC-0005 (prepaid customer balances) and a
+> usage-metering service brief, all in vaam-apps/vpay#244 and all **Draft**
+> with open questions. Every item in the list above is still true. Do not
+> implement one of those features from the RFC as though it were decided,
+> and do not describe any of it in the present tense. The list of what the
+> RFCs would change is in [references/not-built.md](references/not-built.md).
+
 > **The reason `amount_refunded` is `0` changed on 2026-09-16, and the new one
 > is narrower.** ~~No vpay rail can refund, and `POST /v1/refunds` is
 > unrouted.~~ All five `/v1/refunds` routes are mounted now (RFC-0003 § 2),
