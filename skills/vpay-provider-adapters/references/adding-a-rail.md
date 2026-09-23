@@ -1,6 +1,6 @@
 # Adding a rail
 
-_Verified against vpay `d3a8810b` (2026-09-16). Version-sensitive claims
+_Verified against vpay `b747e5d5` (2026-09-23). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 The canonical checklist is `docs/flows/provider-port.md` § "Adding a rail".
@@ -86,6 +86,31 @@ the root `Cargo.toml` and to `[workspace.dependencies]`.
 The pure-function split matters because it is what the crate's own unit tests
 assert row by row, and the conformance suite then proves the same rows arrive
 over a real socket.
+
+## 3b. `payer_fields` — what the payer types, declared once
+
+Added 2026-09-16 (vpay#186). This page did not have the step until
+2026-09-23, and `docs/flows/provider-port.md` still does not. If the payer
+types something vpay forwards to the rail, as a push rail's MSISDN is,
+override `ProviderAdapter::payer_fields` with a `const &[PayerField]`: name,
+kind, `required`, `label_key`. `vpay_adapter_mtn_momo`'s `PAYER_FIELDS` is
+the one example. A rail that collects nothing, as a redirect rail does, keeps
+the default `&[]`. Do not override it to return `&[]` explicitly.
+
+What reads it, so you know what a wrong declaration breaks:
+
+- `vpay_api::v1::payer_fields` validates every `confirm`'s
+  `payment_method_data[<code>][…]` against it. An undeclared key is a `400`
+  naming the key. A `Phone` field is parsed and canonicalised for its `region`
+  before `submit` runs. **Steering numbers in your integration tests and demo
+  mappings must therefore be valid numbers in that region**, or vpay refuses
+  them before your rail sees them. `requesttopay.json`'s move from
+  `237600000400` to `237670000400` is the precedent.
+- `vpay_api::browser::checkout_sessions::build_rails` puts it in the payer
+  surface's `RailSpec.fields`, beside `flow` and the deployment's optional
+  `providers[].display_name`.
+- The value is a fact about the rail's product, never read from
+  `ProviderConfig`. `PayerFieldKind::Phone`'s `region` doc says why.
 
 ## 4. A mapping table into the failure taxonomy
 

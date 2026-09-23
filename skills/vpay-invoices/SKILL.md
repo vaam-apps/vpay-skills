@@ -5,7 +5,7 @@ description: vpay's Invoice and invoice-line objects — the wire shape (twenty-
 
 # Invoices and invoice items
 
-> **Verified against vpay `7997536b` (2026-09-23).** Version-sensitive claims below
+> **Verified against vpay `b747e5d5` (2026-09-23).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -23,11 +23,14 @@ is 16 cases, `vpay-db`'s `tests/repositories.rs` adds 10, `postgres_smoke.rs`
 pins the multi-column CHECK inventory). Both merchant SDKs ship 13 methods each
 with a live suite against a real `vpay-server`.
 
-**Since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged in vaam-apps/vpay#251): manual
-payments** — migration `0049`, `manual_payments` (`mp_…`), two new object
-keys, a second writer of `paid` and `invoice.paid`, nothing on the ledger. On an
-older `master` none of it exists. On the branch, 2026-09-23: `invoices.rs` 29
-cases, 29 passed, 0 ignored; `tests/repositories.rs` twelve on invoices.
+**Since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged in vaam-apps/vpay#251 as
+`b747e5d5`, 2026-09-23): manual payments** — migration `0049`,
+`manual_payments` (`mp_…`), two new object keys, a second writer of `paid` and
+`invoice.paid`, nothing on the ledger. On an older `master` none of it exists.
+Counted from source at `b747e5d5`: `invoices.rs` has **29** `#[tokio::test]`
+cases (16 above is the 2026-09-16 figure), and `tests/repositories.rs` has
+**twelve** on invoices (ten at `7997536b`). The run on the PR branch the same
+day was 29 passed and 0 ignored. That run was not repeated for this page.
 [§ Paid out of band](#paid-out-of-band--a-statement-not-a-payment).
 
 **The "What is not built" list is the whole reason the flow page exists** —
@@ -255,10 +258,20 @@ filled `out_of_band_payment` on the out-of-band writer's.
 > **`invoice.*` webhook bodies carry `lines.data` EMPTY**, while
 > `GET /v1/invoices/{id}` carries them. Deliberate: the body is rendered inside
 > the transaction that wrote the row, and reading the lines there would put a
-> second query on a connection holding the sequence row's lock. Three sites
+> second query on a connection holding the sequence row's lock. ~~Three sites
 > render `InvoiceObject::render(&row, &[], None)` — `vpay_api::v1::invoices`'
 > transition writer, its create, and
-> `vpay_worker::handlers::invoice_snapshot`.
+> `vpay_worker::handlers::invoice_snapshot`.~~ **Corrected 2026-09-23:** two
+> production sites render with empty lines. One is
+> `vpay_api::v1::invoices::write_with_event`, which the create, the
+> transitions and the out-of-band `pay` all go through. The other is
+> `vpay_worker::handlers::invoice_snapshot`, the settlement's `invoice.paid`.
+> The create and the transitions were one site at `7997536b` too. Since step A
+> the call takes a fourth argument, the out-of-band record:
+> `render(&row, &[], None, record.as_ref())` in `write_with_event` and
+> `render(&row, &[], None, None)` in the worker. The worker's `None` is
+> exact, not assumed: `paid_out_of_band_means_paid` makes an `open` row's
+> flag `false`.
 
 `invoice.marked_uncollectible` and `invoice.payment_failed` are Stripe types
 vpay **does not emit** — neither is in the vocabulary, because nothing writes

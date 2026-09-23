@@ -1,10 +1,11 @@
 # The state machines
 
-_Verified against vpay `d3a8810b` (2026-09-16). Version-sensitive claims
+_Verified against vpay `b747e5d5` (2026-09-23). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 Every enum below is in `backends/crates/vpay-core/src/state.rs` except
-`FailureCode`, which is `failure.rs`. Verified **2026-09-16**.
+`FailureCode`, which is `failure.rs`. Verified **2026-09-23** (it said
+2026-09-16; no enum changed in between).
 
 Each enum carries the same three things, and the pattern is worth copying if
 you add one: `ALL` (so an exhaustive test can be written once over the list
@@ -165,8 +166,15 @@ writes the row, so the CHECK is what answers `409 over_refund`.
 
 ```text
 draft ──finalize──> open ──> paid | void | uncollectible
-  └────void────> void        (also: DELETE, which removes it entirely)
+  └── DELETE, which removes it entirely
 ```
+
+_(Corrected 2026-09-23: this diagram was copied from `vpay_core::InvoiceStatus`'s
+doc comment and drew a `draft ──void──> void` edge. That edge does not exist.
+`void_in_tx`'s `WHERE` names `'open'` alone, `number_is_assigned_at_finalize`
+would refuse a numberless voided row, and a draft is deleted instead. The
+SKILL page and `vpay-invoices` already said so. The doc comment in
+`state.rs` is still wrong at `b747e5d5`.)_
 
 | Value           | Meaning                                                                                                                                                                                                                                  |
 | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -239,19 +247,21 @@ this build cannot name never turns a merchant's `GET` into a `500`.
 
 ## Where the state lives, versus where it is enforced
 
-| Invariant                                        | Enforced by                                                                                                 |
-| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
-| legal intent transition                          | `next_status` **and** a compare-and-swap `UPDATE ... WHERE status = …`                                      |
-| one charge per intent                            | `CREATE UNIQUE INDEX one_charge_per_intent` (migration `0004`)                                              |
-| one invoice per intent                           | the same device, migration `0036`                                                                           |
-| `paid` implies nothing remaining                 | `paid_means_nothing_remaining` CHECK (migration `0036`)                                                     |
-| no over-refund                                   | `no_over_refund` CHECK (migration `0003`) — reachable from `POST /v1/refunds` since 2026-09-16              |
-| a refund the rail already has is not cancellable | `NOT EXISTS (… provider_requests … 'refund')` in the cancel statement (2026-09-16)                          |
-| a ledger transaction balances, per currency      | `vpay_ledger::Transaction::validate()`, called by `vpay_db::ledger::post_in_tx` before any statement        |
-| a `merchant_id` iff `merchant_payable`           | `ledger_entries_merchant_id_iff_merchant_payable` CHECK (migration `0045`) **and** `AccountKind`'s sum type |
-| non-negative amounts                             | four CHECKs on `payment_intents`, plus `Money::new`                                                         |
-| `supports_partial_refunds ⇒ supports_refunds`    | `Capabilities::is_coherent` in Rust **and** `partial_refunds_imply_refunds` CHECK (migration `0002`)        |
-| event type is in the vocabulary                  | `type_is_a_documented_event` CHECK (migration `0039`)                                                       |
+| Invariant                                        | Enforced by                                                                                                  |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------ |
+| legal intent transition                          | `next_status` **and** a compare-and-swap `UPDATE ... WHERE status = …`                                       |
+| one charge per intent                            | `CREATE UNIQUE INDEX one_charge_per_intent` (migration `0004`)                                               |
+| one invoice per intent                           | the same device, migration `0036`                                                                            |
+| `paid` implies nothing remaining                 | `paid_means_nothing_remaining` CHECK (migration `0036`)                                                      |
+| no over-refund                                   | `no_over_refund` CHECK (migration `0003`) — reachable from `POST /v1/refunds` since 2026-09-16               |
+| a refund the rail already has is not cancellable | `NOT EXISTS (… provider_requests … 'refund')` in the cancel statement (2026-09-16)                           |
+| a ledger transaction balances, per currency      | `vpay_ledger::Transaction::validate()`, called by `vpay_db::ledger::post_in_tx` before any statement         |
+| a `merchant_id` iff `merchant_payable`           | `ledger_entries_merchant_id_iff_merchant_payable` CHECK (migration `0045`) **and** `AccountKind`'s sum type  |
+| non-negative amounts                             | four CHECKs on `payment_intents`, plus `Money::new`                                                          |
+| `supports_partial_refunds ⇒ supports_refunds`    | `Capabilities::is_coherent` in Rust **and** `partial_refunds_imply_refunds` CHECK (migration `0002`)         |
+| event type is in the vocabulary                  | `type_is_a_documented_event` CHECK (migration `0039`)                                                        |
+| a `paid` invoice names how it was paid           | `paid_names_how` and `paid_out_of_band_means_paid` CHECKs (migration `0049`, 2026-09-23)                     |
+| an out-of-band payment is never refunded         | `paid_out_of_band_is_never_refunded` CHECK (`0049`) **and** `AND NOT paid_out_of_band` in the refund counter |
 
 The pattern: a rule that a concurrent writer could violate lives in the
 **statement or the index**, and a Rust guard beside it is at best a nicer error

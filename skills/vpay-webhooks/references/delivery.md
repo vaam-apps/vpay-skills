@@ -1,6 +1,6 @@
 # The outbox, the ladder, and the deliverer
 
-_Verified against vpay `d3a8810b` (2026-09-16). Version-sensitive claims
+_Verified against vpay `b747e5d5` (2026-09-23). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 All of it in `vpay_worker::webhooks`, run by the job loop in `vpay-server`'s
@@ -142,7 +142,20 @@ grammar, you are changing four things: the signer, both verifiers, and
 **state row read by humans**, not a log. That is why the response excerpt is
 512 characters of something recognisable rather than a full body.
 
-## Status, as of 2026-09-16
+**The excerpt is personal data, and an erasure rewrites it.** A receiver that
+echoes what it was sent has put the payer's details in it. Since 2026-09-19
+(vaam-apps/vpay#211) a customer erasure replaces `response_excerpt` with
+`[redacted]` on **every** delivery of that payer's `customer.*` events,
+terminal ones included. Since 2026-09-23 (#251) it does the same for the
+`invoice.*` deliveries whose body carries an out-of-band `reference`
+(`vpay_db::customers`, `redact_stored_copies` and
+`redact_out_of_band_references`). A runbook or tool that reads excerpts must
+therefore expect `[redacted]` in them. A new column that stores a copy of a
+merchant's response needs its own erasure statement:
+`an_erasure_leaves_no_payer_identifier_in_any_column_of_any_table` is the
+test that fails if it lacks one.
+
+## Status, as of 2026-09-23 (unchanged since 2026-09-16)
 
 - Signing, both ladders, the outbox, `webhook_deliveries`, the SSRF guard and
   the SDK verifiers: real, tested, with the Node SDK's signature parity checked

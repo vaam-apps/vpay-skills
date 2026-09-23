@@ -1,11 +1,12 @@
 # The conformance suite
 
-_Verified against vpay `d3a8810b` (2026-09-16). Version-sensitive claims
+_Verified against vpay `b747e5d5` (2026-09-23). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 `backends/tests/conformance/` — package `vpay-tests-conformance`, one test
 file (`tests/adapter_conformance.rs`, ~3 250 lines as of 2026-09-16 — it was
-~2 400 before the refund family landed) and one mappings directory per rail
+~2 400 before the refund family landed; 3 256 lines, unchanged, at
+`b747e5d5`) and one mappings directory per rail
 under `wiremock/`.
 
 ## The rule
@@ -21,7 +22,9 @@ Nothing in it is `#[ignore]`d. `just verify-ignored` holds the count at
 **zero** for this suite, so an ignored test here would be hiding a regression
 rather than declaring an absence. **67 tests, 67 passed, 0 skipped as of
 2026-09-16** (`docs/status/verification/2026-09-16-w3-merge.md`); it was 54 on
-2026-09-15, before the refund-destination and refund-wire families.
+2026-09-15, before the refund-destination and refund-wire families. The test
+file has not changed since, through `b747e5d5`, and the suite was not re-run
+for this page. Only mappings moved (below).
 
 ## No `if rail == …` in a test body
 
@@ -74,6 +77,14 @@ adding one mappings directory rather than editing the test file.
 | `REF_REDIRECT`    | `…0302`         | answer the **submit** `307` with `Location: REDIRECT_TARGET`, **and** stub that path with the rail's _accepted_ answer                                                                                                                                                                                                 |
 | `REF_HUGE`        | `…0b16`         | answer the status query `200` with a valid body padded past `MAX_RAIL_BODY_BYTES` (256 KiB)                                                                                                                                                                                                                            |
 | decline block     | `…0f01…`        | one reference per documented failure reason in your `mapping.rs`                                                                                                                                                                                                                                                       |
+
+**These UUIDs steer the adapter directly and are unaffected by payer
+validation.** An MSISDN a mapping matches for an _integration_ or demo path,
+through `POST /v1/payment_intents/{id}/confirm`, has had to be a valid
+Cameroon mobile number since 2026-09-16. `vpay_api::v1::payer_fields` refuses
+a documentation number such as `237600000400` with vpay's own `400` first. So
+MTN's `requesttopay.json` decline row matches `237670000400`. Keep a mapping
+that proves a _rail's_ decline on a number vpay will let through.
 
 Plus one `ProviderConfig` whose credentials are wrong (`Credentials::Rejected`
 in `start`), and a mapping answering it `401`, to prove a credential failure

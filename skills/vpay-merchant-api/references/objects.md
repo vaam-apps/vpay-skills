@@ -1,6 +1,6 @@
 # Wire objects
 
-_Verified against vpay `d3a8810b` (2026-09-16). Version-sensitive claims
+_Verified against vpay `b747e5d5` (2026-09-23). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 Every wire DTO lives in one module: `vpay_api::model`
@@ -10,16 +10,23 @@ separate `Deserialize` structs in each `v1::*` handler module.
 
 ## The rule that governs every object here
 
-**There is no `#[serde(skip_serializing_if)]` in this module**, deliberately.
-Every key is present on every render, so an SDK can model a field as
+**`#[serde(skip_serializing_if)]` is the exception in this module, never the
+default**, deliberately. Every other key is present on every render, so an SDK can model a field as
 _required and nullable_ and an absent key never means "unknown". `name: null`
 on an `account_holder` is a **meaningful answer** — "the rail does not know
 this number" — which an omitted key could not express.
 
-Two exceptions, both argued in place:
+The module header says there is none "anywhere below". There are **four**
+sites, all on the payer surface or an erased customer, each argued in place:
 
 - `CheckoutSessionForPayer::merchant` — present only on the payer surface;
+- `RailSpec::display_name`, and both of `RailDisplayName`'s `en`/`fr` — the
+  payer surface's per-rail descriptor, since 2026-09-16 (vpay#186); omitted
+  when the deployment configured no name, "matching `merchant`'s convention";
 - `CustomerObject::deleted` — present only on an erased customer.
+
+_(This said "two exceptions" until 2026-09-23. The `RailSpec` pair postdates
+the `d3a8810b` stamp.)_
 
 If you add a field, add it unconditionally. `cargo xtask verify-serde` checks
 the _naming_ convention (snake_case on the wire, with a table of exemptions in
@@ -33,20 +40,20 @@ breaks its tripwire test on purpose** — update the count and the SDKs together
 `vpay_core::ids` owns all of them, with `is_well_formed(prefix, id)` and a
 minting function per type.
 
-| Prefix  | Object                                                                                                                                                           |
-| ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `pi_`   | PaymentIntent                                                                                                                                                    |
-| `ch_`   | Charge (internal — never on the wire)                                                                                                                            |
-| `re_`   | Refund                                                                                                                                                           |
-| `evt_`  | Event                                                                                                                                                            |
-| `cs_`   | CheckoutSession                                                                                                                                                  |
-| `cus_`  | Customer                                                                                                                                                         |
-| `in_`   | Invoice                                                                                                                                                          |
-| `ii_`   | InvoiceItem                                                                                                                                                      |
-| `stf_`  | Staff member                                                                                                                                                     |
-| `cred_` | Credential                                                                                                                                                       |
-| `lt_`   | Ledger transaction (internal — never on the wire; added 2026-09-15)                                                                                              |
-| `mp_`   | Manual (out-of-band) payment — on the wire only as `invoice.out_of_band_payment.id`; since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged in vaam-apps/vpay#251) |
+| Prefix  | Object                                                                                                                                                                       |
+| ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pi_`   | PaymentIntent                                                                                                                                                                |
+| `ch_`   | Charge (internal — never on the wire)                                                                                                                                        |
+| `re_`   | Refund                                                                                                                                                                       |
+| `evt_`  | Event                                                                                                                                                                        |
+| `cs_`   | CheckoutSession                                                                                                                                                              |
+| `cus_`  | Customer                                                                                                                                                                     |
+| `in_`   | Invoice                                                                                                                                                                      |
+| `ii_`   | InvoiceItem                                                                                                                                                                  |
+| `stf_`  | Staff member                                                                                                                                                                 |
+| `cred_` | Credential                                                                                                                                                                   |
+| `lt_`   | Ledger transaction (internal — never on the wire; added 2026-09-15)                                                                                                          |
+| `mp_`   | Manual (out-of-band) payment — on the wire only as `invoice.out_of_band_payment.id`; since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged in vaam-apps/vpay#251, 2026-09-23) |
 
 Also in `ids`: `CLIENT_SECRET_INFIX` (`_secret_`), `client_secret_suffix()`
 (160 bits from the OS CSPRNG), `client_secret(id, suffix)`, and
@@ -72,7 +79,11 @@ Also in `ids`: `CLIENT_SECRET_INFIX` (`_secret_`), `client_secret_suffix()`
 | `livemode`             | boolean                 |                                                        |
 
 `PaymentIntentWithSecret` is the same object `#[serde(flatten)]`ed plus
-`client_secret` — twelve keys plus one. It is returned by `create`, `confirm`
+`client_secret` — **thirteen** keys plus one, as the table above lists and
+`the_browser_wrapper_is_the_thirteen_keys_plus_the_client_secret` pins.
+_(This said "twelve keys plus one" until 2026-09-23. `customer` became the
+thirteenth on 2026-09-06 (S4a). `model.rs`'s own doc comments on
+`PaymentIntentWithSecret` and `ExpandableIntent` still say "twelve".)_ It is returned by `create`, `confirm`
 and the browser reads; the plain object is what a list renders.
 
 `NextAction` is `#[serde(tag = "type")]` with exactly one variant today:
@@ -205,7 +216,10 @@ a `url` of `/v1/invoice_items` — a route that exists — rather than Stripe's
 `marked_uncollectible_at`, all Unix seconds or null.
 
 `hosted_invoice_url` and `payment_intent` are `null` until
-`POST /v1/invoices/{id}/pay`.
+`POST /v1/invoices/{id}/pay` mints an intent. An out-of-band `pay`
+(2026-09-23) sets neither. An invoice paid out of band therefore carries
+`null`, or the canceled earlier attempt's intent and URL, which stay attached
+(ADR-0024 D15). Neither is evidence of a rail payment. _(Added 2026-09-23.)_
 
 **The four `invoice.*` webhook bodies carry `lines.data` EMPTY** while this
 object always carries them — a real, deliberate difference between what a

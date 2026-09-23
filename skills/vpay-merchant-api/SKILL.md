@@ -5,7 +5,7 @@ description: The vpay HTTP surface — the /v1 merchant API, its route tables, O
 
 # The vpay HTTP surface
 
-> **Verified against vpay `0799a8d2` (2026-09-18).** Version-sensitive claims below
+> **Verified against vpay `b747e5d5` (2026-09-23).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -22,19 +22,42 @@ Four nests, one router function: `vpay_api::router` in
 | `/dash/v1`    | the staff dashboard | staff session → authorization code      |
 
 `/livez` and `/metrics` are on a **different port** (`vpay_api::observability`)
-and deliberately not on this router. `/healthz` is, and is the one response in
-the crate that is not an error envelope — it answers bare text.
+and deliberately not on this router. `/healthz` is, and answers bare text
+rather than an error envelope. ~~It is the one response in the crate that is
+not an error envelope.~~ _(Corrected 2026-09-23: there are others —
+`/v1/oauth/token`'s RFC 6749 body, and axum's `405` and tower-http's `413`;
+see [references/errors.md](references/errors.md).)_
 
 `/dash/v1` belongs to the `vpay-dashboard` skill; the table here lists it for
 completeness.
 
+**Which nests a process mounts depends on `deployment.surfaces`**, since
+2026-09-16 (ADR-0022, vpay#183; the ADR's status is still _Proposed_). This
+page did not say so until 2026-09-23. `business` mounts `/v1`, `/v1/browser`,
+`/provider` and `POST /v1/oauth/token`. `management` mounts `/dash/v1` and the
+staff routes. Either surface mounts `/v1/oauth`'s discovery and JWKS, and
+`/healthz` is always mounted. An absent key means both surfaces
+(`EnabledSurfaces::ALL`), and an empty list is a boot error. A nest the
+process does not mount gets the outer honest `404`, not a refusal. So a
+`404 unknown_route` from a pod can mean "wrong tier" as well as "no such
+route".
+
 ## Routes are rows in a table, not calls to `.route()`
 
-`V1_ROUTES` (`vpay_api::v1`), `BROWSER_ROUTES` (`vpay_api::browser`),
-`DASH_ROUTES` (`vpay_api::dash`) and `STAFF_ROUTES` (`vpay_api::staff`) are
-`const` slices, and each router is **folded from its table**. The table is the
-router's source, not documentation of it — so **adding a route means adding a
-row** with its `path`, its `methods` and its `mount` closure.
+`V1_ROUTES` (`vpay_api::v1`), `BROWSER_ROUTES` (`vpay_api::browser`) and
+`DASH_ROUTES` (`vpay_api::dash`) are `const` slices, and each of those routers
+is **folded from its table**. The table is the router's source, not
+documentation of it — so **adding a route means adding a row** with its
+`path`, its `methods` and its `mount` closure.
+
+~~…and `STAFF_ROUTES` (`vpay_api::staff`) are `const` slices, and each router
+is folded from its table.~~ **Corrected 2026-09-23:** `STAFF_ROUTES` is a
+`(path, methods)` list with **no** mount closure, kept **beside**
+`staff::routes()`, which builds its eight `.route(…)` calls inline. It was
+the same at `d3a8810b`. Its own test checks only that it has eight entries.
+So a staff route added to `routes()` and not to the table mounts without
+complaint and escapes the boundary walk that reads the table. Add it in both
+places.
 
 `methods` is carried beside the handler because axum 0.8 cannot enumerate a
 built `Router`. Two tests walk the tables rather than a hand-kept copy:
@@ -116,11 +139,15 @@ not `ApiError`: [references/errors.md](references/errors.md).
 Every `POST` under `/v1` **requires** an `Idempotency-Key`; a missing one is a
 `400` naming `idempotency_key`, not a generated fallback. A key the server
 invented would differ on every attempt, so a timed-out create would take the
-payment twice. `DELETE /v1/customers/{id}` needs one too.
+payment twice. Every `DELETE` needs one too — on `/v1/customers/{id}`,
+`/v1/invoices/{id}` and `/v1/invoice_items/{id}` (this named only the first
+until 2026-09-23).
 
 Do not hand-roll the claim/finish dance — reuse `PostRequest` from
 `vpay_api::v1::payment_intents` (`pub(crate)`), which every `/v1` write already
-goes through. [references/idempotency.md](references/idempotency.md).
+goes through. Pick its `ResponseSubject` deliberately: a body that can name
+the payer must not be stored `Verbatim`, or an erasure leaves a copy behind
+for 24 hours (issue #111). [references/idempotency.md](references/idempotency.md).
 
 **On `POST /v1/refunds` the claim is the _only_ thing standing between a
 merchant's retry and a second payout.** Unlike a charge, which
@@ -184,7 +211,7 @@ There is **no OpenAPI or Swagger file in this repository.** The wire contract
 is `docs/flows/merchant-auth/resource-contract.md`, `docs/api/README.md` and
 the two SDKs.
 
-| Declared               | Where                        | Reality (2026-09-16)                                                                                                                                                                                                          |
+| Declared               | Where                        | Reality (2026-09-23)                                                                                                                                                                                                          |
 | ---------------------- | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `GET /v1/balance`      | resource-contract; both SDKs | **Unmounted.** A ledger read path exists since 2026-09-16 (`vpay_db::Ledger::merchant_payable_balance`) and **nothing routes it**; the nest's fallback answers the honest `404` rather than a body vpay would have to invent. |
 | `GET /v1/events?type=` | `docs/api/README.md`         | Route served, **filter silently ignored** — `ListParams` in `vpay_api::v1::events` has no `type` field, so a filtered call gets an unfiltered page rather than a `400`.                                                       |
@@ -217,26 +244,29 @@ Both SDKs can call `GET /v1/balance`, and it gets the honest envelope.
 
 ## Where this repository's docs are wrong
 
-Code wins in all four. Fix the doc in the same commit if you touch the area.
+Code wins in all five below (this said "all four" over a list of five until
+2026-09-23). Fix the doc in the same commit if you touch the area.
 
-- `docs/api/README.md` § "Served today" says **"thirty-one methods across
-  twenty paths"**, last re-counted on 2026-09-07. `V1_ROUTES` has **37 methods
-  across 23 paths** as of 2026-09-16 — it is missing
-  `/v1/invoices/{id}/mark_uncollectible` and the four refund methods RFC-0003
-  § 2 added, and its own increments do not add up either. (This page said
-  "33 across 21" until 2026-09-16; the refund routes are the difference.)
-- `docs/flows/merchant-auth/resource-contract.md` says "**All four** refund
-  routes are served since 2026-09-16". That counts the four RFC-0003 § 2
-  _added_ — create, update, list, cancel — beside the read that shipped on
-  2026-09-05, and reads as a total. The total is **five methods across three
-  paths**; `the_refund_resource_is_mounted_for_exactly_five_methods` is the
-  number to trust.
+- ~~`docs/api/README.md` § "Served today" says **"thirty-one methods across
+  twenty paths"**~~ and ~~`docs/flows/merchant-auth/resource-contract.md` says
+  "**All four** refund routes are served"~~. **Corrected 2026-09-23:** both
+  were fixed in vpay on 2026-09-16 (vpay#182, `d3a8810b`). This page went on
+  listing them as wrong through its `0799a8d2` stamp. The README now says
+  **thirty-seven methods across twenty-three paths**, re-counted from
+  `V1_ROUTES`, and that still matches on 2026-09-23. The resource contract
+  now says **five methods across three paths**.
+- `docs/flows/merchant-auth/resource-contract.md`'s `DELETE /v1/customers/{id}`
+  row calls it "the only `DELETE` on this API". `V1_ROUTES` has also mounted
+  `DELETE` on `/v1/invoices/{id}` and `/v1/invoice_items/{id}` since
+  2026-09-07. All three carry an `Idempotency-Key` on a verb with no body.
 - `vpay_api::browser`'s module header opens "the **two** routes a payer's
   browser may call", and `browser_checkout.rs`'s header repeats it. There are
   **five**; the assertion further down that same test file says 5 and is right.
 - `docs/flows/merchant-auth/resource-contract.md`'s resource table omits
-  `/v1/checkout/sessions`, `/v1/invoices` and `/v1/invoice_items` entirely.
-  All three are served.
+  `/v1/checkout/sessions`, `/v1/invoices` and `/v1/invoice_items`. All three
+  are served. The Checkout Session omission is deliberate: the page says so
+  and points at `hosted-checkout.md`. The invoice omission is not mentioned at
+  all.
 - The same table calls `Idempotency-Key` "caller-supplied, else a UUIDv4
   generated per call". The **server requires it**; the UUID is the SDKs'
   client-side behaviour, not a server fallback.

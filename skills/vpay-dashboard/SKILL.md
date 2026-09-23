@@ -5,7 +5,7 @@ description: The staff operator console at frontends/apps/dashboard — it is th
 
 # vpay dashboard
 
-> **Verified against vpay `0799a8d2` (2026-09-18).** Version-sensitive claims below
+> **Verified against vpay `b747e5d5` (2026-09-23).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -32,7 +32,9 @@ what makes signing out a revocation.
 
 **There is no route at `redirect_uri`, and nothing is missing.**
 `dashboard_client.redirect_uris` names `http://localhost:3000/dash/v1/callback`
-and **no browser ever visits it**. This app's own server follows the `302`, so
+in `config/application-sandbox.yml` (the base `config/application.yml` spells
+`http://localhost:8080/dash/v1/callback`; checked 2026-09-23), and **no
+browser ever visits it**. This app's own server follows the `302`, so
 that string is an identifier the two OAuth legs must spell identically —
 matched byte for byte by `ClientRegistration::allows_redirect_uri`, no prefix,
 no wildcard — and not a page. A route there would be a page nobody can reach.
@@ -89,15 +91,30 @@ read cookies.
 
 ## Pages
 
-| Route                                                 | What it does                                                                                                    |
-| ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| `/`                                                   | Redirects to `/payments` or `/login`                                                                            |
-| `/login`, `/login/totp`, `/login/password`            | Password → TOTP (a first sign-in also renders the enrolment QR and secret) → the forced password change         |
-| `/payments`, `/payments/{id}`                         | REST-backed. Status and date filters, cursor paging; the detail page adds charge, refunds, last error, timeline |
-| `/refunds`, `/deliveries`, `/customers`, `/checkouts` | Procedure-backed lists. Offset paged, no filters, no detail route yet                                           |
+| Route                                                 | What it does                                                                                                                          |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `/`                                                   | Redirects to `/payments` or `/login`                                                                                                  |
+| `/login`, `/login/totp`, `/login/password`            | Password → TOTP (a first sign-in also renders the enrolment QR and secret) → the forced password change                               |
+| `/payments`, `/payments/{id}`                         | REST-backed. Status and date filters, cursor paging; the detail page adds charge, refunds, last error, timeline                       |
+| `/refunds`, `/deliveries`, `/customers`, `/checkouts` | Procedure-backed lists. Offset paged, no filters, no detail route yet                                                                 |
+| `/signed-out`, `/healthz`                             | Route handlers, not pages: clear a dead session cookie (since 2026-09-07); "Next is answering" (since 2026-09-16, ADR-0022, vpay#183) |
 
 All four procedure-backed lists are Server Components reading through
 `readProcedurePage`, and all four share `src/components/procedure-table.tsx`.
+
+`/healthz` takes no dependency and probes nothing. Probing `/dash/v1` from it
+would take the dashboard pod's readiness down with every `vpay-server`
+rollout. Do not "improve" it into a deep health check.
+
+**A refund's events do not reach the payment detail's timeline (read from
+the code on 2026-09-23; no test covers it).** The refund writers store the
+refund's own `re_…` id as `object_id` (`vpay_api::v1::refunds::refund_event`).
+The detail read asks `Events::list_for_objects` only for the intent's id and
+the charge's (`vpay_api::dash::payment_intents`). So a refunded payment's
+timeline shows no `charge.refunded`, even though its refunds section lists the
+refund. The integration test that seems to prove otherwise seeds its
+`charge.refunded` row by hand with the charge's id, and no code path writes
+that shape (`docs/flows/dashboard/slice-1-gaps.md`, 2026-09-23).
 
 **`GET /dash/v1/payment_intents` refuses `customer` with a `400` naming it**,
 since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged in vaam-apps/vpay#251;

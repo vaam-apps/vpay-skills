@@ -1,6 +1,6 @@
 # The `/dash/v1` read seam, the token lifecycle, and the BFF
 
-_Verified against vpay `d3a8810b` (2026-09-16). Version-sensitive claims
+_Verified against vpay `b747e5d5` (2026-09-23). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 ## Two transports, one seam
@@ -35,7 +35,8 @@ spelling of the string.
 ### The `$procs` transport mounts FIVE procedures, and the code says otherwise
 
 **Docs↔code disagreement. The code wins: five are mounted.** Verified
-2026-09-16 by reading the schema, the registry and the router.
+2026-09-16 by reading the schema, the registry and the router, and again on
+2026-09-23. Step A added no procedure.
 
 `dashboard_procedure_router` in `backends/crates/vpay-db/src/schema.rs` calls
 `cratestack_schema::axum::procedure_router(..., Payments, ...)`, which mounts
@@ -78,10 +79,15 @@ landed:
    exactly one path — a `GET` on `/$procs/searchPaymentIntents`, expecting
    `405` rather than `404`, because CrateStack procedures are `POST`-only and a
    matched route answering the wrong method is the discriminator. **The other
-   four are mounted and unprobed**, and a sixth would be too. Its nineteen-table
-   half — asserting no generated model CRUD route is mounted — does still cover
-   the whole model set, and has its own note about a model declared after the
-   list was written being exactly the one nobody has proved unmounted.
+   four are mounted and unprobed**, and a sixth would be too. ~~Its
+   nineteen-table half — asserting no generated model CRUD route is mounted —
+   does still cover the whole model set~~ **Corrected 2026-09-23: it no longer
+   does.** `schemas/vpay.cstack` declares **twenty** `model`s since step A
+   (vpay#251, 2026-09-23) added `model ManualPayment`. `MODEL_TABLES` in that
+   test is still `[&str; 19]`, and `manual_payments` is not in it. The test's
+   own comment predicted this: a model declared after the list was written is
+   exactly the one nobody has proved unmounted. It is a vpay-side gap. Close
+   it there, not by editing this page.
 
 If you add a procedure, add a probe for it in that test and fix the test's
 name while you are there.
@@ -255,7 +261,7 @@ green.
 
 ## Known-stale prose
 
-Two, both verified 2026-09-16.
+Two, both verified 2026-09-16 and re-read 2026-09-23.
 
 **The "one procedure" sentences in the Rust transport are stale — five are
 mounted.** Full detail above. Code wins.
@@ -264,6 +270,11 @@ mounted.** Full detail above. Code wins.
 says the BFF is "**Two** `GET` route handlers" and quotes a suite of "22 files,
 243 tests". There are now **six** route files under `app/api/dash/`
 (`payment_intents`, `payment_intents/[id]`, `checkouts`, `customers`,
-`deliveries`, `refunds`) and the suite is **311 cases in 30 files, 0 skipped**
-per `docs/flows/dashboard/status-built-and-not-built.md`. The README's
+`deliveries`, `refunds`). The latest recorded suite figure is **311 cases in
+30 files, 0 skipped**, taken 2026-09-13 and cited in
+`docs/flows/dashboard/status-built-and-not-built.md`. On 2026-09-23 the tree
+had 31 `*.test.ts(x)` files; the suite was not re-run for this page. Since
+vpay#247 (2026-09-23) the README's struck BFF paragraph says six handlers, but
+its "Two `GET` route handlers" lead-in, its layout table ("The BFF's two route
+handlers") and its test-count comment still carry the old numbers. The README's
 _properties_ are all still right; only its counts lag.

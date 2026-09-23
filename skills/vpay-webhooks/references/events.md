@@ -1,9 +1,9 @@
 # The event vocabulary and its writers
 
-_Verified against vpay `d3a8810b` (2026-09-16). Version-sensitive claims
+_Verified against vpay `b747e5d5` (2026-09-23). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
-Verified against the code on **2026-09-16**.
+Verified against the code on **2026-09-23** (it said 2026-09-16 until then).
 
 ## Where the vocabulary lives
 
@@ -19,7 +19,8 @@ added a type:
 | `0036_create-invoices.sql`                        | the four `invoice.*` types             |
 | `0039_events-customer-created-updated.sql`        | `customer.created`, `customer.updated` |
 
-`0039` is the current one. There is no Rust enum: `vpay_db::EventRow::r#type`
+`0039` is still the current one as of 2026-09-23: `0049_manual-payments.sql`
+(step A) added no type. There is no Rust enum: `vpay_db::EventRow::r#type`
 and `vpay_api::model::EventObject::kind` are both `String`. The SDKs carry a
 `KnownEventType` for ergonomics, but the authority is the CHECK.
 
@@ -46,7 +47,7 @@ rule exists.
 | `customer.deleted`              | `vpay_db::customers::erase_idle` (retention sweep) **and** `vpay_api::v1::customers::delete_once`                              | 2026-09-06 / 2026-09-10 |
 | `invoice.created`               | `vpay_api::v1::invoices::write_with_event`                                                                                     | 2026-09-07              |
 | `invoice.finalized`             | `vpay_api::v1::invoices::write_with_event`                                                                                     | 2026-09-07              |
-| `invoice.paid`                  | `Settlement::apply_succeeded` **and**, since vpay step A, `vpay_api::v1::invoices::write_with_event` for the out-of-band `pay` | 2026-09-07 / step A     |
+| `invoice.paid`                  | `Settlement::apply_succeeded` **and**, since vpay step A, `vpay_api::v1::invoices::write_with_event` for the out-of-band `pay` | 2026-09-07 / 2026-09-23 |
 | `invoice.voided`                | `vpay_api::v1::invoices::write_with_event`                                                                                     | 2026-09-07              |
 
 ### The two with no writer
@@ -168,7 +169,7 @@ Consequences worth knowing before you add one:
 - `invoice.paid` is **not re-emitted** if a settlement lands on an invoice that
   is no longer `open` — that is a `WARN`, not a second event.
 - **`invoice.paid` has a second writer since vaam-apps/vpay step A (RFC-0004
-  §§ 5–6, merged in vaam-apps/vpay#251)**: `POST /v1/invoices/{id}/pay` with
+  §§ 5–6, merged in vaam-apps/vpay#251 on 2026-09-23)**: `POST /v1/invoices/{id}/pay` with
   `paid_out_of_band=true` writes it in the transition's own transaction. No
   vocabulary change was needed — the label has been in
   `type_is_a_documented_event` since `0036`. **A merchant tells the two apart

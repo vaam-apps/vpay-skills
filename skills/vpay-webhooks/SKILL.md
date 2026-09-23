@@ -5,7 +5,7 @@ description: vpay's outbound webhooks — the fifteen-type event vocabulary clos
 
 # Outbound webhooks
 
-> **Verified against vpay `0799a8d2` (2026-09-18).** Version-sensitive claims below
+> **Verified against vpay `b747e5d5` (2026-09-23).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -26,7 +26,8 @@ repository's history went to a test receiver.
 
 ## The event vocabulary is closed by the database, not by a Rust enum
 
-Fifteen types, and the closed set is a Postgres CHECK constraint:
+Fifteen types as of 2026-09-23 — unchanged since `0039` (2026-09-10); step A's
+`0049` added no type — and the closed set is a Postgres CHECK constraint:
 `type_is_a_documented_event` on `events.type`, most recently rewritten by
 `backends/migrations/0039_events-customer-created-updated.sql`. The Rust side
 carries a `String`, not an enum.
@@ -78,7 +79,7 @@ There is no other shape in this repository. `Settlement::apply_succeeded` (in `v
 moves the charge to `succeeded`, moves the intent, writes the
 `payment_intent.succeeded` row and — if the intent pays one — the invoice and
 its `invoice.paid`, all in **one** transaction (since vaam-apps/vpay step A,
-RFC-0004 §§ 5–6, merged in vaam-apps/vpay#251, the out-of-band `pay` is a second writer of
+RFC-0004 §§ 5–6, merged in vaam-apps/vpay#251 on 2026-09-23, the out-of-band `pay` is a second writer of
 `invoice.paid`, in its own single transaction with the `open → paid`
 compare-and-swap and the `manual_payments` row); the customer erasure writes the
 anonymisation and the `customer.deleted` in one; the checkout sweep flips

@@ -1,6 +1,6 @@
 # Idempotency
 
-_Verified against vpay `d3a8810b` (2026-09-16). Version-sensitive claims
+_Verified against vpay `b747e5d5` (2026-09-23). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 Two halves: the header and fingerprint in `vpay_api::idempotency`, the storage
@@ -40,8 +40,11 @@ Validation (`IdempotencyKey::parse`):
 `IdempotencyKey` is a newtype with a private field, so a handler cannot pass a
 merchant id or a path segment where a key belongs.
 
-**`DELETE /v1/customers/{id}` requires one too** — the only verb on this API
-with no body that still carries a key.
+**`DELETE` requires one too**, on all three paths that answer it:
+`/v1/customers/{id}`, `/v1/invoices/{id}` and `/v1/invoice_items/{id}`. It
+is the only verb on this API with no body that still carries a key. _(This
+named only `DELETE /v1/customers/{id}` until 2026-09-23. The two invoice
+`DELETE`s have been mounted since 2026-09-07.)_
 
 ## The storage key is `(merchant_id, idempotency_key)`
 
@@ -74,8 +77,11 @@ Do not write a second copy of this. `PostRequest` is `pub(crate)` in
 it** — `payment_intents::{create, confirm, cancel}`,
 `checkout_sessions::{create, expire}`, `customers::{create, update, delete}`,
 `invoices::{create, update, delete, finalize, void, mark_uncollectible, pay}`
-(the first two transitions share one `transition` helper), and
-`invoice_items::{create, update, delete}`.
+(the first two transitions share one `transition` helper),
+`invoice_items::{create, update, delete}`, and — since 2026-09-16 —
+`refunds::{create, update, cancel}`. _(The refund writes were missing from
+this list until 2026-09-23. Twenty `PostRequest::read` call sites as of that
+date.)_
 
 It exists because the fingerprint is taken over the **raw** body while the
 handler needs the **parsed** body, and no two axum extractors can both consume
@@ -139,6 +145,27 @@ disagree with the response it replays — a stored `409` refusal would come back
 advertising a retry that cannot succeed, and stripe-node applies a
 "retry every 409" rule to exactly that.
 
+## What is stored can be rewritten by an erasure
+
+`Idempotency::store` takes a `vpay_db::ResponseSubject`, and **choosing it is
+part of writing a `/v1` route**:
+
+| Variant                            | For                                                                                                                            | Since                   |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | ----------------------- |
+| `Verbatim`                         | every body that cannot carry payer detail — intents, sessions, invoice items, ordinary invoices, refunds                       | —                       |
+| `Customer { id }`                  | `/v1/customers` writes                                                                                                         | 2026-09-13 (issue #111) |
+| `OutOfBandInvoice { customer_id }` | `POST /v1/invoices/{id}/pay` with `paid_out_of_band=true`, and `POST /v1/invoices/{id}` on an invoice already paid out of band | 2026-09-23 (vpay#251)   |
+
+The last two store inside a transaction that takes the payer's row under a
+share lock. If that payer has since been erased, the store rewrites the body
+it just stored. A later erasure also rewrites stored bodies
+(`redact_stored_responses_in_tx`, `redact_stored_invoice_responses_in_tx`).
+So **"a replay returns the stored body byte for byte" holds only until the
+payer is erased.** After that, the replay carries `[redacted]` where the
+payer's detail was. A new route whose response can name the payer, but which
+stores `Verbatim`, reintroduces the 24-hour erasure window that issue #111
+closed. This section was missing from this page until 2026-09-23.
+
 ## What is stored, and what is released
 
 **A `4xx` is stored** — Stripe's own behaviour. The merchant caused it,
@@ -175,11 +202,19 @@ again.
 Internalise this before you touch the mechanism: the key makes retries _quiet_;
 the index makes them _safe_.
 
-## Known gaps, as of 2026-09-16
+## Known gaps, as of 2026-09-23
 
-- **No scheduled sweep.** `idempotency_keys` rows expire logically after 24
+- ~~**No scheduled sweep.** `idempotency_keys` rows expire logically after 24
   hours (`vpay_db::idempotency::claim` reclaims an expired row), but nothing
-  deletes them. A long-lived deployment grows that table monotonically.
+  deletes them. A long-lived deployment grows that table monotonically.~~
+  **Corrected 2026-09-23:** this was wrong from the day it was written. Since
+  Step 4 (2026-09-03), the worker's hourly housekeeping job,
+  `vpay_worker::handlers::sweep_expired`, calls `Idempotency::sweep_expired`
+  on every pass. So the table holds at most about an hour of expired keys
+  past their 24-hour window. vpay's own resource contract made the same
+  correction on 2026-09-23. **What is still a gap:** no test asserts that the
+  job deletes an idempotency key. The job is exercised only by a checkout
+  sessions test that asserts on sessions.
 - **No idempotency anywhere but `/v1`.** `/v1/browser`'s confirm calls
   `confirm_once` directly and takes no key — consistent with the browser nest's
   CORS deliberately not allowing the `Idempotency-Key` header, because sending

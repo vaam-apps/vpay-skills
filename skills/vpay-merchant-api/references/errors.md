@@ -1,6 +1,6 @@
 # The error model
 
-_Verified against vpay `d3a8810b` (2026-09-16). Version-sensitive claims
+_Verified against vpay `b747e5d5` (2026-09-23). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 ADR-0011. Two tiers, and one rule that holds them together: **a boundary
@@ -98,11 +98,15 @@ alert's label and the JSON log line that produced it are joinable by eye.
 
 ## `ApiError`, and the rule that keeps it honest
 
-`vpay_api::ApiError` has seven `#[from]` leaves — `Db`, `Provider`, `Money`,
-`Currency`, `Ledger`, `Config`, `Auth` — and its own variants: `UnknownRoute`,
-`InvalidParam`, `IdempotencyKeyReused`, `IdempotencyKeyInFlight`, `NotFound`,
-`Conflict`, `Forbidden`, `StaffSignInRefused`, `StaffSignInRateLimited`,
-`StaffAuth`, `CheckoutNotConfigured`, `CheckoutSessionNotOpen`, `Internal`.
+`vpay_api::ApiError` (`backends/crates/vpay-api/src/error.rs`) has **eight**
+`#[from]` leaves — `Db`, `Provider`, `Money`, `Currency`, `Ledger`, `Config`,
+`Auth`, `StaffAuth` — and its own variants: `UnknownRoute`, `InvalidParam`,
+`IdempotencyKeyReused`, `IdempotencyKeyInFlight`, `NotFound`, `Conflict`,
+`Forbidden`, `StaffSignInRefused`, `StaffSignInRateLimited`,
+`CheckoutNotConfigured`, `CheckoutSessionNotOpen`, `Internal`. _(Until
+2026-09-23 this said "seven" and listed `StaffAuth` among the own variants.
+`StaffAuth` wraps `StaffAuthError` with `#[from]`, and did at `d3a8810b`
+too. The file has not changed since then.)_
 
 > **A composite never re-classifies.** Every `Classify` method — `category`,
 > `code`, `retry`, `severity`, `public_message` — delegates **wholesale** for a

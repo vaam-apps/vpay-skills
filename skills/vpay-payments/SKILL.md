@@ -5,7 +5,7 @@ description: vpay's payment domain model — the PaymentIntent lifecycle (which 
 
 # The payment domain
 
-> **Verified against vpay `7997536b` (2026-09-23).** Version-sensitive claims below
+> **Verified against vpay `b747e5d5` (2026-09-23).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -221,9 +221,10 @@ invariant 2 is computable and `Ledger::merchant_payable_balance` exists; and
 units across every leg until 2026-09-15, and a mixed-currency posting
 committed.
 
-> **Still absent: any assertion of invariants 2–4.** `docs/flows/ledger.md`
-> says they are "asserted nightly". **Nothing schedules any assertion**, and
-> that sentence describes the intent. Invariant 1 is application-enforced by
+> **Still absent: any assertion of invariants 2–4.** ~~`docs/flows/ledger.md`
+> says they are "asserted nightly".~~ It said that until 2026-09-16 (vpay#178).
+> It now says "intended to be asserted nightly — **none of them is**", and this
+> page lagged it until 2026-09-23. **Nothing schedules any assertion.** Invariant 1 is application-enforced by
 > `validate()`, which `post_in_tx` calls before its first statement; it is
 > deliberately **not** a database constraint and will not become one —
 > `SUM(debit) = SUM(credit)` is an aggregate over sibling rows and a row-level
@@ -248,7 +249,7 @@ rather than voided. Two doc comments in vpay say otherwise and are stale; see
 `amount_remaining = 0` (`paid_means_nothing_remaining`, migration `0036`).
 
 **`paid` has two writers since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged
-in vaam-apps/vpay#251)** — before it, one. The settlement transaction of a succeeded
+in vaam-apps/vpay#251 on 2026-09-23)** — before it, one. The settlement transaction of a succeeded
 intent, and `POST /v1/invoices/{id}/pay` with `paid_out_of_band=true`, a
 compare-and-swap `open → paid` under `NO_LIVE_INTENT` that records a
 merchant's statement in `manual_payments`. **The second moves no money and
@@ -287,7 +288,7 @@ prepaid balance, the statement matcher and the router are still Draft and
 unbuilt, and out-of-band `bank_transfer` is a label a merchant sends, not
 RFC-0007's matcher.
 
-## Status, as of 2026-09-16
+## Status, as of 2026-09-23 (unchanged since 2026-09-16)
 
 The state functions, `Money`, the failure taxonomy and the settlement
 transaction are real and tested. A merchant can create a refund and the ledger
