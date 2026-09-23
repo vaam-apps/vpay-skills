@@ -130,7 +130,7 @@ does. Do not weaken or bypass the claim on that route.
 
 ## `customer` on the lists — a filter, never a lookup
 
-Since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged <pending>; ADR-0024
+Since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged in vaam-apps/vpay#251; ADR-0024
 D1–D4, D12), `GET /v1/payment_intents`, `GET /v1/checkout/sessions` and
 `GET /v1/refunds` take `customer=cus_…`. `GET /v1/invoices` always did. On an
 older server the parameter is **silently ignored and the whole list comes

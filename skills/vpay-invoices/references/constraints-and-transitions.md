@@ -9,7 +9,7 @@ Code: `backends/crates/vpay-db/src/invoices.rs` (the statements),
 `apply_refund_succeeded`), `backends/crates/vpay-core/src/state.rs`
 (`InvoiceStatus`). Schema: `0036_create-invoices.sql`,
 `0042_invoices-amount-refunded.sql`, and — since vaam-apps/vpay step A
-(RFC-0004 §§ 5–6, merged <pending>) — `0049_manual-payments.sql`.
+(RFC-0004 §§ 5–6, merged in vaam-apps/vpay#251) — `0049_manual-payments.sql`.
 
 ## Three enforcers, and none of them is a validation function
 
@@ -154,7 +154,7 @@ decides where a payer may be sent.
 
 ## The settlement flip
 
-**Since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged <pending>) this is one
+**Since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged in vaam-apps/vpay#251) this is one
 of two writers of `paid`**; before it, the only one. It is still the only
 writer that follows **money a rail moved**, and the only one that posts to the
 ledger.

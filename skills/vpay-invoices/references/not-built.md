@@ -107,14 +107,14 @@ document — a `paid` invoice with anything remaining is a row Postgres refuses.
 A merchant taking a deposit issues two invoices. An out-of-band payment is
 all-or-nothing too: one `manual_payments` row per invoice
 (`manual_payments_invoice_id_key`), always for the whole `amount_due` (since
-vaam-apps/vpay step A, RFC-0004 §§ 5–6, merged <pending>).
+vaam-apps/vpay step A, RFC-0004 §§ 5–6, merged in vaam-apps/vpay#251).
 
 ## ~~A merchant paid in cash cannot record it~~ — built, with four gaps beside it
 
 **Corrected 2026-09-23.** This page did not carry the gap — it was stated in
 RFC-0004's problem list and the Proposed section below called
 `paid_out_of_band` "proposed". Since vaam-apps/vpay step A (RFC-0004 §§ 5–6,
-merged <pending>), `POST /v1/invoices/{id}/pay` with `paid_out_of_band=true`
+merged in vaam-apps/vpay#251), `POST /v1/invoices/{id}/pay` with `paid_out_of_band=true`
 records it (see the SKILL page). On an older `master` a merchant paid in cash
 still has only `void` and `mark_uncollectible`, both false statements about
 the document.
@@ -168,7 +168,7 @@ Both of these read as gaps in older prose and are **done**:
   five CRUD, four transitions, four on a line — and both event unions know the
   four `invoice.*` types. Fifteen ✅/✅ rows in `docs/sdks/parity.md` as of
   2026-09-16. Since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged
-  <pending>), `pay` also takes one optional out-of-band object — still
+  in vaam-apps/vpay#251), `pay` also takes one optional out-of-band object — still
   thirteen methods, one more ✅/✅ row, and a live case in each SDK's suite.
   The Rust half is **source-breaking** for `PayInvoiceParams` struct literals;
   see the `vpay-sdks` skill.
@@ -214,7 +214,7 @@ vaam-apps/vpay#244 (merged as `7997536b`) proposes closing most of this page,
 in `docs/rfc/0004-billing-on-top-of-invoices.md` and
 `docs/rfc/0005-prepaid-customer-balances.md`. ~~**Nothing in it is built
 or decided as of 2026-09-23.** Each RFC is Draft~~ **Corrected 2026-09-23:**
-since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged <pending>), two pieces of
+since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged in vaam-apps/vpay#251), two pieces of
 RFC-0004 are accepted (ADR-0024) and built — § 5's `customer` filter on the
 three list routes that exist, and § 6, manual payments. **Everything else in
 both RFCs is still Draft and unbuilt**, and each ends with numbered open
@@ -235,7 +235,7 @@ What an agent is most likely to get wrong from reading them:
 - ~~**`paid_out_of_band` is proposed** (RFC-0004 § 6). Today the only writer
   of `paid` is the settlement transaction. A merchant paid in cash still has
   only `void` and `mark_uncollectible`.~~ **Corrected 2026-09-23:** built
-  since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged <pending>) — see the
+  since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged in vaam-apps/vpay#251) — see the
   section above. What an agent still gets wrong: it is **not** a payment vpay
   saw, it posts nothing to the ledger, and nothing in RFC-0004 beyond §§ 5–6
   came with it.
@@ -251,7 +251,7 @@ What an agent is most likely to get wrong from reading them:
 - ~~**The invoice wire object is still nineteen keys.** The RFC's new keys
   (`subscription`, `paid_out_of_band`, `invoice_pdf`, `tax`, …) are not on
   it.~~ **Corrected 2026-09-23:** since vaam-apps/vpay step A (RFC-0004
-  §§ 5–6, merged <pending>) it is **twenty-one** keys — `paid_out_of_band`
+  §§ 5–6, merged in vaam-apps/vpay#251) it is **twenty-one** keys — `paid_out_of_band`
   and `out_of_band_payment` (ADR-0024 D9; the second is vpay's own and not in
   the RFC). `subscription`, `invoice_pdf`, `tax` and the rest are still not on
   it.

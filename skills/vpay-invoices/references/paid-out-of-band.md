@@ -1,7 +1,7 @@
 # Paid out of band — a statement, not a payment
 
 _Written 2026-09-23 against the vaam-apps/vpay step A integration branch
-(`feat/rfc-0004-step-a`, RFC-0004 §§ 5–6, merged <pending>). None of this
+(`feat/rfc-0004-step-a`, RFC-0004 §§ 5–6, merged in vaam-apps/vpay#251). None of this
 exists on a vpay `master` older than that merge. See
 [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 

@@ -33,20 +33,20 @@ breaks its tripwire test on purpose** — update the count and the SDKs together
 `vpay_core::ids` owns all of them, with `is_well_formed(prefix, id)` and a
 minting function per type.
 
-| Prefix  | Object                                                                                                                                               |
-| ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `pi_`   | PaymentIntent                                                                                                                                        |
-| `ch_`   | Charge (internal — never on the wire)                                                                                                                |
-| `re_`   | Refund                                                                                                                                               |
-| `evt_`  | Event                                                                                                                                                |
-| `cs_`   | CheckoutSession                                                                                                                                      |
-| `cus_`  | Customer                                                                                                                                             |
-| `in_`   | Invoice                                                                                                                                              |
-| `ii_`   | InvoiceItem                                                                                                                                          |
-| `stf_`  | Staff member                                                                                                                                         |
-| `cred_` | Credential                                                                                                                                           |
-| `lt_`   | Ledger transaction (internal — never on the wire; added 2026-09-15)                                                                                  |
-| `mp_`   | Manual (out-of-band) payment — on the wire only as `invoice.out_of_band_payment.id`; since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged <pending>) |
+| Prefix  | Object                                                                                                                                                           |
+| ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pi_`   | PaymentIntent                                                                                                                                                    |
+| `ch_`   | Charge (internal — never on the wire)                                                                                                                            |
+| `re_`   | Refund                                                                                                                                                           |
+| `evt_`  | Event                                                                                                                                                            |
+| `cs_`   | CheckoutSession                                                                                                                                                  |
+| `cus_`  | Customer                                                                                                                                                         |
+| `in_`   | Invoice                                                                                                                                                          |
+| `ii_`   | InvoiceItem                                                                                                                                                      |
+| `stf_`  | Staff member                                                                                                                                                     |
+| `cred_` | Credential                                                                                                                                                       |
+| `lt_`   | Ledger transaction (internal — never on the wire; added 2026-09-15)                                                                                              |
+| `mp_`   | Manual (out-of-band) payment — on the wire only as `invoice.out_of_band_payment.id`; since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged in vaam-apps/vpay#251) |
 
 Also in `ids`: `CLIENT_SECRET_INFIX` (`_secret_`), `client_secret_suffix()`
 (160 bits from the OS CSPRNG), `client_secret(id, suffix)`, and
@@ -187,7 +187,7 @@ microdegrees, consistent with the no-float rule.
 `out_of_band_payment`, `due_date`, `description`, `metadata`,
 `payment_intent`, `hosted_invoice_url`, `lines`, `status_transitions`,
 `created`, `livemode` — **twenty-one keys** since vaam-apps/vpay step A
-(RFC-0004 §§ 5–6, merged <pending>), pinned by
+(RFC-0004 §§ 5–6, merged in vaam-apps/vpay#251), pinned by
 `the_invoice_object_is_the_documented_twenty_one_keys`. This list had nineteen
 until 2026-09-23 (no `paid_out_of_band`, no `out_of_band_payment`), which is
 still the shape of any older `master`.

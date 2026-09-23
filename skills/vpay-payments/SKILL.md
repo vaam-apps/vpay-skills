@@ -248,7 +248,7 @@ rather than voided. Two doc comments in vpay say otherwise and are stale; see
 `amount_remaining = 0` (`paid_means_nothing_remaining`, migration `0036`).
 
 **`paid` has two writers since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged
-<pending>)** — before it, one. The settlement transaction of a succeeded
+in vaam-apps/vpay#251)** — before it, one. The settlement transaction of a succeeded
 intent, and `POST /v1/invoices/{id}/pay` with `paid_out_of_band=true`, a
 compare-and-swap `open → paid` under `NO_LIVE_INTENT` that records a
 merchant's statement in `manual_payments`. **The second moves no money and
@@ -282,7 +282,7 @@ explicitly refuses to retry a declined intent on another rail. None of it
 exists. See `vpay-invoices` and `vpay-provider-adapters`.
 **Corrected 2026-09-23:** this paragraph listed out-of-band payments as
 proposed. They are built since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged
-<pending>; ADR-0024), as the second writer of `paid` described above. The
+in vaam-apps/vpay#251; ADR-0024), as the second writer of `paid` described above. The
 prepaid balance, the statement matcher and the router are still Draft and
 unbuilt, and out-of-band `bank_transfer` is a label a merchant sends, not
 RFC-0007's matcher.

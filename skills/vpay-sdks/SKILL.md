@@ -135,7 +135,7 @@ Node test checked it.
 
 ## Step A: two new parameters, one source break in Rust
 
-Since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged <pending>). **No method
+Since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged in vaam-apps/vpay#251). **No method
 was added**; two existing ones take more:
 
 - **`customer` on `payment_intents.list`, `checkout.sessions.list` and

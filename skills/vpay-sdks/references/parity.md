@@ -169,7 +169,7 @@ When you **rename** a test, edit the cell in the same commit. When you
   in that package and like the wire. The issue's original sketch said
   `paymentMethodType`; following it would have made that the only camelCase
   request field in the SDK. **Corrected 2026-09-23:** since vaam-apps/vpay
-  step A (RFC-0004 §§ 5–6, merged <pending>) there **are** camelCase request
+  step A (RFC-0004 §§ 5–6, merged in vaam-apps/vpay#251) there **are** camelCase request
   fields — `invoices.pay`'s `outOfBand` object and its `receivedAt` — by the
   maintainer's decision, recorded in `docs/sdks/parity.md` under the
   `/v1` resource table. Rust spells them `out_of_band` / `received_at`; the
@@ -189,7 +189,7 @@ When you **rename** a test, edit the cell in the same commit. When you
 
 ## Step A: the rows it moved
 
-Since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged <pending>). No SDK
+Since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged in vaam-apps/vpay#251). No SDK
 method was added, so the method count did not move: `verify-sdk-parity`
 printed **757 proving tests, 45 dated gaps, 35 methods across 40 rows** on the
 branch (`docs/status/verification/2026-09-23-manual-payments.md`) — one new

@@ -106,7 +106,7 @@ tables, not one.** Getting this wrong is the most damaging defect available in
 this area. Details, the marker CHECK's `IS NOT DISTINCT FROM` subtlety, and
 the closed idempotency race: [references/erasure.md](references/erasure.md).
 
-**Since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged <pending>) there is a
+**Since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged in vaam-apps/vpay#251) there is a
 copy a _merchant_ writes: the out-of-band payment reference.**
 `out_of_band[reference]` on `POST /v1/invoices/{id}/pay` — a cheque number
 beside the drawer's name, a transfer reference carrying the payer's — lands in
@@ -144,7 +144,7 @@ with a slow clock cannot rewind it.
 
 **Paying an invoice does not stamp it** — hosted `pay` never did, and the
 out-of-band `pay` added by vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged
-<pending>) does not either; only creating the invoice does, through
+in vaam-apps/vpay#251) does not either; only creating the invoice does, through
 `resolve_for_attachment`. `docs/flows/invoices.md` lists it as an existing
 gap. Listing by `customer=` stamps nothing either, correctly: a read is not a
 use.
@@ -192,7 +192,7 @@ named tests.
 
 **Listing a customer's payments is a filter on the _other_ lists, not a
 route here.** Since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged
-<pending>), `customer=cus_…` filters `GET /v1/payment_intents`,
+in vaam-apps/vpay#251), `customer=cus_…` filters `GET /v1/payment_intents`,
 `GET /v1/checkout/sessions` and `GET /v1/refunds` (and `GET /v1/invoices`
 always did), inside the same `WHERE` as `merchant_id`, so a foreign or unknown
 `cus_…` is an empty page and never a `404`. An erased customer keeps its
@@ -217,7 +217,7 @@ unique to this resource is that its three write routes pass
 `ResponseSubject::Customer { id }` to `vpay_db::Idempotency::store` where every
 other route passes `Verbatim` — see [references/erasure.md](references/erasure.md).
 _(Qualified 2026-09-23: since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged
-<pending>) a third variant, `ResponseSubject::OutOfBandInvoice { customer_id }`,
+in vaam-apps/vpay#251) a third variant, `ResponseSubject::OutOfBandInvoice { customer_id }`,
 covers the out-of-band `pay` and a `POST /v1/invoices/{id}` on an invoice paid
 out of band — the same issue-#111 race on a body carrying a reference. The
 customer routes are no longer the only non-`Verbatim` callers.)_

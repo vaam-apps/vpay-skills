@@ -19,7 +19,7 @@ workspace may name a `PgPool`, a `sqlx::Transaction`, or a CrateStack handle.
 this page said **44** until `0045`–`0048` landed the same day (RFC-0003,
 vpay#178); `0045` adds `ledger_entries.merchant_id`, `0046` widens the ledger
 id, and `0047`–`0048` are comment-only corrections to `refunds`. **49 since
-vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged <pending>)**:
+vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged in vaam-apps/vpay#251)**:
 `0049_manual-payments.sql` adds `invoices.paid_out_of_band` and the
 `manual_payments` table — see below. Counted
 off the directory, which is the only authority: they are
@@ -44,7 +44,7 @@ gap between the two is **counted, not closed** — ~~190 pending changes over 25
 relations as of migration 0044~~, which this page said until 2026-09-23 and
 which had been stale since 2026-09-15: `0045` and `0046` moved it to 192 and
 then **194 over 25**, the value on `master` before step A. **201 over 26
-relations since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged <pending>)**,
+relations since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged in vaam-apps/vpay#251)**,
 19 unmappable columns unmoved — `EXPECTED_DRIFT_CHANGES`,
 `EXPECTED_DRIFTED_RELATIONS` and `EXPECTED_UNMAPPABLE_COLUMNS` in
 `postgres_smoke.rs`, measured on the branch at cratestack 0.12.0. See
@@ -52,7 +52,7 @@ relations since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged <pending>)**,
 
 ## Migration `0049` (step A): the database says what a CHECK cannot
 
-Since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged <pending>). The pattern is
+Since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged in vaam-apps/vpay#251). The pattern is
 reusable, and the traps are specific:
 
 - **A cross-table invariant is a composite foreign key, not a CHECK.** A CHECK

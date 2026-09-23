@@ -50,7 +50,7 @@ An erasure that only rewrites `customers` is the characteristic defect here.
 | `manual_payments.reference` (step A)          | the merchant's out-of-band payment reference; also its copies in `invoice.*` bodies, their live deliveries' digests and excerpts, and stored invoice responses |
 
 The last row exists since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged
-<pending>; migration `0049`), written by `redact_out_of_band_references` in the
+in vaam-apps/vpay#251; migration `0049`), written by `redact_out_of_band_references` in the
 erasure's transaction. It is the first copy in this table that the
 **merchant** typed rather than vpay derived, and it is still `subject: payer`:
 a reference exists to say how the payer paid. The whole-database scan now
@@ -188,7 +188,7 @@ rounds fail with the payer's name in the stored body.
 `ResponseSubject::Customer`.** Nothing greps for that.
 
 **A third variant since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged
-<pending>): `ResponseSubject::OutOfBandInvoice { customer_id }`.** The
+in vaam-apps/vpay#251): `ResponseSubject::OutOfBandInvoice { customer_id }`.** The
 out-of-band `pay` and a `POST /v1/invoices/{id}` on an invoice paid out of band
 pass it, because their stored body carries `out_of_band_payment.reference`.
 Same mechanism, keyed on the invoice's customer; it runs the same

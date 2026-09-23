@@ -168,7 +168,7 @@ Consequences worth knowing before you add one:
 - `invoice.paid` is **not re-emitted** if a settlement lands on an invoice that
   is no longer `open` — that is a `WARN`, not a second event.
 - **`invoice.paid` has a second writer since vaam-apps/vpay step A (RFC-0004
-  §§ 5–6, merged <pending>)**: `POST /v1/invoices/{id}/pay` with
+  §§ 5–6, merged in vaam-apps/vpay#251)**: `POST /v1/invoices/{id}/pay` with
   `paid_out_of_band=true` writes it in the transition's own transaction. No
   vocabulary change was needed — the label has been in
   `type_is_a_documented_event` since `0036`. **A merchant tells the two apart

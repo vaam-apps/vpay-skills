@@ -91,7 +91,7 @@ All four procedure-backed lists are Server Components reading through
 `readProcedurePage`, and all four share `src/components/procedure-table.tsx`.
 
 **`GET /dash/v1/payment_intents` refuses `customer` with a `400` naming it**,
-since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged <pending>;
+since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged in vaam-apps/vpay#251;
 `refuse_customer` in `vpay_api::dash::payment_intents`). `/v1` gained that
 filter in the same change; before it, the dashboard's `ListParams` dropped the
 unknown key and **answered every customer's intents** — which an operator, or

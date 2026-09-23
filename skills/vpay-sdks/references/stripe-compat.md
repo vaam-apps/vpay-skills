@@ -158,7 +158,7 @@ prevent.
   exactly as `stripe.events.list()` is.
 
 - **Two Stripe spellings started to mean something** since vaam-apps/vpay
-  step A (RFC-0004 §§ 5–6, merged <pending>): `customer` on
+  step A (RFC-0004 §§ 5–6, merged in vaam-apps/vpay#251): `customer` on
   `paymentIntents.list`, `checkout.sessions.list` and `refunds.list` now
   filters (it was ignored, answering the whole list), and
   `invoices.pay(id, { paid_out_of_band: true })` records the invoice paid out

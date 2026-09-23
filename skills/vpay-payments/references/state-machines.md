@@ -168,13 +168,13 @@ draft ──finalize──> open ──> paid | void | uncollectible
   └────void────> void        (also: DELETE, which removes it entirely)
 ```
 
-| Value           | Meaning                                                                                                                                                                                                                      |
-| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `draft`         | being edited; lines mutable, no number, cannot be paid                                                                                                                                                                       |
-| `open`          | issued; has a number, lines frozen, waiting to be paid                                                                                                                                                                       |
-| `paid`          | terminal; only reachable with `amount_remaining = 0`. Two writers since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged <pending>): the settlement, and the out-of-band `pay`, which moves no money and posts no ledger entry |
-| `void`          | cancelled by the merchant. Terminal. **Keeps its number** — a number that vanished is a hole an accountant reads as a destroyed document                                                                                     |
-| `uncollectible` | written off: still owed, never expected. Terminal                                                                                                                                                                            |
+| Value           | Meaning                                                                                                                                                                                                                                  |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `draft`         | being edited; lines mutable, no number, cannot be paid                                                                                                                                                                                   |
+| `open`          | issued; has a number, lines frozen, waiting to be paid                                                                                                                                                                                   |
+| `paid`          | terminal; only reachable with `amount_remaining = 0`. Two writers since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged in vaam-apps/vpay#251): the settlement, and the out-of-band `pay`, which moves no money and posts no ledger entry |
+| `void`          | cancelled by the merchant. Terminal. **Keeps its number** — a number that vanished is a hole an accountant reads as a destroyed document                                                                                                 |
+| `uncollectible` | written off: still owed, never expected. Terminal                                                                                                                                                                                        |
 
 An invoice is a _document_; an intent is an _attempt to move money_. They share
 not one state, which is why overloading `IntentStatus` here would put "somebody

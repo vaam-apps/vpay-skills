@@ -274,7 +274,7 @@ Four Draft RFCs, merged by vaam-apps/vpay#244 as `7997536b`
 not treat a Draft section as a decision:
 
 > **Qualified 2026-09-23.** Since vaam-apps/vpay step A (RFC-0004 §§ 5–6,
-> merged <pending>), RFC-0004 is Draft **except** § 5's `customer` list filters
+> merged in vaam-apps/vpay#251), RFC-0004 is Draft **except** § 5's `customer` list filters
 > and § 6's manual payments, accepted through ADR-0024 and built. **Neither
 > touches this port**: no capability, no adapter method, no `ProviderFlow`.
 > Everything below — § 7 included — is still Draft. One name collides: step

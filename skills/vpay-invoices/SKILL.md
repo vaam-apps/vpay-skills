@@ -23,7 +23,7 @@ is 16 cases, `vpay-db`'s `tests/repositories.rs` adds 10, `postgres_smoke.rs`
 pins the multi-column CHECK inventory). Both merchant SDKs ship 13 methods each
 with a live suite against a real `vpay-server`.
 
-**Since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged <pending>): manual
+**Since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged in vaam-apps/vpay#251): manual
 payments** — migration `0049`, `manual_payments` (`mp_…`), two new object
 keys, a second writer of `paid` and `invoice.paid`, nothing on the ledger. On an
 older `master` none of it exists. On the branch, 2026-09-23: `invoices.rs` 29
@@ -49,7 +49,7 @@ dunning, no subscription, no partial payment, no dashboard screen, and
 > change is in [references/not-built.md](references/not-built.md).
 >
 > **Corrected 2026-09-23:** this block listed manual payments as proposed.
-> Since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged <pending>), RFC-0004 is
+> Since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged in vaam-apps/vpay#251), RFC-0004 is
 > **Draft except § 5's `customer` filters and § 6, manual payments**, which
 > are accepted through ADR-0024
 > (`docs/adr/0024-customer-filters-and-manual-payments.md`, D1–D19) and built.
@@ -73,7 +73,7 @@ dunning, no subscription, no partial payment, no dashboard screen, and
 ## The two objects
 
 **Invoice — `in_…`, twenty-one keys since vaam-apps/vpay step A (RFC-0004
-§§ 5–6, merged <pending>)**, held by
+§§ 5–6, merged in vaam-apps/vpay#251)**, held by
 `the_invoice_object_is_the_documented_twenty_one_keys` in `vpay_api::model`.
 ~~Nineteen keys, held by `the_invoice_object_is_the_documented_nineteen_keys`~~
 — this page said that until 2026-09-23, and it is still true of any `master`
@@ -137,7 +137,7 @@ payment recorded in error **cannot be undone**; there is no route for it and
 none is planned by ADR-0024.
 
 **`open → paid` has two writers since vaam-apps/vpay step A (RFC-0004 §§ 5–6,
-merged <pending>)**: the settlement transaction, and the out-of-band
+merged in vaam-apps/vpay#251)**: the settlement transaction, and the out-of-band
 compare-and-swap. Both match `status = 'open'`; the second also carries
 `NO_LIVE_INTENT`, so a settlement and an out-of-band payment cannot both win.
 Before that merge the settlement was the only writer, and code or prose that
@@ -221,7 +221,7 @@ a `409` naming a status being an existence oracle. All four writes take an
 
 ## Paid out of band — a statement, not a payment
 
-Since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged <pending>).
+Since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged in vaam-apps/vpay#251).
 `POST /v1/invoices/{id}/pay` with `paid_out_of_band=true` and optional
 `out_of_band[method|reference|received_at]` (`method` defaults to `other`, so
 Stripe's bare flag works) moves an `open` invoice to `paid`. What an agent must
@@ -244,7 +244,7 @@ the evidence: [references/paid-out-of-band.md](references/paid-out-of-band.md).
 
 `invoice.created`, `invoice.finalized`, `invoice.paid` (**the settlement
 transaction**, not a write afterwards — and, since vaam-apps/vpay step A
-(RFC-0004 §§ 5–6, merged <pending>), also the out-of-band `pay`, in its own
+(RFC-0004 §§ 5–6, merged in vaam-apps/vpay#251), also the out-of-band `pay`, in its own
 transaction) and `invoice.voided`, each written inside the transaction of the
 transition it describes; a refused transition writes none. All four entered
 `type_is_a_documented_event` in `0036` **with their writer in the same
@@ -270,7 +270,7 @@ emits nothing on it; the merchant learns from `payment_intent.payment_failed`.
 Verified 2026-09-16, both ungated. ~~**`docs/flows/invoices.md` is missing
 from the table in `docs/flows/README.md`** — every other flow page is listed,
 and nothing checks that table.~~ **Corrected 2026-09-23:** vaam-apps/vpay
-step A (RFC-0004 §§ 5–6, merged <pending>) adds the row; on an older `master`
+step A (RFC-0004 §§ 5–6, merged in vaam-apps/vpay#251) adds the row; on an older `master`
 it is still missing, and nothing checks that table either way. And **the
 page's own
 `[What is not built](#what-is-not-built)` link is a dead anchor**: there is no

@@ -52,7 +52,7 @@ router's source rather than a description of it.
 | POST                     | `/v1/invoice_items`                    | `invoice_items::create`                             |
 | GET, POST, PATCH, DELETE | `/v1/invoice_items/{id}`               | `invoice_items::{retrieve, update, update, delete}` |
 
-**Since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged <pending>), no row is
+**Since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged in vaam-apps/vpay#251), no row is
 added** — only parameters, on rows that exist:
 
 | Route                          | Takes                                                                                                                  | Since               |
