@@ -44,6 +44,21 @@ Start with `vpay`. It is the orientation skill and it routes to the rest.
 | [`vpay-sdks`](skills/vpay-sdks/)                           | The merchant SDKs, the payer plugins (Flutter, Tauri v2), and the parity rule that binds them |
 | [`vpay-ops`](skills/vpay-ops/)                             | Configuration, deployment, the reconciler, observability                                      |
 
+## For people rather than agents
+
+These skills brief an agent that is already at work. A **person** evaluating,
+integrating or operating vpay should start with the human documentation at
+**[vpay-oss.vaam.store](https://vpay-oss.vaam.store)**
+([vaam-apps/vpay-docs](https://github.com/vaam-apps/vpay-docs)). It is pinned
+to a vpay **release tag**, not to a commit, and every page there names the
+skills here that cover the same ground, with their install commands.
+
+That link runs in both directions, and it is checked. vpay-docs'
+`verify-parity` fails when a page names a skill that does not exist here, and
+when a skill here is referenced by no page there. Its `release-parity` workflow
+checks this repository's `main`, so **a new skill surfaces there as a gap at
+the next vpay release**. Nothing here fails because of it, and nothing blocks.
+
 ## Why a separate repository
 
 Two reasons, and the second is the load-bearing one.
