@@ -39,7 +39,7 @@ agree, that page has the reasoning.
 
 ## The shape — one state machine, four hosts
 
-```
+```text
  guest-js/  @vaam-apps/vpay-tauri-checkout   ← every decision lives here (T1)
    VpayCheckout.start(sessionUrl)
      parse → pre-flight → show → one event → poll → one of five kinds
