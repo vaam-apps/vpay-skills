@@ -82,9 +82,10 @@ function parseFrontmatter(text) {
 
 // ------------------------------------------------------------------- baseline
 //
-// A skill is true of *a* vpay, not of vpay. vpay publishes no release tags and
-// its workspace version has never moved off 0.1.0, so the only honest version
-// identity is a commit and a date. These skills were verified against one; say
+// A skill is true of *a* vpay, not of vpay. vpay has release tags since
+// 2026-09-17 (v0.1.1..v0.5.0 as of 2026-09-23), but skills are verified against
+// master between them, so the precise version identity is a commit and a date.
+// (This comment said vpay had no tags and was stuck at 0.1.0 until 2026-09-23.) These skills were verified against one; say
 // how far the tree in front of us has moved from it.
 //
 // This is REPORTED, never failed. Drift is the normal state between releases —
