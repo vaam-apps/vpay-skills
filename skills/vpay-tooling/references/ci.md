@@ -3,8 +3,28 @@
 _Verified against vpay `67c90ea5` (2026-09-20). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
-Three workflows in `.github/workflows/`: `ci.yml`, `docs.yml`, `release.yml`.
-Re-read 2026-09-16.
+Eight workflows in `.github/workflows/`. This page covers the three that build
+and gate vpay: `ci.yml`, `docs.yml` and `release.yml`. The other five:
+
+- `release-please.yml` proposes the next version as a standing PR and cuts the
+  `v*` tag when it merges, with the org's `vaam-apps` App token, so the tag
+  push is an event `release.yml` can trigger on (2026-09-17).
+- `pr-title.yml` refuses a PR title that is not a conventional commit, because
+  the repository squash-merges with the PR title (2026-09-17).
+- `quality.yml` calls the org-wide workflows in `vaam-apps/.github`:
+  super-linter, CodeQL and Trivy (2026-09-18). **super-linter lints a changed
+  file whole**, so a pre-existing defect in a file you touch fails your PR.
+  The usual one is MD040, an unlabelled code fence; label it `text`.
+- `issue-governance.yml` is org-wide issue triage (2026-09-18).
+- `notify-docs.yml` runs on the same `v*` tag push as `release.yml` but as a
+  separate workflow, so it cannot block a release. It mints a `vaam-apps` App
+  token scoped to `vaam-apps/vpay-docs` only (`contents: write`) and sends
+  `repository_dispatch: vpay-release`, so the human docs site's parity check
+  runs at once (2026-09-23). It has not run on a real tag.
+
+_(This said "Three workflows … `ci.yml`, `docs.yml`, `release.yml`. Re-read
+2026-09-16." until 2026-09-23. It was wrong from 2026-09-17, when
+`release-please.yml` and `pr-title.yml` landed.)_
 
 The shape to internalise: **CI calls `just` recipes rather than copies of their
 commands**, so the gate and the local check cannot drift. Where a job does
