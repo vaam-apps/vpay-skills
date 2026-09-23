@@ -206,6 +206,57 @@ it is the version installed on the authoring host, not a value computed from
 a `pubspec.yaml` constraint, and nothing enforces agreement between the two
 the way `verify-toolchain` enforces the Rust pin.
 
+### The four `*-tauri-*` recipes (2026-09-22, #238)
+
+New with [vpay#238](https://github.com/vaam-apps/vpay/pull/238), merged
+2026-09-22 as `999a23f9` — absent from any `master` checkout older than
+that. They build and test `tauri-plugin-vpay-checkout`, the Tauri v2 payer
+surface (`vpay-sdks`'s `references/tauri-plugin.md` has the architecture and
+every caveat). Added here 2026-09-23, because this page was already cited as
+the depth for them and did not mention Tauri at all.
+
+All four share one `_tauri-preflight`, which refuses by name when
+`sdks/tauri/tauri-plugin-vpay-checkout/` or its `Cargo.toml` is missing —
+the same shape as `_flutter-preflight` above. All four drive cargo or pnpm
+through `--manifest-path` / `--filter` rather than `-p`, because **the crate
+is its own Cargo workspace** (ADR-0023 T2): `cargo clippy --workspace`,
+`cargo nextest run --workspace` and `cargo deny` at the root cannot see it,
+so these are the only commands in the repository that compile it.
+
+| Recipe                    | Proves                                                                                                                                                       | In `just ci`?                     |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------- |
+| `just test-tauri-rust`    | `cargo test --manifest-path …` — the unit suite **and** the `init()` doctest in `src/lib.rs` in one invocation (`cargo test`, not nextest, deliberately)     | **no** (T7)                       |
+| `just clippy-tauri-rust`  | `cargo clippy --all-targets -- -D warnings` — the only thing in the repository that lints this crate                                                         | **no** (T7)                       |
+| `just check-tauri-mobile` | `cargo check` for `aarch64-linux-android` and `aarch64-apple-ios` — that the `#[cfg(mobile)]` half still compiles. **Nothing about the Kotlin or the Swift** | **no** (T7)                       |
+| `just test-tauri-js`      | `pnpm --filter @vaam-apps/vpay-tauri-checkout test` — scoping only, for a single-package iteration loop                                                      | not by name — `pnpm -r test` does |
+
+**None of the three Rust ones is in `just ci` or `just verify`, and the
+justfile says why in its own header (T7):** the `tauri` crate does not build
+on Linux without `libwebkit2gtk-4.1-dev`, which the CI image does not carry,
+and `check-tauri-mobile` needs an Android and an Apple target the image has
+no toolchain for. Adding either is a runner-image change — the maintainer's
+call, not a recipe's. So **every Rust count this repository quotes for this
+crate is a human running a recipe by hand**, exactly as with Flutter above.
+The justfile's gate tally is unchanged at fifteen: none of these is a gate.
+
+`rustup target add aarch64-linux-android aarch64-apple-ios` before
+`check-tauri-mobile`. It sets no `IPHONEOS_DEPLOYMENT_TARGET` on purpose —
+swift-rs defaults to iOS 13.0 and the Swift host needs 15.0, handled by an
+`if #available(iOS 15.0, *)` guard in the source. A Swift availability
+failure here is that guard regressing, not your environment.
+
+The **TypeScript** half needs no recipe to be gated: `pnpm-workspace.yaml`
+names `sdks/tauri/*`, so `just lint-web`, `just test-web` and
+`just fmt-check-web` already reach `@vaam-apps/vpay-tauri-checkout`, and
+CI's `web` job filter already names `**/*.ts`.
+
+**What no recipe covers at all:** `examples/tauri-checkout/src-tauri/` — the
+example app's Rust, and with it the only route in this repository that
+compiles the plugin's Kotlin and Swift. It is in **0** justfile recipes, 0
+workflow files and 0 xtasks (measured 2026-09-23). The example's TypeScript
+does run, through `pnpm -r`, because `pnpm-workspace.yaml` globs
+`examples/*`.
+
 ### WireMock steering MSISDNs — the hex convention is dead (2026-09-17, #191)
 
 `worker_e2e`/`worker_kill9` (the chaos suites) used to steer WireMock's own

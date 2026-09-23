@@ -210,7 +210,10 @@ under `sdks/tauri/`.
   `just lint-web`/`just test-web` with no recipe change. The Kotlin and the
   Swift **do** now compile and link — but only inside `examples/tauri-checkout`
   (`tauri android build` / `tauri ios build`, both exit 0 on 2026-09-22), run
-  by a human, never by a gate.
+  by a human, never by a gate — and the example's own `src-tauri/` is the
+  ungated slice (its TypeScript does run in `pnpm -r`; its Rust, lockfile and
+  `dev` script are in 0 recipes, 0 workflows and 0 xtasks, which is how
+  vpay#241's two bugs stayed green — `references/tauri-plugin.md`).
 - **The state machine is guest-JS (T1)**, so **a change to D1 or D4 behaviour
   is a TypeScript change.** The Rust, Kotlin and Swift hosts hold no rule
   about money; their whole vocabulary is
