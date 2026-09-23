@@ -1,6 +1,6 @@
-# Erasure — the six tables, the marker CHECK, and the closed race
+# Erasure — the eight tables, the marker CHECK, and the closed race
 
-_Verified against vpay `d3a8810b` (2026-09-16). Version-sensitive claims
+_Verified against vpay `b747e5d5` (2026-09-23). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 `vpay_db::customers::erase_in_tx` is the whole of it. Migration
@@ -34,20 +34,32 @@ Foreign keys are `NO ACTION` and **stay that way**. `ON DELETE SET NULL` was
 the alternative and is worse: vpay never detaches a payment from the payer it
 was taken from, because that is the record a dispute is settled with.
 
-## "Every copy" is six tables
+## "Every copy" is eight tables
+
+~~"Every copy" is six tables.~~ **Corrected 2026-09-23: eight, as of vpay
+`b747e5d5`** — `customers` plus seven others. The six were right on
+2026-09-16; `payment_intents` joined on 2026-09-19
+([vpay#211](https://github.com/vaam-apps/vpay/pull/211), written 2026-09-18)
+and `manual_payments` on 2026-09-23 (step A, vpay#251, migration `0049`).
+Count tables by reading `redact_stored_copies` and
+`redact_out_of_band_references` in `vpay-db/src/customers.rs`, not by trusting
+a doc comment: `erase_in_tx`'s own list still says "six more statements" and
+names neither 2026-09-19 addition.
 
 An erasure that only rewrites `customers` is the characteristic defect here.
 `erase_in_tx` writes all of these **in the transaction that erases the row**:
 
-| Table                                         | What was in it                                                                                                                                                 |
-| --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `customers`                                   | the eleven identifier columns                                                                                                                                  |
-| `events.data`                                 | **every** `customer.*` body ever written stores the whole rendered object, and nothing prunes `events`                                                         |
-| `charges.payer_ref` / `payer_ref_masked`      | the payer's MSISDN as the rail was given it — reachable from a customer only _through_ an intent                                                               |
-| `charges.failure_raw` / `refunds.failure_raw` | the rail's own words, verbatim: a decline may quote the subscriber's number back                                                                               |
-| `idempotency_keys.response_body`              | the exact JSON a `POST /v1/customers` answered, kept 24 hours to replay                                                                                        |
-| `webhook_deliveries.payload_sha256`           | cleared — see below; this one protects a delivery, not the payer                                                                                               |
-| `manual_payments.reference` (step A)          | the merchant's out-of-band payment reference; also its copies in `invoice.*` bodies, their live deliveries' digests and excerpts, and stored invoice responses |
+| Table                                                  | What was in it                                                                                                                                                 |
+| ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `customers`                                            | the eleven identifier columns                                                                                                                                  |
+| `events.data`                                          | **every** `customer.*` body ever written stores the whole rendered object, and nothing prunes `events`                                                         |
+| `charges.payer_ref` / `payer_ref_masked`               | the payer's MSISDN as the rail was given it — reachable from a customer only _through_ an intent                                                               |
+| `charges.failure_raw` / `refunds.failure_raw`          | the rail's own words, verbatim: a decline may quote the subscriber's number back                                                                               |
+| `idempotency_keys.response_body`                       | the exact JSON a `POST /v1/customers` answered, kept 24 hours to replay                                                                                        |
+| `webhook_deliveries.payload_sha256`                    | cleared — see below; this one protects a delivery, not the payer                                                                                               |
+| `webhook_deliveries.response_excerpt`                  | the merchant endpoint's reply, un-parsed, up to 512 chars — a receiver that echoes its payload has put the payer in it. Since 2026-09-19 (#211)                |
+| `payment_intents.last_payment_error_code` / `_message` | the intent's own decline text; vpay-authored today, NULLed as a **pair** (the `lpe_paired` CHECK) as defence in depth. Since 2026-09-19 (#211)                 |
+| `manual_payments.reference` (step A)                   | the merchant's out-of-band payment reference; also its copies in `invoice.*` bodies, their live deliveries' digests and excerpts, and stored invoice responses |
 
 The last row exists since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged
 in vaam-apps/vpay#251; migration `0049`), written by `redact_out_of_band_references` in the
@@ -56,15 +68,23 @@ erasure's transaction. It is the first copy in this table that the
 a reference exists to say how the payer paid. The whole-database scan now
 seeds a paid-out-of-band invoice whose reference names the payer and expects
 `manual_payments.reference` among the places it finds the literal before the
-erasure. _(This table is as verified on 2026-09-16 plus that row; the
-`payment_intents.last_payment_error_*` and `webhook_deliveries.response_excerpt`
-statements added on 2026-09-18 are not in it — see vpay's
-`docs/reference/personal-data-inventory.md`. The count "six" is not restated
-here for that reason.)_
+erasure. _(This paragraph said the table was "as verified on 2026-09-16 plus
+that row" and left out the two #211 statements. **Corrected 2026-09-23:** both
+are rows above, and the table is re-verified whole against vpay `b747e5d5`.)_
+
+`response_excerpt` is marked `[redacted]` (a `NULL` stays `NULL`) on **every**
+delivery of this payer's `customer.*` events, terminal ones included — unlike
+`payload_sha256`, it is a copy of what the merchant _said_, not forensics of
+what vpay _sent_. The intent's pair is NULLed rather than marked because the
+code column's closed-vocabulary CHECK (`0037`) refuses a text marker.
 
 `provider_requests` needs no statement, and that is a property of its schema
 (`0016`: a status code and an attempt number, no bodies) rather than an
-oversight. `refunds.reason` is left alone — it is the merchant's free text
+oversight. Its `error_kind` holds only vpay's own operator labels and is
+**not** redacted; whether to reclassify it is recorded in
+`docs/flows/customers/privacy-and-erasure.md` as a decision a maintainer has
+yet to take. `staff_members.email` is out of reach by construction — a staff
+subject, issue #145. `refunds.reason` is left alone — it is the merchant's free text
 about their own refund, the same kind of thing `metadata` is.
 
 Two of these were found only because a test caught them, not because anyone
@@ -85,8 +105,10 @@ payer's identifiers", not "none except the newest".
 
 ## Why `webhook_deliveries.payload_sha256` is cleared
 
-`webhook_deliveries` stores a digest and not the bytes (`0022`), so it holds no
-copy of the payer. It gets a statement for the opposite reason to a leak: the
+`webhook_deliveries` stores a digest and not the bytes (`0022`), ~~so it holds
+no copy of the payer~~ — _corrected 2026-09-23: the digest holds none, but
+`response_excerpt` can (the table above), and has its own statement since
+2026-09-19._ The digest gets a statement for the opposite reason to a leak: the
 digest is recorded by the first signed attempt and compared on every later one,
 so rewriting `events.data` makes a pending delivery fail that comparison and
 **dead-letter**, with an operator-facing message blaming "a renderer changed
@@ -142,7 +164,16 @@ the rows they exist to refuse.
 `an_erasure_leaves_no_payer_identifier_in_any_column_of_any_table` scans
 **every** `text`, `character varying` and `jsonb` column `information_schema`
 reports in `public`, before and after, for five fixture literals — found in
-seven named places before the `DELETE` and nowhere after. A test that named
+**ten** named places before the `DELETE` and nowhere after. ~~seven named
+places~~ **Corrected 2026-09-23:** the seven of 2026-09-16 (`customers.name`,
+`customers.address_line1`, `events.data`, `charges.payer_ref`,
+`charges.failure_raw`, `refunds.failure_raw`, `idempotency_keys.response_body`)
+plus `payment_intents.last_payment_error_message` and
+`webhook_deliveries.response_excerpt` (2026-09-19, #211) and
+`manual_payments.reference` (2026-09-23, step A). The list is the `for expected
+in [...]` array in `backends/tests/integration/tests/customers.rs`; a new
+store that holds a payer literal must join it, or the "found before" half
+silently stops proving anything about that column. A test that named
 tables would have named the wrong ones, which is exactly what happened to
 issue #68.
 

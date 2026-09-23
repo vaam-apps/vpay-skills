@@ -5,8 +5,12 @@ changed, and — the section worth reading — **any claim that stopped being tr
 so someone upgrading can find the thing that will break them.
 
 Releases are named for the date of verification and the vpay commit verified
-against, because vpay publishes no release tags and its workspace version has
-never moved off `0.1.0`. See [VERSIONING.md](VERSIONING.md).
+against, because that commit is usually between two vpay releases. See
+[VERSIONING.md](VERSIONING.md). _(Corrected 2026-09-23: this sentence said "vpay
+publishes no release tags and its workspace version has never moved off
+`0.1.0`". vpay has cut release tags since 2026-09-17 — `v0.1.1` through
+`v0.5.0` as of 2026-09-23 — and its workspace version is `0.5.0`. The naming
+rule stands, for the reasons VERSIONING.md now gives.)_
 
 ## v2026-09-16-7a79684e
 

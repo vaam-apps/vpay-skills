@@ -1,6 +1,6 @@
 # Errors: typed at the leaves, composed per layer, classified once
 
-_Verified against vpay `d3a8810b` (2026-09-16). Version-sensitive claims
+_Verified against vpay `b747e5d5` (2026-09-23). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 Decision record: `docs/adr/0011-error-modelling.md`. Readable version:
@@ -237,11 +237,21 @@ logs at `severity()`. The loop does not inspect variants.
 **Binaries.** `main` returns `ExitCode` and wraps an
 `async fn run() -> anyhow::Result<()>` in which every fallible startup step
 gets `.context("what we were doing")`. On `Err`, `main` prints the full chain
-to **stderr** with `eprintln!("{e:#}")` — `tracing` may not be initialised yet
-when configuration fails — then finds the first classifiable leaf with
-`find_in_chain::<ConfigError>` first, then `DbError` (a config naming a dead
-database is still a config problem), and exits with `category().exit_code()`,
-falling back to `Internal`/`1`.
+to **stderr** with `eprintln!("vpay-server: {error:#}")` — `tracing` may not
+be initialised yet when configuration fails — then finds the first
+classifiable leaf and exits with `category().exit_code()`, falling back to
+`Internal`/`1`.
+
+~~…finds the first classifiable leaf with `find_in_chain::<ConfigError>`
+first, then `DbError`…~~ **Corrected 2026-09-23:** `exit_code_for` in
+`backends/apps/vpay-server/src/main.rs` tries **four** leaves, in this order:
+`StartupError` (a flag or knob the binary was not given, defined in the binary
+itself), `ConfigError`, `SigningKeyError`, then `DbError` — last, because a
+config naming a dead database is still a config problem. It has had that shape
+since Step 1 (2026-09-02); the two-type version was copied from
+`docs/flows/errors.md` § Boundaries, which still says it as of vpay `b747e5d5`.
+Trust the function, and add a new startup leaf **there**: `find_in_chain` is
+typed, so anything it does not name falls through to exit `1`.
 
 ## How to add an error
 

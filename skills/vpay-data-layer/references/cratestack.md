@@ -1,6 +1,6 @@
 # CrateStack in vpay: the private module, the traps, and the drift
 
-_Verified against vpay `d3a8810b` (2026-09-16). Version-sensitive claims
+_Verified against vpay `b747e5d5` (2026-09-23). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 `vpay-db` compiles `schemas/vpay.cstack` with CrateStack's
@@ -12,29 +12,55 @@ generates DDL from the `.cstack` file and it drives no migration. What the
 file buys is a second, machine-checked description of the same database and
 a query layer for the parts of it that fit.
 
-## What actually runs through it, as of 2026-09-16
+## What actually runs through it, as of 2026-09-23
 
-Nineteen `model` declarations, **five** of which carry real queries:
+Twenty `model` declarations (nineteen from 2026-09-13, when `Credential`
+arrived, until step A added `ManualPayment` on 2026-09-23). **Fourteen** carry
+production statements — thirty-six chains, counted on vpay `b747e5d5` as every
+generated builder chain in `backends/crates/vpay-db/src/*.rs` outside
+`#[cfg(test)]` that ends in one `run(..)` or `run_in_tx(..)`:
 
-| model             | statements                                                                        |
-| ----------------- | --------------------------------------------------------------------------------- |
-| `DisabledClient`  | `find_unique`, `upsert`, `delete_many().where_(..)`                               |
-| `Currency`        | `find_unique(..).for_update()` then `upsert(..)`, both `run_in_tx` on boot step 4 |
-| `Provider`        | `upsert(..).run_in_tx` — migration `0033` is what made it possible                |
-| `Event`           | the outbox: `update_many(..)` on the fan-out transaction                          |
-| `WebhookDelivery` | the outbox: `upsert(..).do_nothing()` on the same transaction                     |
+| model                    | statements | what                                                                              |
+| ------------------------ | ---------- | --------------------------------------------------------------------------------- |
+| `DisabledClient`         | 3          | `find_unique`, `upsert`, `delete_many().where_(..)`                               |
+| `Currency`               | 2          | `find_unique(..).for_update()` then `upsert(..)`, both `run_in_tx` on boot step 4 |
+| `Provider`               | 1          | `upsert(..).run_in_tx` — migration `0033` is what made it possible                |
+| `Event`                  | 1          | the outbox: `update_many(..)` on the fan-out transaction                          |
+| `WebhookDelivery`        | 1          | the outbox: `upsert(..).do_nothing()` on the same transaction                     |
+| `Customer`               | 2          | `touch_last_used`'s `update_many`, the hard delete's `delete_many`                |
+| `CheckoutSession`        | 4          | four reads (`find_many`/`find_unique`), no generated write                        |
+| `Invoice`                | 1          | `mark_uncollectible`'s guarded `update_many`                                      |
+| `InvoiceItem`            | 1          | `items_for_invoice`, a `find_many`                                                |
+| `ManualPayment`          | 1          | `manual_payment_for_invoice`, a `find_many` (step A, 2026-09-23)                  |
+| `StaffMember`            | 5          | every `staff_members` statement                                                   |
+| `StaffSession`           | 7          | every `staff_sessions` statement                                                  |
+| `OauthAuthorizationCode` | 3          | every `oauth_authorization_codes` statement                                       |
+| `Credential`             | 4          | every `credentials` statement (2026-09-13)                                        |
 
-Plus three whole tables whose **every** repository method runs through the
-generated layer — `staff_members` (7), `staff_sessions` (6),
-`oauth_authorization_codes` (3), sixteen of the thirty-two statements the
-reference page counts, with no raw `sqlx` between them.
+~~Nineteen `model` declarations, **five** of which carry real queries~~ —
+**corrected 2026-09-23.** The five-row table was the figure in
+`schemas/vpay.cstack`'s own header box, which still says "FIVE" on
+`b747e5d5`, and it was wrong from 2026-09-06 (`Customer`) and 2026-09-07
+(the rest). vpay's `docs/status/infrastructure.md` corrected it to twelve of
+seventeen on 2026-09-10 (issue #87); `docs/reference/vpay-db/cratestack-what-runs-through-it.md`
+still carries that 2026-09-10 registry ("thirty-two statements, twelve
+tables"), with no `Credential` or `ManualPayment` row. **Recount by the method
+above before you quote any of these numbers.**
 
-That is a property of migration `0035` rather than of ambition. Everything
-that keeps other tables on raw `sqlx` was designed out of those three before
-they were created: no `jsonb`, no `bytea`, no native enum, no `DEFAULT` on
+Four whole tables have **every** repository statement on the generated layer,
+with no raw `sqlx` in their modules: `staff_members` (5), `staff_sessions`
+(7), `oauth_authorization_codes` (3) and `credentials` (4). ~~Three … (7),
+(6), (3), sixteen of the thirty-two statements~~ _(this said three tables and
+7/6/3 — the 2026-09-10 registry's counts; re-measured 2026-09-23.)_
+
+That is a property of migrations `0035` (the staff three) and `0044`
+(`credentials`) rather than of ambition. Everything that keeps other tables on
+raw `sqlx` was designed out of those four before they were created: no `jsonb`, no `bytea`, no native enum, no `DEFAULT` on
 any column a writer names, no `seq` cursor.
 
-**Every other model is a design sketch.** `model PaymentIntent`,
+**The other six are a design sketch** — `PaymentIntent`, `Charge`,
+`Refund`, `LedgerTransaction`, `LedgerEntry`, `RateLimitWindow` (the last
+declared since 2026-09-10; `rate_limits.rs` is raw `sqlx`). `model PaymentIntent`,
 `model Charge` and `model Refund` in particular carry **no `@@allow` arm at
 all**, so every generated read on them answers zero rows — and that is
 pinned in that direction on purpose by
@@ -91,12 +117,20 @@ intra-doc link is documentation, not a reach.
 The dashboard's read surface mounts `cratestack_schema::axum::procedure_router`.
 
 The generated `router()` **merges `model_router(...)`** — the CRUD CrateStack
-generates for every one of the nineteen models, creates, updates and deletes
-included, whether or not anything routes it. `procedure_router` is the same
-generated function with that merge removed. **"Reads only" is expressed by
-calling a different generated function rather than by trusting a route
-table**, and `no_generated_model_route_is_mounted_only_the_one_procedure_is`
-probes all nineteen model paths to prove none matches.
+generates for every model, creates, updates and deletes included, whether or
+not anything routes it. `procedure_router` is the same generated function with
+that merge removed. **"Reads only" is expressed by calling a different
+generated function rather than by trusting a route table**, and
+`no_generated_model_route_is_mounted_only_the_one_procedure_is` probes each
+model's paths to prove none matches.
+
+**Gap, measured on vpay `b747e5d5` (2026-09-23): the probe covers nineteen of
+the twenty models.** Its `MODEL_TABLES: [&str; 19]` has no `manual_payments`
+— step A's `model ManualPayment` was declared after the list, which is exactly
+the case the list's own comment on `credentials` warns about. Nothing
+suggests `/manual_payments` is mounted (`procedure_router` merges no model
+router), but nothing proves it either. **If you add a model, add its table to
+that array in the same commit.**
 
 `dashboard_procedure_router` never calls `crate::persistence::system_context`
 — the only place in the crate that can produce a context for which

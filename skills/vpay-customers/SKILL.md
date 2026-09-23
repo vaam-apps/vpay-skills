@@ -1,11 +1,11 @@
 ---
 name: vpay-customers
-description: The vpay Customer object and the account-holder lookup — phone-first identity, the at-least-one-identifier rule, the address object whose GPS half is two integer microdegree columns, the two-shape erasure that must reach every copy of a payer vpay kept (six tables, not one), the twelve-month retention sweep, the three customer.* events, and GET /v1/account_holders' three-way answer with its three reserved-but-unbuilt privacy controls. Load this before touching /v1/customers, /v1/account_holders, the address, anything that stores or logs a payer identifier, or the sweep_idle_customers job.
+description: The vpay Customer object and the account-holder lookup — phone-first identity, the at-least-one-identifier rule, the address object whose GPS half is two integer microdegree columns, the two-shape erasure that must reach every copy of a payer vpay kept (eight tables, not one), the twelve-month retention sweep, the three customer.* events, and GET /v1/account_holders' three-way answer with its three reserved-but-unbuilt privacy controls. Load this before touching /v1/customers, /v1/account_holders, the address, anything that stores or logs a payer identifier, or the sweep_idle_customers job.
 ---
 
 # Customers, addresses, erasure, and the account-holder lookup
 
-> **Verified against vpay `0799a8d2` (2026-09-18).** Version-sensitive claims below
+> **Verified against vpay `b747e5d5` (2026-09-23).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -17,7 +17,7 @@ here is a privacy rule with a gate behind it, not a CRUD shape. Flow docs:
 `docs/flows/customers.md` plus the five pages in `docs/flows/customers/`, and
 `docs/flows/account-holder-lookup.md`.
 
-## State of it, as of 2026-09-16
+## State of it, as of 2026-09-23
 
 **REAL.** The five `/v1/customers` routes, the address including both
 coordinate columns, both erasure branches, the retention sweep, all three
@@ -101,8 +101,11 @@ identifier columns become the literal `[redacted]`, the two coordinate columns
 become `NULL`, `anonymized_at` is stamped, `GET` answers `200` with
 `deleted: true`. `metadata` is untouched — it is the merchant's data.
 
-**The erasure must cover every copy vpay kept, and "every copy" means six
-tables, not one.** Getting this wrong is the most damaging defect available in
+**The erasure must cover every copy vpay kept, and "every copy" means eight
+tables, not one** — as of 2026-09-23. ~~six tables~~ _(Corrected 2026-09-23:
+six was right until 2026-09-19, when vpay#211 added `payment_intents` (its
+decline-text pair) and a second `webhook_deliveries` statement
+(`response_excerpt`); step A added `manual_payments` on 2026-09-23.)_ Getting this wrong is the most damaging defect available in
 this area. Details, the marker CHECK's `IS NOT DISTINCT FROM` subtlety, and
 the closed idempotency race: [references/erasure.md](references/erasure.md).
 

@@ -1,6 +1,6 @@
 # `GET /v1/account_holders` — the three-way answer and three unbuilt controls
 
-_Verified against vpay `d3a8810b` (2026-09-16). Version-sensitive claims
+_Verified against vpay `b747e5d5` (2026-09-23). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 "Whose mobile-money account is this number?" Built for issue #47: an integrator
