@@ -63,16 +63,44 @@ browser, with no error anywhere.
 
 ## Which components come from `@vaam-apps/ui`
 
-`Table`, `FormField` (was `Field`), `Input`, `Button`, `InlineBanner` (was
+~~`Table`, `FormField` (was `Field`), `Input`, `Button`, `InlineBanner` (was
 `Alert`), `InlineEmptyState`, `Code`, `ScreenStack`, `SideNav`,
 `MoreDetailDrawer`, `ThemeSwitcher`, `Pagination`, `Timeline`,
-`DataList`/`DataListRow`, `createStatusPill`/`defineStatusSystem`.
+`DataList`/`DataListRow`, `createStatusPill`/`defineStatusSystem`.~~
+**Corrected 2026-09-24** (read off vpay `434dda7c`'s imports): `Table` and its
+parts, `FormField` (was `Field`), `Input`, `Button`, `InlineBanner` (was
+`Alert`), `InlineEmptyState`, `Code`, `ScreenStack`, `SideNav`,
+`MoreDetailDrawer`, `DrawerClose`, `DetailList`/`DetailRow`, `InstrumentPanel`,
+`DateRangePicker` (with `IsoDateRange`), `ThemeSwitcher`,
+`createStatusPill`/`defineStatusSystem`. The dashboard imports no `Pagination`,
+`Timeline` or `DataList`/`DataListRow`.
 
 Two things that changed shape rather than name: `InlineBanner` renders **no
 `role`** where `Alert` defaulted to `role="alert"`, so every site relying on
 that default now wraps it and names the role explicitly. And
-`payments-filters.tsx` uses a **native `<select>`** — `@vaam-apps/ui`'s
-`Select` cannot be named by a `<label>`.
+`payments-filters.tsx` uses a **native `<select>`** — ~~`@vaam-apps/ui`'s
+`Select` cannot be named by a `<label>`.~~ **Corrected 2026-09-24:** it can.
+`SelectTrigger` takes an `id` (on `0.2.4` as on `0.3.0`), so a `FormField` label
+names it. The native `<select>` stays for the reason the file itself gives: the
+package's `Select` wraps a Headless UI `Listbox` and forwards no `name`, and no
+ref a plain `onChange` can read.
+
+**The date filter, since vaam-apps/vpay#258** (`@vaam-apps/ui` `0.3.0`; not on
+`master` before that merge). `DateRangePicker` is compound parts:
+`DatePickerTrigger` (named by `aria-label="Created between"`; there is still no
+visible label), `DatePickerValue`, `DatePickerClear` and `DatePickerContent`. A
+pick is staged: it reaches the filter only on **Save**, and Cancel, Escape or a
+press outside discards it. Taps follow M3's range rule: the first sets the
+start, a tap on or after it sets the end, and any other tap starts again. A
+start saved alone sends `created_from` only, "from that day on", where the old
+picker's first click was a one-day range. While the picker is open the page is
+inert, so the first press on Apply only closes it.
+
+**Floating chrome, since vaam-apps/vpay#258.** Below 640px `SideNav` is a
+288px-wide bar at the bottom of the screen. Anything pinned near the bottom must
+clear it: the Menu pill sits above it (`bottom-24`), and `main` carries `pb-40`
+so the last row scrolls clear of both. From 640px up the rail ends 80px from
+the edge, so content columns use `sm:pl-24`.
 
 `ProcedureTable` (`src/components/procedure-table.tsx`) is the app's own shell
 shared by the four procedure lists, because they differ only in their columns.
@@ -125,7 +153,10 @@ sidebar `<nav aria-label="Primary">` with only `xl:`-prefixed utilities and no
 unprefixed `hidden`, so it falls back to `display: block` while the 1024–1279px
 floating rail is also visible — two landmarks answering the same name.
 Reproduced directly with axe-core at four viewports and traced to the upstream
-line. **It has not been reported upstream.**
+line. ~~**It has not been reported upstream.**~~ **Corrected 2026-09-24:** it
+had been, as [vaam-apps/ui#16](https://github.com/vaam-apps/ui/issues/16)
+(2026-09-13), which is still open. The vaam-apps/vpay#258 review re-measured it
+on `@vaam-apps/ui` `0.3.0`: one violation at 375–1279px, none from 1280px.
 
 The dashboard's Storybook has 25 stories bound to the same
 `src/testing/fixtures.ts` `a11y.test.tsx` renders, so a screen cannot gain a
