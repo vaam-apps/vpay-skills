@@ -87,14 +87,35 @@ ref a plain `onChange` can read.
 
 **The date filter, since vaam-apps/vpay#258** (`@vaam-apps/ui` `0.3.0`; not on
 `master` before that merge). `DateRangePicker` is compound parts:
-`DatePickerTrigger` (named by `aria-label="Created between"`; there is still no
-visible label), `DatePickerValue`, `DatePickerClear` and `DatePickerContent`. A
-pick is staged: it reaches the filter only on **Save**, and Cancel, Escape or a
-press outside discards it. Taps follow M3's range rule: the first sets the
+`DatePickerTrigger`, `DatePickerValue` (placeholder "Any time"),
+`DatePickerClear` and `DatePickerContent`, inside a `FormField` labelled
+"Created between". The label's `htmlFor` is the trigger's `id`
+(`payments-filter-created`), and the trigger has no `aria-label`. Its name is
+"Created between" in every state, and its description is the picked dates, or
+"Any time" when empty. Tests find it with
+`getByRole("button", { name: "Created between" })`. Clicking the label focuses
+the field without opening the picker.
+
+A pick is staged: it reaches the filter only on **Save**, and Cancel, Escape or
+a press outside discards it. Taps follow M3's range rule: the first sets the
 start, a tap on or after it sets the end, and any other tap starts again. A
 start saved alone sends `created_from` only, "from that day on", where the old
 picker's first click was a one-day range. While the picker is open the page is
 inert, so the first press on Apply only closes it.
+
+The trigger has a fixed width, `w-[calc(23ch+16px+3.5rem)]`, sized to the
+longest value `YYYY-MM-DD → YYYY-MM-DD`. The `16px` and `3.5rem` are kept apart
+on purpose. The rem chrome grows with the browser's default font size and the
+14px value does not, so a single pixel figure cut the range short at Chrome's
+"Large" setting. `font-mono text-prose` on it only sets the font that `ch` is
+measured in; keep it. `max-w-full` on the trigger and on both filters'
+`FormField`s caps them at the row, so below a 314px window the field truncates
+rather than push the page sideways. The Status `<select>` is `h-10`, so the two
+labels and controls line up. The row is `flex-wrap` at every width and never
+scrolls sideways: one line wherever it fits, more lines where it doesn't.
+Don't add a breakpoint or `overflow-x-auto` to it. The `FiltersWithRange`
+(1280×800) and `FiltersWithRangePhone` (375×812) stories measure all of this in
+a real browser, including at a 20px root.
 
 **Floating chrome, since vaam-apps/vpay#258.** Below 640px `SideNav` is a
 288px-wide bar at the bottom of the screen. Anything pinned near the bottom must
