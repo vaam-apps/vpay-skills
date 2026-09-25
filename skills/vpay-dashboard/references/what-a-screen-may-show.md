@@ -69,15 +69,24 @@ browser, with no error anywhere.~~ **Corrected 2026-09-23, in two parts.**
    The Storybook runs 29 stories `dark` and 4 `light` as of vpay `f68fda09`
    (2026-09-25); it ran 21 and 4 from 2026-09-13
    (`docs/flows/dashboard/status-built-and-not-built.md`) through `b747e5d5`.
-2. **Since `^0.2.4` (vpay#249, 2026-09-23) the package also declares its
-   dark tokens on `:root`.** So an unregistered `data-theme` should no longer
-   render unthemed. This comes from reading the package's
-   `dist/styles/theme.css`, on `0.2.4` and again on `0.4.0` (2026-09-25),
-   where the `:root, [data-theme="dark"]` block is unchanged. Nobody has
-   measured it in a browser. vpay's own `layout.test.tsx` header still says
-   a `data-theme` naming neither theme "compiles no styling at all", and the
-   dashboard README that it renders "completely unthemed". That is the same
-   unmeasured question, answered the other way.
+2. **Since `^0.2.4` (vpay#249, 2026-09-23) the package also declares its own
+   dark tokens on `:root`**, in a `:root, [data-theme="dark"]` block that
+   `0.4.0` keeps unchanged. **An unregistered `data-theme` renders dark.**
+   Measured 2026-09-25 in headless Chromium: `@vaam-apps/ui` 0.4.0's built
+   `dist/styles/theme.css`, compiled the way `app/globals.css` does it
+   (`tailwindcss`, then the theme, then `daisyui` with `themes: false`) with
+   the tailwindcss 4.3.3 and daisyUI 5.7.28 vpay's lockfile resolves, on a
+   bare test page rather than the app's own build. `data-theme="nonsense"`
+   and `data-theme="corporate"` computed the same `--color-base-100`
+   (`#0a0b0d`), `--surface-3` (`#1c1f25`) and body background as
+   `data-theme="dark"` and as no attribute, under both
+   `prefers-color-scheme` values. Only `light` differed (`#fcfcfd`). The same
+   probe on `0.1.2`'s `theme.css` gave daisyUI's colours dark as well, with
+   the package's own `--surface-3` unset: with this toolchain a wrong name
+   lost the package's own tokens, not all styling. vpay's own
+   `layout.test.tsx` header still says a `data-theme` naming neither theme
+   "compiles no styling at all", and the dashboard README says it renders
+   "completely unthemed". Both are wrong at `f68fda09`. Fix them in vpay.
 
 ~~`layout.test.tsx`'s case is still titled "the only theme @vaam-apps/ui
 actually compiles", which is stale.~~ **Corrected 2026-09-25:**
