@@ -1,6 +1,6 @@
 # `sdks/flutter/vpay_checkout_flutter`
 
-_Verified against vpay `0799a8d2` (2026-09-18). Version-sensitive claims
+_Verified against vpay `b747e5d5` (2026-09-23). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 A **payer** surface, like `@vaam-apps/vpay-stripe-js` — not a third merchant
@@ -424,8 +424,16 @@ moment of dismissal. Full detail, screenshots and transaction ids:
 ## What is still not done, honestly
 
 - **iOS and macOS were not touched by this lane** — Android only, on the
-  maintainer's own `emulator-5554`. They remain compiled by nobody (no
-  `xcodebuild` on this repository's Linux host); reviewed by reading only.
+  maintainer's own `emulator-5554`, so **the native sheet has never run on
+  iOS**. ~~They remain compiled by nobody (no `xcodebuild` on this
+  repository's Linux host); reviewed by reading only.~~ **Corrected
+  2026-09-23, iOS only:** the iOS host was built and driven on an iOS
+  Simulator (iPhone 17 Pro, iOS 26.5) on 2026-09-16, for architecture 2's
+  browser cutover — the day before this lane — and vpay's
+  `docs/status/mobile-flutter-plugin.md` records that since 2026-09-20.
+  **macOS is still compiled by nobody.** The gap-ledger line in
+  `docs/sdks/parity.md` still says both are, as of `b747e5d5`; the Flutter
+  table's own row is the corrected one.
 - **The redirect hand-off's stop-URL matching is still unverified on every
   platform** — the same deep-link signal architecture 2's cutover
   documented. Every Orange walk in this lane also ended in `dismissed`,

@@ -1,6 +1,6 @@
 # `sdks/tauri/tauri-plugin-vpay-checkout`
 
-_Verified against vpay `999a23f9` (2026-09-22). Version-sensitive claims
+_Verified against vpay `b747e5d5` (2026-09-23). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 Arrived with [vpay#238](https://github.com/vaam-apps/vpay/pull/238), merged
@@ -23,7 +23,11 @@ branch forked at `7134ecb`, before release-please's 0.4.0 → 0.4.1 bump
 ([#236](https://github.com/vaam-apps/vpay/pull/236)) landed on `master`, so
 the branch was internally consistent with itself and wrong about the tree it
 merged into — the merge was clean and the version was stale. This page
-faithfully mirrored the branch.
+faithfully mirrored the branch. **Both are `0.5.0` since 2026-09-23**, when
+the `v0.5.0` release ([vpay#239](https://github.com/vaam-apps/vpay/pull/239),
+`d98fdaf`) moved them with every other annotated line — on `b747e5d5`
+`cargo xtask verify-versions` prints `24 version references all say 0.5.0`.
+The plugin has no version of its own: it moves with every vpay release.
 
 Design: `docs/plans/2026-09-22-tauri-plugin.md` (T1–T7). Contract the parallel
 lanes built against: `docs/plans/2026-09-22-tauri-plugin-brief.md`. Decisions:
@@ -91,12 +95,18 @@ Android, because Tauri always supplies the Activity.
 
 ## Per host, with the fact that will surprise you first
 
-| Host                          | Window                                                      | Dismissal signal                    | `stopUrlReached`                                          |
-| ----------------------------- | ----------------------------------------------------------- | ----------------------------------- | --------------------------------------------------------- |
-| Android                       | partial Custom Tab, 90 % height, adjustable, close at START | yes — the tab closing               | wired via an exported forwarding Activity; never observed |
-| iOS                           | `SFSafariViewController`, `.pageSheet` + `.large()`         | yes — Done **and** swipe-away       | **unreachable** (T6)                                      |
-| Desktop (macOS/Windows/Linux) | the default browser, `open::that_detached`                  | **none at all** — `dismiss()` only  | not implemented                                           |
-| Plain browser (no Tauri)      | `window.open` popup, address bar visible                    | yes — `closed`, polled every 500 ms | n/a — a cross-origin popup's location is unreadable       |
+| Host                          | Window                                                                                   | Dismissal signal                    | `stopUrlReached`                                          |
+| ----------------------------- | ---------------------------------------------------------------------------------------- | ----------------------------------- | --------------------------------------------------------- |
+| Android                       | partial Custom Tab **requested** (90 %, adjustable, close at START) — Chrome declined it | yes — the tab closing               | wired via an exported forwarding Activity; never observed |
+| iOS                           | `SFSafariViewController`, `.pageSheet` + `.large()`                                      | yes — Done **and** swipe-away       | **unreachable** (T6)                                      |
+| Desktop (macOS/Windows/Linux) | the default browser, `open::that_detached`                                               | **none at all** — `dismiss()` only  | not implemented                                           |
+| Plain browser (no Tauri)      | `window.open` popup, address bar visible                                                 | yes — `closed`, polled every 500 ms | n/a — a cross-origin popup's location is unreadable       |
+
+_(Corrected 2026-09-23: the Android row said "partial Custom Tab, 90 %
+height" flat. The height is a request a browser may decline, and Chrome
+declined it on 2026-09-22 — see the gap list below. vpay's
+`docs/flows/tauri-checkout.md` table made the same correction the same day,
+vpay#242.)_
 
 - **Android** declares **no `<intent-filter>` of its own.** A hostless `https`
   filter would claim every https URL on the device (harmful on API 21–30,
@@ -194,7 +204,8 @@ session's` is the case that pins it.
   `package.json`. Neither is a bare string, for the reason #203/#204 wrote
   down. `cargo xtask verify-versions` counts **24** references as of
   2026-09-22; it was 22 before. ~~All `0.4.0`.~~ **Corrected 2026-09-23:**
-  the gate prints `24 version references all say 0.4.1`. The count was right
+  the gate printed `24 version references all say 0.4.1` — and, after the
+  `v0.5.0` release the same day, `… all say 0.5.0` on `b747e5d5`. The count was right
   and the version was not, for the fork-point reason at the top of this page
   — [vpay#240](https://github.com/vaam-apps/vpay/pull/240) moved all 24
   together, which is what a single wrong version reference would have
@@ -215,7 +226,10 @@ session's` is the case that pins it.
   `Cargo.lock`" step globs `git ls-files '*Cargo.lock'` and runs
   `cargo metadata` in each directory, so a release-please bump picks this
   file up — **so the exposure is the manual bump only**, which is exactly
-  what #240 was. If you bump this crate's version by hand: run
+  what #240 was. _(Observed 2026-09-23: the `v0.5.0` release left
+  `examples/tauri-checkout/src-tauri/Cargo.lock` at `0.5.0` with no hand
+  edit, the self-heal working as described. The example's own README still
+  quotes `0.4.1` in its lockfile snippet.)_ If you bump this crate's version by hand: run
   `cargo metadata --format-version 1` in
   `examples/tauri-checkout/src-tauri/` and commit the lockfile in the same
   change.
@@ -250,14 +264,14 @@ exit code and who ran it:
 **Measured 2026-09-22 by the lane that built it** (and, for the first four
 rows, re-run in the docs lane's own pass through the `just` recipes):
 
-| What                            | Result                                                                                                         |
-| ------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| The Rust crate                  | `cargo build`, `clippy --all-targets -D warnings`, `cargo doc` (0 warnings) and `cargo fmt --check` all exit 0 |
-| Its tests                       | **19 passed, 0 failed, 0 ignored**, plus **1 doctest** — eleven of the nineteen are the desktop host           |
-| The mobile targets              | `cargo check` exits 0 for `aarch64-linux-android` (no NDK needed) and `aarch64-apple-ios` (no env var needed)  |
-| The guest-JS package            | typecheck, lint at `--max-warnings 0`, build, and **71 vitest cases across 8 files, 0 skipped** — all exit 0   |
-| The Swift                       | `swift build --sdk iphonesimulator -target arm64-apple-ios15.0-simulator` exit 0; `xcodebuild` BUILD SUCCEEDED |
-| `cargo xtask verify-sdk-parity` | 0 — **750 proving tests, 45 dated gaps, 39 rows** (was 662 / 37) — ~~44~~, see below                           |
+| What                            | Result                                                                                                                                     |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| The Rust crate                  | `cargo build`, `clippy --all-targets -D warnings`, `cargo doc` (0 warnings) and `cargo fmt --check` all exit 0                             |
+| Its tests                       | **19 passed, 0 failed, 0 ignored**, plus **1 doctest** — eleven of the nineteen are the desktop host                                       |
+| The mobile targets              | `cargo check` exits 0 for `aarch64-linux-android` (no NDK needed) and `aarch64-apple-ios` (no env var needed)                              |
+| The guest-JS package            | typecheck, lint at `--max-warnings 0`, build, and **71 vitest cases across 8 files, 0 skipped** — all exit 0                               |
+| The Swift                       | `swift build --sdk iphonesimulator -target arm64-apple-ios15.0-simulator` exit 0; `xcodebuild` BUILD SUCCEEDED                             |
+| `cargo xtask verify-sdk-parity` | 0 — **750 proving tests, 45 dated gaps, 39 rows** (was 662 / 37) — ~~44~~, see below. **767 / 45 / 40 on `b747e5d5`** (step A, 2026-09-23) |
 
 ~~**44** dated gaps.~~ **Corrected 2026-09-23: the gate prints
 `45 dated gap(s)`**, and the 44 was wrong on the day it was written rather
@@ -322,6 +336,16 @@ package and its `typecheck`, `lint` and `test` scripts **do** run in
 `just ci` through `pnpm -r` — and each of those scripts chains the same
 `deps` step that builds the guest-JS first, so the TypeScript half is
 genuinely covered.
+
+**A bare `cargo build` in `src-tauri/` fails on a clean checkout** (written
+down 2026-09-23, vpay#242, in that crate's `Cargo.toml` header):
+`tauri.conf.json`'s `frontendDist = "../dist"` is read by `tauri-codegen` at
+compile time and `/dist` is gitignored. `beforeBuildCommand` does not help —
+the Tauri CLI runs that hook, cargo does not. Build the front end first
+(`pnpm --filter @vpay/example-tauri-checkout build`) or drive the build
+through `pnpm exec tauri build`. `src-tauri/gen/` (the Gradle and Xcode
+projects `tauri … init` writes) is gitignored and regenerated by `init`;
+`src-tauri/Cargo.lock` is tracked.
 
 **The ungated slice is exactly `src-tauri/` — the Rust, and with it every
 route to the Kotlin and the Swift — plus any script `pnpm -r` never calls,

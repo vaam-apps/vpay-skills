@@ -5,7 +5,7 @@ description: "The six packages under sdks/ and the parity rule that binds the tw
 
 # vpay SDKs
 
-> **Verified against vpay `999a23f9` (2026-09-22).** Version-sensitive claims below
+> **Verified against vpay `b747e5d5` (2026-09-23).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -20,7 +20,13 @@ commit, and the gate passes against `master`.
 
 `sdks/` holds **six** packages as of 2026-09-22 (five until then). Two are
 merchant SDKs, **three** are payer surfaces, and one is evidence rather than an
-SDK.
+SDK. **Five of them carry vpay's own version** — `0.5.0` since the `v0.5.0`
+release of 2026-09-23 (vpay#239; `sdks/rust` through `version.workspace`);
+release-please moves all twenty-four annotated version lines together, so no
+package has a release line of its own. `sdks/stripe-compat` is `0.0.0`,
+private, and never released. `npm view` answers `0.5.0` for `@vaam-apps/vpay-sdk` and
+`@vaam-apps/vpay-stripe-js`, and `404` for `@vaam-apps/vpay-tauri-checkout`
+(measured 2026-09-23).
 
 ## The rule, before anything else
 

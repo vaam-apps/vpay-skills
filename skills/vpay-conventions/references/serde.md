@@ -1,6 +1,6 @@
 # serde: `rename_all` is for _our_ wire, never a rail's
 
-_Verified against vpay `d3a8810b` (2026-09-16). Version-sensitive claims
+_Verified against vpay `b747e5d5` (2026-09-23). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 ADR-0016 standard 3. Gate: `cargo xtask verify-serde`, in `just verify` and in
@@ -63,8 +63,15 @@ proposed again". A rail's product roadmap is not a registry.
 ## The exemption table
 
 It lives in `docs/adr/0016-engineering-standards.md`, under standard 3.
-Sixteen rows as of 2026-09-16 (`verify-serde` last printed "90 types, 16
-exemptions"). Each row is `Type | File | Reason`. Adding a row is the only
+~~Sixteen rows as of 2026-09-16 (`verify-serde` last printed "90 types, 16
+exemptions").~~ **Corrected 2026-09-23: seventeen rows** — the seventeenth,
+`Transfer` in `vpay-adapter-mtn-momo/src/wire.rs` (MTN's camelCase
+Disbursements wire), arrived with the refund path
+([vpay#178](https://github.com/vaam-apps/vpay/pull/178)) on 2026-09-16, so the
+old figure was already stale on the tree it was stamped against. Measured on
+vpay `b747e5d5`, `cargo xtask verify-serde` prints **104 serialisable types,
+17 exempted** (it was 90 and 16 on 2026-09-12). Re-run it rather than trusting
+either number. Each row is `Type | File | Reason`. Adding a row is the only
 sanctioned escape, and:
 
 **It is read in both directions.** A row naming a type that now complies, or a
