@@ -45,12 +45,14 @@ Refine screens. Their first render is read on the server and handed to Refine
 as `initialData`. Their _later_ reads, paging and refetches, go through
 `dashDataProvider("/api/dash")` in `app/(dash)/layout.tsx`, to
 `/api/dash/payment_intents` and `/api/dash/payment_intents/{id}`. There are six
-handlers under `app/api/dash/`; the four later ones (`refunds`, `deliveries`
-and `customers` since 2026-09-13, `checkouts` since 2026-09-14) have no
-caller, because those four screens render on the server and use no client
-data layer. _(This dated all four 2026-09-14 until 2026-09-25, as vpay's
-README did until vaam-apps/vpay#255.)_ So **deleting the
-route files and `src/server/bff.ts` now breaks the payments screens' paging.**
+handlers under `app/api/dash/`; the four added 2026-09-14 (`refunds`,
+`deliveries`, `customers`, `checkouts`) have no caller, because those four
+screens render on the server and use no client data layer. _(vpay's README
+has dated the first three 2026-09-13 since vaam-apps/vpay#255, after
+`f9c7d2cd`, the branch commit that wrote them. None of the four was on
+`master` before 2026-09-14, and this page dates a claim by `master`.)_ So
+**deleting the route files and `src/server/bff.ts` now breaks the payments
+screens' paging.**
 Whether this app should have an authenticated browser-reachable surface at all
 still **reverses a stated property of its security model** and is RD5 in the
 Refine plan — a maintainer's call, not this code's. _(This said "Nothing in
