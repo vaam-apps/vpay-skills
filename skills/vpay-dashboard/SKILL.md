@@ -150,10 +150,17 @@ _create_ one: `/dash/v1` refuses every non-`GET` at the boundary.
 `/login/password` is a step, not a nag: `vpay-server staff add` writes the
 new staff member's password credential with `must_change: true` (a
 `staff_members.password_change_required` column until migration `0044`,
-vpay#168, 2026-09-13), and ADR-0017 decision 1 refuses **every**
-authenticated route to a session whose password still carries it,
-`/oauth/authorize` included (`vpay_api::staff::password_change_required` is
-the check). No `/dash/v1` token can exist until it is done. ~~There is
+vpay#168, 2026-09-13). ~~ADR-0017 decision 1 refuses **every** authenticated
+route to a session carrying it, `/oauth/authorize` included.~~ **Corrected
+2026-09-25:** that is how ADR-0017 decision 1 words it, not what the code
+does. At `f68fda09` the refusal is per route. `GET /dash/v1/oauth/authorize`
+refuses such a session, so no `/dash/v1` token can exist until the change is
+done. `GET /dash/v1/staff/session` and `POST /dash/v1/staff/totp` answer
+`password_change_required: true` instead of refusing, and the dashboard's
+`gateFor` (`src/server/gate.ts`) sends the session to `/login/password`. All
+three ask `vpay_api::staff::password_change_required`, which is deliberately
+not folded into `load_session`, so **a new authenticated staff route refuses
+nothing until it asks too.** ~~There is
 deliberately no "current password" field — the session has already presented
 both factors.~~ **Corrected 2026-09-25, wrong since 2026-09-10 (vpay#97,
 issue #79 item 3):** the form asks for the **current password**, and the
