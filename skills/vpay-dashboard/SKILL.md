@@ -184,8 +184,8 @@ The **merchant** is not configured here at all — it comes from
 signed-in page, so an operator looking at an empty list can tell "this merchant
 has no payments" from "I am looking at the wrong merchant". From 640px it is
 on screen. Below 640px it has been one tap away since 2026-09-14: in the Menu
-drawer until vaam-apps/vpay#258, and in `SideNav`'s More sheet since
-(2026-09-25).
+drawer until vaam-apps/vpay#258, and in `SideNav`'s More sheet since that
+merge (2026-09-25).
 
 ## Navigation is a gate, not a comment
 
