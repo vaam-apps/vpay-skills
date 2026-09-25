@@ -11,8 +11,10 @@ description: The staff operator console at frontends/apps/dashboard — it is th
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
 
 `frontends/apps/dashboard` (`@vpay/dashboard`). Next 15.5.25 App Router, React
-19, Refine 5. Its own `README.md` is the best in-repo companion; the flow docs
-are `docs/flows/dashboard.md` plus the four pages under `docs/flows/dashboard/`
+19, Refine 5. Its own `README.md` is the best in-repo companion, but seven of
+its passages are stale at `f68fda09` (listed under "Known-stale prose" in
+`references/read-seam-and-bff.md`). The flow docs are
+`docs/flows/dashboard.md` plus the four pages under `docs/flows/dashboard/`
 and `docs/flows/dashboard-auth.md`. Decisions: ADR-0008, ADR-0017.
 
 Load `vpay-frontend` first for the workspace, the styling stack and

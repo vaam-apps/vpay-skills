@@ -282,10 +282,12 @@ Two, both verified 2026-09-16 and re-read 2026-09-23 and 2026-09-25
 **The "one procedure" sentences in the Rust transport are stale — five are
 mounted.** Full detail above. Code wins.
 
-**`frontends/apps/dashboard/README.md`'s test count is a 2026-09-11
-snapshot.** _(Until 2026-09-25 this said "counts", and that the README "says
-the BFF is '**Two** `GET` route handlers'". True at `b747e5d5`; see the
-correction below.)_ It quotes a suite of "22 files, 243 tests". The latest
+**`frontends/apps/dashboard/README.md` lags the code: its test count, and seven
+passages about what the app does.** _(Until 2026-09-25 this said its
+"counts are a 2026-09-11 snapshot", and that the README "says the BFF is
+'**Two** `GET` route handlers'". True at `b747e5d5`; see the corrections
+below.)_ Its test count is a 2026-09-11 snapshot: it quotes a suite of "22
+files, 243 tests". The latest
 recorded suite figure is **311 cases in 30 files, 0 skipped**, taken
 2026-09-13 and cited in `docs/flows/dashboard/status-built-and-not-built.md`.
 The tree had 31 `*.test.ts(x)` files on 2026-09-23 and has 30 at `f68fda09`,
@@ -294,8 +296,28 @@ this page. ~~Since vpay#247 (2026-09-23) the README's struck BFF paragraph
 says six handlers, but its "Two `GET` route handlers" lead-in, its layout
 table ("The BFF's two route handlers") and its test-count comment still carry
 the old numbers.~~ **Corrected 2026-09-25:** vaam-apps/vpay#255 (2026-09-24)
-fixed the lead-in and the layout table. Both say six now, so only the
-test-count comment lags. There are **six** route files
+fixed the lead-in and the layout table. Both say six now, so of its
+numbers only the test-count comment lags. There are **six** route files
 under `app/api/dash/` (`payment_intents`, `payment_intents/[id]`,
-`checkouts`, `customers`, `deliveries`, `refunds`). The README's _properties_
-are all still right; only its test count lags.
+`checkouts`, `customers`, `deliveries`, `refunds`). ~~The README's
+_properties_ are all still right; only its counts lag.~~ **Corrected
+2026-09-25: they are not, and were not at `b747e5d5` either.** At `f68fda09`
+the README still says:
+
+- `staff add` "sets `password_change_required`". It writes the password
+  credential's `must_change` since migration `0044` (vpay#168, 2026-09-13).
+- ADR-0017 decision 1 refuses "every authenticated route" to such a
+  session. In the code only `/oauth/authorize` refuses it; see `SKILL.md`.
+- There is no "current password" field. There has been one since 2026-09-10
+  (vpay#97).
+- There is no "Sign out" in the nav. There has been one since 2026-09-14.
+- A `data-theme` that names neither theme renders "completely unthemed".
+  Measured false on `@vaam-apps/ui` 0.4.0; see
+  `what-a-screen-may-show.md`.
+- Its pages table lists six routes and none of the four procedure-backed
+  lists, which have been on `master` since 2026-09-14.
+- "Contrast checking" is among what the app cannot do. Its Storybook's axe
+  run has checked `color-contrast` in Chromium since 2026-09-13 (vpay#171).
+
+`SKILL.md` and `what-a-screen-may-show.md` carry the current truth for each.
+The code wins. Fix the README in vpay, not by editing this page.
