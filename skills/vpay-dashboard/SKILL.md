@@ -5,7 +5,7 @@ description: The staff operator console at frontends/apps/dashboard — it is th
 
 # vpay dashboard
 
-> **Verified against vpay `b747e5d5` (2026-09-23).** Version-sensitive claims below
+> **Verified against vpay `f68fda09` (2026-09-25).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -45,9 +45,11 @@ Refine screens. Their first render is read on the server and handed to Refine
 as `initialData`. Their _later_ reads, paging and refetches, go through
 `dashDataProvider("/api/dash")` in `app/(dash)/layout.tsx`, to
 `/api/dash/payment_intents` and `/api/dash/payment_intents/{id}`. There are six
-handlers under `app/api/dash/`; the four added 2026-09-14 (`refunds`,
-`deliveries`, `customers`, `checkouts`) have no caller, because those four
-screens render on the server and use no client data layer. So **deleting the
+handlers under `app/api/dash/`; the four later ones (`refunds`, `deliveries`
+and `customers` since 2026-09-13, `checkouts` since 2026-09-14) have no
+caller, because those four screens render on the server and use no client
+data layer. _(This dated all four 2026-09-14 until 2026-09-25, as vpay's
+README did until vaam-apps/vpay#255.)_ So **deleting the
 route files and `src/server/bff.ts` now breaks the payments screens' paging.**
 Whether this app should have an authenticated browser-reachable surface at all
 still **reverses a stated property of its security model** and is RD5 in the
@@ -143,11 +145,20 @@ question 8) and **no rail has ever returned money to anyone.** A row on this
 screen is an instruction recorded, never a payout. The dashboard still cannot
 _create_ one: `/dash/v1` refuses every non-`GET` at the boundary.
 
-`/login/password` is a step, not a nag: `vpay-server staff add` sets
-`password_change_required`, and ADR-0017 decision 1 refuses **every**
-authenticated route to a session carrying it, `/oauth/authorize` included. No
-`/dash/v1` token can exist until it is done. There is deliberately no "current
-password" field — the session has already presented both factors.
+`/login/password` is a step, not a nag: `vpay-server staff add` writes the
+new staff member's password credential with `must_change: true` (a
+`staff_members.password_change_required` column until migration `0044`,
+vpay#168, 2026-09-13), and ADR-0017 decision 1 refuses **every**
+authenticated route to a session whose password still carries it,
+`/oauth/authorize` included (`vpay_api::staff::password_change_required` is
+the check). No `/dash/v1` token can exist until it is done. ~~There is
+deliberately no "current password" field — the session has already presented
+both factors.~~ **Corrected 2026-09-25, wrong since 2026-09-10 (vpay#97,
+issue #79 item 3):** the form asks for the **current password**, and the
+server requires `current_password`. The two factors were presented once, up to
+twelve hours earlier, so without it the session cookie alone could change the
+password. On a first sign-in the current password is the one-time password
+`staff add` printed, and the field's hint says so.
 
 ## Configuration fails closed
 
@@ -163,10 +174,18 @@ deliberately: a payment page with no branding still takes a payment; a
 dashboard with no client registration is a login form that cannot log anybody
 in, and rendering one invites somebody to retype a password.
 
+A fifth variable, `VPAY_DASHBOARD_PUBLIC_ORIGIN` (since 2026-09-10), is
+**optional**: the origin a browser reaches the dashboard on, read by
+`csrf.ts`. It is not defaulted either. Unset or unusable, the origin check
+falls back to comparing with `Host`, never to allowing everything.
+
 The **merchant** is not configured here at all — it comes from
 `GET /dash/v1/staff/session` and is rendered beside the staff address on every
 signed-in page, so an operator looking at an empty list can tell "this merchant
-has no payments" from "I am looking at the wrong merchant".
+has no payments" from "I am looking at the wrong merchant". From 640px it is
+on screen. Below 640px it has been one tap away since 2026-09-14: in the Menu
+drawer until vaam-apps/vpay#258, and in `SideNav`'s More sheet since
+(2026-09-25).
 
 ## Navigation is a gate, not a comment
 
@@ -190,9 +209,20 @@ No entry declares a `create` or `edit` route and `meta.canDelete` is `false`,
 so Refine renders no create button and builds no edit route. The refusal is
 expressed in the routing rather than discovered at submit time.
 
-There is no "Sign out" in the nav, and that is the same rule — this layout
-renders on `/login` too. Identity and the way out are in `SignedInBar`, which
-only the pages behind the gate render.
+~~There is no "Sign out" in the nav, and that is the same rule — this layout
+renders on `/login` too.~~ Identity and the way out are in `SignedInBar`,
+which only the pages behind the gate render. **Corrected 2026-09-25, wrong
+since 2026-09-14:** there is a Sign out in the nav. The rule is about the
+**root layout**, which `/login` shares: it renders no nav and no signed-in
+control at all (`layout.test.tsx`: "renders no signed-in control — this layout
+is on /login too"). The rail is `AppShell`'s, which only the pages behind the
+gate render, and its `SideNav` carries the account block (`SignedInBar`, Sign
+out included, and `ThemeSwitcher`) as `accountSlot`. That was in the ≥1280px
+sidebar only from 2026-09-14, and has been at every width since
+vaam-apps/vpay#258 (2026-09-25), behind the toolbar's More control below
+1280px. Sign out stays a form that POSTs to the `signOut` Server Action.
+`references/what-a-screen-may-show.md` says where the block's copies are and
+how a test finds the visible one.
 
 ## More
 
@@ -200,4 +230,7 @@ only the pages behind the gate render.
   procedures, `PROCEDURE_OF`, the token lifecycle, the BFF's properties and its
   method policy. **Read this before adding a procedure or a read.**
 - `references/what-a-screen-may-show.md` — the honest-absence rules, status
-  colour, and what this app still cannot do.
+  colour, which `@vaam-apps/ui` components the app imports, the 0.4.0 chrome
+  (the More sheet and `accountSlot`, the loading skeletons, the date filter),
+  the a11y gate, and what this app still cannot do. **Read this before
+  touching the shell, a loading state or a filter.**
