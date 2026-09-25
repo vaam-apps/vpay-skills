@@ -1,6 +1,6 @@
 # Transitions, numbering, paying, and the settlement flip
 
-_Verified against vpay `d3a8810b` (2026-09-16). Version-sensitive claims
+_Verified against vpay `b747e5d5` (2026-09-23). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 Code: `backends/crates/vpay-db/src/invoices.rs` (the statements),

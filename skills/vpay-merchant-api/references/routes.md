@@ -1,10 +1,30 @@
 # Every mounted route, and the middleware around them
 
-_Verified against vpay `d3a8810b` (2026-09-16). Version-sensitive claims
+_Verified against vpay `b747e5d5` (2026-09-23). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 Assembled in `vpay_api::router` (`backends/crates/vpay-api/src/lib.rs`).
-Counts and contents verified against the code on **2026-09-16**.
+Counts and contents verified against the code on **2026-09-23** (this said
+2026-09-16; no count moved in between).
+
+**Not every process mounts every nest.** This has been true since 2026-09-16
+(ADR-0022, vpay#183, status _Proposed_), and this page did not say so until
+2026-09-23. `vpay_api::router` reads `RouterDeps::surfaces`, which is
+resolved from `deployment.surfaces` by
+`vpay_config::Deployment::enabled_surfaces`:
+
+| Surface      | Mounts                                                              |
+| ------------ | ------------------------------------------------------------------- |
+| `business`   | `/v1`, `/v1/browser`, `/provider`, and `POST /v1/oauth/token`       |
+| `management` | `/dash/v1` (the reads, the staff routes and `$procs`)               |
+| either       | `/v1/oauth/.well-known/openid-configuration`, `/v1/oauth/jwks.json` |
+| always       | `/healthz`                                                          |
+
+An absent `surfaces:` key means both (`EnabledSurfaces::ALL`), which is every
+pre-ADR-0022 deployment. An empty list is `ConfigError::NoSurfacesConfigured`
+at boot. `/token` is business-only because a management pod serving it would
+mint merchant credentials on the staff tier. A nest that is not mounted
+answers the outer `404 unknown_route`.
 
 Nest order in the source is `/v1/oauth`, `/v1/browser`, `/v1`, `/provider`,
 then the two conditional `/dash/v1` mounts. axum's path table is
@@ -21,7 +41,8 @@ fallback is deleted.
 ## `/v1` — merchant API
 
 Source: `V1_ROUTES` in `backends/crates/vpay-api/src/v1/mod.rs`.
-**23 paths, 37 methods as of 2026-09-16** — ~~21 paths, 33 methods~~, which
+**23 paths, 37 methods as of 2026-09-16, re-counted unchanged on
+2026-09-23** — ~~21 paths, 33 methods~~, which
 this page said until the refund routes landed (RFC-0003 § 2, vpay#178). Both
 figures are counted off `V1_ROUTES`' own `methods:` field, which is the
 router's source rather than a description of it.
@@ -52,18 +73,18 @@ router's source rather than a description of it.
 | POST                     | `/v1/invoice_items`                    | `invoice_items::create`                             |
 | GET, POST, PATCH, DELETE | `/v1/invoice_items/{id}`               | `invoice_items::{retrieve, update, update, delete}` |
 
-**Since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged in vaam-apps/vpay#251), no row is
-added** — only parameters, on rows that exist:
+**Since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged in vaam-apps/vpay#251 on
+2026-09-23), no row is added** — only parameters, on rows that exist:
 
-| Route                          | Takes                                                                                                                  | Since               |
-| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------- | ------------------- |
-| `GET /v1/payment_intents`      | `limit`, `starting_after`, `ending_before`, **`customer`** (the intent's own)                                          | `customer`: step A  |
-| `GET /v1/checkout/sessions`    | cursor, `payment_intent`, **`customer`** (the **session's** own, ADR-0024 D12)                                         | `customer`: step A  |
-| `GET /v1/refunds`              | cursor, `payment_intent`, **`customer`** (through the refund's intent)                                                 | `customer`: step A  |
-| `GET /v1/invoices`             | cursor, `customer`, `status`                                                                                           | 2026-09-07          |
-| `GET /v1/customers`            | cursor only — **no filter, deliberately** (ADR-0024 D4)                                                                | —                   |
-| `POST /v1/invoices/{id}/pay`   | `success_url`, `cancel_url`; **or** `paid_out_of_band=true` + `out_of_band[method\|reference\|received_at]` and no URL | out of band: step A |
-| `GET /dash/v1/payment_intents` | `status`, `created_gte`, `created_lte`; **`customer` is a `400`**                                                      | refusal: step A     |
+| Route                          | Takes                                                                                                                  | Since                   |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------- | ----------------------- |
+| `GET /v1/payment_intents`      | `limit`, `starting_after`, `ending_before`, **`customer`** (the intent's own)                                          | `customer`: 2026-09-23  |
+| `GET /v1/checkout/sessions`    | cursor, `payment_intent`, **`customer`** (the **session's** own, ADR-0024 D12)                                         | `customer`: 2026-09-23  |
+| `GET /v1/refunds`              | cursor, `payment_intent`, **`customer`** (through the refund's intent)                                                 | `customer`: 2026-09-23  |
+| `GET /v1/invoices`             | cursor, `customer`, `status`                                                                                           | 2026-09-07              |
+| `GET /v1/customers`            | cursor only — **no filter, deliberately** (ADR-0024 D4)                                                                | —                       |
+| `POST /v1/invoices/{id}/pay`   | `success_url`, `cancel_url`; **or** `paid_out_of_band=true` + `out_of_band[method\|reference\|received_at]` and no URL | out of band: 2026-09-23 |
+| `GET /dash/v1/payment_intents` | `status`, `created_gte`, `created_lte`; **`customer` is a `400`**                                                      | refusal: 2026-09-23     |
 
 Before step A, `customer` on the first three and on `/dash/v1` was **silently
 ignored** — the answer was the unfiltered list. The oracle rule, the one
@@ -182,9 +203,16 @@ the two crates.
 or sends a shared secret. **There is no signature verification to find, and
 adding a naive one would be inventing a scheme the rails do not implement.**
 The handler is written around that: it never writes charge or intent state.
-The only thing it can do is bring an already-queued `poll_charge` job forward,
-and not even that if the job is already due within `PULL_FORWARD_FLOOR` (10 s,
-the poll ladder's fastest rung). `CallbackRef::ref_extra` — Orange's
+~~The only thing it can do is bring an already-queued `poll_charge` job
+forward~~ **Corrected 2026-09-23:** it runs two statements in one transaction.
+`enqueue_in_tx` inserts a `poll_charge` job (`ON CONFLICT DO NOTHING` on
+`poll:<charge>`, so a no-op when one exists), and `pull_forward_in_tx` then
+brings the job forward. A fresh job is written only when the charge has none,
+for example after an operator deleted it or after it finished. The pull-forward
+is skipped if the job is already due within `PULL_FORWARD_FLOOR` (10 s, the
+poll ladder's fastest rung). The module's own header still says only "bring
+an already-queued job forward". `provider_callback::callback`'s step list is
+the accurate one. `CallbackRef::ref_extra` — Orange's
 `notif_token` / `pay_token` — is **discarded**, because writing rail key
 material from an unauthenticated request is the one thing this route must not
 do.
@@ -206,29 +234,33 @@ per worker claim. Bounded only by the 16 KiB body limit and the dedupe key.
 ## `/dash/v1` — the dashboard (owned by `vpay-dashboard`)
 
 Two `GET` reads from `DASH_ROUTES`, eight unauthenticated staff routes merged
-in from `STAFF_ROUTES`, and the CrateStack procedure transport `nest_service`d
-at the same prefix. The whole nest is **conditional** on the deployment having
-both a `dashboard_validator` and a `dashboard` binding; a deployment with no
-`dashboard_client` mounts nothing and every `/dash/v1/…` path falls through to
-the outer honest 404.
+in from `staff::routes()`, and the CrateStack procedure transport
+`nest_service`d at the same prefix. The staff router is built inline.
+`STAFF_ROUTES` is a separate `(path, methods)` list kept beside it for the
+boundary walk, not its source. _(This said "merged in from `STAFF_ROUTES`"
+until 2026-09-23.)_ The whole nest is **conditional** on the `management`
+surface being enabled (since 2026-09-16, ADR-0022) **and** on the deployment
+having both a `dashboard_validator` and a `dashboard` binding. A deployment
+with no `dashboard_client` mounts nothing, and every `/dash/v1/…` path falls
+through to the outer honest 404.
 
-| Method | Path                                      | Notes                                                                            |
-| ------ | ----------------------------------------- | -------------------------------------------------------------------------------- |
-| GET    | `/dash/v1/payment_intents`                | `DASH_ROUTES`, behind `require_dashboard_token`; refuses `customer` since step A |
-| GET    | `/dash/v1/payment_intents/{id}`           | same                                                                             |
-| POST   | `/dash/v1/staff/login`                    | `STAFF_ROUTES`, outside the token layer                                          |
-| POST   | `/dash/v1/staff/totp`                     | same                                                                             |
-| POST   | `/dash/v1/staff/password`                 | same                                                                             |
-| GET    | `/dash/v1/staff/session`                  | same                                                                             |
-| GET    | `/dash/v1/staff/session/stage`            | same                                                                             |
-| POST   | `/dash/v1/staff/logout`                   | same                                                                             |
-| GET    | `/dash/v1/oauth/authorize`                | same                                                                             |
-| POST   | `/dash/v1/oauth/token`                    | same                                                                             |
-| POST   | `/dash/v1/$procs/searchPaymentIntents`    | CrateStack transport                                                             |
-| POST   | `/dash/v1/$procs/searchRefunds`           | CrateStack transport                                                             |
-| POST   | `/dash/v1/$procs/searchWebhookDeliveries` | CrateStack transport                                                             |
-| POST   | `/dash/v1/$procs/searchCustomers`         | CrateStack transport                                                             |
-| POST   | `/dash/v1/$procs/searchCheckoutSessions`  | CrateStack transport                                                             |
+| Method | Path                                      | Notes                                                                                |
+| ------ | ----------------------------------------- | ------------------------------------------------------------------------------------ |
+| GET    | `/dash/v1/payment_intents`                | `DASH_ROUTES`, behind `require_dashboard_token`; refuses `customer` since 2026-09-23 |
+| GET    | `/dash/v1/payment_intents/{id}`           | same                                                                                 |
+| POST   | `/dash/v1/staff/login`                    | `staff::routes()`, outside the token layer                                           |
+| POST   | `/dash/v1/staff/totp`                     | same                                                                                 |
+| POST   | `/dash/v1/staff/password`                 | same                                                                                 |
+| GET    | `/dash/v1/staff/session`                  | same                                                                                 |
+| GET    | `/dash/v1/staff/session/stage`            | same                                                                                 |
+| POST   | `/dash/v1/staff/logout`                   | same                                                                                 |
+| GET    | `/dash/v1/oauth/authorize`                | same                                                                                 |
+| POST   | `/dash/v1/oauth/token`                    | same                                                                                 |
+| POST   | `/dash/v1/$procs/searchPaymentIntents`    | CrateStack transport                                                                 |
+| POST   | `/dash/v1/$procs/searchRefunds`           | CrateStack transport                                                                 |
+| POST   | `/dash/v1/$procs/searchWebhookDeliveries` | CrateStack transport                                                                 |
+| POST   | `/dash/v1/$procs/searchCustomers`         | CrateStack transport                                                                 |
+| POST   | `/dash/v1/$procs/searchCheckoutSessions`  | CrateStack transport                                                                 |
 
 `/dash/v1` is **read-only structurally, not by promise**:
 `require_dashboard_token` refuses any method that is not `GET`/`HEAD` with a
@@ -244,7 +276,10 @@ therefore uses a **separate** middleware,
 > comment and `schema/search_payment_intents.rs`'s module docs say the same.
 > That was true for Lane C. `procedure_router` mounts **every** procedure in
 > the `ProcedureRegistry`, and `schemas/vpay.cstack` now declares **five**.
-> Only `searchPaymentIntents` is exercised over HTTP by any test.
+> Only `searchPaymentIntents` is exercised over HTTP by any test. And since
+> 2026-09-23 the test's "no model route is mounted" half probes **19** of the
+> schema's **20** models, because `manual_payments` (step A) is not in its
+> `MODEL_TABLES`. See `vpay-dashboard`.
 
 ## Middleware, and why the order is load-bearing
 

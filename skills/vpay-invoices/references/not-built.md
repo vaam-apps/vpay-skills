@@ -1,13 +1,13 @@
 # What is not built — the list this resource exists to keep honest
 
-_Verified against vpay `d3a8810b` (2026-09-16). Version-sensitive claims
+_Verified against vpay `b747e5d5` (2026-09-23). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 `docs/flows/invoices.md`'s opening paragraph says why this list exists: _"a
 document that lists only what exists is how somebody comes to believe an
 invoice gets sent."_ Every entry below is a **gap**, dated, not a decision
 against the feature, unless it says otherwise. Verified against code
-2026-09-16.
+2026-09-23 (it said 2026-09-16 until then).
 
 The one navigational trap: the page's own link to this list,
 `[What is not built](#what-is-not-built)`, points at a heading that does not
@@ -119,7 +119,7 @@ records it (see the SKILL page). On an older `master` a merchant paid in cash
 still has only `void` and `mark_uncollectible`, both false statements about
 the document.
 
-What stays unbuilt beside it, per `docs/flows/invoices.md` on that branch:
+What stays unbuilt beside it, per `docs/flows/invoices.md` at `b747e5d5`:
 
 - **No operator can record one.** Only `/v1` writes it; ADR-0008's dashboard
   writes and their audit log do not exist.
@@ -140,8 +140,9 @@ without its writer in the same commit.
 
 Restated here because it is the divergence most likely to be discovered in
 production rather than read. The `/v1` object always carries the lines; the
-event body never does. See the SKILL.md quote block for why, and for the three
-render sites.
+event body never does. See the SKILL.md quote block for why, and for the two
+render sites. _(This said "three render sites" until 2026-09-23. The create
+and the transitions share one, `write_with_event`.)_
 
 ## No dashboard screen, no browser test
 

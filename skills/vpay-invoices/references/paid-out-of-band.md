@@ -1,8 +1,9 @@
 # Paid out of band — a statement, not a payment
 
-_Written 2026-09-23 against the vaam-apps/vpay step A integration branch
-(`feat/rfc-0004-step-a`, RFC-0004 §§ 5–6, merged in vaam-apps/vpay#251). None of this
-exists on a vpay `master` older than that merge. See
+_Verified against vpay `b747e5d5` (2026-09-23), the merge of vaam-apps/vpay#251
+(RFC-0004 §§ 5–6, step A). The page was written the same day against the
+integration branch `feat/rfc-0004-step-a`, and it carried no commit stamp
+until then. None of this exists on a vpay `master` older than that merge. See
 [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 Flow page: `docs/flows/invoices.md` § "Paid out of band". Decisions: D5–D19 in
@@ -59,10 +60,12 @@ Code: `vpay_api::v1::invoices::pay_out_of_band_once`,
 order — `docs/reference/vpay-db/customers-and-invoices.md`). The refund
 counter `add_refund_for_intent_in_tx` gained `AND NOT paid_out_of_band`.
 
-## The evidence, as of 2026-09-23 on the branch
+## The evidence, as of 2026-09-23
 
 `backends/tests/integration/tests/invoices.rs` is 29 cases, 29 passed, 0
-ignored — thirteen of them for this. `vpay-db`'s `tests/repositories.rs` adds
+ignored, thirteen of them for this. That was measured on the branch.
+Re-counted from source at `b747e5d5`: 29 `#[tokio::test]` cases; the suite was
+not re-run. `vpay-db`'s `tests/repositories.rs` adds
 two (`paying_out_of_band_records_the_invoices_own_amount_and_posts_nothing`,
 `paying_out_of_band_keeps_the_canceled_intent_and_nothing_can_move_it_again`).
 `the_out_of_band_invariants_are_enforced_by_the_database_itself` writes every

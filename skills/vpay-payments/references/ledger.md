@@ -1,6 +1,6 @@
 # The ledger
 
-_Verified against vpay `d3a8810b` (2026-09-16). Version-sensitive claims
+_Verified against vpay `b747e5d5` (2026-09-23). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 Read the status lines before anything else. **This page said the opposite
@@ -13,8 +13,10 @@ until 2026-09-16** and the correction is the whole of what changed.
 > write, `post_in_tx`, and one read, `Ledger::merchant_payable_balance`.
 
 > **Still true, and it is what an agent must not fabricate:** nothing
-> schedules the **nightly assertion** of invariants 2–4.
-> `docs/flows/ledger.md` says they are "asserted nightly". They are not
+> schedules the **nightly assertion** of invariants 2–4. ~~`docs/flows/ledger.md`
+> says they are "asserted nightly".~~ _(Corrected 2026-09-23: vpay#178 fixed
+> that doc on 2026-09-16, the day this page was stamped. Its heading now reads
+> "intended to be asserted nightly — **none of them is**".)_ They are not
 > asserted at all. And **no rail has ever returned money to anyone**, so the
 > refund posting below has never run outside a test.
 
@@ -184,15 +186,16 @@ does not carry a currency; each leg does, which is why invariant 1 is stated
 
 `docs/flows/ledger.md` names four.
 
-| #   | Invariant                                                                   | Status as of 2026-09-16                                                                               |
+| #   | Invariant                                                                   | Status as of 2026-09-23 (unchanged since 2026-09-16)                                                  |
 | --- | --------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
 | 1   | per transaction: `SUM(debit) = SUM(credit)`, **per currency**               | **Enforced on every write** — `Transaction::validate()`, called by `post_in_tx` before any statement  |
 | 2   | per merchant: `balance(merchant_payable) = Σ captures − Σ fees − Σ refunds` | **Computable since 2026-09-15, asserted by nothing** — `Ledger::merchant_payable_balance` is the read |
 | 3   | `amount_refunded` equals the sum of succeeded refunds for that intent       | **Asserted by nothing**                                                                               |
 | 4   | every succeeded charge has exactly one capture transaction                  | **Asserted by nothing** — `apply_succeeded`'s CAS is what makes it hold, not a check                  |
 
-> The flow doc says they are "asserted nightly". **There is no nightly
-> assertion.** Nothing schedules an invariant check on any of 2, 3 or 4; that
+> ~~The flow doc says they are "asserted nightly".~~ The flow doc has said
+> "intended to be … none of them is" since 2026-09-16 (see the top of this
+> page). **There is no nightly assertion.** Nothing schedules an invariant check on any of 2, 3 or 4; that
 > sentence describes the intent. ~~Invariant 1 is the only one that exists.~~
 > **Corrected 2026-09-16:** invariant 1 is now _enforced on a live write path_
 > rather than only tested, and invariant 2 stopped being uncomputable — but
@@ -341,6 +344,13 @@ reachable from a merchant request now** — `POST /v1/refunds` reserves the
 amount through `Refunds::create` in the same transaction that writes the row,
 so the CHECK is what answers a `409 over_refund`.
 
+**An out-of-band invoice payment posts nothing, by design** (vpay step A,
+2026-09-23; ADR-0024 D8). No money crossed `payer_clearing`, and under
+pass-through there is no account it arrived in. So a merchant whose invoices
+were paid out of band has a `merchant_payable` balance that does not include
+them. That is correct, and it is not a gap to close with a posting. Invariant
+2's `Σ captures` counts only rail captures.
+
 The refund sequence, as built: increment `amount_refund_pending` on creation;
 on success, in one transaction, decrement pending, increment refunded, add to
 `invoices.amount_refunded` and post the REFUND transaction; on failure or
@@ -383,9 +393,9 @@ is what proves it fires.
 them landed on 2026-09-15 (RFC-0003 § 4).** What is left, so you can scope
 honestly:
 
-- **A runner for invariants 2, 3 and 4.** This is the big one, it is what
-  `docs/flows/ledger.md` already claims happens nightly, and nothing schedules
-  it. Invariant 2's read exists; 3 and 4 have none.
+- **A runner for invariants 2, 3 and 4.** This is the big one. It is what
+  `docs/flows/ledger.md` says is _intended_ to happen nightly (it claimed
+  outright that it did until 2026-09-16), and nothing schedules it. Invariant 2's read exists; 3 and 4 have none.
 - **A caller for the refund posting.** It is written and unreachable, and the
   blocker is not the ledger: it is that nothing settles a `pending` refund
   (RFC-0003 open question 8), which needs a refund poll ladder and therefore a

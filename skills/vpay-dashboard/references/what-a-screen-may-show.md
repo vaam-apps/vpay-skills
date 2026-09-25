@@ -1,6 +1,6 @@
 # What a dashboard screen may and may not show
 
-_Verified against vpay `d3a8810b` (2026-09-16). Version-sensitive claims
+_Verified against vpay `b747e5d5` (2026-09-23). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 vpay's cardinal rule — nothing may look more finished than it is — has a
@@ -19,7 +19,9 @@ for every intent that offers two and was taken by one, and wrong **invisibly**.
 The detail page has a real `Rail`, from `charge.provider_code`.
 
 **The masked payer is an em dash, and it is a real `null`.**
-`charges.payer_ref_masked` is never written by anything (`docs/status.md`), so
+`charges.payer_ref_masked` is never written by anything (the module doc of
+`vpay_api::dash::payment_intents`; this cited `docs/status.md` until
+2026-09-23, which does not mention the column), so
 the detail page renders it **from the column** and never derives it. The only
 other value that could produce a mask is the payer's unmasked phone number, and
 reading that into a staff surface to make a row look populated is the trade
@@ -56,13 +58,42 @@ read one colour in the list and another on the detail page.
 `@vaam-apps/ui` cutover). Do not reintroduce a per-screen tone map;
 `verify-ui`'s check 7a-ii refuses a raw status-colour token written in an app.
 
-`data-theme` is `dark` and `src/layout.test.tsx` pins it: `@vaam-apps/ui`
+`data-theme` is `dark` and `src/layout.test.tsx` pins it. ~~`@vaam-apps/ui`
 registers its one theme under daisyUI's built-in name `dark`, so a `data-theme`
 that says anything else renders the page **completely unthemed** in a real
-browser, with no error anywhere.
+browser, with no error anywhere.~~ **Corrected 2026-09-23, in two parts.**
+
+1. **There are two themes, not one.** `dark` is the default and `light` is
+   opt-in, and that has been true since `0.1.2`, the version this page was
+   written against (`app/layout.tsx`). `ThemeSwitcher` writes the attribute,
+   and the Storybook runs 21 stories `dark` and 4 `light`
+   (`docs/flows/dashboard/status-built-and-not-built.md`, 2026-09-13).
+2. **Since `^0.2.4` (vpay#249, 2026-09-23) the package also declares its
+   dark tokens on `:root`.** So an unregistered `data-theme` should no longer
+   render unthemed. This comes from reading the package's
+   `dist/styles/theme.css`. Nobody has measured it in a browser.
+
+`layout.test.tsx`'s case is still titled "the only theme @vaam-apps/ui
+actually compiles", which is stale. Pin `dark` because it is what the app
+ships, not because nothing else would render.
 
 ## Which components come from `@vaam-apps/ui`
 
+`@vaam-apps/ui` is `^0.2.4` since 2026-09-23 (vpay#249); it was `^0.1.2`
+before. `0.2.0` shipped visual breaking changes with no API change, among them
+the `SideNav` width below `xl` and the dark theme applying without a
+`data-theme`. So a green typecheck does not show that a screen still looks
+right.
+
+Imported by the app as of 2026-09-23: `Table` (and `TableHeader`/`TableBody`/
+`TableRow`/`TableHead`/`TableCell`), `FormField` (was `Field`), `Input`,
+`Button`, `InlineBanner` (was `Alert`), `InlineEmptyState`, `Code`,
+`ScreenStack`, `SideNav`, `MoreDetailDrawer`/`DrawerClose`, `ThemeSwitcher`,
+`DetailList`/`DetailRow`, `DateRangePicker`, `InstrumentPanel`,
+`RouteSkeleton`, `createStatusPill`/`defineStatusSystem`. _(Until 2026-09-23
+this list also named `Pagination`, `Timeline` and `DataList`/`DataListRow`.
+The app imported none of the three, at `d3a8810b` or since. The timeline and
+the paging links are the app's own markup.)_
 ~~`Table`, `FormField` (was `Field`), `Input`, `Button`, `InlineBanner` (was
 `Alert`), `InlineEmptyState`, `Code`, `ScreenStack`, `SideNav`,
 `MoreDetailDrawer`, `ThemeSwitcher`, `Pagination`, `Timeline`,
@@ -188,7 +219,8 @@ not know to swipe reads the first two columns as the whole answer.
 
 ## What this app still cannot do
 
-As of 2026-09-16:
+As of 2026-09-23 (this said 2026-09-16; the list is unchanged except the last
+entry):
 
 - **Anything at all to a payment.** `/dash/v1` refuses every non-`GET` method
   **at the boundary, before the router matches** — no re-poll, no replay, no
@@ -206,6 +238,10 @@ As of 2026-09-16:
 - **Most reads through the BFF.** Only the payments list and the payment
   detail call it, and only for reads after their first render (since 2026-09-12;
   this line said "No page and no component calls it" until 2026-09-23).
+- **Show a refund's events on the payment timeline.** This was read from the
+  code on 2026-09-23 and is untested. Refund events are keyed on the `re_…`
+  id, and the detail read fetches events for the intent and the charge only.
+  See the `SKILL.md` note.
 
 ## Testing notes
 
@@ -244,6 +280,17 @@ vaam-apps/vpay#258 dropped the suppression, and the `ShellPhone`, `ShellRail`,
 `ShellLaptop` and `ShellDesktop` stories (375, 700, 1100 and 1280px) assert
 exactly one exposed `Primary` landmark.
 
+**Re-checked against `0.2.4` on 2026-09-23 by reading the code, not by
+measuring.** The dependency moved to `^0.2.4`, and the suppression in
+`src/a11y-gate.test.ts` still names `@vaam-apps/ui@0.1.2`. In
+`side-nav.js`, the in-flow `<nav>`'s non-collapsed floating class string
+(`xl:flex …`, with no unprefixed `hidden`) is byte-identical in `0.1.2` and
+`0.2.4`, so the defect has probably not been fixed. `0.2.4` also renders
+**three** `<nav aria-label="Primary">` shapes and relies on their breakpoint
+gates being complements. Do not drop the suppression without re-running axe at
+1200×900.
+
+The dashboard's Storybook has 25 stories (counted 2026-09-23) bound to the same
 The dashboard's Storybook has 33 stories as of vaam-apps/vpay#258 (2026-09-24;
 25 when it was added on 2026-09-13), bound to the same
 `src/testing/fixtures.ts` `a11y.test.tsx` renders, so a screen cannot gain a

@@ -1,11 +1,11 @@
 ---
 name: vpay-provider-adapters
-description: The vpay provider port (`vpay-provider`) and how to add a payment rail — the `ProviderAdapter` trait and its seven methods, the `Unsupported` vs `NotImplemented` rule that decides which error a missing operation returns, the rail-agnostic refund destination (`RefundDestination`, `RefundTarget`, `parse_destination`), the capability flags the core branches on instead of provider codes, the shared HTTP/token modules, and the shared conformance suite a new adapter must pass. Load this before writing or changing any `vpay-adapter-*` crate, before touching `backends/crates/vpay-provider`, and before adding a rail.
+description: The vpay provider port (`vpay-provider`) and how to add a payment rail — the `ProviderAdapter` trait and its nine methods (payer_fields since 2026-09-16), the `Unsupported` vs `NotImplemented` rule that decides which error a missing operation returns, the rail-agnostic refund destination (`RefundDestination`, `RefundTarget`, `parse_destination`), the capability flags the core branches on instead of provider codes, the shared HTTP/token modules, and the shared conformance suite a new adapter must pass. Load this before writing or changing any `vpay-adapter-*` crate, before touching `backends/crates/vpay-provider`, and before adding a rail.
 ---
 
 # The provider port, and adding a rail
 
-> **Verified against vpay `7997536b` (2026-09-23).** Version-sensitive claims below
+> **Verified against vpay `b747e5d5` (2026-09-23).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -77,11 +77,15 @@ reaching that arm means the core skipped the `Capabilities` check it is
 supposed to branch on first, and logging it at `Conflict`'s default `Info`
 would bury our own bug among merchants' typos.
 
-## The seven methods
+## The nine methods
 
+~~The seven methods~~ **Corrected 2026-09-23:** the trait has **nine** `fn`s
+at `b747e5d5`. The code block below always listed eight, and
+`payer_fields` became the ninth on 2026-09-16 (vpay#186). This page went on
+saying "seven" through its `7997536b` stamp.
 **`parse_destination` was added on 2026-09-15 (RFC-0003 open question 4) and
 `refund` grew a `destination` parameter the same day.** An adapter written
-against the six-method shape does not compile against this port.
+against the shape before that does not compile against this port.
 
 ```rust
 fn code(&self) -> &'static str;                   // == the payment_method_types value
@@ -94,7 +98,28 @@ fn parse_destination(&self, raw: &serde_json::Map<String, Value>)
 async fn refund(&self, charge, amount, destination: Option<&RefundTarget>, config)
                                             -> Result<Refunded, _>;   // default: Unsupported
 async fn account_holder_name(&self, msisdn, config)-> Result<Option<AccountHolder>, _>; // default: Unsupported
+fn payer_fields(&self) -> &'static [PayerField];  // default: &[] — since 2026-09-16
 ```
+
+- **`payer_fields` is what the payer must type, and vpay enforces it
+  generically** (since 2026-09-16, vpay#186). A push rail that collects an
+  instrument declares its `PayerField`s as a `const`. MTN declares one:
+  `msisdn`, `Phone { region: "CM", phone_type: Mobile }`, required. A redirect
+  rail keeps the default `&[]`. The checkout's per-rail `RailSpec` renders the
+  declaration. `vpay_api::v1::payer_fields` validates `confirm` against it,
+  refuses any key the declaration does not name, and **checks the phone number
+  for real** before the rail is asked. So a stub or test steering on a
+  documentation MSISDN (`2376000000xx`) now gets vpay's own `400` on the
+  confirm path and never reaches the mapping. MTN's `requesttopay.json`
+  decline row moved to `237670000400` for that reason. The conformance suite calls adapters
+  directly and is unaffected. **Its default is a trap for wrappers:**
+  `Measured` must forward it. It silently answered `&[]` until that was caught
+  against the live demo stack on 2026-09-16, and
+  `payer_fields_is_forwarded_to_the_inner_adapter_and_not_defaulted` in
+  `vpay_provider::measured` now
+  pins it. Any new decorator over `dyn ProviderAdapter` must forward every
+  defaulted method. `docs/flows/provider-port.md` does not mention
+  `payer_fields` at all.
 
 - **The error-surface table in the trait's own doc comment is the contract.**
   It is a markdown grid, one row per `ProviderError` variant and one column
