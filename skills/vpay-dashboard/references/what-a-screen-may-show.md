@@ -1,6 +1,6 @@
 # What a dashboard screen may and may not show
 
-_Verified against vpay `b747e5d5` (2026-09-23). Version-sensitive claims
+_Verified against vpay `f68fda09` (2026-09-25). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 vpay's cardinal rule — nothing may look more finished than it is — has a
@@ -65,50 +65,83 @@ browser, with no error anywhere.~~ **Corrected 2026-09-23, in two parts.**
 
 1. **There are two themes, not one.** `dark` is the default and `light` is
    opt-in, and that has been true since `0.1.2`, the version this page was
-   written against (`app/layout.tsx`). `ThemeSwitcher` writes the attribute,
-   and the Storybook runs 21 stories `dark` and 4 `light`
-   (`docs/flows/dashboard/status-built-and-not-built.md`, 2026-09-13).
-2. **Since `^0.2.4` (vpay#249, 2026-09-23) the package also declares its
-   dark tokens on `:root`.** So an unregistered `data-theme` should no longer
-   render unthemed. This comes from reading the package's
-   `dist/styles/theme.css`. Nobody has measured it in a browser.
+   written against (`app/layout.tsx`). `ThemeSwitcher` writes the attribute.
+   The Storybook runs 29 stories `dark` and 4 `light` as of vpay `f68fda09`
+   (2026-09-25); it ran 21 and 4 from 2026-09-13
+   (`docs/flows/dashboard/status-built-and-not-built.md`) through `b747e5d5`.
+2. **Since `^0.2.4` (vpay#249, 2026-09-23) the package also declares its own
+   dark tokens on `:root`**, in a `:root, [data-theme="dark"]` block that
+   `0.4.0` keeps unchanged. **An unregistered `data-theme` renders dark.**
+   Measured 2026-09-25 in headless Chromium: `@vaam-apps/ui` 0.4.0's built
+   `dist/styles/theme.css`, compiled the way `app/globals.css` does it
+   (`tailwindcss`, then the theme, then `daisyui` with `themes: false`) with
+   the tailwindcss 4.3.3 and daisyUI 5.7.28 vpay's lockfile resolves, on a
+   bare test page rather than the app's own build. `data-theme="nonsense"`
+   and `data-theme="corporate"` computed the same `--color-base-100`
+   (`#0a0b0d`), `--surface-3` (`#1c1f25`) and body background as
+   `data-theme="dark"` and as no attribute, under both
+   `prefers-color-scheme` values. Only `light` differed (`#fcfcfd`). The same
+   probe on `0.1.2`'s `theme.css` gave daisyUI's colours dark as well, with
+   the package's own `--surface-3` unset: with this toolchain a wrong name
+   lost the package's own tokens, not all styling. vpay's own
+   `layout.test.tsx` header still says a `data-theme` naming neither theme
+   "compiles no styling at all", and the dashboard README says it renders
+   "completely unthemed". Both are wrong at `f68fda09`. Fix them in vpay.
 
-`layout.test.tsx`'s case is still titled "the only theme @vaam-apps/ui
-actually compiles", which is stale. Pin `dark` because it is what the app
-ships, not because nothing else would render.
+~~`layout.test.tsx`'s case is still titled "the only theme @vaam-apps/ui
+actually compiles", which is stale.~~ **Corrected 2026-09-25:**
+vaam-apps/vpay#255 (2026-09-24) retitled it "sets the dark theme —
+@vaam-apps/ui's default, and one of the two it compiles". The case now reads
+the registered theme names off the package's `theme.css`, asserts they are
+exactly `dark` and `light`, and asserts the layout pins exactly one
+`data-theme`, `dark`. Pin `dark` because it is what the app ships, not because
+nothing else would render.
 
 ## Which components come from `@vaam-apps/ui`
 
-`@vaam-apps/ui` is `^0.2.4` since 2026-09-23 (vpay#249); it was `^0.1.2`
-before. `0.2.0` shipped visual breaking changes with no API change, among them
-the `SideNav` width below `xl` and the dark theme applying without a
-`data-theme`. So a green typecheck does not show that a screen still looks
-right.
+~~`@vaam-apps/ui` is `^0.2.4` since 2026-09-23 (vpay#249); it was `^0.1.2`
+before.~~ **Corrected 2026-09-25:** it is `^0.4.0` since vaam-apps/vpay#258
+(merged 2026-09-25 as vpay `f68fda09`). The struck sentence was true at
+`b747e5d5` and until that merge. `0.3.0` was on vaam-apps/vpay#258's branch
+only and never on `master`. `0.2.0` shipped visual breaking changes with no
+API change, among them the `SideNav` width below `xl` and the dark theme
+applying without a `data-theme`. So a green typecheck does not show that a
+screen still looks right.
 
-Imported by the app as of 2026-09-23: `Table` (and `TableHeader`/`TableBody`/
-`TableRow`/`TableHead`/`TableCell`), `FormField` (was `Field`), `Input`,
-`Button`, `InlineBanner` (was `Alert`), `InlineEmptyState`, `Code`,
-`ScreenStack`, `SideNav`, `MoreDetailDrawer`/`DrawerClose`, `ThemeSwitcher`,
-`DetailList`/`DetailRow`, `DateRangePicker`, `InstrumentPanel`,
-`RouteSkeleton`, `createStatusPill`/`defineStatusSystem`. _(Until 2026-09-23
-this list also named `Pagination`, `Timeline` and `DataList`/`DataListRow`.
-The app imported none of the three, at `d3a8810b` or since. The timeline and
-the paging links are the app's own markup.)_
-~~`Table`, `FormField` (was `Field`), `Input`, `Button`, `InlineBanner` (was
-`Alert`), `InlineEmptyState`, `Code`, `ScreenStack`, `SideNav`,
-`MoreDetailDrawer`, `ThemeSwitcher`, `Pagination`, `Timeline`,
-`DataList`/`DataListRow`, `createStatusPill`/`defineStatusSystem`.~~
-**Corrected 2026-09-24** (read off the imports under `frontends/apps/dashboard/`
-at vaam-apps/vpay#258's head, `@vaam-apps/ui` 0.4.0; not on `master` before
-that merge): `Table` and its parts, `FormField` (was `Field`), `Input`,
-`Button`, `InlineBanner` (was `Alert`), `InlineEmptyState`, `Code`,
-`ScreenStack`, `SideNav`, `Skeleton`, `DetailList`/`DetailRow`,
-`InstrumentPanel`, `DateRangePicker` and its parts (with `IsoDateRange`),
-`ThemeSwitcher`, `createStatusPill`/`defineStatusSystem`. The dashboard
-imports no `Pagination`, `Timeline`, `DataList`/`DataListRow`,
-`RouteSkeleton`, `MoreDetailDrawer` or `DrawerClose`. The last three went with
-vaam-apps/vpay#258: on `master` before it, both payments screens rendered
-`RouteSkeleton`, and the Menu pill's drawer was a `MoreDetailDrawer`.
+**Imported by the app as of vpay `f68fda09` (2026-09-25, `@vaam-apps/ui`
+0.4.0)**, read off every `import … from "@vaam-apps/ui"` under
+`frontends/apps/dashboard/`: `Table` and its parts
+(`TableHeader`/`TableBody`/`TableRow`/`TableHead`/`TableCell`), `FormField`
+(was `Field`), `Input`, `Button`, `InlineBanner` (was `Alert`),
+`InlineEmptyState`, `Code`, `ScreenStack`, `SideNav`, `Skeleton`,
+`DetailList`/`DetailRow`, `InstrumentPanel`, `DateRangePicker` and its parts
+(with `IsoDateRange`), `ThemeSwitcher`, `createStatusPill`/`defineStatusSystem`.
+The dashboard imports no `Pagination`, `Timeline`, `DataList`/`DataListRow`,
+`RouteSkeleton`, `MoreDetailDrawer` or `DrawerClose`. The timeline and the
+paging links are the app's own markup.
+
+The list was corrected twice, a day apart, and both earlier versions are kept
+because an agent on an older tree will meet them:
+
+- ~~`Table`, `FormField` (was `Field`), `Input`, `Button`, `InlineBanner` (was
+  `Alert`), `InlineEmptyState`, `Code`, `ScreenStack`, `SideNav`,
+  `MoreDetailDrawer`, `ThemeSwitcher`, `Pagination`, `Timeline`,
+  `DataList`/`DataListRow`, `createStatusPill`/`defineStatusSystem`.~~ The
+  first version. The app imported none of `Pagination`, `Timeline` and
+  `DataList`/`DataListRow` at `d3a8810b`, `b747e5d5` or `f68fda09`, and the
+  list missed components the app did import.
+- ~~Imported by the app as of 2026-09-23: `Table` (and
+  `TableHeader`/`TableBody`/`TableRow`/`TableHead`/`TableCell`), `FormField`
+  (was `Field`), `Input`, `Button`, `InlineBanner` (was `Alert`),
+  `InlineEmptyState`, `Code`, `ScreenStack`, `SideNav`,
+  `MoreDetailDrawer`/`DrawerClose`, `ThemeSwitcher`, `DetailList`/`DetailRow`,
+  `DateRangePicker`, `InstrumentPanel`, `RouteSkeleton`,
+  `createStatusPill`/`defineStatusSystem`.~~ Corrected 2026-09-23 against
+  `b747e5d5` (`^0.2.4`), and true there. vaam-apps/vpay#258 took out
+  `MoreDetailDrawer`, `DrawerClose` and `RouteSkeleton`, and added
+  `Skeleton`: on `master` before it, both payments screens rendered
+  `RouteSkeleton`, and the Menu pill's drawer (`more-menu.tsx`, deleted) was a
+  `MoreDetailDrawer` with a `DrawerClose`.
 
 Two things that changed shape rather than name: `InlineBanner` renders **no
 `role`** where `Alert` defaulted to `role="alert"`, so every site relying on
@@ -121,8 +154,9 @@ itself gives: the
 package's `Select` wraps a Headless UI `Listbox` and forwards no `name`, and no
 ref a plain `onChange` can read.
 
-**The date filter, since vaam-apps/vpay#258** (`@vaam-apps/ui` 0.3.0's picker,
-unchanged in the 0.4.0 that merge ships; not on `master` before it).
+**The date filter, since vaam-apps/vpay#258** (merged 2026-09-25;
+`@vaam-apps/ui` 0.3.0's picker, unchanged in the 0.4.0 that merge ships; not
+on `master` before it).
 `DateRangePicker` is compound parts:
 `DatePickerTrigger`, `DatePickerValue` (placeholder "Any time"),
 `DatePickerClear` and `DatePickerContent`, inside a `FormField` labelled
@@ -154,7 +188,8 @@ Don't add a breakpoint or `overflow-x-auto` to it. The `FiltersWithRange`
 (1280×800) and `FiltersWithRangePhone` (375×812) stories measure all of this in
 a real browser, including at a 20px root.
 
-**Floating chrome, since vaam-apps/vpay#258** (`@vaam-apps/ui` 0.4.0). Below
+**Floating chrome, since vaam-apps/vpay#258** (2026-09-25, `@vaam-apps/ui`
+0.4.0). Below
 1280px `SideNav`'s floating toolbar ends in a **More** control that opens a
 modal sheet: a bottom sheet from the phone bar below 640px (288px wide with the
 dashboard's five destinations, as of 2026-09-24), a drawer from the left edge
@@ -190,7 +225,8 @@ Sign out ever asks for confirmation, use `InlineConfirm`, not a `Dialog`: a
 dialog opened from the modal sheet opens under its scrim, out of a pointer's
 reach.
 
-**Loading states, since vaam-apps/vpay#258.** Both payments screens load in
+**Loading states, since vaam-apps/vpay#258 (2026-09-25).** Both payments
+screens load in
 their own shape: `PaymentsSkeleton` (`payments-skeleton.tsx`) for the list and
 `PaymentSkeleton` (`payment-skeleton.tsx`) for one payment. On `master` before
 that merge both rendered `RouteSkeleton`, whose header, filter bar and rows
@@ -219,8 +255,8 @@ not know to swipe reads the first two columns as the whole answer.
 
 ## What this app still cannot do
 
-As of 2026-09-23 (this said 2026-09-16; the list is unchanged except the last
-entry):
+As of vpay `f68fda09` (2026-09-25), unchanged since 2026-09-23. _(This said
+"As of 2026-09-16" until 2026-09-23, when the last entry was added.)_
 
 - **Anything at all to a payment.** `/dash/v1` refuses every non-`GET` method
   **at the boundary, before the router matches** — no re-poll, no replay, no
@@ -253,52 +289,65 @@ explicitly. Without it every render in a file accumulates in one
 `src/a11y-gate.test.ts` is the twin of the checkout's. ~~With one difference:
 this app **does** carry axe-rule suppressions, and the test pins exactly which
 stories may carry one and which rule id.~~ **Corrected for vaam-apps/vpay#258**
-(`@vaam-apps/ui` 0.4.0): it pins both lists as **empty**. No story may disable
-an axe rule or carry a `parameters` override at all, so a story's viewport or
-theme goes in story-level `globals`, and a reviewed exception has to be written
-into the test's two lists. Until 0.4.0 the `Shell` stories disabled
-`landmark-unique`, the rule below. They were first written as
-`parameters.a11y = { test: "todo" }`, which switches the addon off for the
-**whole story** — measured, a `#3a3a3a`-on-`#0a0b0d` probe placed inside
+(merged 2026-09-25, `@vaam-apps/ui` 0.4.0): it pins both lists as **empty**.
+No story may disable an axe rule or carry a `parameters` override at all, so a
+story's viewport or theme goes in story-level `globals`, and a reviewed
+exception has to be written into the test's two lists. Until 0.4.0 the
+`Shell` stories disabled `landmark-unique`, the rule below. They were first
+written as `parameters.a11y = { test: "todo" }`, which switches the addon off
+for the **whole story** — measured, a `#3a3a3a`-on-`#0a0b0d` probe placed inside
 `Shell` PASSED under it, so the chrome around every screen in the app had no
 colour-contrast verdict at all. With the suppression narrowed to one rule id
 the same probe fails at 1.73.
 
-That suppression covers a **real third-party defect**, not this app's markup:
-at 1200×900 (below `xl`), `@vaam-apps/ui@0.1.2`'s `SideNav` renders its in-flow
-sidebar `<nav aria-label="Primary">` with only `xl:`-prefixed utilities and no
-unprefixed `hidden`, so it falls back to `display: block` while the 1024–1279px
-floating rail is also visible — two landmarks answering the same name.
-Reproduced directly with axe-core at four viewports and traced to the upstream
-line. ~~**It has not been reported upstream.**~~ **Corrected 2026-09-24:** it
-had been, as [vaam-apps/ui#16](https://github.com/vaam-apps/ui/issues/16)
-(2026-09-13). The vaam-apps/vpay#258 review re-measured it on `@vaam-apps/ui`
-`0.3.0`: one violation at 375–1279px, none from 1280px. **Fixed in 0.4.0**
-(vaam-apps/ui#39, 2026-09-24): the in-flow `<nav>` is hidden below 1280px, so
-one `Primary` landmark is exposed at every width.
-vaam-apps/vpay#258 dropped the suppression, and the `ShellPhone`, `ShellRail`,
-`ShellLaptop` and `ShellDesktop` stories (375, 700, 1100 and 1280px) assert
-exactly one exposed `Primary` landmark.
+That suppression covered a **real third-party defect**, not this app's markup:
+at 1200×900 (below `xl`), `@vaam-apps/ui@0.1.2`'s `SideNav` rendered its
+in-flow sidebar `<nav aria-label="Primary">` with only `xl:`-prefixed
+utilities and no unprefixed `hidden`, so it fell back to `display: block` while
+the 1024–1279px floating rail was also visible — two landmarks answering the
+same name. Reproduced directly with axe-core at four viewports and traced to
+the upstream line. ~~**It has not been reported upstream.**~~ **Corrected
+2026-09-24:** it had been, as
+[vaam-apps/ui#16](https://github.com/vaam-apps/ui/issues/16) (2026-09-13).
 
-**Re-checked against `0.2.4` on 2026-09-23 by reading the code, not by
-measuring.** The dependency moved to `^0.2.4`, and the suppression in
-`src/a11y-gate.test.ts` still names `@vaam-apps/ui@0.1.2`. In
-`side-nav.js`, the in-flow `<nav>`'s non-collapsed floating class string
-(`xl:flex …`, with no unprefixed `hidden`) is byte-identical in `0.1.2` and
-`0.2.4`, so the defect has probably not been fixed. `0.2.4` also renders
-**three** `<nav aria-label="Primary">` shapes and relies on their breakpoint
-gates being complements. Do not drop the suppression without re-running axe at
-1200×900.
+What happened to it next, in order. Two re-checks landed a day apart, and the
+first one's advice is now spent:
 
-The dashboard's Storybook has 25 stories (counted 2026-09-23) bound to the same
-The dashboard's Storybook has 33 stories as of vaam-apps/vpay#258 (2026-09-24;
-25 when it was added on 2026-09-13), bound to the same
+1. **2026-09-23, `0.2.4`, read and not measured.** The dependency had moved
+   to `^0.2.4`, and the suppression in `src/a11y-gate.test.ts` still named
+   `@vaam-apps/ui@0.1.2`. In `side-nav.js`, the in-flow `<nav>`'s
+   non-collapsed floating class string (`xl:flex …`, with no unprefixed
+   `hidden`) was byte-identical in `0.1.2` and `0.2.4`, so the defect had
+   probably not been fixed. `0.2.4` also rendered **three**
+   `<nav aria-label="Primary">` shapes and relied on their breakpoint gates
+   being complements. ~~Do not drop the suppression without re-running axe
+   at 1200×900.~~ _(Right on `master` until vaam-apps/vpay#258 merged. That
+   merge is the re-run: its `Shell` and `ShellLight` stories run axe at the
+   suite's 1200×900 with nothing suppressed.)_
+2. **2026-09-24, `0.3.0`, measured** by the vaam-apps/vpay#258 review: one
+   violation at 375–1279px, none from 1280px.
+3. **Fixed in `0.4.0`** (vaam-apps/ui#39, 2026-09-24): the in-flow `<nav>` is
+   hidden below 1280px, so one `Primary` landmark is exposed at every width.
+   vaam-apps/vpay#258 (merged 2026-09-25) dropped the suppression, and the
+   `ShellPhone`, `ShellRail`, `ShellLaptop` and `ShellDesktop` stories (375,
+   700, 1100 and 1280px) assert exactly one exposed `Primary` landmark.
+
+The dashboard's Storybook has 33 stories as of vpay `f68fda09`
+(vaam-apps/vpay#258, merged 2026-09-25). It had 25 from 2026-09-13, when it
+was added, through `b747e5d5` (counted 2026-09-23). They are bound to the same
 `src/testing/fixtures.ts` `a11y.test.tsx` renders, so a screen cannot gain a
 story without a test already covering it.
 
 ## The decisive mutations
 
-Each was applied to the tree, the suite run, and the mutation reverted:
+Each was applied to the tree, the suite run, and the mutation reverted, when
+the row was written. None has been re-run for a restamp since. Re-read, not
+re-run, against `f68fda09` on 2026-09-25: every file and identifier named is
+still there, and between `b747e5d5` and `f68fda09` none of the files behind
+these rows changed except `layout.test.tsx` (its theme case, not its nav
+cases), `src/dash/resources.ts` (a helper only the deleted `more-menu.tsx`
+used) and `dashboard.cy.ts` (three queries scoped to `<main>`, not the frame
+case).
 
 | Mutation                                                                     | Fails                                                                                             |
 | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |

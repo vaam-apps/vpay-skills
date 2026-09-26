@@ -1,6 +1,6 @@
 # The `/dash/v1` read seam, the token lifecycle, and the BFF
 
-_Verified against vpay `b747e5d5` (2026-09-23). Version-sensitive claims
+_Verified against vpay `f68fda09` (2026-09-25). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 ## Two transports, one seam
@@ -36,7 +36,8 @@ spelling of the string.
 
 **Docs↔code disagreement. The code wins: five are mounted.** Verified
 2026-09-16 by reading the schema, the registry and the router, and again on
-2026-09-23. Step A added no procedure.
+2026-09-23 and 2026-09-25 (`f68fda09`). Step A added no procedure, and nothing
+since has.
 
 `dashboard_procedure_router` in `backends/crates/vpay-db/src/schema.rs` calls
 `cratestack_schema::axum::procedure_router(..., Payments, ...)`, which mounts
@@ -81,16 +82,26 @@ landed:
    matched route answering the wrong method is the discriminator. **The other
    four are mounted and unprobed**, and a sixth would be too. ~~Its
    nineteen-table half — asserting no generated model CRUD route is mounted —
-   does still cover the whole model set~~ **Corrected 2026-09-23: it no longer
-   does.** `schemas/vpay.cstack` declares **twenty** `model`s since step A
-   (vpay#251, 2026-09-23) added `model ManualPayment`. `MODEL_TABLES` in that
-   test is still `[&str; 19]`, and `manual_payments` is not in it. The test's
-   own comment predicted this: a model declared after the list was written is
-   exactly the one nobody has proved unmounted. It is a vpay-side gap. Close
-   it there, not by editing this page.
+   does still cover the whole model set~~ ~~**Corrected 2026-09-23: it no
+   longer does.** `schemas/vpay.cstack` declares **twenty** `model`s since
+   step A (vpay#251, 2026-09-23) added `model ManualPayment`. `MODEL_TABLES`
+   in that test is still `[&str; 19]`, and `manual_payments` is not in it.
+   The test's own comment predicted this: a model declared after the list was
+   written is exactly the one nobody has proved unmounted. It is a vpay-side
+   gap. Close it there, not by editing this page.~~ **Corrected 2026-09-25:
+   closed on vpay's side** by vaam-apps/vpay#255 (2026-09-24). The model half
+   now covers all twenty models: `MODEL_TABLES` is `[(&str, &str); 20]` of
+   `(model, table)` pairs, `ManualPayment` included, and before sending a
+   request it compares its model column with `cratestack_schema::MODELS`, the
+   schema's own list, in both directions. So **a model you declare in
+   `schemas/vpay.cstack` fails this test until you add its pair.** The table
+   column is still hand-written: a right model beside a wrong table name would
+   probe the wrong path (vpay's own follow-up, in
+   `docs/status/verification/2026-09-23-skills-reverification.md`).
 
 If you add a procedure, add a probe for it in that test and fix the test's
-name while you are there.
+name while you are there. As of `f68fda09` it still ends
+`only_the_one_procedure_is`.
 
 ## Instants: two formatters, because there are two wire shapes
 
@@ -132,6 +143,10 @@ Re-minting is _more_ checking than carrying one token, not less:
 `vpay_api::staff::oauth::authorize` re-reads the staff row and re-checks that
 the account is active, that `merchant_id` is still the dashboard client's
 binding, and that `password_change_required` is not set, **on every mint**.
+(That check is `vpay_api::staff::password_change_required`, which reads the
+staff member's password credential's `must_change`. It was a
+`staff_members.password_change_required` column until migration `0044`,
+vpay#168, 2026-09-13.)
 
 `readDash` takes both tokens as arguments rather than reading them, so the
 whole of it runs against a stubbed `fetch` — `dash-read.test.ts` is what would
@@ -261,20 +276,48 @@ green.
 
 ## Known-stale prose
 
-Two, both verified 2026-09-16 and re-read 2026-09-23.
+Two, both verified 2026-09-16 and re-read 2026-09-23 and 2026-09-25
+(`f68fda09`).
 
 **The "one procedure" sentences in the Rust transport are stale — five are
 mounted.** Full detail above. Code wins.
 
-**`frontends/apps/dashboard/README.md`'s counts are a 2026-09-11 snapshot.** It
-says the BFF is "**Two** `GET` route handlers" and quotes a suite of "22 files,
-243 tests". There are now **six** route files under `app/api/dash/`
-(`payment_intents`, `payment_intents/[id]`, `checkouts`, `customers`,
-`deliveries`, `refunds`). The latest recorded suite figure is **311 cases in
-30 files, 0 skipped**, taken 2026-09-13 and cited in
-`docs/flows/dashboard/status-built-and-not-built.md`. On 2026-09-23 the tree
-had 31 `*.test.ts(x)` files; the suite was not re-run for this page. Since
-vpay#247 (2026-09-23) the README's struck BFF paragraph says six handlers, but
-its "Two `GET` route handlers" lead-in, its layout table ("The BFF's two route
-handlers") and its test-count comment still carry the old numbers. The README's
-_properties_ are all still right; only its counts lag.
+**`frontends/apps/dashboard/README.md` lags the code: its test count, and seven
+passages about what the app does.** _(Until 2026-09-25 this said its
+"counts are a 2026-09-11 snapshot", and that the README "says the BFF is
+'**Two** `GET` route handlers'". True at `b747e5d5`; see the corrections
+below.)_ Its test count is a 2026-09-11 snapshot: it quotes a suite of "22
+files, 243 tests". The latest
+recorded suite figure is **311 cases in 30 files, 0 skipped**, taken
+2026-09-13 and cited in `docs/flows/dashboard/status-built-and-not-built.md`.
+The tree had 31 `*.test.ts(x)` files on 2026-09-23 and has 30 at `f68fda09`,
+since vaam-apps/vpay#258 deleted `more-menu.test.tsx`. The suite was not re-run for
+this page. ~~Since vpay#247 (2026-09-23) the README's struck BFF paragraph
+says six handlers, but its "Two `GET` route handlers" lead-in, its layout
+table ("The BFF's two route handlers") and its test-count comment still carry
+the old numbers.~~ **Corrected 2026-09-25:** vaam-apps/vpay#255 (2026-09-24)
+fixed the lead-in and the layout table. Both say six now, so of its
+numbers only the test-count comment lags. There are **six** route files
+under `app/api/dash/` (`payment_intents`, `payment_intents/[id]`,
+`checkouts`, `customers`, `deliveries`, `refunds`). ~~The README's
+_properties_ are all still right; only its counts lag.~~ **Corrected
+2026-09-25: they are not, and were not at `b747e5d5` either.** At `f68fda09`
+the README still says:
+
+- `staff add` "sets `password_change_required`". It writes the password
+  credential's `must_change` since migration `0044` (vpay#168, 2026-09-13).
+- ADR-0017 decision 1 refuses "every authenticated route" to such a
+  session. In the code only `/oauth/authorize` refuses it; see `SKILL.md`.
+- There is no "current password" field. There has been one since 2026-09-10
+  (vpay#97).
+- There is no "Sign out" in the nav. There has been one since 2026-09-14.
+- A `data-theme` that names neither theme renders "completely unthemed".
+  Measured false on `@vaam-apps/ui` 0.4.0; see
+  `what-a-screen-may-show.md`.
+- Its pages table lists six routes and none of the four procedure-backed
+  lists, which have been on `master` since 2026-09-14.
+- "Contrast checking" is among what the app cannot do. Its Storybook's axe
+  run has checked `color-contrast` in Chromium since 2026-09-13 (vpay#171).
+
+`SKILL.md` and `what-a-screen-may-show.md` carry the current truth for each.
+The code wins. Fix the README in vpay, not by editing this page.

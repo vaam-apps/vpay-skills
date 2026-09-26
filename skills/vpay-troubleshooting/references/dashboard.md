@@ -20,10 +20,17 @@ refund and no annotation — and therefore no `audit_log`, because there is
 nothing yet to audit. ADR-0008 wants one row per dashboard write; that write
 surface does not exist.
 
-**Any other slice.** Webhooks, checkout sessions, balances, settings and rail
-health are not built, and **the navigation does not link to them** —
+**Any other slice.** ~~Webhooks, checkout sessions, balances, settings and rail
+health are not built~~ **Corrected 2026-09-25:** wrong since 2026-09-14, two
+days before this page's stamp. Read-only lists of webhook deliveries
+(`/deliveries`) and checkout sessions (`/checkouts`) reached `master` that
+day with their nav entries, beside `/refunds` and `/customers`. Webhook
+configuration and retries, balances, settings and rail health are not built,
+and **the navigation does not link to them** —
 `frontends/apps/dashboard/src/layout.test.tsx` fails if it ever does. So adding
-a nav entry for an unbuilt page is a test failure, deliberately.
+a nav entry for an unbuilt page is a test failure, deliberately. This page's
+source, `docs/runbooks/demo/dashboard-sign-in.md`, still carries the struck
+sentence at vpay `f68fda09`; `vpay-dashboard` has the current list.
 
 ## The demo's dashboard is down on purpose
 
