@@ -555,6 +555,14 @@ review's parser hardening (`c4c542f3`) in it._
   with an element name, or an empty `surface`/`description`. (It cannot refuse
   an _unregistered_ one — nothing derives that list. The count of surfaces
   "not yet statically enumerable" is printed, not enforced.)
+- **a `debug_protections`-registered type that derives `Debug`** — the
+  hand-written redacting `Debug` boundary (RFC-0002 PR 3, issue #147,
+  2026-10-01): a `#[derive(Debug)]` on a struct holding a payer identifier,
+  rail failure text, rendered API body or credential prints all of it into
+  every log line a `{:?}` reaches;
+- **a `debug_protections` entry naming a type no longer declared in its
+  file**, or naming an element not in the inventory — the same both-directions
+  rule as the columns, applied to the registration list;
 - **a migration whose DDL the parser cannot read** — by name, see below.
 
 **Implements:** `cargo xtask verify-privacy-inventory`, `verify_privacy_inventory`
@@ -615,7 +623,12 @@ exists (31 created tables, 31 distinct bare names, as of 2026-09-18).
 a column and leaving its copy behind trips the other direction — and dropping a
 **table** without deleting its rows is the same failure with more rows; that is
 a real hole this gate's own review found, on migration 0009's
-`merchant_api_keys`.
+`merchant_api_keys`. **Since 2026-10-01 (#268, RFC-0002 PR 3):** adding a
+row/wire/port type that holds a payer identifier, rail failure text, a rendered
+API body or a credential and leaving `#[derive(Debug)]` on it — the
+`debug_protections` row for that type then fails the build until it gets a
+hand-written redacting `Debug` and a canary. A `debug_protections` entry for a
+type that no longer exists fails too, so the list cannot rot.
 
 **The file's shape**, so you can add a row without opening it: `version: 1`,
 then `elements:` keyed by a stable element name, each carrying the eight
@@ -623,10 +636,16 @@ classification fields, then `copies:` — a list of
 `{kind: column, table: …, column: …}`. Then `non_db_surfaces:`, a list of
 registered disclosure surfaces (**10 as of 2026-09-18, 6 of them
 `enumerable: false`**, which the gate counts and prints but does not enforce).
-The published prose companion is `docs/reference/personal-data-inventory.md`.
-The gate's own behaviour is pinned by **26 mutation cases as of 2026-09-18**
-(16 before the parser hardening the same day) in `mod privacy_inventory_tests`,
-inside `cargo test -p xtask`'s 285.
+Then `debug_protections:` (**since 2026-10-01, #268**), a list of
+`{type, file, elements}` where `type` must exist in `file` and must **not**
+derive `Debug` — `elements` names the inventory elements the type's hand-written
+`Debug` redacts, each checked to exist. **17 entries as of 2026-10-01**, across
+`vpay-db`, `vpay-api` and `vpay-provider` (the swept types all compose the
+`vpay_core::privacy` wrappers). The published prose companion is
+`docs/reference/personal-data-inventory.md`.
+The gate's own behaviour is pinned by **31 mutation cases as of 2026-10-01**
+(26 as of 2026-09-18; five more from `debug_protections`) in
+`mod privacy_inventory_tests`, inside `cargo test -p xtask`'s 313.
 
 ## 15. `verify-doc-counts`
 
