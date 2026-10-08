@@ -1,6 +1,6 @@
 # Configuration: the CLI layer, the YAML, and what refuses to boot
 
-_Verified against vpay `d3a8810b` (2026-09-16). Version-sensitive claims
+_Verified against vpay `a33aac61` (2026-09-29) for "The ten environment variables"; the rest of this page was last read at `d3a8810b` (2026-09-16). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 ADR-0003. Flow doc `docs/flows/configuration.md`; crate reference
@@ -181,18 +181,28 @@ so. It moves behind the port the day `ProviderAdapter` grows a
 `required_settings()` hook. **It is the only sanctioned one; do not add a
 second.**
 
-## The seven environment variables
+## The ten environment variables
+
+~~The seven environment variables~~ — **corrected 2026-09-29: ten, as of vpay
+`a33aac61`.** vpay's `docs/flows/configuration.md` made the same correction on
+2026-09-20 ("Seven … Corrected 2026-09-20: 10") and has gated it since by
+`cargo xtask verify-doc-counts` (marker `count:env-vars config/application.yml`).
+The three that were missing here are the Disbursements credentials that arrived
+with the refund path on 2026-09-16.
 
 ```bash
 grep -o '${[A-Z_]*}' config/application.yml | sort -u
 ```
 
-As of 2026-09-16: `MERCHANT_WEBHOOK_SECRET`, `MTN_API_KEY`, `MTN_API_USER`,
-`MTN_SUBSCRIPTION_KEY`, `ORANGE_CLIENT_ID`, `ORANGE_CLIENT_SECRET`,
-`ORANGE_MERCHANT_KEY`. **The list grows as features land** — re-derive it for
-the image you are deploying rather than copying this one.
+As of 2026-09-29 that prints eleven lines; one is the literal `${VAR}` that the
+file's own `#` comments use as an example (comments never reach the resolver),
+so the real set is ten: `MERCHANT_WEBHOOK_SECRET`, `MTN_API_KEY`,
+`MTN_API_USER`, `MTN_DISBURSEMENT_API_KEY`, `MTN_DISBURSEMENT_API_USER`,
+`MTN_DISBURSEMENT_SUBSCRIPTION_KEY`, `MTN_SUBSCRIPTION_KEY`, `ORANGE_CLIENT_ID`,
+`ORANGE_CLIENT_SECRET`, `ORANGE_MERCHANT_KEY`. **The list grows as features land**
+— re-derive it for the image you are deploying rather than copying this one.
 
-All seven are needed by **both** modes, including `serve`, which never delivers
+All ten are needed by **both** modes, including `serve`, which never delivers
 a webhook but loads and validates the same document. They are set on both
 services in `compose.e2e.yml` (which `compose.demo.yml` layers on) and listed in
 `.env.example`.

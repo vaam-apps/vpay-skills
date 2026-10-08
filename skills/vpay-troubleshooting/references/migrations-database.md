@@ -1,6 +1,6 @@
 # Migrations and the database
 
-_Verified against vpay `d3a8810b` (2026-09-16). Version-sensitive claims
+_Verified against vpay `a33aac61` (2026-09-29) for § "Adding a migration"; the rest of this page was last read at `d3a8810b` (2026-09-16). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 ## The rule that will bite you: a shipped migration is never edited
@@ -87,6 +87,13 @@ The rule and the mechanics live in `backends/migrations/README.md`;
 `docs/runbooks/migrations.md` is the operational half. Add the file, run
 `just migrations-manifest` to append its line, and **review that line in the
 diff.**
+
+On **macOS**, `just migrations-manifest` failed with `find: -printf: unknown
+primary or operator` (GNU-only `find -printf`) on every vpay before
+`9184e42` — vaam-apps/vpay#252, merged 2026-09-23, made it portable
+(`find … -exec basename`, `sha256sum` or else `shasum -a 256`). On an older
+tree, append the line by hand with `shasum -a 256` and let
+`verify-migrations` check it, as step A's `0049` was.
 
 ## `vpay-shop` dies in `zen migrate deploy`
 

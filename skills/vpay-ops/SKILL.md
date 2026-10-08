@@ -5,7 +5,7 @@ description: Configuration, deployment and observability for vpay — the YAML l
 
 # vpay ops
 
-> **Verified against vpay `35848b5c` (2026-09-19).** Version-sensitive claims below
+> **Verified against vpay `a33aac61` (2026-09-29).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -31,9 +31,11 @@ been performed, and no restore drill has ever run. ADR-0013 is `Proposed` and
 every number in it is proposed, not measured.
 
 What _has_ run: compose stacks, CI runners, and — once, on 2026-09-15 — a
-single MTN **sandbox** push (`docs/runbooks/live-sandbox-test.md`). Describing
-anything else in the present tense is the most damaging thing you can write
-here.
+single MTN **sandbox** push (`docs/runbooks/live-sandbox-test.md`); and, since
+2026-09-20, `release.yml` itself: it has pushed images to GHCR since 2026-09-03,
+and its `publish-chart` job pushed **and signed** a chart on `v0.3.0` (a
+`cosign verify` of it has still never been run). Describing anything else in the
+present tense is the most damaging thing you can write here.
 
 ## The configuration model
 
@@ -142,8 +144,9 @@ that show up everywhere:
 - **`USER 65532:65532` is a raw UID**, because `scratch` has no `/etc/passwd`.
 
 Depth: [references/deployment.md](references/deployment.md) — the chart, the
-Secrets, the overlay `subPath` rule, the routing defects, and — added
-2026-09-19, never run — how `release.yml` publishes the chart itself to GHCR.
+Secrets, the overlay `subPath` rule, the routing defects, and how `release.yml`
+publishes the chart itself to GHCR (added 2026-09-19; ~~never run~~ run twice on
+2026-09-20, failed once and succeeded once — the page has the table).
 
 ## Observability, in one paragraph
 

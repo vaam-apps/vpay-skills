@@ -5,7 +5,7 @@ description: The staff operator console at frontends/apps/dashboard — it is th
 
 # vpay dashboard
 
-> **Verified against vpay `f68fda09` (2026-09-25).** Version-sensitive claims below
+> **Verified against vpay `a33aac61` (2026-09-29).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -235,8 +235,58 @@ vaam-apps/vpay#258 (2026-09-25), behind the toolbar's More control below
 `references/what-a-screen-may-show.md` says where the block's copies are and
 how a test finds the visible one.
 
+## The demo stack's dashboard (from `docs/flows/dashboard/status-styling-and-demo.md`)
+
+_Added 2026-09-29; the justfile variables were checked at `a33aac61`, the
+behaviour was not re-run._ `demo_dashboard_port` (default `3000`, since
+2026-09-10, issue #78) is threaded through `compose.demo.yml`'s publication (still
+`!override` and bound to `127.0.0.1`, because what is behind it is a real
+staff sign-in form), the app's `VPAY_DASHBOARD_REDIRECT_URI`, the generated
+overlay's registered `redirect_uris` and Cypress's `baseUrl`, so two demo stacks
+can each serve a dashboard; the two OAuth legs must still spell one string
+identically, and `gen-demo-keys` regenerating the overlay is what keeps them
+doing so. **Which tenant the demo dashboard reads** is `demo_dashboard_merchant`,
+`shop-merchant-tenant` by default (and `demo_staff_merchant` is the same
+variable, so the staff member cannot end up in the other tenant). It was
+`demo-merchant-tenant` until 2026-09-11 (exp51), so a payment a person made by
+hand through the shop was absent from the list and its id answered the uniform
+cross-tenant `404`: both answers were correct, and the binding named the tenant
+nobody clicks in. Point it back and `dashboard.cy.ts` fails on both the list and
+the by-id read, which is asserted twice on purpose (once through the row link,
+once by visiting `/payments/{id}` directly, because only the second can fail on
+its own).
+
+**Offset paging is not stable while payments are being created** (exp54 review,
+2026-09-11), and it applies to the procedure-backed lists above: `OFFSET` is
+counted afresh per call, so a payment created between page 1 and page 2 shifts
+the window by one, repeating the last row of a page at the top of the next and
+missing one at the tail — worst exactly where the list matters. The cursor list
+`GET /dash/v1/payment_intents` does not have the property
+(`starting_after` names a row, which an insert cannot move). Neither the
+procedure nor anything else in vpay compensates. (The flow page, written when no
+screen read through a procedure, called moving the frontend onto one "a
+maintainer's decision"; four screens have been built on them since, per the
+route table above, and this is what that costs them.)
+
+## Flow pages, and where each is covered
+
+| Page                                                 | Covered in                                                                                    |
+| ---------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `docs/flows/dashboard/slice-1-gaps.md`               | this page's refund and `customer` sections; what slice 1 did not build, corrections since     |
+| `docs/flows/dashboard/status-built-and-not-built.md` | `references/what-a-screen-may-show.md` (the shell, the 0.3.0 and 0.4.0 chrome, the a11y gate) |
+| `docs/flows/dashboard/status-read-seam-and-bff.md`   | `references/read-seam-and-bff.md`                                                             |
+| `docs/flows/dashboard/status-styling-and-demo.md`    | the demo section above; the styling stack is `vpay-frontend`'s                                |
+| `docs/flows/dashboard-auth/rate-limiting.md`         | `references/staff-auth.md`                                                                    |
+| `docs/flows/dashboard-auth/sessions-and-refusals.md` | `references/staff-auth.md`; the forced password change is above                               |
+| `docs/flows/dashboard-auth/scope-and-tokens.md`      | `references/staff-auth.md`, and the re-mint in `references/read-seam-and-bff.md`              |
+
 ## More
 
+- `references/staff-auth.md` — the sign-in limiter and which address it counts,
+  why every refusal is one `401` and what that forbids a client from doing, the
+  stage route, scope and token lifetimes, and where the JWKS is (not on
+  `/dash/v1`). **Read this before touching `vpay_api::staff` or a `401`
+  handler.**
 - `references/read-seam-and-bff.md` — the two transports and the five mounted
   procedures, `PROCEDURE_OF`, the token lifecycle, the BFF's properties and its
   method policy. **Read this before adding a procedure or a read.**

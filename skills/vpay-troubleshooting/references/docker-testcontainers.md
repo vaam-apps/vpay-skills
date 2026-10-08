@@ -1,6 +1,6 @@
 # Docker and testcontainers
 
-_Verified against vpay `d3a8810b` (2026-09-16). Version-sensitive claims
+_Verified against vpay `a33aac61` (2026-09-29) for § "A bounded retry over `run_once` is a flake"; the rest of this page was last read at `d3a8810b` (2026-09-16). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 Everything Postgres-backed in this workspace starts a real container. Nothing
@@ -195,11 +195,54 @@ directory or that gate will time out by design.
 
 ### A bounded retry over `run_once` is a flake, not a test (2026-09-18)
 
-`vpay_worker::seed_singletons` stamps a job's `run_at` from the **test
+~~`vpay_worker::seed_singletons` stamps a job's `run_at` from the **test
 process's** clock (`OffsetDateTime::now_utc()`), while `Jobs::claim` selects
 `WHERE run_at <= now()` — evaluated by the **Postgres server** inside its own
 testcontainer. Those are two clocks. A container reading milliseconds behind
-the host makes a just-seeded job unclaimable, and `run_once` answers `None`.
+the host makes a just-seeded job unclaimable, and `run_once` answers `None`.~~
+
+**Corrected 2026-09-29 — the "two clocks" cause is gone for the shipping
+enqueue, and the stale sentence is still in vpay.** Until 2026-09-23 the above
+was true: `seed_singletons` and most other `run_at` writers computed the instant
+in Rust. ADR-0026 (vaam-apps/vpay#256, merged 2026-09-24) removed it at the
+source, as of vpay `a33aac61`:
+
+- `TxRepositories::enqueue_in_tx` takes a **`Duration`** and the statement
+  computes `now() + delay`; `seed_singletons` enqueues all five singletons at
+  `Duration::ZERO`, so a seeded job is due at the database's own `now()`. Its
+  doc comment says so ("until 2026-09-23 it was this host's
+  `OffsetDateTime::now_utc()`").
+- `WebhookDeliveries::record_attempt` takes the **retry rung**
+  (`retry_after: Option<Duration>`), not a `next_attempt_at`.
+- `Settlement::live_charges_stale_since` takes a **window back from `now()`**
+  (`stale_after: Duration`), not a cutoff instant.
+- `Jobs::oldest_runnable_run_at` became **`Jobs::oldest_runnable_age`**,
+  subtracted in SQL.
+- **Facts stay on the application's clock** (D6–D8): `checkout_sessions.created_at`
+  and `expires_at`, `customers.last_used_at`, invoice stamps, the signature's
+  `t=`, every `events` body. A fixture comparing one of those with `now()`
+  still has two clocks.
+- **Test fixtures read "now" off the database** (#254, `d08dafd`, 2026-09-23,
+  merged before the production change): `support::db_now(pool)` in the
+  integration suite and a private `db_now` in `vpay-db/tests/repositories.rs`,
+  both `SELECT now()`. A fixture that stamps `run_at` and then calls
+  `Jobs::claim` should use them. #254 found the flake after a Docker Desktop VM
+  restart (1 and then 5 `webhooks.rs` cases panicking `the fan-out job is
+claimable`); it demonstrated the mechanism with a +200 ms offset standing in
+  for skew and did **not** reproduce the flake itself.
+
+**The stale prose is in vpay, not here.** `checkout_sessions.rs`'s `run_until`
+doc comment still says "`seed_singletons` stamps a singleton's `run_at` from
+this **process's** clock" as of `a33aac61`. It is false of `seed_singletons`
+now. Trust the function.
+
+**What the advice below keeps.** `None` from `run_once` still means "nothing
+claimable _this instant_", and a job enqueued with a non-zero delay (a
+confirm's poll grace, a ladder rung, a webhook retry rung) is genuinely not due
+yet. A bounded retry loop around `run_once` is therefore still a poor test; it
+is just no longer explained by two clocks. And no test can run a _skewed_ host —
+a testcontainer's clock cannot be set apart from the machine's — so the
+single-clock guarantee rests on the method signatures, not on a test.
 
 `None` means "nothing claimable _this instant_", never "nothing left to
 claim". The shipping `run_loop` knows this — `Ok(None) => idle(…)` waits out

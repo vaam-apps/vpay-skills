@@ -5,7 +5,7 @@ description: vpay's payment domain model — the PaymentIntent lifecycle (which 
 
 # The payment domain
 
-> **Verified against vpay `b747e5d5` (2026-09-23).** Version-sensitive claims below
+> **Verified against vpay `a33aac61` (2026-09-29).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -87,6 +87,16 @@ time, and that index is the backstop for the two pages racing one `confirm`.
 the same intent. `Retry::NewAttempt` in the error taxonomy is exactly this
 instruction. It is also why releasing an idempotency key after a `5xx` is safe:
 the re-executed confirm meets this index and answers `409`.
+
+**An intent's `customer_id` is never rewritten from one customer to another.** Set
+at create, or — since ADR-0025 (2026-09-23) — written **once, from none** by the
+first checkout session that names a customer for a customer-less intent
+(`UPDATE … WHERE customer_id IS NULL`, in the session insert's own transaction).
+It is never changed from one customer to another. That can only happen while the
+intent has no charge (a session is refused on an intent that has one, and a
+refund needs a charge), which is why neither `charges` nor `refunds` needs a
+guard on it; erasure's `payment_intents` statement does need one (ADR-0027, see
+`vpay-customers`). Intents created before 2026-09-23 were not backfilled.
 
 ## Money
 
@@ -243,8 +253,9 @@ runner would still involve: [references/ledger.md](references/ledger.md).
 
 `draft → open → paid | void | uncollectible`. **There is no `draft → void`** —
 `void_in_tx`'s `WHERE` names `status = 'open'` alone, and a draft is deleted
-rather than voided. Two doc comments in vpay say otherwise and are stale; see
-`vpay-invoices`. Plus a
+rather than voided. ~~Two doc comments in vpay say otherwise and are stale.~~
+Both were fixed on 2026-09-24 (vaam-apps/vpay#255); `vpay-invoices` has the
+detail. Plus a
 `DELETE` that removes a draft entirely. `paid` is only reachable with
 `amount_remaining = 0` (`paid_means_nothing_remaining`, migration `0036`).
 
@@ -288,7 +299,7 @@ prepaid balance, the statement matcher and the router are still Draft and
 unbuilt, and out-of-band `bank_transfer` is a label a merchant sends, not
 RFC-0007's matcher.
 
-## Status, as of 2026-09-23 (unchanged since 2026-09-16)
+## Status, as of 2026-09-29 (unchanged since 2026-09-16)
 
 The state functions, `Money`, the failure taxonomy and the settlement
 transaction are real and tested. A merchant can create a refund and the ledger

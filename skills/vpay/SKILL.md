@@ -5,7 +5,7 @@ description: "Orientation for working in the vpay repository — a Rust + TypeSc
 
 # vpay
 
-> **Verified against vpay `67c90ea5` (2026-09-20).** Version-sensitive claims below
+> **Verified against vpay `a33aac61` (2026-09-29).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -14,8 +14,13 @@ A payment orchestrator for Cameroon mobile money. Rust backend, TypeScript
 frontends, merchant SDKs in Rust, Node and Flutter.
 
 **Read `docs/status.md` before you believe anything.** It is short on purpose
-(~290 lines) and it is the contract behind this repository's second rule. The
-whole history lives under `docs/status/`, one page per area.
+and it is the contract behind this repository's second rule. The whole history
+lives under `docs/status/`, one page per area. ~~(~290 lines)~~ **Corrected
+2026-09-29:** it was 275 lines on 2026-09-11 (6 151 the day before) and ~290 on
+2026-09-15, and has been **653** since 2026-09-20 (`67c90ea5`; unchanged at
+`a33aac61`) — the growth is the gate table and banner addenda, not a new log.
+Still one sitting, but not the sitting it was. (vpay's own `CLAUDE.md` still
+says "259 lines as of 2026-09-11"; the git history says 275 that day.)
 
 ## The one thing to get right
 
@@ -66,8 +71,10 @@ naming code that no longer carries one. (`cargo xtask verify-status`)
 
 **Do not reach for `#[ignore]`.** AGENTS.md still prescribes
 `#[ignore = "not implemented: …"]`, but `just verify-ignored` pins
-`expected_ignored := "0"` and is step 7 of `just ci`, so adding one fails the
-build. The sanctioned way to mark a test that needs a running stack is a Cargo
+`expected_ignored := "0"` and is a dependency of `just ci` (the sixth:
+`fmt-check clippy verify test-rust test-doc verify-ignored lint-web …`; this page
+said "step 7" until 2026-09-29, which matched no counting of that recipe at
+`a33aac61`), so adding one fails the build. The sanctioned way to mark a test that needs a running stack is a Cargo
 feature (`required-features = ["live-stack"]`). This is the authority rule in
 miniature: the recipe wins over the prose.
 
@@ -79,8 +86,13 @@ cat docs/status.md
 ```
 
 The recipe echoes its own count; trust that over any number written down,
-here or in vpay. It was fourteen until 2026-09-18, and twelve until
-2026-09-17.
+here or in vpay. It was twelve until 2026-09-17, thirteen on 2026-09-17
+(`verify-versions`, #201), fourteen from 2026-09-18 (`verify-privacy-inventory`,
+#187) and **fifteen since 2026-09-20** (`verify-doc-counts`, #233).
+~~It was fourteen until 2026-09-18~~ — this page said that, which has the dates
+backwards. `verify-doc-counts` now fails a vpay document whose marked count
+disagrees with the recipe. The recipe at `a33aac61` lists sixteen targets:
+fifteen gates plus `verify-docs`, the report that never fails.
 
 When you finish: `just ci`, then update the status page your change belongs to
 **in the same commit**, then the relevant `docs/flows/*.md` **Status** section.
@@ -91,19 +103,19 @@ Then state explicitly, in your summary, what you did _not_ do.
 
 ## Repository map
 
-| Path                   | What is in it                                                                                                                                              |
-| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `backends/crates/`     | The Rust workspace: `vpay-core`, `vpay-api`, `vpay-db`, `vpay-provider`, adapters                                                                          |
-| `backends/apps/`       | `vpay-server` — the one shipping binary, three modes                                                                                                       |
-| `backends/migrations/` | SQL migrations + `MANIFEST.sha256` (their bytes are pinned)                                                                                                |
-| `frontends/apps/`      | `checkout` (the payer page) and the dashboard. The demo shop is `examples/shop`                                                                            |
-| `sdks/`                | Merchant SDKs — Rust, Node, Flutter                                                                                                                        |
-| `schemas/vpay.cstack`  | The CrateStack schema. **It compiles into `vpay-db`** — a syntax error is a build failure                                                                  |
-| `docs/flows/`          | One page per process: what happens, what can go wrong, what invariant holds                                                                                |
-| `docs/status/`         | What is actually built, by area, with dated evidence                                                                                                       |
-| `docs/adr/`            | Decisions. Immutable — superseded, never edited                                                                                                            |
-| `docs/reference/`      | Why the code is shaped the way it is, per crate                                                                                                            |
-| `justfile`             | 4 704 lines, two-thirds of them comment (268 KB, 2026-09-16). **The recipe body is the source of truth** — it wins over its own comment and over AGENTS.md |
+| Path                   | What is in it                                                                                                                                                                                             |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `backends/crates/`     | The Rust workspace: `vpay-core`, `vpay-api`, `vpay-db`, `vpay-provider`, adapters                                                                                                                         |
+| `backends/apps/`       | `vpay-server` — the one shipping binary, three modes                                                                                                                                                      |
+| `backends/migrations/` | SQL migrations + `MANIFEST.sha256` (their bytes are pinned)                                                                                                                                               |
+| `frontends/apps/`      | `checkout` (the payer page) and the dashboard. The demo shop is `examples/shop`                                                                                                                           |
+| `sdks/`                | Merchant SDKs — Rust, Node, Flutter                                                                                                                                                                       |
+| `schemas/vpay.cstack`  | The CrateStack schema. **It compiles into `vpay-db`** — a syntax error is a build failure                                                                                                                 |
+| `docs/flows/`          | One page per process: what happens, what can go wrong, what invariant holds                                                                                                                               |
+| `docs/status/`         | What is actually built, by area, with dated evidence                                                                                                                                                      |
+| `docs/adr/`            | Decisions. Immutable — superseded, never edited                                                                                                                                                           |
+| `docs/reference/`      | Why the code is shaped the way it is, per crate                                                                                                                                                           |
+| `justfile`             | 5 299 lines, 67% of them comment (307 696 bytes, counted 2026-09-29; ~~4 704 lines, 268 KB~~ on 2026-09-16). **The recipe body is the source of truth** — it wins over its own comment and over AGENTS.md |
 
 ## Architecture rules you will trip over
 

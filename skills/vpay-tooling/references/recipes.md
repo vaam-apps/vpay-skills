@@ -303,7 +303,9 @@ There is **no** `just migrate`. `sqlx::migrate!` runs at server boot.
 
 `migrations-manifest` is append-only and refuses to rewrite an existing line
 whose hash changed, or to drop a line whose file is gone. Adding a migration
-means running it in the same commit. Editing a shipped migration is the failure
+means running it in the same commit. It runs on Linux and macOS alike since vaam-apps/vpay#252
+(2026-09-23, `9184e42`); before that it failed on macOS (`find -printf`), and
+`0049`'s line was appended by hand. Editing a shipped migration is the failure
 mode — see [gates.md](gates.md#12-verify-migrations).
 
 ## Docker and the compose stacks

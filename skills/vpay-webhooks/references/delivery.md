@@ -1,6 +1,6 @@
 # The outbox, the ladder, and the deliverer
 
-_Verified against vpay `b747e5d5` (2026-09-23). Version-sensitive claims
+_Verified against vpay `a33aac61` (2026-09-29) for § "Two retry ladders" and the two paragraphs after it (the clock, `create_in_tx`); the rest of this page was last read at `b747e5d5` (2026-09-23). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 All of it in `vpay_worker::webhooks`, run by the job loop in `vpay-server`'s
@@ -57,6 +57,33 @@ stops the question being asked.
 
 The delivery index is the **pre-increment** `attempt`, which counts failures so
 far: after the first failure the wait is `delivery_delay(0)`.
+
+**Every rung is measured on Postgres' clock** (since 2026-09-23, ADR-0026,
+vaam-apps/vpay#256, merged 2026-09-24). `WebhookDeliveries::record_attempt` takes
+`retry_after: Option<Duration>` and writes `next_attempt_at = now() + retry_after`
+in the statement that stamps `sent_at` (`None` writes `NULL`: nothing is owed);
+~~it took a `next_attempt_at: Option<OffsetDateTime>` computed from the worker
+host's clock~~, which the delivery backstop then compared with `now()`, so a
+skewed worker moved the backstop's view of every delivery. Each fan-out's first
+`deliver_webhook` job is also due at the database's `now()` (`Duration::ZERO`).
+The ladder itself — the rungs above, `None` after seven — did not change.
+`record_attempt_bounds_the_excerpt_moves_the_ladder_and_then_exhausts` asserts
+`next_attempt_at - sent_at` equals the rung to the microsecond. (The `t=` in a
+webhook **signature** is a different thing: it is a fact, judged by the
+receiver's clock, and stays the application's — ADR-0026 D6.)
+
+**`create_in_tx` and a repeat inside one transaction** (cratestack 0.15.0,
+2026-09-29, vaam-apps/vpay#259). The fan-out creates each `(event_id,
+endpoint_id)` delivery through CrateStack's `.do_nothing()`. Through 0.12.0 a
+second `create_in_tx` for one pair **in the same still-open transaction** answered
+`PersistenceError::Denied`, which would have failed the whole fan-out; from
+0.15.0 it answers `Ok(None)`, as a committed repeat always did. Nothing reached
+the old refusal either way — `endpoint.id` is unique per merchant (refused at
+boot by `vpay_config`, deduped again by `EndpointRegistry::from_pairs`) — but if
+you read a comment saying the same-transaction repeat is `Denied`, it describes
+0.12.0. The test is
+`a_repeat_creation_inside_one_transaction_is_reported_missing_like_a_committed_one`
+(renamed from `…_is_refused_rather_than_reported_missing`).
 
 **Delivery never consults `Classify`.** A merchant's `500` is not a
 `ProviderError` and has no place in the rail failure vocabulary. Do not route a

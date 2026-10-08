@@ -5,7 +5,7 @@ description: The payer-facing checkout page at frontends/apps/checkout — the t
 
 # vpay checkout page
 
-> **Verified against vpay `0799a8d2` (2026-09-18).** Version-sensitive claims below
+> **Verified against vpay `a33aac61` (2026-09-29).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -17,6 +17,13 @@ description: The payer-facing checkout page at frontends/apps/checkout — the t
 Load `vpay-frontend` first for the workspace, the Tailwind/daisyUI setup and
 `verify-ui`. The Flutter payer surface is a different package — load
 `vpay-sdks`.
+
+Creating the session (`POST /v1/checkout/sessions`) is the merchant API's, not
+this app's: load `vpay-merchant-api`. One thing from there reaches this page's
+flows doc: since ADR-0025 (2026-09-23) a `customer` on that create is written
+onto a customer-less intent in the same transaction, so a session and the
+payment it collects name one payer for every session created from that day. This
+app renders no customer and never did.
 
 **The invariant the whole page is built around:** a payer's browser holds
 credentials for **one** checkout and nothing else, and every one of them
@@ -212,3 +219,13 @@ purpose: absent from that list, it read as forgotten rather than decided.
   reducer refuses, and why there is no `failed` intent status.
 - `references/testing-and-gates.md` — `a11y-gate.test.ts`, the theme-ordering
   defect it guards, the Storybook gotchas, and the Cypress suite.
+
+_Flow pages, and where each is covered (added 2026-09-29; `docs/flows/hosted-checkout.md`
+is the overview):_
+
+| Page under `docs/flows/hosted-checkout/` | Covered in                                                                                                                                   |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `state-machine-and-outcomes.md`          | `references/state-machine.md`                                                                                                                |
+| `page-memory-and-protocols.md`           | `references/state-machine.md` § Page memory; § Popup is not iframe and § `middleware.ts` above (the iframe protocol, the popup, the headers) |
+| `runtime-configuration.md`               | `references/state-machine.md` § Runtime configuration                                                                                        |
+| `not-built-and-not-proven.md`            | `references/testing-and-gates.md` § What is still not proven (that page also lists what the horizon emits, which is not summarised here)     |

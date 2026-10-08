@@ -1,6 +1,6 @@
 # Build and toolchain failures
 
-_Verified against vpay `d3a8810b` (2026-09-16). Version-sensitive claims
+_Verified against vpay `a33aac61` (2026-09-29) for §§ `check-schema` and "Editing `schemas/vpay.cstack`"; the rest of this page was last read at `d3a8810b` (2026-09-16). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 ## Three version numbers that are not each other
@@ -70,8 +70,13 @@ The recipe follows that with: "this is a failure, not a skip: nothing checked
 **Fix:**
 
 ```bash
-cargo install cratestack-cli --locked --version 0.12.0
+cargo install cratestack-cli --locked --version 0.15.0
 ```
+
+~~`--version 0.12.0`~~ — **0.15.0 since 2026-09-29** (vaam-apps/vpay#259). The
+recipe prints this line with the version it pins (`justfile`'s
+`cratestack_version`), so copy the recipe's, not this page's, if they ever
+differ.
 
 Three sub-traps the recipe's own message covers:
 
@@ -80,10 +85,15 @@ Three sub-traps the recipe's own message covers:
   `rust-version = 1.98.0`). The instruction then was to `cd` out of the tree
   first. The pin is 1.98.0 now, so it works in place — **that bump is why.**
 - There is **no prebuilt binary for linux MUSL.** Five triples only:
-  x86_64/aarch64 linux-gnu and apple-darwin, x86_64-pc-windows-msvc.
+  x86_64/aarch64 linux-gnu and apple-darwin, x86_64-pc-windows-msvc. That is
+  what the recipe's message says at vpay `a33aac61`; it was measured against the
+  0.12.0 release, and **vpay did not re-check the 0.15.0 release's asset list**
+  when it moved the pin (it re-checked the CI install action's retry, and that
+  the `v0.15.0` tag is lightweight). Unverified at 0.15.0.
 - A CLI on `PATH` at a **different version** prints a WARNING and **still runs
   the check against the wrong grammar.** `docs/status.md` records exactly that:
-  pinned `0.12.0`, CLI on the authoring machine `0.11.1`, check ran in full
+  pinned `0.12.0` (the pin is `0.15.0` since 2026-09-29; the example is
+  history), CLI on the authoring machine `0.11.1`, check ran in full
   against the 0.11.1 grammar. "A gate that ran against a different grammar than
   CI will is a gate whose green means less than it looks."
 
@@ -105,8 +115,12 @@ began _compiling_ the file 2026-09-06. A syntax error in it is now a
 Three consequences:
 
 1. **The CLI and the library must stay on one version.** `justfile`'s
-   `cratestack_version` and `Cargo.toml`'s `cratestack = "=0.12.0"` — bump them
-   together.
+   `cratestack_version` and `Cargo.toml`'s `cratestack = "=0.15.0"` (it was
+   `=0.12.0` until 2026-09-29) — bump them together, and `vpay-db`'s
+   `cratestack-codec-json` with them. A bump also repoints the two
+   `install-cratestack-cli` steps in `.github/workflows/ci.yml` at the tag's
+   commit, and moves the twelve `cratestack-*` entries in `Cargo.lock`
+   (`cargo update -p cratestack-pg --precise <version>`).
 2. **The generated module is private to `vpay-db` on purpose.**
    `cargo xtask verify-repositories` fails if `mod schema` is made `pub` or
    re-exported, "because the module the macro creates exists in no source file

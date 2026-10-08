@@ -5,7 +5,7 @@ description: vpay's outbound webhooks — the fifteen-type event vocabulary clos
 
 # Outbound webhooks
 
-> **Verified against vpay `b747e5d5` (2026-09-23).** Version-sensitive claims below
+> **Verified against vpay `a33aac61` (2026-09-29).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -212,3 +212,15 @@ Code wins.
   applied migration are pinned by `MANIFEST.sha256` and `verify-migrations`;
   migration `0039`'s comment is current and correct, and a later migration is
   the only way to restate it.
+
+## Flow pages, and where each is covered
+
+_Added 2026-09-29; `docs/flows/webhooks.md` is the overview and its **Status**
+section is an index._
+
+| Page under `docs/flows/webhooks/` | Covered in                                                                                                           |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `status-writers.md`               | § The event vocabulary above, and [references/events.md](references/events.md) (which transition writes which event) |
+| `outbox-transactions.md`          | § The event row goes in the same transaction, and [references/delivery.md](references/delivery.md) § Two steps       |
+| `endpoints-and-egress.md`         | § Endpoints come from YAML, and delivery.md § SSRF vetting is per delivery                                           |
+| `events-api-and-recovery.md`      | delivery.md § What an operator can and cannot recover (`GET /v1/events`, the backstop, replay)                       |

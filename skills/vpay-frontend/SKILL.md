@@ -5,7 +5,7 @@ description: The vpay pnpm workspace under frontends/ — the seven packages and
 
 # vpay frontends
 
-> **Verified against vpay `0799a8d2` (2026-09-18).** Version-sensitive claims below
+> **Verified against vpay `a33aac61` (2026-09-29).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -58,8 +58,12 @@ CSS-first. `postcss.config.js` is one line in every app:
 `export default { plugins: { "@tailwindcss/postcss": {} } };`
 
 Both vpay apps pin `tailwindcss 4.3.3`, `@tailwindcss/postcss 4.3.3`,
-`daisyui 5.7.28`, `@vaam-apps/ui ^0.1.2`. Their `app/globals.css` must open in
-**exactly this order**:
+`daisyui 5.7.28`, `@vaam-apps/ui ^0.4.0` (as of vpay `a33aac61`; read from both
+`frontends/apps/*/package.json`, 2026-09-29). ~~`@vaam-apps/ui ^0.1.2`~~ — that
+was the range until `^0.2.4` on 2026-09-23 (vaam-apps/vpay#249) and `^0.4.0` on
+2026-09-25 (#258; its title says "the dashboard", but **the checkout's
+`package.json` moved too**, and `pnpm-workspace.yaml` has one resolution for the
+workspace). Their `app/globals.css` must open in **exactly this order**:
 
 ```css
 @import "tailwindcss";
@@ -74,6 +78,24 @@ Both vpay apps pin `tailwindcss 4.3.3`, `@tailwindcss/postcss 4.3.3`,
 and `@plugin "daisyui" { themes: bumblebee --default; }` with no
 `@vaam-apps/ui` at all, because a merchant integrating vpay would not have
 vpay's design system.
+
+### A `@vaam-apps/ui` bump can fail `pnpm install` on a package that is too new
+
+_Added 2026-09-29._ pnpm 11 defaults `minimumReleaseAge` to 1440 (24 h): a
+version must sit on the registry for a day before it installs. `@vaam-apps/ui`
+0.4.0 was published the same day the maintainer asked for the bump, so
+`pnpm install --frozen-lockfile` exits 1 with
+`ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION` ("`@vaam-apps/ui@0.4.0` was published
+at …") — reproduced 2026-09-24 on pnpm 11.18.0. `pnpm-workspace.yaml` carries a
+`minimumReleaseAgeExclude` entry for exactly the version in use
+(`"@vaam-apps/ui@0.4.0"`), with a `REMOVE WHEN` line in its comment. Rules that
+fell out of #258: the entry **replaces** the previous version's rather than
+joining it; a lockfile that still names the old version needs **both** entries
+for the one install that moves it (pnpm re-verifies the lockfile's existing
+version first); and an entry that matches no importer is dead weight to delete,
+not a mistake to keep. The time pnpm enforced for 0.4.0 (20:18:56Z) was not the
+one npm's `time` field shows (20:21:35Z); the entry's comment counts from the
+later.
 
 ### The three lines that fail silently
 

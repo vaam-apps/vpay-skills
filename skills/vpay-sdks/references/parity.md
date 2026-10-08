@@ -1,6 +1,6 @@
 # `docs/sdks/parity.md` and `cargo xtask verify-sdk-parity`
 
-_Verified against vpay `b747e5d5` (2026-09-23). Version-sensitive claims
+_Verified against vpay `a33aac61` (2026-09-29) for the gap-ledger paragraph; the rest of this page was last read at `b747e5d5` (2026-09-23). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 The record ADR-0015 requires: one row per capability, one column per SDK, and a
@@ -253,13 +253,16 @@ Flutter plugin, that none of its `just` recipes is in `just ci`; and, since
 iOS cannot reach `stopUrlReached`, desktop has no dismissal signal, no deep
 link ever observed, Chrome declined the partial Custom Tab).
 
-**The ledger's "iOS and macOS hosts … compiled by nobody" line is stale for
-iOS and nobody has struck it** (as of `b747e5d5`). The Flutter table's own
+~~**The ledger's "iOS and macOS hosts … compiled by nobody" line is stale for
+iOS and nobody has struck it** (as of `b747e5d5`).~~ **Corrected 2026-09-29:**
+vaam-apps/vpay#255 (2026-09-24) struck that ledger row and narrowed it to macOS
+(it now reads "narrowed 2026-09-23, iOS only"; verified at `a33aac61`), so the
+paragraph below is history for the ledger and still current for the rest. The Flutter table's own
 row was narrowed on 2026-09-16 — the iOS host was built and driven on an
 iOS Simulator that day — and `docs/status/mobile-flutter-plugin.md` was
 corrected on 2026-09-20; only macOS is still compiled by nobody. Trust the
-table row over the ledger line. _(This page repeated the ledger's wording
-until 2026-09-23.)_
+table row over the ledger line ~~(no longer needed)~~. _(This page repeated
+the ledger's wording until 2026-09-23.)_
 
 Keep the strikethroughs. They are the only signal a reader has about which
 sentences on the page have been checked recently.

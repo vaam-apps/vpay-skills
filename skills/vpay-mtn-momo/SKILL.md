@@ -5,7 +5,7 @@ description: The MTN MoMo Cameroon adapter (`vpay-adapter-mtn-momo`) — a push 
 
 # MTN MoMo — the push rail
 
-> **Verified against vpay `0799a8d2` (2026-09-18).** Version-sensitive claims below
+> **Verified against vpay `a33aac61` (2026-09-29).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -267,8 +267,12 @@ conformance page has the full accounting of which case proves what.
 
 Those three keys are also **three new `${VAR}` names** every environment
 loading `config/application.yml` must define — the list went seven to ten on
-2026-09-15. Empty is fine; **absent is an unresolved placeholder and exit 78
-on both binaries**, before any key check runs.
+~~2026-09-15~~ 2026-09-16 (the branch was written on the 15th; they reached
+`master` with vaam-apps/vpay#178 on the 16th — `git log -S` on the file, and
+vpay's `docs/flows/configuration.md`, say 2026-09-16). Empty is fine; **absent
+is an unresolved placeholder and exit 78 in every mode of the one
+`vpay-server` binary** (~~on both binaries~~: there has been one since
+2026-09-07, issue #77), before any key check runs.
 
 ### `refund_outcome(status, body)` — the money-out table
 

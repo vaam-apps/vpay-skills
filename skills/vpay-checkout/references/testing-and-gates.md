@@ -1,7 +1,22 @@
 # Testing the checkout, and the gates that guard the gates
 
-_Verified against vpay `d3a8810b` (2026-09-16). Version-sensitive claims
+_Verified against vpay `a33aac61` (2026-09-29). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
+
+> **Added 2026-09-29, and it is a limit on every number below.** The checkout
+> app's `@vaam-apps/ui` range moved `^0.1.2` → `^0.2.4` (vaam-apps/vpay#249,
+> 2026-09-23) → `^0.4.0` (#258, 2026-09-25 — titled "move the dashboard", but
+> `frontends/apps/checkout/package.json` is in its diff). **Nothing else under
+> `frontends/apps/checkout` changed** across either bump (`git diff` over
+> `0799a8d2..a33aac61` shows that one file). #249's own message says 0.2.0
+> "carried documented visual breaking changes … so typecheck/lint were not
+> enough on their own to trust the bump". The browser-level measurements in
+> vpay's docs at `a33aac61` for 0.3.0 and 0.4.0 are the **dashboard's**
+> (`docs/flows/dashboard/status-built-and-not-built.md`); a search of
+> `docs/status/` and `docs/flows/hosted-checkout*` for `0.2.4` and `0.4.0` on
+> 2026-09-29 found none for the checkout. So the 22-story, axe, `--color-base-100` and byte-count figures here
+> were measured at `^0.1.2` and have not been re-evidenced at `^0.4.0` in any
+> vpay page. The gates still run in CI; their _numbers_ are history.
 
 The theme through this whole page: **every one of these checks has, at some
 point, gone green while measuring nothing.** Each fix is a test that asserts the

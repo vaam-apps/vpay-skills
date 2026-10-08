@@ -1,11 +1,11 @@
 {
   "//": "The docs<->skills parity map. Checked in BOTH directions by tools/verify-coverage.mjs: a docs/flows page no skill claims fails, and a claimed path that no longer exists in vpay fails. See README.md and CONTRIBUTING.md.",
   "baseline": {
-    "//": "A skill is true of *a* vpay, not of vpay. The stamp is a commit and a date, not a vpay release tag: vpay has cut release tags since 2026-09-17 (v0.1.1 through v0.5.0 as of 2026-09-23; this comment said until then that it had none and was stuck at 0.1.0), but skills are verified against master, which is usually between tags, and a lightweight tag can move where a master commit cannot. Every SKILL.md is stamped with at least this ref: the gate requires the stamped commit to CONTAIN the baseline, not to equal it, so a skill re-verified on its own carries a newer stamp than its nineteen siblings. See VERSIONING.md.",
-    "vpayRef": "0799a8d27ac6d5069910ed586640f2d18be964b2",
-    "vpayRefShort": "0799a8d2",
-    "vpayCommitDate": "2026-09-18",
-    "verifiedAt": "2026-09-18"
+    "//": "A skill is true of *a* vpay, not of vpay. The stamp is a commit and a date, not a vpay release tag: vpay has cut release tags since 2026-09-17 (v0.1.1 through v0.5.0 as of 2026-09-23, and v0.5.0 was still the latest on 2026-09-29 when the baseline moved to a33aac61; this comment said until then that it had none and was stuck at 0.1.0), but skills are verified against master, which is usually between tags, and a lightweight tag can move where a master commit cannot. Every SKILL.md is stamped with at least this ref: the gate requires the stamped commit to CONTAIN the baseline, not to equal it, so a skill re-verified on its own carries a newer stamp than its nineteen siblings. See VERSIONING.md.",
+    "vpayRef": "a33aac61029c5e2d81e77217cd9ea23d43f946ac",
+    "vpayRefShort": "a33aac61",
+    "vpayCommitDate": "2026-09-29",
+    "verifiedAt": "2026-09-29"
   },
   "skills": {
     "vpay": {
@@ -43,7 +43,11 @@
         "deny.toml",
         "backends/crates/vpay-core/src/error.rs",
         "backends/crates/vpay-worker/src/error.rs",
-        "backends/crates/vpay-api/src/error.rs"
+        "backends/crates/vpay-api/src/error.rs",
+        "docs/adr/0025-session-customer-onto-intent.md",
+        "docs/adr/0026-the-database-clock-schedules-jobs.md",
+        "docs/adr/0027-erasure-reaches-through-checkout-sessions.md",
+        "docs/adr/0024-customer-filters-and-manual-payments.md"
       ]
     },
     "vpay-tooling": {
@@ -129,7 +133,9 @@
         "backends/migrations/0009_drop-merchant-api-keys.sql",
         "backends/migrations/0015_create-idempotency-keys.sql",
         "backends/migrations/0025_idempotency-keys-retry-advice.sql",
-        "examples/merchant-curl/README.md"
+        "examples/merchant-curl/README.md",
+        "docs/flows/merchant-auth/verification-and-limits.md",
+        "docs/adr/0025-session-customer-onto-intent.md"
       ]
     },
     "vpay-webhooks": {
@@ -144,7 +150,11 @@
         "backends/crates/vpay-api/src/v1/events.rs",
         "backends/migrations/0018_create-events.sql",
         "backends/migrations/0022_create-webhook-deliveries.sql",
-        "examples/webhook-receiver"
+        "examples/webhook-receiver",
+        "docs/flows/webhooks/endpoints-and-egress.md",
+        "docs/flows/webhooks/events-api-and-recovery.md",
+        "docs/flows/webhooks/outbox-transactions.md",
+        "docs/flows/webhooks/status-writers.md"
       ]
     },
     "vpay-reconciler": {
@@ -156,7 +166,9 @@
         "backends/apps/vpay-server/src/worker.rs",
         "backends/crates/vpay-config/src/signal.rs",
         "backends/tests/integration/tests/worker_recovery.rs",
-        "backends/tests/integration/tests/worker_kill9.rs"
+        "backends/tests/integration/tests/worker_kill9.rs",
+        "docs/adr/0026-the-database-clock-schedules-jobs.md",
+        "docs/reference/vpay-worker.md"
       ]
     },
     "vpay-provider-adapters": {
@@ -195,7 +207,12 @@
         "backends/tests/integration/tests/postgres_smoke.rs",
         "docs/reference/vpay-db.md",
         "docs/reference/vpay-db/cratestack.md",
-        "docs/status/cratestack.md"
+        "docs/status/cratestack.md",
+        "docs/reference/vpay-db/cratestack-what-runs-through-it.md",
+        "docs/adr/0026-the-database-clock-schedules-jobs.md",
+        "backends/crates/vpay-db/src/jobs.rs",
+        "backends/crates/vpay-db/src/checkout_sessions.rs",
+        "docs/reference/vpay-db/jobs.md"
       ]
     },
     "vpay-customers": {
@@ -210,7 +227,14 @@
         "backends/migrations/0039_events-customer-created-updated.sql",
         "backends/migrations/0041_customers-address-and-anonymisation.sql",
         "backends/tests/integration/tests/customers.rs",
-        "backends/tests/integration/tests/account_holders.rs"
+        "backends/tests/integration/tests/account_holders.rs",
+        "docs/flows/customers/address-and-gps.md",
+        "docs/flows/customers/api-and-code.md",
+        "docs/flows/customers/events.md",
+        "docs/flows/customers/privacy-and-erasure.md",
+        "docs/flows/customers/retention-sweep.md",
+        "docs/adr/0025-session-customer-onto-intent.md",
+        "docs/adr/0027-erasure-reaches-through-checkout-sessions.md"
       ]
     },
     "vpay-invoices": {
@@ -243,7 +267,11 @@
         "docs/flows/hosted-checkout",
         "docs/flows/browser-checkout.md",
         "frontends/apps/checkout",
-        "examples/checkout-browser"
+        "examples/checkout-browser",
+        "docs/flows/hosted-checkout/not-built-and-not-proven.md",
+        "docs/flows/hosted-checkout/page-memory-and-protocols.md",
+        "docs/flows/hosted-checkout/runtime-configuration.md",
+        "docs/flows/hosted-checkout/state-machine-and-outcomes.md"
       ]
     },
     "vpay-dashboard": {
@@ -254,7 +282,14 @@
         "docs/flows/dashboard-auth",
         "docs/adr/0008-dashboard-scope.md",
         "docs/adr/0017-staff-authentication.md",
-        "frontends/apps/dashboard"
+        "frontends/apps/dashboard",
+        "docs/flows/dashboard/slice-1-gaps.md",
+        "docs/flows/dashboard/status-built-and-not-built.md",
+        "docs/flows/dashboard/status-read-seam-and-bff.md",
+        "docs/flows/dashboard/status-styling-and-demo.md",
+        "docs/flows/dashboard-auth/rate-limiting.md",
+        "docs/flows/dashboard-auth/scope-and-tokens.md",
+        "docs/flows/dashboard-auth/sessions-and-refusals.md"
       ]
     },
     "vpay-sdks": {

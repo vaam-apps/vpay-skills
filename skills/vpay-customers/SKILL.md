@@ -5,7 +5,7 @@ description: The vpay Customer object and the account-holder lookup — phone-fi
 
 # Customers, addresses, erasure, and the account-holder lookup
 
-> **Verified against vpay `b747e5d5` (2026-09-23).** Version-sensitive claims below
+> **Verified against vpay `a33aac61` (2026-09-29).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -17,13 +17,15 @@ here is a privacy rule with a gate behind it, not a CRUD shape. Flow docs:
 `docs/flows/customers.md` plus the five pages in `docs/flows/customers/`, and
 `docs/flows/account-holder-lookup.md`.
 
-## State of it, as of 2026-09-23
+## State of it, as of 2026-09-29
 
 **REAL.** The five `/v1/customers` routes, the address including both
 coordinate columns, both erasure branches, the retention sweep, all three
 `customer.*` events, and `GET /v1/account_holders` are built and proven
 against a real Postgres and the shipping router. `customers.rs` in
-`backends/tests/integration/tests/` is 24 cases.
+`backends/tests/integration/tests/` is **28** `#[tokio::test]` cases as of vpay
+`a33aac61` (counted 2026-09-29, none `#[ignore]`d) — ~~24~~, until ADR-0027's four
+erasure-through-sessions cases on 2026-09-23.
 
 **NOT real, and do not build on it:** no deployment has ever run the retention
 sweep (no vpay has been up for twelve months); the account-holder lookup has
@@ -128,6 +130,32 @@ have a deadlock the suite's race case
 (`an_erasure_racing_an_out_of_band_payment_neither_deadlocks_nor_leaves_the_reference`)
 exists to catch.
 
+**Erasure also reaches a payment whose only link to the payer is a checkout
+session** — since ADR-0027 (vaam-apps/vpay#257, 2026-09-23). The three
+per-payment statements (`charges`, `refunds`, `payment_intents`) find their
+intents through one private constant, `vpay_db::customers::PAYERS_INTENTS`: the
+intents that name the customer, **plus** customer-less intents that a
+`checkout_sessions` row naming the customer points at. The guard is the
+intent's own `customer_id`, which must be `NULL` or the erased customer — an
+intent naming somebody else is never reached. Four consequences an agent will
+trip on:
+
+- **An old intent whose sessions named both X and Y is redacted by either
+  payer's erasure** (nothing recorded which paid; the error goes toward
+  erasure). The maintainer decided on 2026-10-08 to keep this — a decision
+  relayed to this repository, not yet written in any vpay document at
+  `a33aac61`. Do not "fix" it without asking.
+- **A session create now takes `FOR SHARE` on its customer before it touches
+  the intent.** The old order (intent, then customer) deadlocked with an
+  erasure — Postgres `40P01`, surfaced as a `503`. Do not reverse it.
+- **A create against a just-erased customer is a `409`**
+  (`DbError::CustomerErased`) instead of attaching the erased payer to an
+  intent no later erasure visits.
+- **Erasure writes nothing onto the intent**: it still names nobody afterwards.
+
+Mechanism, tests and the rest: [references/erasure.md](references/erasure.md)
+§ "Which payments an erasure reaches".
+
 ## The twelve-month retention sweep
 
 `vpay_worker::handlers::sweep_idle_customers` — its own `jobs.kind`
@@ -201,9 +229,18 @@ always did), inside the same `WHERE` as `merchant_id`, so a foreign or unknown
 `cus_…` is an empty page and never a `404`. An erased customer keeps its
 `cus_…` and the filter still finds everything that names it. **`GET
 /v1/customers` stays unfiltered** (ADR-0024 D4): a filter _by_ an id the
-merchant holds is not a search _for_ a payer. Rules and the one consequence
-(a session-named customer on a customer-less intent is invisible to the intent
-and refund filters, ADR-0024 open question 3): `vpay-merchant-api`.
+merchant holds is not a search _for_ a payer. Rules: `vpay-merchant-api`.
+
+~~One consequence: a session-named customer on a customer-less intent is
+invisible to the intent and refund filters (ADR-0024 open question 3).~~
+**Corrected 2026-09-29:** that is true **only of rows written before
+2026-09-23.** ADR-0025 (vaam-apps/vpay#253) answered question 3: a session
+created with `customer=X` on a customer-less intent now writes `X` onto the
+intent in the same transaction, so all three filters agree for every session
+created from that day. Older rows were deliberately **not backfilled** (a
+backfill would have to guess between sessions naming different payers), so for
+them the sessions filter still finds the payment and the intent and refund
+filters do not. Erasure is a separate matter and does reach them (above).
 
 Update has three states per field: absent leaves it, a value sets it, the
 empty string (`name=`) clears it. `metadata` has **two** — merged key-wise, a
@@ -231,3 +268,16 @@ A name lookup with a **three-way** answer that nothing may collapse, three
 privacy rules that apply only here, and three controls issue #47 asked for that
 are **reserved maintainer decisions and are not built**:
 [references/account-holder-lookup.md](references/account-holder-lookup.md).
+
+## Flow pages, and where each is covered
+
+_Added 2026-09-29; `docs/flows/customers.md` is the overview and its **Status**
+section is the summary._
+
+| Page under `docs/flows/customers/` | Covered in                                                                                    |
+| ---------------------------------- | --------------------------------------------------------------------------------------------- |
+| `address-and-gps.md`               | § The address, above (the formal address **and** the GPS point, two `BIGINT` columns)         |
+| `api-and-code.md`                  | § The routes, above, and the `customer=` filter paragraph                                     |
+| `events.md`                        | § Events, above (`customer.created`, `.updated`, `.deleted`)                                  |
+| `privacy-and-erasure.md`           | [references/erasure.md](references/erasure.md), including § Which payments an erasure reaches |
+| `retention-sweep.md`               | § The twelve-month retention sweep, above                                                     |
