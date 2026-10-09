@@ -5,12 +5,12 @@ description: The payer-facing checkout page at frontends/apps/checkout — the t
 
 # vpay checkout page
 
-> **Verified against vpay `a33aac61` (2026-09-29).** Version-sensitive claims below
+> **Verified against vpay `69d822ab` (2026-10-09).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
 
-`frontends/apps/checkout` (`@vpay/checkout`). Next 15.5.25 App Router, React 19. Process doc: `docs/flows/hosted-checkout.md` plus the four pages under
+`frontends/apps/checkout` (`@vpay/checkout`). Next ~~15.5.25~~ **`^15.5.27`** (since 2026-10-09, vaam-apps/vpay#272) App Router, React 19. Process doc: `docs/flows/hosted-checkout.md` plus the four pages under
 `docs/flows/hosted-checkout/`. The surface underneath it is
 `docs/flows/browser-checkout.md`.
 
