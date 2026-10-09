@@ -110,11 +110,11 @@ Two recipes joined that list in 2026-09-17/18 and each is runnable on its own,
 offline, in seconds — reach for them directly rather than the whole of
 `just verify`:
 
-| Recipe                          | Does                                                                                                                                                                                   |
-| ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `just verify-versions`          | `cargo xtask verify-versions` — the 13th gate (2026-09-17, #201)                                                                                                                       |
-| `just verify-privacy-inventory` | `cargo xtask verify-privacy-inventory` — the 14th gate (2026-09-18, #187), needs no Postgres; since 2026-10-01 (#268) also enforces the `debug_protections` hand-written-`Debug` boundary in both directions                                                                                                                           |
-| `just verify-doc-counts`        | `cargo xtask verify-doc-counts` — the 15th gate (2026-09-20, #233); checks every `<!-- count:KIND ARG… -->`-marked number against what the tree measures, including its own gate tally |
+| Recipe                          | Does                                                                                                                                                                                                         |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `just verify-versions`          | `cargo xtask verify-versions` — the 13th gate (2026-09-17, #201)                                                                                                                                             |
+| `just verify-privacy-inventory` | `cargo xtask verify-privacy-inventory` — the 14th gate (2026-09-18, #187), needs no Postgres; since 2026-10-09 (#273) also enforces the `debug_protections` hand-written-`Debug` boundary in both directions |
+| `just verify-doc-counts`        | `cargo xtask verify-doc-counts` — the 15th gate (2026-09-20, #233); checks every `<!-- count:KIND ARG… -->`-marked number against what the tree measures, including its own gate tally                       |
 
 **`fmt-check-web` walks the working tree, not the index.** An untracked scratch
 `.ts`, `.md` or `.json` left lying about fails it. `.gitignore` it or delete it

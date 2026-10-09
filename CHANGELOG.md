@@ -12,6 +12,27 @@ publishes no release tags and its workspace version has never moved off
 `v0.5.0` as of 2026-09-23 — and its workspace version is `0.5.0`. The naming
 rule stands, for the reasons VERSIONING.md now gives.)_
 
+## v2026-10-09-69d822ab
+
+Verified against vpay `69d822ab` (2026-10-09), the squash of vaam-apps/vpay#273,
+which carried vaam-apps/vpay#268 (RFC-0002 PR 3, issue #147) with the
+maintainer's review fixes. `vpay-tooling` was briefed by @Valsuh45 in
+vaam-apps/vpay-skills#28, restamped and corrected here.
+
+### Added
+
+- `vpay-tooling`: the `debug_protections` boundary of `verify-privacy-inventory`.
+  A registered type that derives `Debug`, a registration naming no declared
+  type, or one naming no inventory element fails the gate. A derive is matched on
+  its last path segment. The lockstep row covers adding a type that holds a payer
+  identifier, rail failure text, a rendered API body or a credential.
+
+### Claims that stopped being true
+
+- None. This entry adds a boundary that did not exist before. Figures
+  #268 stated that did not survive its review: 17 registrations is 24 on
+  `master`, 31 gate tests is 33, and xtask's 313 tests is 315.
+
 ## v2026-10-09-87166eaf
 
 Re-verified against vpay [`87166eaf`](https://github.com/vaam-apps/vpay/commit/87166eafb71eb105ff90a9958377866840447748)

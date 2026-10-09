@@ -557,7 +557,7 @@ review's parser hardening (`c4c542f3`) in it._
   "not yet statically enumerable" is printed, not enforced.)
 - **a `debug_protections`-registered type that derives `Debug`** — the
   hand-written redacting `Debug` boundary (RFC-0002 PR 3, issue #147,
-  2026-10-01): a `#[derive(Debug)]` on a struct holding a payer identifier,
+  landed 2026-10-09 in #273, which carried #268): a `#[derive(Debug)]` on a struct holding a payer identifier,
   rail failure text, rendered API body or credential prints all of it into
   every log line a `{:?}` reaches;
 - **a `debug_protections` entry naming a type no longer declared in its
@@ -623,7 +623,7 @@ exists (31 created tables, 31 distinct bare names, as of 2026-09-18).
 a column and leaving its copy behind trips the other direction — and dropping a
 **table** without deleting its rows is the same failure with more rows; that is
 a real hole this gate's own review found, on migration 0009's
-`merchant_api_keys`. **Since 2026-10-01 (#268, RFC-0002 PR 3):** adding a
+`merchant_api_keys`. **Since 2026-10-09 (#273, RFC-0002 PR 3):** adding a
 row/wire/port type that holds a payer identifier, rail failure text, a rendered
 API body or a credential and leaving `#[derive(Debug)]` on it — the
 `debug_protections` row for that type then fails the build until it gets a
@@ -636,16 +636,21 @@ classification fields, then `copies:` — a list of
 `{kind: column, table: …, column: …}`. Then `non_db_surfaces:`, a list of
 registered disclosure surfaces (**10 as of 2026-09-18, 6 of them
 `enumerable: false`**, which the gate counts and prints but does not enforce).
-Then `debug_protections:` (**since 2026-10-01, #268**), a list of
+Then `debug_protections:` (**since 2026-10-09, #273**), a list of
 `{type, file, elements}` where `type` must exist in `file` and must **not**
 derive `Debug` — `elements` names the inventory elements the type's hand-written
-`Debug` redacts, each checked to exist. **17 entries as of 2026-10-01**, across
+`Debug` redacts, each checked to exist. **24 entries as of 2026-10-09** (17 when #268 opened on 2026-10-01; the maintainer's review added seven, among them `RedirectToUrl`/`NextAction`, whose URL carries Orange's `pay_token`), across
 `vpay-db`, `vpay-api` and `vpay-provider` (the swept types all compose the
 `vpay_core::privacy` wrappers). The published prose companion is
 `docs/reference/personal-data-inventory.md`.
-The gate's own behaviour is pinned by **31 mutation cases as of 2026-10-01**
-(26 as of 2026-09-18; five more from `debug_protections`) in
-`mod privacy_inventory_tests`, inside `cargo test -p xtask`'s 313.
+The gate's own behaviour is pinned by **33 mutation cases as of 2026-10-09**
+(26 as of 2026-09-18; five more from `debug_protections` in #268 and two in its
+review) in `mod privacy_inventory_tests`, inside `cargo test -p xtask`'s 315.
+A derive is matched on its **last path segment**, so `#[derive(std::fmt::Debug)]`
+and `core::fmt::Debug` are refused like a bare `Debug` (they slipped through
+until the review). What the gate cannot do is notice a type nobody
+registered: a **new** type holding one of these values is caught by review,
+not by `verify-privacy-inventory`, so add its row in the same change.
 
 ## 15. `verify-doc-counts`
 
