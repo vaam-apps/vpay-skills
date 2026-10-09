@@ -16,7 +16,8 @@ rule stands, for the reasons VERSIONING.md now gives.)_
 
 Verified against vpay `69d822ab` (2026-10-09), the squash of vaam-apps/vpay#273,
 which carried vaam-apps/vpay#268 (RFC-0002 PR 3, issue #147) with the
-maintainer's review fixes. `vpay-tooling` was briefed by @Valsuh45 in
+maintainer's review fixes, and on top of vaam-apps/vpay#272 (the npm advisory
+sweep). `vpay-tooling` was briefed by @Valsuh45 in
 vaam-apps/vpay-skills#28, restamped and corrected here.
 
 ### Added
@@ -29,9 +30,14 @@ vaam-apps/vpay-skills#28, restamped and corrected here.
 
 ### Claims that stopped being true
 
-- None. This entry adds a boundary that did not exist before. Figures
-  #268 stated that did not survive its review: 17 registrations is 24 on
+- `vpay-tooling`: none. The boundary is new. Figures vaam-apps/vpay#268
+  stated that did not survive its review: 17 registrations is 24 on
   `master`, 31 gate tests is 33, and xtask's 313 tests is 315.
+- `vpay-checkout`, `vpay-dashboard`, `vpay-frontend` and `workspace.md`, since
+  vaam-apps/vpay#272 the same day: the two vpay apps are on Next `^15.5.27`, not 15.5.25. `examples/shop` pins 16.3.8, not
+  16.3.4. Both changed on 2026-10-09 to clear GHSA-vcvr-r3jv-pc5j and
+  CVE-2026-94483. `read-seam-and-bff.md`'s note keeps the versions the review
+  read, now in the past tense.
 
 ## v2026-10-09-87166eaf
 

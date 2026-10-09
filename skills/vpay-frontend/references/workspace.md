@@ -124,9 +124,9 @@ green.
 It is in the workspace but it is **not** a vpay frontend. It depends on
 `@vpay/config` (dev only) and on the two published SDKs, and on **no** vpay
 design-system package — by design, so that what it demonstrates is reproducible
-by a merchant. It pins Next 16.3.4 while the two vpay apps are on 15.5.25; that
+by a merchant. It pins Next ~~16.3.4~~ **16.3.8** while the two vpay apps are on ~~15.5.25~~ **`^15.5.27`** (both since 2026-10-09, vaam-apps/vpay#272); that
 difference is real and intentional, and the dashboard's BFF review explicitly
-notes it read Next 16.3.4's behaviour while the dashboard resolves 15.5.25.
+notes it read Next 16.3.4's behaviour while the dashboard resolved 15.5.25 at the time.
 
 Its persistence is ZenStack over Postgres: `examples/shop/zenstack/schema.zmodel`
 plus migrations under `examples/shop/zenstack/migrations/`. Regenerate with

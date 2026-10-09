@@ -249,7 +249,7 @@ would still produce; the next asserts what the caller actually gets. Making
 ### Two corrections the review made, both worth carrying
 
 The review recorded its findings against **Next 16.3.4**, which is
-`examples/shop`'s pin; this app resolves **15.5.25**. The finding held; the
+`examples/shop`'s pin at the time; this app resolved **15.5.25** then. _(Both moved on 2026-10-09 for npm advisories, vaam-apps/vpay#272: the shop to 16.3.8, this app to `^15.5.27`. The point below is unchanged.)_ The finding held; the
 version named in it was not this app's. The test measures the installed one
 rather than repeating either number.
 
