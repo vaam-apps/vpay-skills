@@ -1,6 +1,6 @@
 # The recipe inventory
 
-_Verified against vpay `67c90ea5` (2026-09-20). Version-sensitive claims
+_Verified against vpay `67c90ea5` (2026-09-20), except § Helm, re-read against `87166eaf` (2026-10-09). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 `justfile` is 4 704 lines, two-thirds of them comment (2026-09-16).
@@ -463,15 +463,45 @@ against MTN's real sandbox: the three MTN values, `VPAY_STAFF_PEPPER` and
 ServiceMonitor/PrometheusRule). CI's `deploy` job runs this recipe, not a copy
 of its commands.
 
-What it proves: the chart lints under three value sets; all three render (the
-Gateway API one needs `--api-versions gateway.networking.k8s.io/v1`, without
-which the `HTTPRoute` templates render **nothing** and every check below would
-pass over an empty file); the **24 named guards** under
+What it proves: the chart lints under ~~three~~ **four** value sets (the defaults,
+`ci/values-full.yaml`, `ci/values-route.yaml` and
+`ci/values-route-networkpolicy.yaml`); ~~all three~~ all four render (the Gateway
+API ones need `--api-versions gateway.networking.k8s.io/v1`, without which the
+`HTTPRoute` templates render **nothing** and every check below would pass over an
+empty file); the **24 named guards** under
 `deploy/helm/vpay/ci/guards/` are exactly the 24 the recipe lists and each
 fires _by name_ with a non-zero exit; the default render templates no checkout
 page and `ci/values-full.yaml`'s does; the Ingress carries `limit-rps` and the
 token Ingress is **tighter** than `/v1`'s; both mechanisms route `/provider`;
-and every rendered object validates against upstream schemas.
+the `/dash/v1` route and the `-management` NetworkPolicy agree when both render;
+the chart **as a subchart** (below); and every rendered object validates against
+upstream schemas (`kubeconform -strict`, over the four renders).
+
+_This section said "three value sets" and "all three render" until 2026-10-09. The
+recipe's own comment dates the correction to four value sets 2026-09-16
+(`ci/values-route-networkpolicy.yaml` is the fourth), so the sentence was already
+wrong when this page was stamped. It also omitted the step added by
+vaam-apps/vpay#270 (merged 2026-10-09): **"wrapper chart"**._
+
+**The wrapper-chart step** (`wrapper := "deploy/helm/fixtures/wrapper"` in the
+`justfile`). `deploy/helm/fixtures/wrapper` is a real parent chart that depends on
+`deploy/helm/vpay` by `file://` path and sets a top-level `global`; it is a fixture
+for `helm-check`, not something that ships (`release.yml` packages `chart` alone).
+Helm passes a parent's `global` to every subchart, **adds the key even when the
+parent sets nothing**, and validates it against the subchart's
+`values.schema.json`, which is `additionalProperties: false`. Until 2026-10-09 the
+schema did not list `global`, so any chart that depended on vpay's failed
+`helm lint` and `helm template` with `additional properties 'global' not allowed`,
+while every other step stayed green: they all render the chart as the root.
+The step builds the dependency (`helm dependency build`; `charts/` and `Chart.lock`
+are removed by the recipe's `trap`, so a dirty fixture directory is not a result),
+lints and renders the wrapper, requires a `Deployment` in it, requires the render
+to equal the default root render except for the `# Source:` comments (`global` is
+**accepted, not read**: nothing in the chart reads `.Values.global`), and requires
+`--set vpay.bogus=1` to still be refused by the schema. Only the `file://`
+dependency is exercised; the published OCI chart has never been consumed as a
+dependency from a registry. The wrapper's render is **not** among the four
+`kubeconform` inputs.
 
 _This said **22** until 2026-09-16, when ADR-0022 retired
 `dashboard-not-templated` (the chart now templates the dashboard) and added

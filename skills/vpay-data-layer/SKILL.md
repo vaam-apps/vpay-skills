@@ -5,7 +5,7 @@ description: vpay's persistence layer — `backends/migrations/*.sql` as the aut
 
 # The data layer
 
-> **Verified against vpay `a33aac61` (2026-09-29).** Version-sensitive claims below
+> **Verified against vpay `87166eaf` (2026-10-09).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -300,9 +300,27 @@ parameter and costs a round trip. The rest you will trip on:
   The residual is stated by the ADR: such comparisons can still span two
   application hosts. Two more same-class columns were named and left out (D8):
   `oauth_signing_keys.expires_at` and `oauth_client_assertion_jtis.expires_at`.
-- **ADR-0026's status is "Accepted in part"** on vpay `master` at `a33aac61`:
+  _(Updated 2026-10-09, verified against vpay `87166eaf`: the second is concluded.
+  ADR-0028, vaam-apps/vpay#271, made `ClientAssertions::delete_expired_client_assertion_jtis`
+  take `retain_after_exp: Duration`, with the statement
+  `expires_at < now() - ($1::BIGINT * INTERVAL '1 microsecond')` on the database's
+  clock, and the worker passes `vpay_worker::CLIENT_ASSERTION_JTI_RETENTION`,
+  5 minutes. The column still stores the client's raw `exp`, a fact under D6; the
+  horizon is policy, applied once, at deletion. `record_jti` and the migrations did
+  not change, and `sql_audit`'s `EXPECTED_ASSERT_SITES` did not move. Why 5 minutes:
+  `vpay-merchant-api`. `oauth_signing_keys.expires_at` is untouched and still
+  open.)_
+- ~~**ADR-0026's status is "Accepted in part"** on vpay `master` at `a33aac61`:
   the rule is the maintainer's, D1–D8 are the implementing agent's and are marked
-  as needing confirmation. See `vpay-conventions` → `adr-index.md`.
+  as needing confirmation.~~ **Corrected 2026-10-09:** the status is
+  `Accepted (2026-10-08)`. The maintainer confirmed D1–D8 on 2026-10-08 and the text
+  of D1–D8 is unchanged; the Status block is the only edit, and it reached `master`
+  with vaam-apps/vpay#271. D6's list of comparisons against a fact omits one site,
+  the checkout confirm gate (`SessionGate::admit_confirm` in
+  `backends/crates/vpay-api/src/v1/return_trip.rs`), which compares the
+  application's clock with `checkout_sessions.expires_at`: it is on the right side of
+  D6's rule, nothing about it changes, and ADR-0028 § "Related findings" records the
+  omission in the list, not in the code. See `vpay-conventions` → `adr-index.md`.
 - **Tests read "now" off the database too (#254, `d08dafd`).** Fixtures that
   stamp a job and then claim it use `support::db_now(pool)` (integration) or a
   private `db_now` in `vpay-db/tests/repositories.rs`, both `SELECT now()`.

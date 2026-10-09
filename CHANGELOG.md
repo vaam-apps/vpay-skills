@@ -12,6 +12,145 @@ publishes no release tags and its workspace version has never moved off
 `v0.5.0` as of 2026-09-23 — and its workspace version is `0.5.0`. The naming
 rule stands, for the reasons VERSIONING.md now gives.)_
 
+## v2026-10-09-87166eaf
+
+Re-verified against vpay [`87166eaf`](https://github.com/vaam-apps/vpay/commit/87166eafb71eb105ff90a9958377866840447748)
+(2026-10-09), `v0.5.0` plus fourteen commits (`git describe`: `v0.5.0-14`; no
+release has been cut since `v0.5.0`). The previous entry here is `a33aac61`
+(2026-09-29), and `87166eaf` is **two merged pull requests** later:
+[vaam-apps/vpay#270](https://github.com/vaam-apps/vpay/pull/270) (the Helm chart
+accepts `global`, `8cad7d1`) and
+[vaam-apps/vpay#271](https://github.com/vaam-apps/vpay/pull/271) (ADR-0028, the
+client-assertion `jti` horizon, `87166ea`). Together they touch 22 files, and this
+release covers all of them: every path in that diff that a skill claims in
+`coverage.json` was read, and the skills that describe them were corrected.
+
+**What "re-verified" means here is narrower than in the last entry, and a stamp
+should be read that way.** The check was the `git diff a33aac61..87166eaf` of the
+claimed paths, plus a grep of `skills/` for every symbol and claim those two PRs
+touched (`jti`, `client_assertion`, `sweep_expired`, `stopgap`, `value sets`,
+`Accepted in part`, `not yet written`). It was **not** a re-read of any reference
+page end to end. Eight skills changed content and carry the new stamp on their
+`SKILL.md` (`vpay-conventions`, `vpay-customers`, `vpay-data-layer`,
+`vpay-merchant-api`, `vpay-ops`, `vpay-reconciler`, `vpay-tooling`,
+`vpay-troubleshooting`); the reference pages that were edited carry a stamp that
+**names the section** and the older stamp for the rest: `adr-index` (the 0026 and
+0028 rows and notes, "Not accepted", the numbering section), `erasure` (§ "Which
+payments an erasure reaches"), `configuration` (boot step 7), `config-boot` (boot
+step 7), `recipes` (§ Helm) and `deployment` (§ "Verifying the chart"). The other
+twelve skills keep the `a33aac61` stamp, which is the honest record of when they
+were last read. **`coverage.json`'s `baseline` did not move** (it is still
+`a33aac61`; the gate requires a stamp to contain it, and every new stamp does).
+Five claims were added to it: ADR-0028 under `vpay-conventions`, `vpay-reconciler`
+and `vpay-merchant-api`, `merchant_token_flow.rs` under `vpay-merchant-api`, and
+`deploy/helm/fixtures/wrapper` under `vpay-tooling`.
+
+### Claims that stopped being true
+
+> **ADR-0026 is `Accepted (2026-10-08)`, not "Accepted in part".**
+> [vaam-apps/vpay#271](https://github.com/vaam-apps/vpay/pull/271) edited the
+> ADR's Status block (and only that): the maintainer confirmed D1–D8 on
+> 2026-10-08, after vaam-apps/vpay#256 merged, and the text of D1–D8 is unchanged.
+> `vpay-conventions`' ADR index, `vpay-data-layer` and `vpay-reconciler` all said
+> "Accepted in part" and told an agent not to describe D1–D8 as
+> maintainer-decided; those sentences are struck. Two findings from the review that
+> preceded the confirmation are recorded in ADR-0028, not in the immutable
+> ADR-0026: D8's `jti` item is concluded, and **D6's list of comparisons against a
+> fact omits the checkout confirm gate** (`SessionGate::admit_confirm`, in
+> `vpay-api/src/v1/return_trip.rs`), which is on the right side of D6's rule, so no
+> behaviour changes.
+
+> **A spent client-assertion `jti` is no longer deleted at its `exp`.**
+> [ADR-0028](https://github.com/vaam-apps/vpay/blob/87166eafb71eb105ff90a9958377866840447748/docs/adr/0028-a-spent-jti-outlives-the-validators-leeway.md)
+> (vaam-apps/vpay#271, 2026-10-09). `authkestra-op` 0.7.1 leaves `jsonwebtoken`'s
+> 60 s leeway at its default, on a whole-second `now`, so the API accepts an
+> assertion until `exp + 61 s`. The hourly sweep deleted at `expires_at < now()`,
+> and a sweep inside those 61 s (about 1.7 % per assertion at zero skew) let a
+> captured, already-spent assertion be replayed **once** for a second merchant
+> access token. `ClientAssertions::delete_expired_client_assertion_jtis` now takes
+> `retain_after_exp: Duration`, the statement is
+> `expires_at < now() - ($1::BIGINT * INTERVAL '1 microsecond')` on the database's
+> clock, and the worker passes `vpay_worker::CLIENT_ASSERTION_JTI_RETENTION`
+> (5 minutes). A test refuses an assertion older than that horizon, so a leeway bump
+> fails CI. `expires_at` still stores the raw `exp`. Not covered: a database clock
+> more than about four minutes ahead of an API replica's. `vpay-merchant-api`
+> now says so beside the `jti` namespace limitation, and `vpay-reconciler` has a
+> section on the sweep. ADR-0026 D8's other named column,
+> `oauth_signing_keys.expires_at`, is untouched and **still open**.
+
+> **There is no boot-time sweep, and there is a worker job loop.** `vpay-ops`'
+> boot list (and its one-line summary "…announce key → sweep → bind…") and
+> `vpay-troubleshooting`'s `config-boot` listed "step 7: sweep expired
+> client-assertion `jti`s and `idempotency_keys` once — non-fatal boot-time
+> stopgaps, because there is no worker job loop", and "the worker sweeps nothing".
+> Both sweeps were removed from `vpay-server` in Step 4 (2026-09-03); the worker's
+> hourly `sweep_expired` job runs them. The steps are struck, with the numbering
+> kept. **vpay's own `docs/flows/configuration.md` still lists that step 7 at
+> `87166eaf`**, so the skills now disagree with a vpay page on purpose; the code
+> (`backends/apps/vpay-server`, which contains no sweep) is what the skills follow.
+> The pre-ADR-0028 doc comment on `delete_expired_client_assertion_jtis` made the
+> same two errors and is quoted in `vpay-merchant-api`.
+
+> **The 2026-10-08 erasure decision is written down, and it has a cost.**
+> `vpay-customers` said the maintainer's decision to keep "either payer's erasure
+> redacts the ambiguous old intent" was "relayed to this repository, not yet
+> written in any vpay document at `a33aac61`". It is written, in
+> `docs/flows/customers/privacy-and-erasure.md` (§ "The erasure covers every copy
+> vpay kept, not just the row", the paragraph "Decided 2026-10-08, and one
+> consequence ADR-0027 does not name"), by vaam-apps/vpay#271. ADR-0027 is not
+> edited. The paragraph also records the consequence the skills now carry: **if `Y`
+> paid and `X` is erased, `Y`'s later refund hands the rail the redaction marker as
+> `payer_ref` and cannot be paid out through vpay**; `charges.provider_txn_id` and
+> `provider_reference_id` are `subject: none` in `schemas/privacy-inventory.yaml`
+> and survive, so the payout can be made at the rail. Only intents whose sessions
+> all predate vaam-apps/vpay#253 can have this shape with a charge.
+
+> **`just helm-check` has four value sets, a wrapper-chart step, and the chart
+> accepts `global`.** `vpay-tooling`'s `recipes` and `vpay-ops`' `deployment` said
+> "three value sets" and "all three renders". The recipe's own comment dates the
+> correction to four to 2026-09-16, so the pages were wrong when they were last
+> stamped. [vaam-apps/vpay#270](https://github.com/vaam-apps/vpay/pull/270)
+> (2026-10-09) made `values.schema.json` list a top-level `global` (an object, any
+> keys; nothing in the chart reads it, so it is accepted and ignored) and added the
+> "wrapper chart" step: `deploy/helm/fixtures/wrapper`, a parent that depends on the
+> chart by `file://` path and sets `global`, must lint, render the same objects as
+> the root default render, and still refuse an unknown key under `vpay:`. Before it,
+> any chart that depended on vpay's failed `helm lint` and `helm template`, and no
+> step saw it because every render used the chart as the root. `deployment` also
+> claimed "zero-skipped is asserted" for `kubeconform`; the recipe passes
+> `-strict -summary` and no `-ignore-missing-schemas` and checks no skipped count,
+> so that parenthesis is struck.
+
+> **`docs/adr/` runs `0001`–`0028`**, not `0027` (0028 merged 2026-10-09), and
+> `adr-index`'s "0028 is the next free number and an open vpay PR is expected to take
+> it" is struck: it did. `0029` is next free on `master`; open PRs were not checked.
+
+### What did NOT change, and is the point
+
+- **The banner.** Exactly one real rail call has ever been made (MTN's sandbox,
+  2026-09-15), no rail has returned money, no cluster has run vpay. Nothing in the
+  two pull requests moved it, and nothing here claims a cluster ran the wrapper
+  chart: it proves the `file://` dependency only, and the published OCI chart has
+  never been consumed as a dependency from a registry.
+- **`jti` is still a global namespace.** The primary key is `jti` alone; `jti` MUST
+  still be a UUID v4. ADR-0028 changes when a row is deleted, not what it keys on.
+- **Nothing a merchant sends or receives changed** in either pull request: no wire,
+  schema or migration change. Migration `0011`'s header comment still says no cleanup
+  job exists; migrations are checksummed and it stays stale.
+- **Fifteen gates and one report.** Neither pull request added a gate.
+- **One number is stale and was left alone:** `vpay`'s `SKILL.md` says the `justfile`
+  is 5 299 lines (counted 2026-09-29, dated in place); `wc -l` at `87166eaf` is
+  5 342. It is a dated count, so it was not edited.
+- **The 24 guards and 25 fixtures** in `helm-check` are as before; the recipe's
+  success line gained "wrapper chart (global)".
+
+### Decided this release
+
+- **Stamps name their section.** The reference pages edited here carry a stamp that
+  says which section was read at `87166eaf`, as the `a33aac61` release did.
+- **A struck step keeps its number.** Boot "step 7" is struck, not deleted, and the
+  steps after it keep theirs, because pages cite boot steps by number.
+
 ## v2026-09-29-a33aac61
 
 Re-verified against vpay [`a33aac61`](https://github.com/vaam-apps/vpay/commit/a33aac61029c5e2d81e77217cd9ea23d43f946ac)

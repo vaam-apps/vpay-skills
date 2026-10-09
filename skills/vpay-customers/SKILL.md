@@ -5,7 +5,7 @@ description: The vpay Customer object and the account-holder lookup — phone-fi
 
 # Customers, addresses, erasure, and the account-holder lookup
 
-> **Verified against vpay `a33aac61` (2026-09-29).** Version-sensitive claims below
+> **Verified against vpay `87166eaf` (2026-10-09).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -142,9 +142,14 @@ trip on:
 
 - **An old intent whose sessions named both X and Y is redacted by either
   payer's erasure** (nothing recorded which paid; the error goes toward
-  erasure). The maintainer decided on 2026-10-08 to keep this — a decision
+  erasure). The maintainer decided on 2026-10-08 to keep this. ~~A decision
   relayed to this repository, not yet written in any vpay document at
-  `a33aac61`. Do not "fix" it without asking.
+  `a33aac61`.~~ **Corrected 2026-10-09:** it is written in
+  `docs/flows/customers/privacy-and-erasure.md` (vaam-apps/vpay#271), and so is its
+  cost: **if Y paid and X is erased, Y's later refund hands the rail the redaction
+  marker as `payer_ref` and cannot be paid out through vpay**. The rail-side refs
+  (`provider_txn_id`, `provider_reference_id`) survive erasure, so the payout can
+  be made at the rail. Do not "fix" it without asking.
 - **A session create now takes `FOR SHARE` on its customer before it touches
   the intent.** The old order (intent, then customer) deadlocked with an
   erasure — Postgres `40P01`, surfaced as a `503`. Do not reverse it.

@@ -5,7 +5,7 @@ description: The vpay worker — the job loop, the poll and delivery ladders, le
 
 # The vpay worker
 
-> **Verified against vpay `a33aac61` (2026-09-29).** Version-sensitive claims below
+> **Verified against vpay `87166eaf` (2026-10-09).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -180,8 +180,11 @@ Duration, …)`, measured back from `now()`, because `charges.updated_at` is
   `docs/flows/crash-safety.md` moved.
 - **Facts keep the application's clock** (ADR-0026 D6–D8): session
   `created_at`/`expires_at`, `customers.last_used_at`, the signature's `t=`.
-  Their sweeps still take an instant. The ADR is `Accepted in part` on `master`
-  at `a33aac61`; D1–D8 await the maintainer's confirmation.
+  Their sweeps still take an instant. ~~The ADR is `Accepted in part` on `master`
+  at `a33aac61`; D1–D8 await the maintainer's confirmation.~~ **Corrected
+  2026-10-09:** the ADR is `Accepted (2026-10-08)` on `master` at `87166eaf`; the
+  maintainer confirmed D1–D8 and their text is unchanged. D8's `jti` item is the
+  exception to "their sweeps still take an instant" (next section).
 
 `recovery_step`'s "every duration is measured by Postgres" rule above is the
 same principle, older: `Charges::get_by_id_as_of` reads `now()` off the same
@@ -191,6 +194,51 @@ Sources: `docs/adr/0026-the-database-clock-schedules-jobs.md` (the rule and D1�
 `docs/reference/vpay-worker.md` (the queue-gauge amendment and the list of seeds,
 scans and fan-out jobs now on the database's clock) and
 `docs/reference/vpay-db/jobs.md` § "One clock: the database's".
+
+## The hourly sweep keeps a spent `jti` five minutes past `exp` (ADR-0028, 2026-10-09)
+
+_Added 2026-10-09, verified against vpay `87166eaf` (vaam-apps/vpay#271)._
+`handlers::sweep_expired` (every `SWEEP_INTERVAL`, 3600 s, one `jobs` row,
+`sweep:expired`) runs four steps: `Idempotency::sweep_expired`,
+`delete_expired_client_assertion_jtis` and `reap_expired_leases` (three
+independent statements, each its own transaction) and then the checkout-session
+expiry, which is not a delete. The second used to delete
+`oauth_client_assertion_jtis` rows at `expires_at < now()`. It now takes
+`retain_after_exp: Duration`, and the worker passes
+`vpay_worker::CLIENT_ASSERTION_JTI_RETENTION` (`5 * 60` s, defined beside
+`SWEEP_INTERVAL` in `backends/crates/vpay-worker/src/handlers.rs` and re-exported
+from `lib.rs`). The statement is
+`expires_at < now() - ($1::BIGINT * INTERVAL '1 microsecond')`, so **Postgres
+computes the cut** and the worker's clock never reaches the comparison (ADR-0026
+D1's shape, applied to the column D8 had left out).
+
+Why a row may not go at `exp`: `authkestra-op` 0.7.1 verifies an assertion with
+`jsonwebtoken`'s default 60 s leeway, on a whole-second `now`, so the API accepts
+it until `exp + 61 s`. A sweep inside that window deleted the `jti` of an assertion
+that still verified, and one captured, already-spent assertion could be replayed
+once for a second access token (about 1.7 % per assertion at zero clock skew). The
+5 minutes is 60 s + 1 s + about 239 s of skew budget. **Do not pass `Duration::ZERO`
+to "make a test sweep everything"**: that restores the defect. A test that needs a
+row gone puts its `expires_at` beyond the horizon, relative to the _database's_
+`now()` (`client_store.rs` does, through `support::db_now`), and leaves the horizon
+alone. Two tests in `merchant_token_flow.rs` hold the invariant: a spent
+assertion 30 s past `exp` cannot be replayed after the real worker sweep runs,
+and an assertion older than the production horizon is **refused by the
+validator**, so an `authkestra-op` or `jsonwebtoken` bump that widens the leeway
+past 5 minutes fails CI before it reopens the window. Detail and the wire side:
+`vpay-merchant-api`.
+
+~~Sweeping `jti`s and `idempotency_keys` is a boot-time stopgap, "because there is
+no worker job loop to schedule either properly".~~ **Corrected 2026-10-09:** the two
+boot-time sweeps were `vpay-server`'s from Step 1 and were removed in Step 4
+(2026-09-03). The server sweeps nothing at boot, and the worker's hourly job does
+both. The boot lists in `vpay-ops` and `vpay-troubleshooting` said otherwise until
+today, and so does vpay's own `docs/flows/configuration.md` step 7 at `87166eaf`
+(`docs/flows/merchant-auth.md` § Status says what is true).
+
+Sources: `docs/adr/0028-a-spent-jti-outlives-the-validators-leeway.md`,
+`backends/crates/vpay-worker/src/handlers.rs` (`CLIENT_ASSERTION_JTI_RETENTION`,
+`sweep_expired`) and `backends/crates/vpay-db/src/client_assertion.rs`.
 
 ## Job kinds
 

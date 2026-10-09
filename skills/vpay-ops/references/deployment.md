@@ -1,6 +1,6 @@
 # Deployment: images, the chart, and what it deliberately does not do
 
-_Verified against vpay `a33aac61` (2026-09-29), section "Publishing the chart" re-read in full; the rest of this page was last read at `9653ee94` (2026-09-16). Version-sensitive claims
+_Verified against vpay `87166eaf` (2026-10-09) for § "Verifying the chart", and against `a33aac61` (2026-09-29) for § "Publishing the chart", re-read in full; the rest of this page was last read at `9653ee94` (2026-09-16). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 Everything here renders and validates. **Nothing here has run on a cluster.**
@@ -420,12 +420,35 @@ is an unmetered token endpoint that renders, validates and reports healthy."
 ## Verifying the chart
 
 `just helm-check` — exactly what CI's `deploy` job runs. It lints and templates
-three value sets, renders every file under `ci/guards/` requiring each to
-**fail with its own guard name**, checks the expected guard names are exactly
-the files on disk, greps the rendered Ingress annotations for rate-limit
-ordering, asserts the Gateway API capability gate in both directions, and runs
-`kubeconform -strict` over all three renders (a **skipped** schema would mean
-nothing was checked, so zero-skipped is asserted).
+~~three~~ **four** value sets (the defaults, `ci/values-full.yaml`,
+`ci/values-route.yaml`, `ci/values-route-networkpolicy.yaml`), renders every file
+under `ci/guards/` requiring each to **fail with its own guard name**, checks the
+expected guard names are exactly the files on disk, greps the rendered Ingress
+annotations for rate-limit ordering, asserts the Gateway API capability gate in
+both directions, checks the `/dash/v1` route and the `-management` NetworkPolicy
+agree, **renders the chart as a subchart of a parent that sets `global`**, and
+runs `kubeconform -strict -summary` over ~~all three renders~~ the four renders.
+~~(A **skipped** schema would mean nothing was checked, so zero-skipped is
+asserted.)~~ _(Corrected 2026-10-09: this page said "three value sets" and "all
+three renders", omitted the subchart step, and claimed a zero-skipped assertion
+that the recipe at `87166eaf` does not contain: it passes no
+`-ignore-missing-schemas`, so a schema kubeconform cannot fetch is an error rather
+than a skip, but no count of skipped resources is checked. The recipe's own comment
+dates its "four value sets" correction 2026-09-16.)_
+
+**The chart accepts a top-level `global`, and ignores it** (vaam-apps/vpay#270,
+merged 2026-10-09; issue #269). `values.schema.json` is `additionalProperties:
+false`, and Helm hands a parent chart's `global` to every subchart whether or not
+the parent sets it, so before this the chart could not be a dependency of any other
+chart. The schema now lists `global` as an object with any keys, and **nothing in
+the chart reads `.Values.global`**: a value set there changes no rendered object.
+Configure vpay from the parent under the `vpay:` key; every other unknown key, at
+the top level or under `vpay:`, is still refused. The "wrapper chart" step of
+`helm-check` (`deploy/helm/fixtures/wrapper`, a parent that depends on the chart by
+`file://` path) is what keeps that true. It proves the `file://` dependency only;
+**nobody has installed the published OCI chart as a dependency from a registry**,
+and no cluster has run any of this. See `vpay-tooling` → `references/recipes.md`
+§ Helm.
 
 **It is not in `just ci`** — kubeconform downloads schemas. Guards are proven
 negatively: neutering a `fail` in `templates/_validate.tpl` makes the recipe

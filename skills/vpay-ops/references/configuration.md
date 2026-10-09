@@ -1,6 +1,6 @@
 # Configuration: the CLI layer, the YAML, and what refuses to boot
 
-_Verified against vpay `a33aac61` (2026-09-29) for "The ten environment variables"; the rest of this page was last read at `d3a8810b` (2026-09-16). Version-sensitive claims
+_Verified against vpay `87166eaf` (2026-10-09) for step 7 of "The boot sequence", and against `a33aac61` (2026-09-29) for "The ten environment variables"; the rest of this page was last read at `d3a8810b` (2026-09-16). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 ADR-0003. Flow doc `docs/flows/configuration.md`; crate reference
@@ -84,9 +84,17 @@ it. **Neither mode's handling of the _timeout_ case is covered by a test.**
 6. Announce the key as active in `oauth_signing_keys`
    (`ensure_active_signing_key`, advisory-locked). Fatal: "a process whose key
    is not published mints tokens nothing can verify."
-7. Sweep expired client-assertion `jti`s and expired `idempotency_keys` once —
+7. ~~Sweep expired client-assertion `jti`s and expired `idempotency_keys` once —
    both non-fatal boot-time stopgaps, "because there is no worker job loop to
-   schedule either properly". The worker sweeps nothing.
+   schedule either properly". The worker sweeps nothing.~~ **Corrected
+   2026-10-09: there is no step 7.** Both boot sweeps were removed in Step 4
+   (2026-09-03) and the worker's hourly `sweep_expired` job runs them (the `jti`
+   delete keeps a spent row five minutes past `exp`, ADR-0028; see
+   `vpay-reconciler`). `vpay-server` sweeps nothing at boot, `vpay-server worker`
+   sweeps on its schedule, and a failing sweep is a failed job, not a refusal to
+   boot. The numbering below is kept so that a citation of a later step by number
+   still resolves. vpay's own `docs/flows/configuration.md` still lists the boot
+   sweep as step 7 at `87166eaf`; trust the code.
 8. Bind the listener, **then** build the token validator — it needs the port
    actually bound (`--bind 127.0.0.1:0` is a real configuration) and validates
    over loopback against this process's own `/v1/oauth/jwks.json`.

@@ -5,7 +5,7 @@ description: Configuration, deployment and observability for vpay — the YAML l
 
 # vpay ops
 
-> **Verified against vpay `a33aac61` (2026-09-29).** Version-sensitive claims below
+> **Verified against vpay `87166eaf` (2026-10-09).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -89,7 +89,9 @@ table, the boot order, `ProviderHost`, and every rule that refuses to boot.
 
 Boot is ordered **cheapest hard failure first**, so the stage tells you the
 cause: YAML → adapter join → signing key → Postgres → reconcile → announce key
-→ sweep → bind → validator → serve. A missing `--config`,
+→ ~~sweep →~~ bind → validator → serve. _(Corrected 2026-10-09: the "sweep" stage was
+removed in Step 4, 2026-09-03; the worker's hourly job does it. See
+`references/configuration.md`.)_ A missing `--config`,
 `--oauth-signing-key-file` **or** `--database-url` is `78` in both `serve` and
 `worker`. That last one used to exit `1`; issue #87 made it typed on
 2026-09-10, specifically so "`78` means the operator forgot something, `69`
