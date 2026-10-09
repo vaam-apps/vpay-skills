@@ -5,7 +5,7 @@ description: The vpay worker — the job loop, the poll and delivery ladders, le
 
 # The vpay worker
 
-> **Verified against vpay `0799a8d2` (2026-09-18).** Version-sensitive claims below
+> **Verified against vpay `a33aac61` (2026-09-29).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -28,8 +28,13 @@ reference we never wrote down is a reconciliation we cannot perform.
 
 And its corollary: **callbacks are hints.** `parse_callback` returns identifiers
 only — the port has nowhere to put a status, deliberately. A callback can do
-exactly one thing: pull an already-queued `poll_charge` job forward. It never
-writes charge or intent state.
+exactly one thing: bring the charge's `poll_charge` job to now. It never writes
+charge or intent state. ~~A callback can do exactly one thing: pull an
+already-queued `poll_charge` job forward.~~ **Corrected 2026-09-29:** it has
+also _enqueued_ that job when none was queued since the route was mounted
+(2026-09-04): `enqueue_in_tx` (`ON CONFLICT DO NOTHING` on `poll:<charge>`)
+then `pull_forward_in_tx`, one transaction. vpay's own `provider_callback.rs`
+header said "only … an already-queued job" until 2026-09-23.
 
 ## `vpay-worker` cannot reach the database directly
 
@@ -135,11 +140,57 @@ Checked **at boot, before the pool is opened and before the database is
 touched** — so a bad knob costs milliseconds rather than a connection and a
 migration run.
 
-Why halved: `create_in_tx` on the already-exists branch holds **two**
+~~Why halved: `create_in_tx` on the already-exists branch holds **two**
 connections at once — its own transaction's, and the one CrateStack's
-update-policy re-check takes from the same pool.
+update-policy re-check takes from the same pool.~~ **That is a cratestack 0.12.0
+reason.** Since 0.15.0 (2026-09-29, vaam-apps/vpay#259; cratestack #1117) the
+re-check runs on the transaction's own connection, so the branch holds **one**
+and `MAX_CONNECTIONS / 2` is a _conservative_ ceiling, not a tight one. vpay left
+the boot guard, its integration test and the chart's `"worker-concurrency-pool"`
+literal alone on purpose — loosening them is a behaviour change for its own PR.
+Do not loosen the ceiling in passing; do not cite the two-connection reason
+for it either.
 
 Raising `MAX_CONNECTIONS` is a code change that moves this ceiling with it.
+
+## One clock for the queue: Postgres' (ADR-0026, 2026-09-23)
+
+_Added 2026-09-29._ `Jobs::claim` judges `run_at <= now()` with **Postgres'**
+clock, so since vaam-apps/vpay#256 (merged 2026-09-24) every job's first `run_at`
+is Postgres' too. `TxRepositories::enqueue_in_tx` takes a `Duration` and the
+statement computes `now() + delay`. Until 2026-09-23 most writers stamped it with
+the worker's or API host's `OffsetDateTime::now_utc()`, so every such job ran
+early or late by the skew between the two hosts. Concretely, as of vpay
+`a33aac61`:
+
+- `seed_singletons` enqueues its five singletons at `Duration::ZERO` (one
+  transaction, unchanged); the callback route's enqueue is `ZERO`; the confirm's
+  poll is `POLL_AFTER_CONFIRM_GRACE` out, added to _the database's_ `now()` (an
+  API host a few seconds behind used to eat that much of the grace);
+  `resubmit_charge`, its follow-up poll and every fan-out's `deliver_webhook`
+  jobs are `ZERO`.
+- The live-charge backstop's staleness is `live_charges_stale_since(stale_after:
+Duration, …)`, measured back from `now()`, because `charges.updated_at` is
+  written by `now()`.
+- The queue-age gauge is subtracted in SQL: `Jobs::oldest_runnable_age()`
+  replaced `oldest_runnable_run_at()`, and the worker's `queue_age` lost its
+  `now` parameter. The sign convention is unchanged (negative when the next job
+  is in the future).
+- **No rung, interval or ordering changed**, and no kill point in
+  `docs/flows/crash-safety.md` moved.
+- **Facts keep the application's clock** (ADR-0026 D6–D8): session
+  `created_at`/`expires_at`, `customers.last_used_at`, the signature's `t=`.
+  Their sweeps still take an instant. The ADR is `Accepted in part` on `master`
+  at `a33aac61`; D1–D8 await the maintainer's confirmation.
+
+`recovery_step`'s "every duration is measured by Postgres" rule above is the
+same principle, older: `Charges::get_by_id_as_of` reads `now()` off the same
+`SELECT` as the row.
+
+Sources: `docs/adr/0026-the-database-clock-schedules-jobs.md` (the rule and D1–D8),
+`docs/reference/vpay-worker.md` (the queue-gauge amendment and the list of seeds,
+scans and fan-out jobs now on the database's clock) and
+`docs/reference/vpay-db/jobs.md` § "One clock: the database's".
 
 ## Job kinds
 

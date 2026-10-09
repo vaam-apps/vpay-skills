@@ -1,6 +1,6 @@
 # The confirm/poll race
 
-_Verified against vpay `d3a8810b` (2026-09-16). Version-sensitive claims
+_Verified against vpay `a33aac61` (2026-09-29). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 A defect worth knowing in full, because the shape of it recurs: **a recovery
@@ -27,7 +27,14 @@ Four of six demo runs hit it on a loaded machine.
 `insert_charge` commits, in one transaction:
 
 - the charge, in state `submitting`, and
-- its `poll_charge` job, with `run_at = now()`.
+- its `poll_charge` job, with `run_at = now()`. _(That was the state on
+  2026-09-04. **Since 2026-09-16 the job is committed a
+  `POLL_AFTER_CONFIRM_GRACE` out** — `vpay_provider::DEFAULT_REQUEST_TIMEOUT` —
+  and pulled forward inside the `submitting → submitted` compare-and-swap, because
+  the predicate below stopped the 500 but not the dead minute a `Wait` cost.
+  Since 2026-09-23 that grace is added to **Postgres'** `now()`, not the API
+  host's (ADR-0026). The recovery table and the `not_found_window` predicate did
+  not change.)_
 
 The worker's `IDLE_SLEEP` is 1 s. So within about a second of the merchant's
 confirm being _sent_, the worker claims that job, finds a charge in

@@ -1,6 +1,6 @@
 # Every mounted route, and the middleware around them
 
-_Verified against vpay `b747e5d5` (2026-09-23). Version-sensitive claims
+_Verified against vpay `a33aac61` (2026-09-29) for § `/provider` and the step A table; the rest of this page was last read at `b747e5d5` (2026-09-23). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 Assembled in `vpay_api::router` (`backends/crates/vpay-api/src/lib.rs`).
@@ -79,7 +79,7 @@ router's source rather than a description of it.
 | Route                          | Takes                                                                                                                  | Since                   |
 | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------- | ----------------------- |
 | `GET /v1/payment_intents`      | `limit`, `starting_after`, `ending_before`, **`customer`** (the intent's own)                                          | `customer`: 2026-09-23  |
-| `GET /v1/checkout/sessions`    | cursor, `payment_intent`, **`customer`** (the **session's** own, ADR-0024 D12)                                         | `customer`: 2026-09-23  |
+| `GET /v1/checkout/sessions`    | cursor, `payment_intent`, **`customer`** (the **session's** own, ADR-0024 D12; see ADR-0025 below)                     | `customer`: 2026-09-23  |
 | `GET /v1/refunds`              | cursor, `payment_intent`, **`customer`** (through the refund's intent)                                                 | `customer`: 2026-09-23  |
 | `GET /v1/invoices`             | cursor, `customer`, `status`                                                                                           | 2026-09-07              |
 | `GET /v1/customers`            | cursor only — **no filter, deliberately** (ADR-0024 D4)                                                                | —                       |
@@ -89,6 +89,19 @@ router's source rather than a description of it.
 Before step A, `customer` on the first three and on `/dash/v1` was **silently
 ignored** — the answer was the unfiltered list. The oracle rule, the one
 shared `400` and the D12 consequence are in the SKILL page.
+
+~~The D12 consequence was that a session naming a customer on a customer-less
+intent was listed by the sessions filter and not by the other two.~~
+**Corrected 2026-09-29:** that stopped being true for sessions created from
+2026-09-23 (ADR-0025, vaam-apps/vpay#253): `POST /v1/checkout/sessions` now
+writes the session's customer onto a customer-less intent in the same
+transaction, so all three lists agree. It is still true of **older rows**,
+which were not backfilled. A `POST /v1/checkout/sessions` that names a
+customer therefore has two refusals it did not have as a distinct code path
+before: the `400` naming `customer` when a concurrent session won the intent
+for another customer, and a `409` when the customer was erased between the
+pre-check and the insert (ADR-0027). The SKILL page's `customer` section has
+both and the idempotency consequence.
 
 Things about this table that are decisions rather than accidents:
 
@@ -206,7 +219,9 @@ The handler is written around that: it never writes charge or intent state.
 ~~The only thing it can do is bring an already-queued `poll_charge` job
 forward~~ **Corrected 2026-09-23:** it runs two statements in one transaction.
 `enqueue_in_tx` inserts a `poll_charge` job (`ON CONFLICT DO NOTHING` on
-`poll:<charge>`, so a no-op when one exists), and `pull_forward_in_tx` then
+`poll:<charge>`, so a no-op when one exists; it takes a `Duration`, here
+`ZERO`, and Postgres computes `now() + delay` — the application host's clock
+until ADR-0026, 2026-09-23), and `pull_forward_in_tx` then
 brings the job forward. A fresh job is written only when the charge has none,
 for example after an operator deleted it or after it finished. The pull-forward
 is skipped if the job is already due within `PULL_FORWARD_FLOOR` (10 s, the

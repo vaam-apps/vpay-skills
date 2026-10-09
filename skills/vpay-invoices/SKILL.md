@@ -5,7 +5,7 @@ description: vpay's Invoice and invoice-line objects — the wire shape (twenty-
 
 # Invoices and invoice items
 
-> **Verified against vpay `b747e5d5` (2026-09-23).** Version-sensitive claims below
+> **Verified against vpay `a33aac61` (2026-09-29).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -28,7 +28,10 @@ with a live suite against a real `vpay-server`.
 `manual_payments` (`mp_…`), two new object keys, a second writer of `paid` and
 `invoice.paid`, nothing on the ledger. On an older `master` none of it exists.
 Counted from source at `b747e5d5`: `invoices.rs` has **29** `#[tokio::test]`
-cases (16 above is the 2026-09-16 figure), and `tests/repositories.rs` has
+cases (~~29~~ **30** at `a33aac61`, 2026-09-29: ADR-0025 added
+`paying_an_invoice_writes_nothing_onto_its_intent_through_the_session`, which
+pins that an invoice's checkout session — whose customer already equals its
+intent's — writes nothing onto the intent; 16 above is the 2026-09-16 figure), and `tests/repositories.rs` has
 **twelve** on invoices (ten at `7997536b`). The run on the PR branch the same
 day was 29 passed and 0 ignored. That run was not repeated for this page.
 [§ Paid out of band](#paid-out-of-band--a-statement-not-a-payment).
@@ -157,11 +160,15 @@ lock. If you add a transition, add a statement — not a predicate.
 > draft is _deleted_. This is forced by `number_is_assigned_at_finalize` — a
 > voided draft would be a non-draft row with no number, which the database
 > refuses — and the statement never attempts it rather than discovering a
-> `23514`. **Two doc comments in the repository say otherwise and are wrong**:
+> `23514`. ~~**Two doc comments in the repository say otherwise and are wrong**:
 > `vpay_core::InvoiceStatus`'s ASCII diagram draws a `draft ──void──> void`
 > edge, and `void_in_tx`'s own first line says "Voids a `draft` or `open`
-> invoice" before contradicting itself three paragraphs later. The statement is
-> the truth. (Found 2026-09-16; neither is gated.)
+> invoice" before contradicting itself three paragraphs later.~~ **Corrected
+> 2026-09-29:** both were fixed by vaam-apps/vpay#255 (2026-09-24) — the diagram
+> now shows `DELETE` and no `void` edge from `draft`, and `void_in_tx` opens
+> "Voids an `open` invoice" (verified at `a33aac61`). The statement was always
+> the truth. (Found 2026-09-16; neither was gated, which is why it took a
+> re-verification of these skills to get them fixed.)
 
 A voided invoice **keeps its number** — for the same constraint, and because a
 number that vanished is a hole an accountant reads as a destroyed document.

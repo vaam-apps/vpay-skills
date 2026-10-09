@@ -5,7 +5,7 @@ description: How to write Rust and TypeScript in vpay — the two machine-enforc
 
 # vpay conventions
 
-> **Verified against vpay `b747e5d5` (2026-09-23).** Version-sensitive claims below
+> **Verified against vpay `a33aac61` (2026-09-29).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -140,8 +140,12 @@ the entry genuinely fires. Do not "fix" it.
 - TS strict, plus `noUncheckedIndexedAccess` and `exactOptionalPropertyTypes`.
 - Both apps compose the published **`@vaam-apps/ui`**. `frontends/packages/ui`
   (`@vpay/ui`) was **deleted 2026-09-12** and `just verify-ui` refuses any
-  import of it. Its one theme registers under daisyUI's built-in name `dark`,
-  not `bumblebee`. `@base-ui/react` left the repository with `@vpay/ui`.
+  import of it. ~~Its one theme registers under daisyUI's built-in name `dark`,
+  not `bumblebee`.~~ **Corrected 2026-09-29:** `@vaam-apps/ui` registers **two**
+  themes under daisyUI's built-in names, `dark` (the default) and `light`
+  (opt-in) — since `0.1.2`; vpay's `AGENTS.md` and a test header said "one" until
+  vaam-apps/vpay#255 (2026-09-24). Neither is `bumblebee`. `@base-ui/react` left
+  the repository with `@vpay/ui`.
 - Status colour and copy come from `@vpay/tokens`, and since 2026-09-12 that
   is machine-enforced: `verify-ui` check 7a-ii refuses `text-state-<hue>-fg` /
   `bg-state-<hue>-bg` / `border-state-<hue>-border` / `text-destructive`

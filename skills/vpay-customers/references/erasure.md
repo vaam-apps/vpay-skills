@@ -1,6 +1,6 @@
 # Erasure — the eight tables, the marker CHECK, and the closed race
 
-_Verified against vpay `b747e5d5` (2026-09-23). Version-sensitive claims
+_Verified against vpay `a33aac61` (2026-09-29) for § "Every copy" and § "Which payments an erasure reaches"; the rest of this page was last read at `b747e5d5` (2026-09-23). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 `vpay_db::customers::erase_in_tx` is the whole of it. Migration
@@ -43,8 +43,13 @@ was taken from, because that is the record a dispute is settled with.
 and `manual_payments` on 2026-09-23 (step A, vpay#251, migration `0049`).
 Count tables by reading `redact_stored_copies` and
 `redact_out_of_band_references` in `vpay-db/src/customers.rs`, not by trusting
-a doc comment: `erase_in_tx`'s own list still says "six more statements" and
-names neither 2026-09-19 addition.
+a doc comment. ~~`erase_in_tx`'s own list still says "six more statements" and
+names neither 2026-09-19 addition.~~ **Corrected 2026-09-29:** vpay corrected
+that doc comment on 2026-09-23 (ADR-0027's change) — it now says **thirteen
+more statements, fifteen in all**, counted on 2026-09-23, and lists both
+2026-09-19 additions (items 7 and 8) and step A's `manual_payments` (item 9,
+five statements). That is the count as of vpay `a33aac61`, and it is still the
+comment's, not the code's: recount when you add a statement.
 
 An erasure that only rewrites `customers` is the characteristic defect here.
 `erase_in_tx` writes all of these **in the transaction that erases the row**:
@@ -53,7 +58,7 @@ An erasure that only rewrites `customers` is the characteristic defect here.
 | ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `customers`                                            | the eleven identifier columns                                                                                                                                  |
 | `events.data`                                          | **every** `customer.*` body ever written stores the whole rendered object, and nothing prunes `events`                                                         |
-| `charges.payer_ref` / `payer_ref_masked`               | the payer's MSISDN as the rail was given it — reachable from a customer only _through_ an intent                                                               |
+| `charges.payer_ref` / `payer_ref_masked`               | the payer's MSISDN as the rail was given it — reachable from a customer only _through_ an intent (`PAYERS_INTENTS`, below)                                     |
 | `charges.failure_raw` / `refunds.failure_raw`          | the rail's own words, verbatim: a decline may quote the subscriber's number back                                                                               |
 | `idempotency_keys.response_body`                       | the exact JSON a `POST /v1/customers` answered, kept 24 hours to replay                                                                                        |
 | `webhook_deliveries.payload_sha256`                    | cleared — see below; this one protects a delivery, not the payer                                                                                               |
@@ -102,6 +107,95 @@ redacted object rather than walking into it, so no nested component can survive.
 The event for this erasure is inserted **before** the redaction statements, so
 the redaction covers it too. The invariant is "no `events` row holds this
 payer's identifiers", not "none except the newest".
+
+## Which payments an erasure reaches: `PAYERS_INTENTS` (ADR-0027, 2026-09-23)
+
+_Added 2026-09-29, verified against vpay `a33aac61`._ Three of the statements
+above — `charges`, `refunds` and `payment_intents` — find a payment through
+**one** private constant, `vpay_db::customers::PAYERS_INTENTS`, which every
+one of them interpolates (it was `payment_intents.customer_id = X` spelled
+three times until
+[ADR-0027](https://github.com/vaam-apps/vpay/blob/a33aac61029c5e2d81e77217cd9ea23d43f946ac/docs/adr/0027-erasure-reaches-through-checkout-sessions.md)).
+It covers two sets of intents:
+
+1. intents whose own `customer_id` is the erased customer; and
+2. **customer-less** intents that a `checkout_sessions` row naming the erased
+   customer points at (`s.customer_id = $1 AND p.customer_id IS NULL`).
+
+Why the second set exists: before ADR-0025 (2026-09-23) a session created with
+`customer=X` on a customer-less intent stored `X` on the session row only, so
+an erasure of `X` left that payment's `charges.payer_ref` in place. ADR-0025
+stops new rows taking that shape and **backfills nothing**; ADR-0027 makes the
+erasure reach the rows that already have it, through `DELETE /v1/customers/{id}`
+and through the twelve-month sweep alike, in the same transaction.
+
+**Do not change the shape of that constant casually.** The rules that came
+with it, each pinned by a test in `backends/tests/integration/tests/customers.rs`:
+
+- **The guard is the intent's own customer, and it must be NULL or X.** A
+  session naming X on an intent that names Y does not make it X's payment; its
+  charge carries Y's MSISDN, and X's erasure never redacts it
+  (`an_erasure_through_a_session_never_reaches_an_intent_that_names_another_customer`).
+  The guard sits in the sub-select, which sees the statement's snapshot, so the
+  `payment_intents` statement **also** carries
+  `(customer_id IS NULL OR customer_id = $1)` on the row it writes: under
+  `READ COMMITTED` a session create can give the intent to Y while the erasure
+  waits on it
+  (`an_erasure_and_a_session_create_naming_another_customer_leave_that_customers_intent_alone`).
+  `charges` and `refunds` do not need the second guard: an intent's customer can
+  change only while the intent has no charge.
+- **An old intent whose sessions named both X and Y is redacted by either
+  payer's erasure.** Exactly: an erasure of X reaches intent `I` when
+  `I.customer_id = X`, or when `I.customer_id IS NULL` and at least one session
+  on `I` names X. Nothing recorded which of the two paid, so the error goes
+  toward erasure and never toward disclosure — if Y paid, X's erasure removes
+  Y's MSISDN from vpay's own charge row, and what is lost is vpay's record of
+  which number paid (dispute evidence). Only intents whose sessions were all
+  created before ADR-0025 was deployed can have this shape **with a charge**, and
+  a charged intent can never get another session, so the ambiguity is permanent
+  for the rows that have it. ADR-0027 names the alternative it did not choose
+  (reach through a session only when no session on the intent names anyone
+  else) and says the change would be one more predicate on the session branch.
+  _(The maintainer's decision of 2026-10-08 is to keep this behaviour. That
+  decision is relayed to this repository and is **not yet written in any vpay
+  document at `a33aac61`**; trust the ADR for the mechanism and ask before
+  "fixing" the ambiguity.)_
+- **Erasure writes nothing onto the intent and detaches nothing.** After it, the
+  intent still names nobody, the session still names X, and the list filters
+  return what they returned before. The payer is gone from the rows, not from
+  the relationships.
+- **A session create takes `FOR SHARE` on the customer before it touches the
+  intent** (`customers::erased_under_share_lock`, the function the idempotency
+  store already uses). ADR-0025's create locked the intent first and the
+  customer second; erasure locks the customer (`FOR UPDATE`) first and, since
+  this change, also writes intents an old session names. On an intent reached
+  both ways the two deadlocked — reproduced against the real code on
+  2026-09-23, Postgres aborting one side with `40P01`, which surfaced as a
+  `503`. `FOR KEY SHARE` would also have removed the deadlock, and was refused
+  because the create then reads `anonymized_at` under the lock, and a plain
+  `UPDATE` of that column does not conflict with `FOR KEY SHARE`. **If you add a
+  writer that locks an intent and then a customer, you have rebuilt the
+  deadlock**; the suite's
+  `a_session_create_and_an_erasure_of_its_customer_serialise_in_either_order`
+  covers both orders. The cost is that a concurrent `last_used_at` stamp or
+  customer update waits for the create's few statements; neither holds an
+  intent lock, so neither can close a cycle.
+- **A create against a just-erased customer is refused with a `409`**
+  (`DbError::CustomerErased`, which `vpay_api` renders as the very bytes of the
+  pre-check's `409`). Before this, a create that read the customer before the
+  erasure committed produced a session and wrote the **erased** customer onto
+  the intent, leaving the payer's MSISDN on a payment that no later erasure
+  visits (a second `DELETE` is a no-op and the sweep skips erased customers). An
+  intent that already names the customer — every invoice session — proceeds as
+  before; whether an erased customer's open invoice may still be paid is
+  **not** decided here.
+- A refund of such a charge after the erasure hands the rail the marker as
+  `payer_ref`. That was already true of a charge on an intent naming an erased
+  customer; ADR-0027 decides nothing new there.
+
+`sql_audit`'s `EXPECTED_ASSERT_SITES` went 71 → 74 for the three interpolations
+(ADR-0027 § Consequences, as of 2026-09-23). No migration, and
+`schemas/privacy-inventory.yaml` did not change.
 
 ## Why `webhook_deliveries.payload_sha256` is cleared
 
@@ -163,8 +257,14 @@ the rows they exist to refuse.
 
 `an_erasure_leaves_no_payer_identifier_in_any_column_of_any_table` scans
 **every** `text`, `character varying` and `jsonb` column `information_schema`
-reports in `public`, before and after, for five fixture literals — found in
-**ten** named places before the `DELETE` and nowhere after. ~~seven named
+reports in `public`, before and after, for six fixture literals — found in
+**ten** named places before the `DELETE` and nowhere after. ~~five fixture
+literals~~ _(Corrected 2026-09-29: six since ADR-0027, 2026-09-23. The sixth,
+`SESSION_MSISDN`, is carried by a payment whose only link to the payer is a
+checkout session, and the test now also asserts, by name, that it sits in four
+places before the erasure — `charges.payer_ref`, `charges.failure_raw`,
+`refunds.failure_raw` and `payment_intents.last_payment_error_message` — because
+the generic check passes on the first literal's copies alone.)_ ~~seven named
 places~~ **Corrected 2026-09-23:** the seven of 2026-09-16 (`customers.name`,
 `customers.address_line1`, `events.data`, `charges.payer_ref`,
 `charges.failure_raw`, `refunds.failure_raw`, `idempotency_keys.response_body`)

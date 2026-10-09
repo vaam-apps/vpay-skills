@@ -5,7 +5,7 @@ description: The vpay provider port (`vpay-provider`) and how to add a payment r
 
 # The provider port, and adding a rail
 
-> **Verified against vpay `b747e5d5` (2026-09-23).** Version-sensitive claims below
+> **Verified against vpay `a33aac61` (2026-09-29).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -118,8 +118,12 @@ fn payer_fields(&self) -> &'static [PayerField];  // default: &[] — since 2026
   `payer_fields_is_forwarded_to_the_inner_adapter_and_not_defaulted` in
   `vpay_provider::measured` now
   pins it. Any new decorator over `dyn ProviderAdapter` must forward every
-  defaulted method. `docs/flows/provider-port.md` does not mention
-  `payer_fields` at all.
+  defaulted method. ~~`docs/flows/provider-port.md` does not mention
+  `payer_fields` at all.~~ **Corrected 2026-09-29:** since vaam-apps/vpay#255
+  (2026-09-24) its interface table lists all nine methods, `payer_fields`
+  included (it listed six, and said "three network methods" where there are
+  four, until then). Its "Adding a rail" checklist still has **no step** for
+  `payer_fields`, at `a33aac61`.
 
 - **The error-surface table in the trait's own doc comment is the contract.**
   It is a markdown grid, one row per `ProviderError` variant and one column

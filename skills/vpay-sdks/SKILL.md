@@ -5,7 +5,7 @@ description: "The six packages under sdks/ and the parity rule that binds the tw
 
 # vpay SDKs
 
-> **Verified against vpay `b747e5d5` (2026-09-23).** Version-sensitive claims below
+> **Verified against vpay `a33aac61` (2026-09-29).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -151,6 +151,16 @@ was added**; two existing ones take more:
   Rust `out_of_band: Option<OutOfBandParams>`, Node `outOfBand` — whose
   presence puts `paid_out_of_band=true` and `out_of_band[…]` on the wire and
   no URL. A URL beside it is refused before any request.
+- **ADR-0025 changed the `customer` doc comments in both SDKs, and nothing
+  else** (2026-09-23, vaam-apps/vpay#253; no signature, field or wire change —
+  `docs/status/merchant-sdks.md` has the row). A checkout session created with
+  `customer` on a customer-less intent now writes it onto the intent _on a
+  server that has ADR-0025_, so the intent and refund `customer` filters find
+  its payment; a server without it, or a session from before 2026-09-23, keeps
+  the customer on the session only. Neither SDK can tell which server it is
+  talking to. The comments also corrected the contradiction refusal from `409`
+  to `400` (`invalid_param` naming `customer`) — the server always answered
+  `400`. Do not add SDK logic that "reconciles" the two lists.
 
 > **BREAKING in `sdks/rust` — source, not wire.** `ListPaymentIntentsParams`,
 > `ListCheckoutSessionsParams`, `ListRefundsParams` and `PayInvoiceParams`

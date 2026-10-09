@@ -12,6 +12,210 @@ publishes no release tags and its workspace version has never moved off
 `v0.5.0` as of 2026-09-23 — and its workspace version is `0.5.0`. The naming
 rule stands, for the reasons VERSIONING.md now gives.)_
 
+## v2026-09-29-a33aac61
+
+Re-verified against vpay [`a33aac61`](https://github.com/vaam-apps/vpay/commit/a33aac61029c5e2d81e77217cd9ea23d43f946ac)
+(2026-09-29), `v0.5.0` plus twelve commits (`git describe`: `v0.5.0-12`; no
+release has been cut since `v0.5.0`). It is the cratestack 0.12.0 → 0.15.0 bump
+([vpay#259](https://github.com/vaam-apps/vpay/pull/259)). The previous entry
+here is `7a79684e` (2026-09-16); the pull requests in between (#20–#27) moved
+individual skills to `b747e5d5`, `67c90ea5` and `f68fda09` and were recorded in
+git history and in each page's own dated corrections, **not** in this file. This entry
+covers the whole interval, and the vpay commits it reads are
+`0799a8d2..a33aac61` (53) for the six skills that were still stamped there.
+
+**The baseline moved for all twenty skills at once, and "re-verified" has a
+precise meaning here — read it before you trust a stamp.** For every skill
+the check was: the `git diff` of every vpay path the skill claims in
+`coverage.json`, from that skill's previous stamp to `a33aac61`; a targeted grep
+of the skill for every symbol, count and claim those diffs touched; and, where
+vpay corrected a claim the skill had been quoting as "still wrong in vpay", the
+strike-through below. It was **not** a line-by-line re-read of every reference
+page. The pages that were read in full, or whose changed sections were, carry
+the new stamp in their own header; a page that was edited in one section carries
+a stamp that **names that section** and the older stamp for the rest; the others
+keep the older stamp, which is the honest record of when they were last read in
+full. Reference pages **not re-read** (older stamp untouched): `vpay-conventions`
+(`serde`), `vpay-customers` (`account-holder-lookup`), `vpay-checkout`
+(`state-machine`), `vpay-dashboard` (`read-seam-and-bff`, `what-a-screen-may-show`:
+`f68fda09`, and vpay changed nothing they cover afterwards but the cratestack
+bump), `vpay-frontend` (`verify-ui`, `workspace`), `vpay-invoices`
+(`constraints-and-transitions`, one sentence edited; `not-built`;
+`paid-out-of-band`), `vpay-merchant-api` (`errors`, `objects`), `vpay-mtn-momo`
+and `vpay-orange-money` (all four references), `vpay-payments` (`ledger`),
+`vpay-provider-adapters` (`conformance`), `vpay-sdks` (`generated-code`,
+`tauri-plugin`), `vpay-tooling` (`gates`, a dated snapshot left alone on purpose;
+`recipes`, two sentences edited), `vpay-troubleshooting` (`config-boot`,
+`dashboard`, `demo-compose`, `deployment`, `node-web`) and `vpay-webhooks`
+(`events`). Two numbers in them are therefore **unverified at `a33aac61`**:
+`verify-serde`'s 104 types (`serde`) and `verify-sdk-parity`'s 767 / 45 / 40
+(`parity`, `tauri-plugin`), both measured on `b747e5d5`; vpay's own pages record
+the second at `9184e42` and nobody re-ran either on `a33aac61`.
+
+Twenty skills changed their stamp; nineteen changed content (`vpay-orange-money`
+changed its stamp only: nothing it covers changed, and its banner claims were
+re-checked against `docs/status.md` and a grep for `NotImplemented`).
+
+### Claims that stopped being true
+
+> **A checkout session's customer is no longer stored "on the session only".**
+> Since [ADR-0025](https://github.com/vaam-apps/vpay/blob/a33aac61029c5e2d81e77217cd9ea23d43f946ac/docs/adr/0025-session-customer-onto-intent.md)
+> (vpay#253, 2026-09-23) `POST /v1/checkout/sessions` with a `customer` on a
+> customer-less intent writes it onto the intent, in the session insert's own
+> transaction. `vpay-merchant-api` said "do not fix it by changing
+> checkout-session creation" and called it ADR-0024's open question 3;
+> `vpay-customers` repeated it; `vpay-conventions`' ADR index listed it as an
+> open maintainer decision. All three are struck. Still true: **intents from
+> before 2026-09-23 were not backfilled**, so for them the three `customer=`
+> filters still disagree. Two races that used to succeed now refuse: a session
+> that loses the intent to a concurrent session naming another customer answers
+> the existing `400` naming `customer` (it used to be created, so one intent could
+> carry sessions naming two payers), and one whose customer was erased between the
+> pre-check and the insert answers the existing `409` (it used to attach the
+> erased customer to the intent).
+
+> **Customer erasure reaches payments through `checkout_sessions.customer_id`.**
+> [ADR-0027](https://github.com/vaam-apps/vpay/blob/a33aac61029c5e2d81e77217cd9ea23d43f946ac/docs/adr/0027-erasure-reaches-through-checkout-sessions.md)
+> (vpay#257). One constant, `vpay_db::customers::PAYERS_INTENTS`, finds the
+> intents for the three per-payment statements: intents naming the customer, plus
+> customer-less intents a session naming the customer points at; the guard is the
+> intent's own customer being `NULL` or the erased one. An old intent whose
+> sessions named two payers is redacted by either payer's erasure (the maintainer
+> decided to keep this on 2026-10-08, a decision this repository was told about
+> and that no vpay document at `a33aac61` records). A session create now takes
+> `FOR SHARE` on its customer before the intent; the old order deadlocked with
+> erasure (`40P01`, a `503`). `vpay-customers` described the reach as "through an
+> intent". `erase_in_tx`'s doc comment, which this repository quoted as saying
+> "six more statements", says **thirteen more, fifteen in all** since 2026-09-23.
+
+> **The database's clock schedules jobs.**
+> [ADR-0026](https://github.com/vaam-apps/vpay/blob/a33aac61029c5e2d81e77217cd9ea23d43f946ac/docs/adr/0026-the-database-clock-schedules-jobs.md)
+> (vpay#256), status "Accepted in part" on `master`. `enqueue_in_tx` takes a
+> `Duration`; `record_attempt` takes the retry rung; `live_charges_stale_since`
+> takes a window back from `now()`; `Jobs::oldest_runnable_run_at` is now
+> `oldest_runnable_age`. `vpay-troubleshooting` said `seed_singletons` stamps
+> `run_at` from the test process's clock ("two clocks"): that stopped being true
+> on 2026-09-23 and the page now says what is and is not still two clocks.
+> Facts (session `expires_at`, `last_used_at`, a webhook signature's `t=`) keep
+> the application's clock on purpose.
+
+> **cratestack is `0.15.0`, not `0.12.0`** (vpay#259, 2026-09-29): `justfile`,
+> `Cargo.toml`, `vpay-db`'s `cratestack-codec-json`, both `install-cratestack-cli`
+> pins in `ci.yml` and the twelve `Cargo.lock` entries. Policy reads now run on
+> the caller's transaction (cratestack #1117), so a repeat `create_in_tx` inside
+> one open transaction answers `Ok(None)`, **not** `PersistenceError::Denied`;
+> `.do_nothing()` holds one connection, not two, so the `MAX_CONNECTIONS / 2`
+> worker ceiling that `vpay-reconciler` explained by the second connection is now
+> a conservative ceiling that vpay left alone on purpose. The drift totals did not
+> move (201 changes over 26 relations, 19 unmappable). **Three 0.12.0
+> measurements were not re-done by vpay and are now marked "unverified at
+> 0.15.0" rather than restated**: that foreign keys are not introspected, that
+> `jsonb`/`bytea` do not round-trip, and that the grammar has no `@@check(expr)`.
+
+> **`just migrations-manifest` runs on macOS** (vpay#252, merged 2026-09-23).
+> `vpay-data-layer` said the PR was open and the recipe failed there.
+
+> **`@vaam-apps/ui` is `^0.4.0` in both apps**, not `^0.1.2` (`^0.2.4` from
+> vpay#249 on 2026-09-23, `^0.4.0` from #258 on 2026-09-25, whose title says "the
+> dashboard" and which also moved the checkout). `pnpm install` can fail on a
+> brand-new `@vaam-apps/ui` with `ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION` until
+> `pnpm-workspace.yaml`'s `minimumReleaseAgeExclude` names it.
+> `vpay-checkout`'s story and axe numbers were measured at `^0.1.2` and have not
+> been re-measured at `^0.4.0` in any vpay page; the page says so.
+
+> **The Helm chart publish job has run.** `vpay-ops` said `publish-chart` "has
+> never run". It ran on 2026-09-20: `v0.2.2` pushed an unsigned, mislabelled
+> `0.2.1` and failed at `cosign sign` (helm and cosign do not share a credential
+> store); `v0.3.0` pushed and signed cleanly. `Chart.yaml`'s `version:` is owned
+> by release-please since 2026-09-20 and must equal the tag (`0.5.0`); the
+> republish guard has four outcomes, not three (a published, unsigned chart is
+> resumed, not refused); the chart package was measured **public**, which
+> corrects the assumption that a first push is private. `cosign verify` has still
+> never been run, and no cluster has installed the chart.
+
+> **`config/application.yml` references ten environment variables, not seven.**
+> The three `MTN_DISBURSEMENT_*` names arrived with vpay#178 on 2026-09-16.
+> `vpay-ops` said seven; `vpay-mtn-momo` dated the move 2026-09-15.
+
+> **Four vpay documentation claims this repository was quoting as "still wrong"
+> were fixed on 2026-09-24 (vpay#255)**, a PR prompted by an earlier pass over
+> these skills: `schemas/vpay.cstack`'s "FIVE models" header (now fourteen of
+> twenty, 36 statements); the route probe's `MODEL_TABLES: [&str; 19]`, which
+> had missed `manual_payments` (now `[(&str, &str); 20]`, checked against the
+> macro's own `MODELS` in both directions); `resource-contract.md`'s "the only
+> `DELETE`" (and its silence about the invoice routes); `InvoiceStatus`'s
+> `draft ──void──> void` edge and `void_in_tx`'s "a `draft` or `open`";
+> `provider-port.md`'s six-method table (now nine); `docs/flows/errors.md`'s
+> two-leaf `exit_code_for`; `stripe-sdk-compat.md`'s "`customer` dropped";
+> `parity.md`'s "iOS and macOS compiled by nobody". Where a skill told an agent
+> to distrust one of these, it now says it is fixed. **Not fixed in vpay, and
+> still named**: `checkout_sessions.rs`'s `run_until` comment ("seed_singletons
+> stamps from this process's clock"), the `0.12.0` mentions in `schemas/vpay.cstack`
+> and `postgres_smoke.rs`, and "both binaries" in `config_reconcile.rs`,
+> `lock_keys.rs` and `repository.rs`.
+
+> **Smaller, each dated where it is corrected:** `docs/status.md` is 653 lines,
+> not "~290" (275 on 2026-09-11; `vpay`, `vpay-docs-status` and
+> `reading-the-docs.md` all said ~290); `justfile` is 5 299 lines, not 4 704;
+> `verify-ignored` is the sixth dependency of `just ci`, not "step 7"; `vpay`'s
+> gate-count history had fourteen and twelve backwards;
+> `vpay_api::provider_callback` also _enqueues_ the `poll_charge` job when none is
+> queued (`vpay-reconciler` said it only pulls one forward); the confirm's poll
+> job is committed `POLL_AFTER_CONFIRM_GRACE` out, not at `run_at = now()`;
+> `@vaam-apps/ui` registers **two** themes (`dark`, `light`), not one;
+> `EXPECTED_ASSERT_SITES` is 74, not 71; `customers.rs` is 28 cases, not 24, and
+> `invoices.rs` 30, not 29.
+
+### What did NOT change, and is the point
+
+- **The banner.** Exactly one real rail call has ever been made (MTN's sandbox,
+  2026-09-15). Orange has never been called, no webhook has reached a merchant
+  outside the repository, no cluster has run vpay, and no rail has returned money.
+  `orange_money::refund` is still the workspace's only declared `NotImplemented`
+  token (re-grepped, not just re-read).
+- **Fifteen gates and one report**, 49 migrations, 23 paths / 37 methods in
+  `V1_ROUTES`, 20 `model`s of which 14 are queried (36 statements, recounted).
+- **The dashboard skill's content.** vpay changed nothing it covers after
+  `f68fda09` except the cratestack bump.
+
+### Decided this release
+
+- **Twenty-one flow pages are now claimed individually.** `customers/*`,
+  `dashboard/*`, `dashboard-auth/*`, `hosted-checkout/*`, `webhooks/*` and
+  `merchant-auth/verification-and-limits.md` were covered only by their
+  directory's claim, which the gate honours only for pages that existed at the
+  baseline, and only when the baseline commit is in the vpay clone. Each is now a
+  claim in `coverage.json`, and each owning skill has a table saying where the
+  page is covered. Four of them were **not covered at all** and now are:
+  `dashboard-auth/rate-limiting.md`, `dashboard-auth/scope-and-tokens.md` and
+  `dashboard-auth/sessions-and-refusals.md` became `vpay-dashboard`'s new
+  `references/staff-auth.md`, and `merchant-auth/verification-and-limits.md`
+  (the `jti` namespace limitation, which is an onboarding requirement) became a
+  section of `vpay-merchant-api`. The rest were already described; the tables
+  only say where.
+- **`verify-coverage` reads vpay's working tree**, not its git history, for the
+  path and page checks (it uses git only for drift, "existed at baseline" and
+  stamp ancestry). Run it against a clean checkout of `master`.
+  `vpay-docs-status`' parity page now says so.
+- **ADR-0026 is described as "Accepted in part"**, which is what `master` says.
+  A vpay PR confirming D1–D8 was in flight; when it merges, change the
+  `vpay-conventions` row and the sentence in `vpay-data-layer` and
+  `vpay-reconciler`. ADR-0028 is not listed; it lands with that PR.
+- **The page budget was not touched.** `vpay-data-layer`, `vpay-customers`,
+  `vpay-dashboard`, `vpay-merchant-api`, `vpay-ops` and `vpay-troubleshooting`
+  grew; the reasons are the same as CONTRIBUTING's: negative claims and
+  corrections belong where the agent will read them.
+
+### Known discrepancy, not resolved here
+
+The brief this release was written from counted **21 flow pages added after the
+old baseline** and **14 stale stamps**. Neither is what the gate shows: one page
+(`tauri-checkout.md`, already claimed) was added after `0799a8d2`, and the 21
+are the detail pages that were covered by directory inheritance; moving the
+baseline to `a33aac61` makes all twenty stamps stale at once, not fourteen.
+vpay's own `CLAUDE.md` says `docs/status.md` "is 259 lines as of 2026-09-11";
+`git` says 275 that day.
+
 ## v2026-09-16-7a79684e
 
 Re-verified against vpay [`7a79684e`](https://github.com/vaam-apps/vpay/commit/7a79684e98afe8a7feeba16cc51da1334ac03b4a)

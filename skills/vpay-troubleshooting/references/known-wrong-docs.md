@@ -1,6 +1,6 @@
 # Known-wrong documentation, and which source wins
 
-_Verified against vpay `67c90ea5` (2026-09-20). Version-sensitive claims
+_Verified against vpay `a33aac61` (2026-09-29). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 vpay documents itself exhaustively. The prose drifts faster than anything else
@@ -80,6 +80,19 @@ point is not the individual facts — it is the _rate_.
 | `config/application.yml`                | The MTN host "used to say `wiremock`, a host no compose file defines — **never caught because the stack had never been started**."                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | `docs/status.md`                        | The load-bearing "no HTTP call to a real rail has ever been made" sentence, narrowed by ten dated addenda and finally retired 2026-09-15 — and **replaced with a narrower one**, not deleted.                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | `docs/plans/exp11-notes/opus-review.md` | A whole review finding whose content is: `CLAUDE.md`'s "Things that will waste your time" still said the toolchain pin is `1.95.0`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+
+**Added 2026-09-29: a measured rate.** Re-verifying these skills against vpay
+`b747e5d5` turned up fourteen places where vpay's own docs, doc comments or test
+titles disagreed with its code; thirteen were real, and vaam-apps/vpay#255
+(2026-09-24) corrected them (`docs/status/verification/2026-09-23-skills-reverification.md`
+lists all fourteen, including the one that was not real). Examples that this
+skills repo had been quoting as "still wrong in vpay" and now has to strike:
+`resource-contract.md`'s "the only `DELETE`", `cratestack-what-runs-through-it.md`'s
+2026-09-10 registry (now carrying a banner), `schemas/vpay.cstack`'s "FIVE
+models" header, the route probe's nineteen-table list, `errors.md`'s two-leaf
+`exit_code_for`, and `provider-port.md`'s six-method table. **Read a "still
+wrong in vpay" claim in a skill as a claim about the commit it is stamped
+with.**
 
 Repository-wide, `grep -c "and was wrong\|Corrected 2026\|~~"` over `docs/`
 gives double digits on `docs/status/backend.md`, `docs/status/merchant-sdks.md`,

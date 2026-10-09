@@ -1,6 +1,6 @@
 # The docs↔skills parity rule
 
-_Verified against vpay `d3a8810b` (2026-09-16). Version-sensitive claims
+_Verified against vpay `a33aac61` (2026-09-29). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 > **A feature lands in three places or it has not landed: the code, the docs,
@@ -18,8 +18,8 @@ skill briefs an agent that is already doing it. So a skill is judged not on
 the right thing on its first attempt**".
 
 That difference is why they live in a separate repository. A briefing that has
-to clear fourteen gates (2026-09-18) to be corrected is a briefing nobody
-corrects. The cost
+to clear fifteen gates (2026-09-20; ~~fourteen (2026-09-18)~~) to be corrected
+is a briefing nobody corrects. The cost
 of the separation is drift, which is what the gate below exists to refuse.
 
 The urgency is rule 2 with a force multiplier attached. A status page that lags
@@ -62,6 +62,16 @@ It fails in **both** directions, the way `verify-status` has since 2026-09-03:
   that moved or was deleted.
 
 A one-directional gate rots in the direction nobody looks.
+
+**Run it against a clean checkout of vpay's `master`, not the tree you are
+editing.** The tool reads vpay's **working tree** for the path-existence half
+and the page walk (`existsSync`, `readdirSync`), and uses `git` only for the
+baseline drift line, the "did this page exist at the baseline" test and the
+stamp-ancestry check. An agent editing vpay on a feature branch, with uncommitted
+files, can make the gate pass or fail for reasons `master` does not share. A
+`git worktree add --detach <dir> <master-sha>` makes the clean checkout; CI's
+clone must also have **full history** (`fetch-depth: 0`), or the baseline commit
+is absent and every covered page looks "added after the baseline".
 
 It also refuses a skill whose `name` does not match its directory (that name is
 what `--skill` resolves), a description under 80 characters (the description is

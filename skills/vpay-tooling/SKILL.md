@@ -5,7 +5,7 @@ description: How to build, test, lint and gate vpay — the just recipes that ma
 
 # vpay tooling and gates
 
-> **Verified against vpay `67c90ea5` (2026-09-20).** Version-sensitive claims below
+> **Verified against vpay `a33aac61` (2026-09-29).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -163,6 +163,12 @@ Change one of these and the other must move in the **same commit**.
 | add a `NotImplemented` token              | its declaration in `docs/status.md`                                                                                                                                                    | `verify-status`                             |
 | add an SDK method                         | its row in `docs/sdks/parity.md`                                                                                                                                                       | `verify-sdk-parity`                         |
 | `flutter-toolchain.toml`'s pin            | nothing — no `verify-*` gate reads it, unlike `rust-toolchain.toml`'s `verify-toolchain`. Its `channel` field is `[user-branch]`, not a clean channel pin, by the file's own admission | nothing                                     |
+
+A `cratestack_version` bump (the lockstep row above) is more than the two pins:
+also `vpay-db`'s `cratestack-codec-json`, both `install-cratestack-cli` steps in
+`ci.yml` (pinned to the tag's commit), and the twelve `cratestack-*` entries in
+`Cargo.lock` (`cargo update -p cratestack-pg --precise <version>`). It is
+`0.15.0` since 2026-09-29 (vaam-apps/vpay#259); it was `0.12.0`.
 
 `verify-toolchain` exists because the drift was measured: with `channel` moved
 to 1.98.0 and the Dockerfile left on 1.95.0, the whole of `just ci` was green.

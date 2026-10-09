@@ -5,7 +5,7 @@ description: A symptom index for vpay — the exact error text or observed behav
 
 # vpay troubleshooting
 
-> **Verified against vpay `0799a8d2` (2026-09-18).** Version-sensitive claims below
+> **Verified against vpay `a33aac61` (2026-09-29).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -46,6 +46,7 @@ Two habits before anything else:
 | Cypress has no binary / `CYPRESS_INSTALL_BINARY`                        | [node-web](references/node-web.md)                           |
 | `EADDRINUSE 127.0.0.1:4181`, or `ECONNREFUSED` on a port no spec chose  | [node-web](references/node-web.md)                           |
 | every Storybook story renders unstyled and every test passes            | [node-web](references/node-web.md)                           |
+| `pnpm install` fails `ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION`           | `vpay-frontend` skill, § a `@vaam-apps/ui` bump              |
 | `migration <n> was previously applied but has been modified`            | inline, below                                                |
 | `vpay-shop` dies in `zen migrate deploy`                                | [migrations-database](references/migrations-database.md)     |
 | `invalid_client: Client authentication failed` from a demo stack        | [demo-compose](references/demo-compose.md)                   |

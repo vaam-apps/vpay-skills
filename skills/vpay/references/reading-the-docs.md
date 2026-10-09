@@ -1,6 +1,6 @@
 # Reading vpay's documentation
 
-_Verified against vpay `d3a8810b` (2026-09-16). Version-sensitive claims
+_Verified against vpay `a33aac61` (2026-09-29). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 vpay's documentation has conventions that will mislead you if you do not know
@@ -53,7 +53,7 @@ counts that were wrong for days while reading correct.
 When a document outgrows one sitting it becomes an overview **plus a
 directory** — never a shorter document. Nothing is dropped or paraphrased in
 the move. Eleven pages split this way on 2026-09-11, `docs/status.md` among
-them (6 151 lines → ~290, with everything preserved under `docs/status/`).
+them (6 151 lines → 275, with everything preserved under `docs/status/`; ~~about 290~~ was the figure here, true on 2026-09-15 only — it is 653 lines as of 2026-09-29).
 
 ## 3. Links are half-checked, and citations are not checked by default
 

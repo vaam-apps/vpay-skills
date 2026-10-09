@@ -65,6 +65,14 @@ Those pull in different directions, and when they do, the briefing wins:
    have differed for some time, and this release widened the gap. That is
    recorded as a fact about the corpus, not as permission._
 
+   _Measured again 2026-09-29, after the `a33aac61` release: **twenty** of the
+   twenty are over 150 lines, median **257**, and the four named above are now
+   374, 312, 351 and 319 (`vpay-mtn-momo`, `vpay-orange-money`,
+   `vpay-provider-adapters`, `vpay-payments`). `vpay-merchant-api` (363) and
+   `vpay-data-layer` (356) are now longer than three of them (`vpay-orange-money`, `vpay-payments`, `vpay-provider-adapters`). Same status as the
+   line above: a fact about the corpus, not permission, and the maintainer
+   decision on the budget is still open._
+
 3. Add or update the entry in [`coverage.json`](coverage.json).
 4. Run the gate:
 

@@ -1,6 +1,6 @@
 # The state machines
 
-_Verified against vpay `b747e5d5` (2026-09-23). Version-sensitive claims
+_Verified against vpay `a33aac61` (2026-09-29) for § `InvoiceStatus`; the rest of this page was last read at `b747e5d5` (2026-09-23). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 Every enum below is in `backends/crates/vpay-core/src/state.rs` except
@@ -173,8 +173,12 @@ _(Corrected 2026-09-23: this diagram was copied from `vpay_core::InvoiceStatus`'
 doc comment and drew a `draft ──void──> void` edge. That edge does not exist.
 `void_in_tx`'s `WHERE` names `'open'` alone, `number_is_assigned_at_finalize`
 would refuse a numberless voided row, and a draft is deleted instead. The
-SKILL page and `vpay-invoices` already said so. The doc comment in
-`state.rs` is still wrong at `b747e5d5`.)_
+SKILL page and `vpay-invoices` already said so. ~~The doc comment in
+`state.rs` is still wrong at `b747e5d5`.~~ **Corrected 2026-09-29:** vaam-apps/vpay#255
+(2026-09-24) fixed it — the diagram's second line is now
+`└────DELETE────> (gone: a draft is removed, never voided)` with a note saying the
+old line drew an edge that never existed — and `void_in_tx`'s first doc line now
+reads "Voids an `open` invoice". Both verified at `a33aac61`.)_
 
 | Value           | Meaning                                                                                                                                                                                                                                  |
 | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

@@ -1,6 +1,6 @@
 # Errors: typed at the leaves, composed per layer, classified once
 
-_Verified against vpay `b747e5d5` (2026-09-23). Version-sensitive claims
+_Verified against vpay `a33aac61` (2026-09-29) for § "Binaries"; the rest of this page was last read at `b747e5d5` (2026-09-23). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 Decision record: `docs/adr/0011-error-modelling.md`. Readable version:
@@ -249,7 +249,11 @@ first, then `DbError`…~~ **Corrected 2026-09-23:** `exit_code_for` in
 itself), `ConfigError`, `SigningKeyError`, then `DbError` — last, because a
 config naming a dead database is still a config problem. It has had that shape
 since Step 1 (2026-09-02); the two-type version was copied from
-`docs/flows/errors.md` § Boundaries, which still says it as of vpay `b747e5d5`.
+`docs/flows/errors.md` § Boundaries, which said it until vaam-apps/vpay#255 —
+~~which still says it as of vpay `b747e5d5`~~ _(corrected 2026-09-29: vaam-apps/vpay#255
+rewrote that paragraph to name the same four leaves, in this order, and says
+"this said `find_in_chain::<ConfigError>` first, then `DbError`" until
+2026-09-23; the function itself is unchanged at vpay `a33aac61`)_.
 Trust the function, and add a new startup leaf **there**: `find_in_chain` is
 typed, so anything it does not name falls through to exit `1`.
 

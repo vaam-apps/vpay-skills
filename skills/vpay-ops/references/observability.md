@@ -1,6 +1,6 @@
 # Observability: two ports, thirteen names, and no scraper
 
-_Verified against vpay `d3a8810b` (2026-09-16). Version-sensitive claims
+_Verified against vpay `a33aac61` (2026-09-29) for the queue-age gauge note; the rest of this page was last read at `d3a8810b` (2026-09-16). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 **Nothing has ever scraped any of this.** The series exist; the alerts on them
@@ -67,6 +67,14 @@ queued work was due".
 
 > A `> 300` alert is unaffected; **an `abs()` applied to make the graph tidy
 > would hide the case it exists for.**
+
+_Added 2026-09-29 (ADR-0026, 2026-09-23):_ the subtraction is done by Postgres
+now. `Jobs::oldest_runnable_age()` (it was `oldest_runnable_run_at()`, which the
+worker then subtracted from its own `now_utc()`) returns
+`now() - min(run_at)` computed in SQL over the same unleased, unparked rows, so a
+worker host whose clock disagrees with the database no longer skews the gauge.
+The sign convention — negative while the next job is in the future — did not
+change, and neither did the metric name or its `abs()` warning above.
 
 **`vpay_build_info{git_sha}` is `unknown` unless the image was built with
 `--build-arg VPAY_GIT_SHA=…`.** `release.yml` passes `github.sha`; **every local

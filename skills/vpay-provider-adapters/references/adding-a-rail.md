@@ -1,6 +1,6 @@
 # Adding a rail
 
-_Verified against vpay `b747e5d5` (2026-09-23). Version-sensitive claims
+_Verified against vpay `a33aac61` (2026-09-29) for § 3b; the rest of this page was last read at `b747e5d5` (2026-09-23). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 The canonical checklist is `docs/flows/provider-port.md` § "Adding a rail".
@@ -90,7 +90,9 @@ over a real socket.
 ## 3b. `payer_fields` — what the payer types, declared once
 
 Added 2026-09-16 (vpay#186). This page did not have the step until
-2026-09-23, and `docs/flows/provider-port.md` still does not. If the payer
+2026-09-23, and `docs/flows/provider-port.md`'s "Adding a rail" checklist still
+does not (its interface _table_ gained the `payer_fields` row on 2026-09-24,
+vaam-apps/vpay#255; the checklist did not move). If the payer
 types something vpay forwards to the rail, as a push rail's MSISDN is,
 override `ProviderAdapter::payer_fields` with a `const &[PayerField]`: name,
 kind, `required`, `label_key`. `vpay_adapter_mtn_momo`'s `PAYER_FIELDS` is

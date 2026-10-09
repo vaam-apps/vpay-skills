@@ -1,6 +1,6 @@
 # Using the official Stripe SDKs against vpay
 
-_Verified against vpay `b747e5d5` (2026-09-23). Version-sensitive claims
+_Verified against vpay `a33aac61` (2026-09-29) for the `customer` bullet; the rest of this page was last read at `b747e5d5` (2026-09-23). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 Source of record: `docs/flows/stripe-sdk-compat.md`. Evidence:
@@ -133,8 +133,10 @@ prevent.
   is a `400` naming `customer` (never a `404` — the uniform answer keeps it
   from being an oracle), where Stripe would take a Stripe customer id. This
   page listed it among the dropped fields because vpay's own
-  `docs/flows/stripe-sdk-compat.md` still does, as of `b747e5d5`; the code
-  (`CreateParams::customer`'s doc comment) is right and the flow doc is stale.
+  `docs/flows/stripe-sdk-compat.md` still did, as of `b747e5d5`; ~~the code is
+  right and the flow doc is stale~~ **vaam-apps/vpay#255 (2026-09-24) fixed the
+  flow doc** ("`metadata` and `customer` are stored; the rest are dropped"), so
+  the two now agree at `a33aac61`.
 - **`client_secret` is on `create` and `retrieve` only.** Absent from
   `confirm`, `cancel`, `list` and every webhook body. `amount_received`,
   `capture_method` and `confirmation_method` are genuinely absent although

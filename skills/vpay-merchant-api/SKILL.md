@@ -5,7 +5,7 @@ description: The vpay HTTP surface — the /v1 merchant API, its route tables, O
 
 # The vpay HTTP surface
 
-> **Verified against vpay `b747e5d5` (2026-09-23).** Version-sensitive claims below
+> **Verified against vpay `a33aac61` (2026-09-29).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -98,6 +98,44 @@ constructor** — a handler cannot invent a tenant to query by. There is no
 that type is the whole tenancy boundary. Repository methods on this path take a
 `merchant_id` and have no unscoped variant.
 
+### What can go wrong signing in, and two limitations nobody has decided
+
+_Added 2026-09-29, from `docs/flows/merchant-auth/verification-and-limits.md`
+(the page this skill did not cover before); nothing here was re-run._
+
+- **Failures and where they surface**: a wrong private key, an unregistered
+  `kid` or a mistyped `client_id` is `401`/`400` `invalid_client` from the token
+  endpoint (the SDK returns an authentication error and does not retry); a
+  merchant in `disabled_clients` is refused at the token endpoint or on a `/v1`
+  route with `401` (one re-auth attempt, then the error); an assertion `exp`
+  more than 300 s out is refused by the OP (the SDKs refuse to be configured
+  that way); **clock skew beyond 60 s** is `invalid_client`, and the message
+  names the failed check only as far as the OP does; a token endpoint at a
+  different path than the SDK default is a `404` `unknown_route` envelope, fixed
+  by the SDK's `issuer`/`token_endpoint` setting; and a rolling deploy can answer
+  `invalid_client` from one replica and success from another (ADR-0010's
+  window), left to the merchant's retry policy.
+- **The `jti` replay namespace is global, not per merchant.**
+  `oauth_client_assertion_jtis.jti` is the primary key on its own, and
+  `authkestra_op`'s `record_jti` is given no `client_id` to scope by. A merchant
+  whose library used a counter or a timestamp as `jti` could collide with, and
+  deliberately pre-spend, another merchant's values. **Onboarding requirement
+  until that changes: `jti` MUST be a UUID v4** (both vpay SDKs do this).
+  Scoping the key to `(client_id, jti)` needs a migration and an upstream seam
+  or a per-client store; that decision is the maintainer's and is open.
+  (Checked at `a33aac61`: the primary key is still `jti` alone.)
+- **No rate limit in front of `/v1/oauth/token` or `/v1`.** A known `client_id`
+  (they are public) costs one `disabled_clients` `SELECT` per token request
+  before any signature check, and ADR-0009 leaves `/token` rate limiting to the
+  ingress. Confirm the ingress does it before relying on that; nothing in the
+  repository enforces it. (The _dashboard's_ staff sign-in does have a limiter —
+  that is `vpay-dashboard`.)
+- **Verifying a webhook** (the same page): `Vpay-Signature: t=<unix>,v1=<hex>`,
+  several `v1=` allowed during a secret rotation, HMAC-SHA256 over the literal
+  bytes `"<t>.<raw body>"`, constant-time compare, a 300 s default tolerance,
+  and parse the body only afterwards. The verifier does **not** dedupe by
+  `event.id`. `vpay-webhooks` is the owner of the scheme.
+
 ## Scopes, and why refusals are 403
 
 Two strings, defined once in `vpay_api::v1`: `SCOPE_PAYMENTS_WRITE`
@@ -162,7 +200,7 @@ D1–D4, D12), `GET /v1/payment_intents`, `GET /v1/checkout/sessions` and
 `GET /v1/refunds` take `customer=cus_…`. `GET /v1/invoices` always did. On an
 older server the parameter is **silently ignored and the whole list comes
 back** — no vpay release up to and including `v0.5.0` has it (as of
-2026-09-23), so a client must not treat an unfiltered page as "this customer's
+2026-09-23, and still the latest tag on 2026-09-29: `a33aac61` is `v0.5.0-12`), so a client must not treat an unfiltered page as "this customer's
 rows".
 
 - **It is in the same `WHERE` as `merchant_id`, and that is the whole
@@ -180,12 +218,49 @@ rows".
   `customer_id`; sessions their **own** `customer_id` (D12); refunds, which
   have no customer column, their intent's, inside the join the tenant
   predicate already makes.
-- **So one payment can be in one list and not the others.** A session created
-  with `customer=X` on an intent with no customer stores `X` on the session
-  only: its payment is listed by `GET /v1/checkout/sessions?customer=X` and
-  **not** by the intent or refund filters. Whether a session's customer
+- ~~**So one payment can be in one list and not the others.** A session
+  created with `customer=X` on an intent with no customer stores `X` on the
+  session only: its payment is listed by `GET /v1/checkout/sessions?customer=X`
+  and **not** by the intent or refund filters. Whether a session's customer
   should be written onto such an intent is ADR-0024's **open question 3** —
-  do not "fix" it by changing checkout-session creation.
+  do not "fix" it by changing checkout-session creation.~~ **Corrected
+  2026-09-29 (vpay `a33aac61`):** this was true until
+  [ADR-0025](https://github.com/vaam-apps/vpay/blob/a33aac61029c5e2d81e77217cd9ea23d43f946ac/docs/adr/0025-session-customer-onto-intent.md)
+  (vaam-apps/vpay#253, merged 2026-09-23), which answered question 3. The
+  maintainer chose to write the customer through, so the sentence "do not fix
+  it" is now backwards: **the fix is built, and it is not yours to undo.**
+  - **Since 2026-09-23 a session created with `customer=X` on a customer-less
+    intent writes `X` onto the intent**, in the same transaction as the session
+    insert (`vpay_db::checkout_sessions::claim_intent_customer`, a
+    compare-and-swap on `customer_id IS NULL`). Its payment is then listed by
+    all three filters. Do not remove the write to make a test pass, and do not
+    add a backfill (below).
+  - **A later session on that intent naming another customer is the `400`
+    naming `customer`** — the refusal `prepare_create` always gave a session
+    that contradicted its intent. Of two concurrent creates naming two
+    customers for one customer-less intent, exactly one wins. The loser gets
+    that same `400` (via `DbError::IntentCustomerConflict`, one shared
+    `customer_contradiction` function, byte for byte) or, if it read the intent
+    after the winner committed, the one-open-session `409` that check has
+    always answered first.
+  - **A create naming a customer erased in the meantime is a `409`**
+    (`DbError::CustomerErased`, the same bytes as the pre-check's — ADR-0027).
+    The create takes `FOR SHARE` on the customer **before** it touches the
+    intent; the order was the reverse until ADR-0027, and the two orders
+    deadlocked with `40P01` against an erasure (a `503`). Keep the customer
+    first.
+  - **Idempotency, because it differs by path.** The race loser's `400` comes
+    from `create`, after the key is claimed, so it is **stored** under the
+    key; the pre-check's identical `400` **releases** the key. Neither retry
+    can succeed, because an intent's customer is never rewritten once set.
+  - **Rows from before 2026-09-23 were not backfilled and are still
+    inconsistent.** A historical session may name a customer its intent does
+    not (an intent can even carry sessions naming two payers), so its payment
+    is listed by `GET /v1/checkout/sessions?customer=X` and **not** by the
+    intent or refund filters. A backfill would have to guess between payers;
+    ADR-0025 § "No backfill" refused to. A merchant who needs a historical
+    payment by customer lists the sessions and follows each `payment_intent`.
+    (Erasure does reach those payments since ADR-0027 — see `vpay-customers`.)
 - **`GET /v1/customers` stays unfiltered**, deliberately (D4): a filter on a
   payer identifier turns a list into a lookup. `customer` filters _by_ an id
   the merchant already holds.
@@ -245,7 +320,8 @@ Both SDKs can call `GET /v1/balance`, and it gets the honest envelope.
 ## Where this repository's docs are wrong
 
 Code wins in all five below (this said "all four" over a list of five until
-2026-09-23). Fix the doc in the same commit if you touch the area.
+2026-09-23; three of the five carry a strike-through as of 2026-09-29, because
+vpay fixed them). Fix the doc in the same commit if you touch the area.
 
 - ~~`docs/api/README.md` § "Served today" says **"thirty-one methods across
   twenty paths"**~~ and ~~`docs/flows/merchant-auth/resource-contract.md` says
@@ -255,18 +331,23 @@ Code wins in all five below (this said "all four" over a list of five until
   **thirty-seven methods across twenty-three paths**, re-counted from
   `V1_ROUTES`, and that still matches on 2026-09-23. The resource contract
   now says **five methods across three paths**.
-- `docs/flows/merchant-auth/resource-contract.md`'s `DELETE /v1/customers/{id}`
-  row calls it "the only `DELETE` on this API". `V1_ROUTES` has also mounted
-  `DELETE` on `/v1/invoices/{id}` and `/v1/invoice_items/{id}` since
-  2026-09-07. All three carry an `Idempotency-Key` on a verb with no body.
+- ~~`docs/flows/merchant-auth/resource-contract.md`'s `DELETE /v1/customers/{id}`
+  row calls it "the only `DELETE` on this API".~~ **Corrected 2026-09-29:**
+  vpay fixed that row on 2026-09-24 (vaam-apps/vpay#255), striking the claim
+  and writing "one of three". `V1_ROUTES` has mounted `DELETE` on
+  `/v1/invoices/{id}` and `/v1/invoice_items/{id}` since 2026-09-07, and all
+  three carry an `Idempotency-Key` on a verb with no body.
 - `vpay_api::browser`'s module header opens "the **two** routes a payer's
   browser may call", and `browser_checkout.rs`'s header repeats it. There are
   **five**; the assertion further down that same test file says 5 and is right.
 - `docs/flows/merchant-auth/resource-contract.md`'s resource table omits
   `/v1/checkout/sessions`, `/v1/invoices` and `/v1/invoice_items`. All three
   are served. The Checkout Session omission is deliberate: the page says so
-  and points at `hosted-checkout.md`. The invoice omission is not mentioned at
-  all.
+  and points at `hosted-checkout.md`. ~~The invoice omission is not mentioned
+  at all.~~ **Corrected 2026-09-29:** since vaam-apps/vpay#255 (2026-09-24)
+  the page names it — "Nor does it list the invoice routes", fifteen of
+  `V1_ROUTES`' 37 method-and-path pairs — and points at `invoices.md` §
+  "The surface". The table still omits them, now on purpose.
 - The same table calls `Idempotency-Key` "caller-supplied, else a UUIDv4
   generated per call". The **server requires it**; the UUID is the SDKs'
   client-side behaviour, not a server fallback.

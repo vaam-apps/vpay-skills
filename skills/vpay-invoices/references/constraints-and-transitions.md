@@ -51,8 +51,9 @@ carries the inventory of every multi-column CHECK in the schema.
 | settlement                               | `flip_invoice`          | `'open'`, keyed on **its own intent** | emits `invoice.paid` in the same transaction                                                                 |
 | `pay` + `paid_out_of_band=true` (step A) | `pay_out_of_band_in_tx` | `'open'`                              | `AND NO_LIVE_INTENT`; `FOR SHARE` on the customer **first**; inserts `manual_payments`; emits `invoice.paid` |
 
-**A draft cannot be voided** — see the SKILL.md warning; two doc comments in
-the repository claim otherwise and are stale.
+**A draft cannot be voided** — see the SKILL.md warning; ~~two doc comments in
+the repository claim otherwise and are stale~~ (both fixed 2026-09-24,
+vaam-apps/vpay#255).
 
 **An invoice with no lines is refused at `finalize`** with a `400`. A
 deliberate divergence from Stripe, which finalizes a zero-amount invoice and

@@ -5,7 +5,7 @@ description: How to finish a change in vpay — which status page takes your row
 
 # Finishing a change in vpay
 
-> **Verified against vpay `67c90ea5` (2026-09-20).** Version-sensitive claims below
+> **Verified against vpay `a33aac61` (2026-09-29).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -37,8 +37,9 @@ none, because people trust it):
 
 ## Where a new row goes
 
-`docs/status.md` is the current-state page and is short on purpose (~290 lines,
-down from 6 151 on 2026-09-11). **Only four things belong on it**: the banner,
+`docs/status.md` is the current-state page and is short on purpose (~~about 290 lines~~
+**653 lines** as of 2026-09-20 and still at `a33aac61`; 275 on 2026-09-11, down
+from 6 151 the day before. The growth is dated rows and gate-table addenda). **Only four things belong on it**: the banner,
 the table of areas, the gate table, and the `NotImplemented` declaration — which
 lives there because `cargo xtask verify-status` reads that file by name.
 Everything else is an archive page under `docs/status/`.
@@ -90,7 +91,10 @@ _This example named `mtn_momo::refund` until 2026-09-16. That token was
 so copying it would have declared a token no shipping code carries — which
 fails the gate's docs→code half. `orange_money::refund` is the live one:
 **there is exactly one declared token as of 2026-09-16**, down from eight on
-2026-09-03 and from two partway through 2026-09-15._
+2026-09-03 and from two partway through 2026-09-15. Re-confirmed 2026-09-29:
+the shipping `NotImplemented("…")` sites at `a33aac61` are still only
+`orange_money::refund`'s two in the Orange adapter; the others `git grep` finds
+are in tests._
 
 That is the gate working, not a trap. It is how `docs/status.md` can discuss
 unpopulated fields in the same section without declaring them unbuilt.

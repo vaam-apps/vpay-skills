@@ -1,6 +1,6 @@
 # Idempotency
 
-_Verified against vpay `b747e5d5` (2026-09-23). Version-sensitive claims
+_Verified against vpay `a33aac61` (2026-09-29) for § "What is stored, and what is released"; the rest of this page was last read at `b747e5d5` (2026-09-23). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 Two halves: the header and fingerprint in `vpay_api::idempotency`, the storage
@@ -171,6 +171,16 @@ closed. This section was missing from this page until 2026-09-23.
 **A `4xx` is stored** — Stripe's own behaviour. The merchant caused it,
 re-running would produce it again, and answering the retry identically is
 cheaper and less surprising than re-executing.
+
+_(Worked example, 2026-09-29, from ADR-0025.)_ `POST /v1/checkout/sessions`
+with a `customer` has two routes to the same `400` naming `customer`, and they
+differ here. A request that contradicts its intent's customer **at the
+pre-check** releases the key (it fails before the write). The loser of a race
+for a customer-less intent gets the same bytes from `CheckoutSessions::create`,
+**after** the key is claimed, so that `400` is stored — as the
+one-open-session `409` from the same place always was. Neither retry can
+succeed, because an intent's customer is never rewritten once it is set, so
+the difference is observable only as which retry re-executes.
 
 **A `5xx` is not stored, and the key is released.** Two wrong things were
 possible here and the second is the one that actually happened:
