@@ -5,7 +5,7 @@ description: The vpay HTTP surface — the /v1 merchant API, its route tables, O
 
 # The vpay HTTP surface
 
-> **Verified against vpay `a33aac61` (2026-09-29).** Version-sensitive claims below
+> **Verified against vpay `87166eaf` (2026-10-09).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -124,6 +124,27 @@ _Added 2026-09-29, from `docs/flows/merchant-auth/verification-and-limits.md`
   Scoping the key to `(client_id, jti)` needs a migration and an upstream seam
   or a per-client store; that decision is the maintainer's and is open.
   (Checked at `a33aac61`: the primary key is still `jti` alone.)
+- **A spent `jti` is kept five minutes past its `exp`, because the validator
+  accepts the assertion for 61 s after it** (ADR-0028, vaam-apps/vpay#271,
+  2026-10-09). Single use is only as good as the row: `authkestra-op` 0.7.1 leaves
+  `jsonwebtoken`'s 60 s leeway at its default, on a whole-second `now`, so an
+  assertion verifies until `exp + 61 s`. The worker's hourly sweep used to delete
+  rows at `expires_at < now()`, and a sweep landing in those 61 s let a captured,
+  already-spent assertion be replayed **once** for a second access token (about
+  1.7 % per assertion at zero clock skew, silent). Now the sweep deletes
+  `expires_at < now() - retain_after_exp`, computed by Postgres, and the worker
+  passes `vpay_worker::CLIENT_ASSERTION_JTI_RETENTION` (5 minutes: 60 s + 1 s +
+  about 239 s of skew budget). `expires_at` still stores the client's raw `exp`.
+  Two things an agent will trip on: **a test refuses an assertion older than the
+  horizon** (`an_assertion_older_than_the_sweep_horizon_is_refused_by_the_validator`),
+  so bumping `authkestra-op` or `jsonwebtoken` past a wider leeway fails CI until the
+  constant grows; and **what is not covered** is a database clock more than about
+  four minutes ahead of an API replica's, which nothing checks. Nothing a merchant
+  sends or receives changed. Mechanism and the sweep itself: `vpay-reconciler`.
+  _(Until 2026-10-09 the doc comment on vpay's `delete_expired_client_assertion_jtis`
+  said an assertion past its `exp` "is refused by `verify_client_assertion` before
+  any store is consulted" and that the worker's job loop "does not exist yet". Both
+  were wrong, the second since 2026-09-03.)_
 - **No rate limit in front of `/v1/oauth/token` or `/v1`.** A known `client_id`
   (they are public) costs one `disabled_clients` `SELECT` per token request
   before any signature check, and ADR-0009 leaves `/token` rate limiting to the

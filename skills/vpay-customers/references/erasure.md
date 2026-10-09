@@ -1,6 +1,6 @@
 # Erasure — the eight tables, the marker CHECK, and the closed race
 
-_Verified against vpay `a33aac61` (2026-09-29) for § "Every copy" and § "Which payments an erasure reaches"; the rest of this page was last read at `b747e5d5` (2026-09-23). Version-sensitive claims
+_Verified against vpay `87166eaf` (2026-10-09) for § "Which payments an erasure reaches", and against `a33aac61` (2026-09-29) for § "Every copy"; the rest of this page was last read at `b747e5d5` (2026-09-23). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 `vpay_db::customers::erase_in_tx` is the whole of it. Migration
@@ -156,10 +156,28 @@ with it, each pinned by a test in `backends/tests/integration/tests/customers.rs
   for the rows that have it. ADR-0027 names the alternative it did not choose
   (reach through a session only when no session on the intent names anyone
   else) and says the change would be one more predicate on the session branch.
-  _(The maintainer's decision of 2026-10-08 is to keep this behaviour. That
+  ~~_(The maintainer's decision of 2026-10-08 is to keep this behaviour. That
   decision is relayed to this repository and is **not yet written in any vpay
   document at `a33aac61`**; trust the ADR for the mechanism and ask before
-  "fixing" the ambiguity.)_
+  "fixing" the ambiguity.)_~~ **Corrected 2026-10-09: it is written down.** The
+  maintainer decided on 2026-10-08 to keep this behaviour (either payer's erasure
+  redacts the ambiguous historical intent, and the error goes toward erasure), and
+  vaam-apps/vpay#271 (merged 2026-10-09) recorded it in
+  `docs/flows/customers/privacy-and-erasure.md`, in the section "The erasure
+  covers every copy vpay kept, not just the row", in the paragraph that begins
+  "**Decided 2026-10-08, and one consequence ADR-0027 does not name.**" ADR-0027
+  itself is not edited and still does not say it. Do not "fix" the ambiguity
+  without the maintainer.
+- **The consequence that paragraph records: if `Y` paid and `X` is erased, `Y`'s
+  refund cannot be paid out through vpay.** `Y`'s charge now carries the redaction
+  marker in `payer_ref`, and a later refund of it hands the rail the marker where
+  the MSISDN to pay out to should be. What survives is on the rail's side:
+  `charges.provider_txn_id` and `provider_reference_id` are classified
+  `subject: none` in `schemas/privacy-inventory.yaml` (the `sys_provider_ref`
+  class) and are not touched by an erasure, so which number paid can still be
+  recovered from the rail, and the refund made there, outside vpay. Only intents
+  whose sessions all predate vaam-apps/vpay#253 can have this shape with a charge,
+  so it does not grow.
 - **Erasure writes nothing onto the intent and detaches nothing.** After it, the
   intent still names nobody, the session still names X, and the list filters
   return what they returned before. The payer is gone from the rows, not from
@@ -191,7 +209,8 @@ with it, each pinned by a test in `backends/tests/integration/tests/customers.rs
   **not** decided here.
 - A refund of such a charge after the erasure hands the rail the marker as
   `payer_ref`. That was already true of a charge on an intent naming an erased
-  customer; ADR-0027 decides nothing new there.
+  customer; ADR-0027 decides nothing new there. _(The ambiguous case above is who
+  that hurts: `Y`, who paid and was not erased. See the bullet there.)_
 
 `sql_audit`'s `EXPECTED_ASSERT_SITES` went 71 → 74 for the three interpolations
 (ADR-0027 § Consequences, as of 2026-09-23). No migration, and

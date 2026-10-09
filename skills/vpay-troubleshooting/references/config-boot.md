@@ -1,6 +1,6 @@
 # Boot failures, exit codes, and configuration refusals
 
-_Verified against vpay `d3a8810b` (2026-09-16). Version-sensitive claims
+_Verified against vpay `d3a8810b` (2026-09-16); step 7 of the boot list below re-read against `87166eaf` (2026-10-09). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 For the configuration model itself see **vpay-ops**. This page is the lookup:
@@ -49,8 +49,10 @@ cause. In order (`docs/flows/configuration.md`):
    advisory-locked. Fatal on failure.
 6. Announce the key as active in `oauth_signing_keys`. Fatal: "a process whose
    key is not published mints tokens nothing can verify."
-7. Sweep expired client-assertion `jti`s and `idempotency_keys` once —
-   non-fatal, boot-time stopgaps.
+7. ~~Sweep expired client-assertion `jti`s and `idempotency_keys` once —
+   non-fatal, boot-time stopgaps.~~ **Corrected 2026-10-09: there is no step 7.**
+   Both boot sweeps were removed in Step 4 (2026-09-03); the worker's hourly
+   `sweep_expired` job runs them (see `vpay-reconciler`). Numbering kept.
 8. Bind the listener, **then** build the token validator (it needs the port
    actually bound, and validates over loopback against this process's own
    `/v1/oauth/jwks.json`).
