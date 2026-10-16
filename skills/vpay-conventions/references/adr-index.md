@@ -150,9 +150,9 @@ itself has been exercised.
 
 ## RFCs — proposals, not decisions
 
-As of 2026-09-23 there are **eight** (this list named only 0001 and 0002
-until then; 0003 arrived 2026-09-16 with vpay#178, 0004–0008 on 2026-09-23 with
-vpay#244):
+As of 2026-10-16 there are **nine** (this list named only 0001 and 0002
+until 2026-09-23; 0003 arrived 2026-09-16 with vpay#178, 0004–0008 on 2026-09-23
+with vpay#244, and 0009 on 2026-10-16 — it said "eight" until then):
 
 - `docs/rfc/0001-settlement-and-payouts.md` — **Draft**.
 - `docs/rfc/0002-gdpr-policy-and-operator-decisions.md` — **Under review**.
@@ -166,6 +166,10 @@ vpay#244):
 - `docs/rfc/0005-prepaid-customer-balances.md`,
   `0006-card-processing-without-a-psp.md`, `0007-bank-transfer-reconciliation.md`,
   `0008-payment-method-routing.md` — **Draft**. None is built.
+- `docs/rfc/0009-provider-accounts-per-merchant.md` — **Draft**, proposed
+  2026-10-16. It starts from a measured gap, not a feature request: provider
+  credentials are configured once per deployment, so pass-through holds only on
+  a deployment that serves one merchant. See `vpay-provider-adapters`.
 
 ## Maintainer decisions recorded in place, not as an ADR status
 

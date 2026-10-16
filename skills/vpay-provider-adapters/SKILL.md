@@ -294,6 +294,22 @@ redacting `Debug` impls. So do both adapters' credential and wire types, and
 so does `vpay_api::v1::refunds`' `CreateParams` — which holds a payee's number
 in a raw `serde_json::Map` that has none of its own. Keep it that way.
 
+## `ProviderConfig` is per deployment today, whatever its doc says (2026-10-16)
+
+`ProviderConfig`'s doc comment calls it "Opaque per-merchant, per-rail
+configuration", and the port hands it to every method per call. **The core
+builds one per rail, not per merchant.** `vpay_api::v1::ResourceConfig::from_config`
+projects each `providers[]` entry into one `RailConfig`, `MerchantClient` names
+no provider account, and `charges` records `provider_code` and no account.
+Measured on vaam-apps/vpay `master` at `44c5bf5`.
+
+So on a deployment with two `merchant_id`s, both merchants are paid into the
+one account `providers[].credentials` belongs to on each rail. **Pass-through
+holds only on a deployment that serves one merchant.** Do not write an adapter
+that assumes it is handed a particular merchant's account, and do not describe
+a multi-merchant deployment as pass-through. Draft RFC-0009 proposes the fix;
+the port's trait would not change.
+
 ## Proposed port changes that do not exist (2026-09-23)
 
 Four Draft RFCs, merged by vaam-apps/vpay#244 as `7997536b`
@@ -331,6 +347,15 @@ not treat a Draft section as a decision:
   **Today `payment_method_types` holds rail codes**, and the checkout lists
   rails in the order the merchant gave (`build_rails` in
   `backends/crates/vpay-api/src/browser/checkout_sessions.rs`).
+- **RFC-0009 — provider accounts per merchant** (added 2026-10-16, not
+  part of vaam-apps/vpay#244). A `provider_accounts` list on each merchant
+  registration, merged per call with rail-level `providers[]` keys (a key at
+  both levels refuses to boot), an account id recorded on every charge, and a
+  rail offered only to a merchant with an account on it. **No trait method
+  changes**; what changes is which `ProviderConfig` the core hands the
+  adapter. Stripe Connect direct charges and PayPal's third-party model are
+  why it needs two levels. None of it exists: see the section above for what
+  the tree does today.
 
 A card PSP adapter is not blocked on engineering. The 2026-09-23 desk
 evaluation (`docs/plans/2026-09-23-card-provider-evaluation.md`,
