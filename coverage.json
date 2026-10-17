@@ -48,7 +48,8 @@
         "docs/adr/0026-the-database-clock-schedules-jobs.md",
         "docs/adr/0027-erasure-reaches-through-checkout-sessions.md",
         "docs/adr/0028-a-spent-jti-outlives-the-validators-leeway.md",
-        "docs/adr/0024-customer-filters-and-manual-payments.md"
+        "docs/adr/0024-customer-filters-and-manual-payments.md",
+        "docs/adr/0029-card-and-bank-adapters-and-payment-method-routing.md"
       ]
     },
     "vpay-tooling": {
