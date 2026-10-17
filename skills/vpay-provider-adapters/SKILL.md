@@ -328,6 +328,16 @@ not treat a Draft section as a decision:
 > adapter, and is not RFC-0007's `bank_transfer`, whose shape below is still
 > an open question.
 
+> **Qualified 2026-10-17.** RFC-0004 § 7 and RFC-0008 are **accepted**
+> through ADR-0029 (vaam-apps/vpay#275). That changes their standing, not
+> the tree: **none of the identifiers below exists**, `payment_method_types`
+> still holds rail codes, and an adapter written against them is written
+> against a design, as RFC-0010 and RFC-0011 are. ADR-0029 D2 says each
+> capability lands with its first consumer; do not add one to the port
+> ahead of the adapter that declares it. D12–D17 of that ADR (the method-type
+> spellings, `collapse`, `routing.requires`, fee schedules on the provider
+> account) are proposed and need the maintainer's confirmation.
+
 - **RFC-0004 § 7 — one adapter per provider.** Every card or bank PSP that
   meets four hard rules gets its own adapter. The rules: vpay never holds the
   money; no card number reaches `vpay-server`; a secret-authenticated status
@@ -335,6 +345,7 @@ not treat a Draft section as a decision:
   transfer become capabilities. It would add `supports_off_session`,
   `charge_stored`, `method_types`, `amount_limits` and
   `ProviderFlow::Instructions`. **None of those identifiers exists.**
+  _Accepted 2026-10-17 (ADR-0029); still none exists._
 - **RFC-0006 — card processing without a PSP.** A separately deployed card
   vault (`vpay-vault`), never linked into `vpay-server`, which appears to the
   core as one more rail (`vpay_vault`). It would also add
@@ -346,7 +357,10 @@ not treat a Draft section as a decision:
   (`flutterwave`), so that `payment_method_types` would accept method types.
   **Today `payment_method_types` holds rail codes**, and the checkout lists
   rails in the order the merchant gave (`build_rails` in
-  `backends/crates/vpay-api/src/browser/checkout_sessions.rs`).
+  `backends/crates/vpay-api/src/browser/checkout_sessions.rs`). _Accepted
+  2026-10-17 (ADR-0029, less its § 7 on health); the spellings `card`,
+  `mtn_wallet`, `orange_wallet`, `paypal` are the ADR's D12, proposed; no
+  router exists._
 - **RFC-0009 — provider accounts per merchant** (added 2026-10-16, not
   part of vaam-apps/vpay#244). A `provider_accounts` list on each merchant
   registration, merged per call with rail-level `providers[]` keys (a key at

@@ -297,7 +297,9 @@ proposed. They are built since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merge
 in vaam-apps/vpay#251; ADR-0024), as the second writer of `paid` described above. The
 prepaid balance, the statement matcher and the router are still Draft and
 unbuilt, and out-of-band `bank_transfer` is a label a merchant sends, not
-RFC-0007's matcher.
+RFC-0007's matcher. _(Corrected 2026-10-17: the router — RFC-0008 — is
+**accepted** through ADR-0029, less its § 7 on health, and still unbuilt;
+the prepaid balance and the statement matcher remain Draft.)_
 
 ## Status, as of 2026-09-29 (unchanged since 2026-09-16)
 
