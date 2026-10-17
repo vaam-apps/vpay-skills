@@ -150,9 +150,10 @@ itself has been exercised.
 
 ## RFCs — proposals, not decisions
 
-As of 2026-10-16 there are **nine** (this list named only 0001 and 0002
+As of 2026-10-17 there are **ten** (this list named only 0001 and 0002
 until 2026-09-23; 0003 arrived 2026-09-16 with vpay#178, 0004–0008 on 2026-09-23
-with vpay#244, and 0009 on 2026-10-16 — it said "eight" until then):
+with vpay#244, 0009 on 2026-10-16 and 0010 on 2026-10-17 — it said "eight"
+until then):
 
 - `docs/rfc/0001-settlement-and-payouts.md` — **Draft**.
 - `docs/rfc/0002-gdpr-policy-and-operator-decisions.md` — **Under review**.
@@ -170,6 +171,10 @@ with vpay#244, and 0009 on 2026-10-16 — it said "eight" until then):
   2026-10-16. It starts from a measured gap, not a feature request: provider
   credentials are configured once per deployment, so pass-through holds only on
   a deployment that serves one merchant. See `vpay-provider-adapters`.
+- `docs/rfc/0010-stripe-adapter.md` — **Draft**, proposed 2026-10-17. The
+  design of `vpay-adapter-stripe` (rail code `stripe`, hosted Checkout as a
+  `Redirect` rail) and of the two core changes any `Origin`-refunding rail
+  needs. No crate, mapping or stub exists. See `vpay-provider-adapters`.
 
 ## Maintainer decisions recorded in place, not as an ADR status
 

@@ -356,6 +356,20 @@ not treat a Draft section as a decision:
   adapter. Stripe Connect direct charges and PayPal's third-party model are
   why it needs two levels. None of it exists: see the section above for what
   the tree does today.
+- **RFC-0010 — a Stripe adapter** (added 2026-10-17). `vpay-adapter-stripe`,
+  rail code `stripe`, Stripe's hosted Checkout as one more `Redirect` rail:
+  `POST /v1/checkout/sessions` with the charge reference as the
+  `Idempotency-Key`, `GET /v1/checkout/sessions/{id}?expand[]=payment_intent`
+  as the authoritative read, `POST /v1/refunds` by `payment_intent`. It
+  would be the **first `RefundDestination::Origin` rail**, and that needs
+  two core changes the RFC names: `refund_at_rail` must put the charge's
+  `provider_txn_id` into the refund `ChargeRef`'s `ref_extra` (empty today),
+  and `no_shipping_rail_returns_a_refund_to_the_paying_instrument` in the
+  conformance suite is relaxed only by paying the three debts its message
+  lists. Its callback URL is registered with Stripe, never sent per request,
+  so `the_submit_tells_the_rail_where_to_call_back` cannot hold on it as
+  written. **No crate, no mapping, no stub exists**, and nothing has called
+  Stripe from this repository.
 
 A card PSP adapter is not blocked on engineering. The 2026-09-23 desk
 evaluation (`docs/plans/2026-09-23-card-provider-evaluation.md`,
