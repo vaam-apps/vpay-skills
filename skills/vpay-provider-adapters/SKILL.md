@@ -370,6 +370,23 @@ not treat a Draft section as a decision:
   so `the_submit_tells_the_rail_where_to_call_back` cannot hold on it as
   written. **No crate, no mapping, no stub exists**, and nothing has called
   Stripe from this repository.
+- **RFC-0011 — a PayPal adapter** (added 2026-10-17). `vpay-adapter-paypal`,
+  rail code `paypal`, Orders v2 as one more `Redirect` rail:
+  `POST /v2/checkout/orders` with `payment_source.paypal` and the charge
+  reference as `PayPal-Request-Id`, the `payer-action` link as the redirect,
+  `GET /v2/checkout/orders/{id}` as the read, refunds on the capture id. Its
+  one design decision: **PayPal's wallet is not captured on approval**
+  (`ORDER_COMPLETE_ON_PAYMENT_APPROVAL` is documented for alternative
+  payment methods only), so the RFC puts the
+  `POST /v2/checkout/orders/{id}/capture` call **inside `query_status`**
+  when the order is `APPROVED`, idempotent on a derived request id, rather
+  than adding a `complete` method to the port. It times out an unapproved
+  order locally (PayPal's status enum has no expired value) from PayPal's
+  documented three-hour validity. It proposes two small core changes of its
+  own — the hosted checkout's return page pulling the poll forward, and
+  `sandbox` as a livemode stub marker — and shares RFC-0010's two. **No
+  crate, no mapping, no stub exists**, and nothing has called PayPal from
+  this repository.
 
 A card PSP adapter is not blocked on engineering. The 2026-09-23 desk
 evaluation (`docs/plans/2026-09-23-card-provider-evaluation.md`,

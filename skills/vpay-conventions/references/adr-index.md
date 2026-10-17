@@ -150,10 +150,10 @@ itself has been exercised.
 
 ## RFCs — proposals, not decisions
 
-As of 2026-10-17 there are **ten** (this list named only 0001 and 0002
+As of 2026-10-17 there are **eleven** (this list named only 0001 and 0002
 until 2026-09-23; 0003 arrived 2026-09-16 with vpay#178, 0004–0008 on 2026-09-23
-with vpay#244, 0009 on 2026-10-16 and 0010 on 2026-10-17 — it said "eight"
-until then):
+with vpay#244, 0009 on 2026-10-16, and 0010 and 0011 on 2026-10-17 — it said
+"eight" until then):
 
 - `docs/rfc/0001-settlement-and-payouts.md` — **Draft**.
 - `docs/rfc/0002-gdpr-policy-and-operator-decisions.md` — **Under review**.
@@ -175,6 +175,11 @@ until then):
   design of `vpay-adapter-stripe` (rail code `stripe`, hosted Checkout as a
   `Redirect` rail) and of the two core changes any `Origin`-refunding rail
   needs. No crate, mapping or stub exists. See `vpay-provider-adapters`.
+- `docs/rfc/0011-paypal-adapter.md` — **Draft**, proposed 2026-10-17. The
+  design of `vpay-adapter-paypal` (rail code `paypal`, Orders v2 as a
+  `Redirect` rail whose `query_status` **captures** an approved order,
+  because PayPal's wallet is not auto-captured on approval). No crate,
+  mapping or stub exists. See `vpay-provider-adapters`.
 
 ## Maintainer decisions recorded in place, not as an ADR status
 
