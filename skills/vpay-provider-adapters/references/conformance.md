@@ -158,13 +158,23 @@ can assert about itself — that a rail declaring `Required` has actually
 `not a phone number`, `+0600000200`, `+1234567` and an **empty sub-map** as
 `Malformed` without any refusal naming the value it refused.
 
-`no_shipping_rail_returns_a_refund_to_the_paying_instrument` is the premise
-guard: both rails declare `RefundDestination::Required`, so every `Origin` arm
-in the suite has no live example. Its failure message lists the three things
-owed before it may be relaxed — an integration case sending `destination` to
-an `Origin` rail through `POST /v1/refunds` and asserting the `400`, a case
-that a refund **without** one succeeds there, and RFC-0003 § 1 updated.
-**Do not simply widen that assertion.**
+`every_shipping_rails_refund_destination_agrees_with_its_parser` is the rule
+the premise guard became on 2026-10-17: a rail declaring
+`RefundDestination::Required` must have overridden `parse_destination`, and a
+rail declaring `Origin` must **not** have — the port's `Unsupported` is the
+permanent, correct answer there. It admits an `Origin` rail; it does not drive
+one, because this suite parameterises over the rails that ship and none of
+them declares `Origin`. _(Until 2026-10-17 it was
+`no_shipping_rail_returns_a_refund_to_the_paying_instrument`, which asserted
+that every shipping rail declares `Required` and listed three debts as the
+price of relaxing it — an integration case sending `destination` to an
+`Origin` rail through `POST /v1/refunds` and asserting the `400`, a case that
+a refund **without** one succeeds there, and RFC-0003 § 1 amended. All three
+were paid in the change that renamed it: the two cases are
+`an_origin_rail_refuses_a_destination_through_the_route` and
+`a_refund_without_a_destination_succeeds_on_an_origin_rail_and_names_the_payment`
+in `backends/tests/integration/tests/refunds.rs`, on an `Origin` rail that
+exists only in that test binary.)_
 
 ## The account-holder family — and the digits-only rule
 
@@ -267,8 +277,9 @@ Capability-level (no rail, no container — these cover a rail added tomorrow
 without anyone touching the file): `every_adapter_declares_coherent_capabilities`,
 `adapter_codes_are_unique`, `unimplemented_operations_never_fabricate_success`,
 `a_destination_is_offered_exactly_when_the_capability_demands_one`, and
-`no_shipping_rail_returns_a_refund_to_the_paying_instrument` — the last two
-added 2026-09-15 and 2026-09-16.
+`every_shipping_rails_refund_destination_agrees_with_its_parser` — the last
+two added 2026-09-15 and 2026-09-16, the last of them as
+`no_shipping_rail_returns_a_refund_to_the_paying_instrument` until 2026-10-17.
 ~~`refund_is_refused_when_the_capability_is_absent`~~ **no longer exists under
 that name**; its subject is `a_rail_without_the_refund_capability_answers_unsupported`
 below.

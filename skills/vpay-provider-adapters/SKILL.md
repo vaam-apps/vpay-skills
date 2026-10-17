@@ -200,10 +200,31 @@ that difference as a capability, never as a rail code.
 | `Required`           | refuses a request **without** a payee                                                                                        | always `Some`          |
 | `Origin`             | refuses a request **carrying** one (accepting and dropping it would tell a merchant their nominated payee had been honoured) | always `None`          |
 
-Both rails vpay carries declare `Required` as of 2026-09-16, so the `Origin`
-arm ships with **no live example** — `no_shipping_rail_returns_a_refund_to_the_paying_instrument`
-in the conformance suite is what stops that premise changing quietly, and its
-assertion message lists the three things owed before it may be relaxed.
+Both rails vpay carries declare `Required`, so the `Origin` arm ships with
+**no shipping example**. Since 2026-10-17 (RFC-0010 § 7, delivery step 1) it
+has an integration guard instead of a census: two cases in
+`backends/tests/integration/tests/refunds.rs` drive `POST /v1/refunds` on an
+`Origin` rail that exists only in that test binary —
+`an_origin_rail_refuses_a_destination_through_the_route` (the `400`) and
+`a_refund_without_a_destination_succeeds_on_an_origin_rail_and_names_the_payment`
+(the accepting arm). The conformance case
+`every_shipping_rails_refund_destination_agrees_with_its_parser` states the
+rule — a `Required` rail overrides `parse_destination`, an `Origin` rail does
+not — and no longer asserts that no `Origin` rail ships. _(Until 2026-10-17
+that case was `no_shipping_rail_returns_a_refund_to_the_paying_instrument`,
+whose message listed those two cases and an RFC-0003 § 1 amendment as the
+price of relaxing it; all three were paid in the change that renamed it.)_
+
+**An `Origin` rail is told which payment it unwinds.** The refund
+`ChargeRef`'s `ref_extra` carries the charge's `provider_txn_id` under
+`vpay_api::v1::refunds::REFUND_PROVIDER_TXN_ID_KEY` (the string
+`provider_txn_id`), or nothing when the charge recorded none — the column is
+nullable, and a `Required` rail never needs it. A `Required` rail ignores the
+key; both shipping adapters do, and a `Required` adapter that reads it is a
+bug. An `Origin` adapter reads it and answers `ProviderError::Config` when it
+is missing — the port's settled answer for a broken invariant: never an
+invented id, never a decline. Until 2026-10-17 `ref_extra` was empty on every
+refund.
 
 **The adapter parses the wire shape, not the core.** The merchant sends
 `destination[<rail_code>][…]`; the core strips its own envelope — the outer
@@ -375,12 +396,13 @@ not treat a Draft section as a decision:
   `POST /v1/checkout/sessions` with the charge reference as the
   `Idempotency-Key`, `GET /v1/checkout/sessions/{id}?expand[]=payment_intent`
   as the authoritative read, `POST /v1/refunds` by `payment_intent`. It
-  would be the **first `RefundDestination::Origin` rail**, and that needs
-  two core changes the RFC names: `refund_at_rail` must put the charge's
-  `provider_txn_id` into the refund `ChargeRef`'s `ref_extra` (empty today),
-  and `no_shipping_rail_returns_a_refund_to_the_paying_instrument` in the
-  conformance suite is relaxed only by paying the three debts its message
-  lists. Its callback URL is registered with Stripe, never sent per request,
+  would be the **first `RefundDestination::Origin` rail**. The two core
+  changes the RFC names **landed on 2026-10-17 as its delivery step 1**:
+  `refund_at_rail` puts the charge's `provider_txn_id` into the refund
+  `ChargeRef`'s `ref_extra` under `REFUND_PROVIDER_TXN_ID_KEY`, and the
+  conformance premise guard was relaxed with its three debts paid — the
+  refund-destination section above has both. Steps 2–7 are unbuilt. Its
+  callback URL is registered with Stripe, never sent per request,
   so `the_submit_tells_the_rail_where_to_call_back` cannot hold on it as
   written. **No crate, no mapping, no stub exists**, and nothing has called
   Stripe from this repository.

@@ -146,6 +146,22 @@ it on the adapter's own declaration rather than on a table in the test. A rail
 that returns money to the instrument that paid declares `Origin` and writes
 nothing; the default `Unsupported` is the permanent, correct answer there.
 
+An `Origin` rail writes no `parse_destination`, but its `refund` must know
+which payment it is unwinding, and since 2026-10-17 (RFC-0010 § 7, delivery
+step 1) the core hands it that: the refund `ChargeRef`'s `ref_extra` carries
+the charge's recorded `provider_txn_id` under
+`vpay_api::v1::refunds::REFUND_PROVIDER_TXN_ID_KEY` (the string
+`provider_txn_id`), or nothing when the charge recorded none. Read it there.
+When it is missing, answer `ProviderError::Config` — a settled charge whose
+rail id was never recorded is a case for a human, never an invented id and
+never a `Rejected` — and never read it on a `Required` rail, where it is
+ignored by design. The two integration cases that drive this arm,
+`an_origin_rail_refuses_a_destination_through_the_route` and
+`a_refund_without_a_destination_succeeds_on_an_origin_rail_and_names_the_payment`
+in `backends/tests/integration/tests/refunds.rs`, run on an `Origin` rail that
+exists only in that test binary; your rail joins the conformance suite by its
+own rows, not by editing that double.
+
 The merchant sends `destination[<rail_code>][…]`. The core strips its own
 envelope — the outer key is a `code()`, core knowledge by definition, and
 spelled the same way as the confirm path's `payment_method_data[<code>]` — so
