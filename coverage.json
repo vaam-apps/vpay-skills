@@ -295,7 +295,12 @@
         "docs/flows/dashboard/status-styling-and-demo.md",
         "docs/flows/dashboard-auth/rate-limiting.md",
         "docs/flows/dashboard-auth/scope-and-tokens.md",
-        "docs/flows/dashboard-auth/sessions-and-refusals.md"
+        "docs/flows/dashboard-auth/sessions-and-refusals.md",
+        "docs/adr/0030-staff-sign-in-federates-to-an-oidc-provider.md",
+        "docs/flows/dashboard-auth/sso.md",
+        "backends/crates/vpay-api/src/staff/sso",
+        "backends/tests/integration/tests/staff_sso.rs",
+        "backends/tests/integration/tests/staff_sso_keycloak.rs"
       ]
     },
     "vpay-sdks": {

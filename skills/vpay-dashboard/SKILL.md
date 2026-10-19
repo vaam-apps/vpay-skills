@@ -15,7 +15,7 @@ description: The staff operator console at frontends/apps/dashboard — it is th
 its passages are stale at `f68fda09` (listed under "Known-stale prose" in
 `references/read-seam-and-bff.md`). The flow docs are
 `docs/flows/dashboard.md` plus the four pages under `docs/flows/dashboard/`
-and `docs/flows/dashboard-auth.md`. Decisions: ADR-0008, ADR-0017.
+and `docs/flows/dashboard-auth.md` (plus `dashboard-auth/sso.md` on a vpay that has merged ADR-0030). Decisions: ADR-0008, ADR-0017, and ADR-0030 for single sign-on.
 
 Load `vpay-frontend` first for the workspace, the styling stack and
 `verify-ui`.
@@ -100,7 +100,7 @@ read cookies.
 | Route                                                 | What it does                                                                                                                          |
 | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
 | `/`                                                   | Redirects to `/payments` or `/login`                                                                                                  |
-| `/login`, `/login/totp`, `/login/password`            | Password → TOTP (a first sign-in also renders the enrolment QR and secret) → the forced password change                               |
+| `/login`, `/login/totp`, `/login/password`            | Password → TOTP (a first sign-in also renders the enrolment QR and secret) → the forced password change. **With ADR-0030 merged**, `/login` also offers a "Sign in with Keycloak" button when `GET /dash/v1/staff/sso` says `enabled`; see [references/sso.md](references/sso.md) |
 | `/payments`, `/payments/{id}`                         | REST-backed. Status and date filters, cursor paging; the detail page adds charge, refunds, last error, timeline                       |
 | `/refunds`, `/deliveries`, `/customers`, `/checkouts` | Procedure-backed lists. Offset paged, no filters, no detail route yet                                                                 |
 | `/signed-out`, `/healthz`                             | Route handlers, not pages: clear a dead session cookie (since 2026-09-07); "Next is answering" (since 2026-09-16, ADR-0022, vpay#183) |
@@ -279,6 +279,7 @@ route table above, and this is what that costs them.)
 | `docs/flows/dashboard-auth/rate-limiting.md`         | `references/staff-auth.md`                                                                    |
 | `docs/flows/dashboard-auth/sessions-and-refusals.md` | `references/staff-auth.md`; the forced password change is above                               |
 | `docs/flows/dashboard-auth/scope-and-tokens.md`      | `references/staff-auth.md`, and the re-mint in `references/read-seam-and-bff.md`              |
+| `docs/flows/dashboard-auth/sso.md`                   | `references/sso.md` (only on a vpay that has merged ADR-0030)                                 |
 
 ## More
 
@@ -287,6 +288,12 @@ route table above, and this is what that costs them.)
   stage route, scope and token lifetimes, and where the JWKS is (not on
   `/dash/v1`). **Read this before touching `vpay_api::staff` or a `401`
   handler.**
+- `references/sso.md` — single sign-on through an OpenID Connect provider
+  (ADR-0030, **only on a vpay that has merged it**): the pending-flow table and
+  why it is not a session, the order of the callback's checks, the one
+  `prompt=login` retry, what Keycloak really issues and the two realm settings
+  that make `amr` exist. **Read this before touching `vpay_api::staff::sso` or
+  the dashboard's `/api/auth/sso/*` routes.**
 - `references/read-seam-and-bff.md` — the two transports and the five mounted
   procedures, `PROCEDURE_OF`, the token lifecycle, the BFF's properties and its
   method policy. **Read this before adding a procedure or a read.**
