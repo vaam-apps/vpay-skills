@@ -82,7 +82,8 @@ script, so `pnpm -r test` skips it.
 
 **The census `verify-ignored` enforces** (variables in `justfile`, read with
 `just --evaluate`): `expected_suites` = 48 test binaries (51 on `master` at
-`b8be107`; 52 with the Notch Pay adapter, 2026-10-20), `expected_ignored` =
+`b8be107`; 52 with the Notch Pay adapter, 2026-10-20; 53 at `d14cbe9`, where
+the Notch Pay sandbox probe's unit tests became one), `expected_ignored` =
 0, `min_tests` = 1080 (a floor, deliberately set under the measured count —
 1772 as of the last measurement — so it is not a number people bump
 reflexively). On failure the recipe prints the binary listing, which is how "a

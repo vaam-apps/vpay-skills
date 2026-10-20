@@ -12,6 +12,26 @@ publishes no release tags and its workspace version has never moved off
 `v0.5.0` as of 2026-09-23 — and its workspace version is `0.5.0`. The naming
 rule stands, for the reasons VERSIONING.md now gives.)_
 
+## 2026-10-20 — the sandbox probe's `--ca-bundle`, and who may run step 1
+
+Read against vaam-apps/vpay's `master` at `d14cbe9`, the merge of
+vaam-apps/vpay#302.
+
+- `vpay-notchpay`: the probe, and only the probe, takes a cloud-only
+  `--ca-bundle <path>`, so that step 1 can run from a Claude Code cloud
+  session. Step 5 cannot, because vpay itself has no such flag and must never
+  gain one (ADR-0003). An agent may run step 1 only after the maintainer has
+  approved the calls in that session's own chat. Nothing has called Notch Pay
+  yet.
+- `vpay-tooling`: `expected_suites` is 53 on `master`, where the probe's unit
+  tests became a test binary.
+
+**Stopped being true.** "Do not run the probe yourself" was unconditional. It
+now holds only without the maintainer's approval in the session's own chat.
+"The probe is an example, not a test" is false: since #302 its
+`[[example]]` says `test = true`. "Do not add a CA or a proxy to vpay" now
+reads "to vpay's shipping code", because the probe has one.
+
 ## 2026-10-20 — a runbook for Notch Pay's sandbox, run by a person
 
 Read against vaam-apps/vpay's `claude/notchpay-sandbox-runbook` branch.
