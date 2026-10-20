@@ -2,8 +2,11 @@
 
 _Verified against vpay `87166eaf` (2026-10-09) for the ADR-0026 and ADR-0028
 rows, the notes on them, "Not accepted" and the numbering section; the rest of
-this page was last read at `a33aac61` (2026-09-29). Version-sensitive claims
-carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
+this page was last read at `a33aac61` (2026-09-29). **The RFC list below was
+extended on 2026-10-20 for RFC-0012 and RFC-0013, read on vpay's
+`claude/happy-hopper-r3h6rz` branch, which is not on `master`; no stamp moved
+for it.** Version-sensitive claims carry the date they became true — see
+[VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 `docs/adr/`. An ADR is **immutable once accepted**: to change a decision you
 write a new ADR that supersedes it. You never edit one.
@@ -122,6 +125,10 @@ the decision."
   it. **D12–D17 are proposed**: read the Status line on `master` before
   describing `card`/`collapse`/`routing.requires` as the maintainer's
   decision. RFC-0004 §§ 1–4 and 8–13, RFC-0006 and RFC-0007 stay Draft.
+  _(Added 2026-10-20.)_ D1's third rule says _secret_-authenticated rather than
+  _authenticated_ because of Notch Pay, whose status read takes a public key;
+  RFC-0012 is gated by it, and is waiting on Notch Pay's written answer (the
+  maintainer's decision of 2026-10-20) rather than on an ADR amending the rule.
 
 ## Not accepted — read the status line before you build on it
 
@@ -164,10 +171,11 @@ itself has been exercised.
 
 ## RFCs — proposals, not decisions
 
-As of 2026-10-17 there are **eleven** (this list named only 0001 and 0002
+As of 2026-10-20 there are **thirteen** (this list named only 0001 and 0002
 until 2026-09-23; 0003 arrived 2026-09-16 with vpay#178, 0004–0008 on 2026-09-23
-with vpay#244, 0009 on 2026-10-16, and 0010 and 0011 on 2026-10-17 — it said
-"eight" until then):
+with vpay#244, 0009 on 2026-10-16, 0010 and 0011 on 2026-10-17, and 0012 and
+0013 on 2026-10-20 — it said "eleven" from 2026-10-17 until 2026-10-20, and
+"eight" before that):
 
 - `docs/rfc/0001-settlement-and-payouts.md` — **Draft**.
 - `docs/rfc/0002-gdpr-policy-and-operator-decisions.md` — **Under review**.
@@ -199,6 +207,28 @@ with vpay#244, 0009 on 2026-10-16, and 0010 and 0011 on 2026-10-17 — it said
   `Redirect` rail whose `query_status` **captures** an approved order,
   because PayPal's wallet is not auto-captured on approval). No crate,
   mapping or stub exists. See `vpay-provider-adapters`.
+- `docs/rfc/0012-notchpay-adapter.md` — **Draft**, proposed 2026-10-20, and
+  **not buildable as written**. Notch Pay (a Cameroon mobile-money aggregator)
+  fails ADR-0029 D1's third hard rule on its own documentation: its payment
+  status read accepts the key Notch Pay calls public, and that rule says
+  _secret_-authenticated, worded for exactly this provider. The maintainer
+  decided on 2026-10-20 to ask Notch Pay in writing (the RFC's way A) and to
+  leave the rule as written; the adapter is not written until Notch Pay
+  answers, and no answer is in the repository as of 2026-10-20. The design is
+  `vpay-adapter-notchpay`, rail code `notchpay`, a `Push` rail. **What exists
+  is only the client crate**, `backends/crates/vpay-notchpay` (2026-10-20, 34
+  unit tests), which no adapter uses and no binary links. See
+  `vpay-provider-adapters`.
+- `docs/rfc/0013-vpay-registers-its-own-callbacks.md` — **Draft**, proposed
+  2026-10-20; **nothing in it is built**. On a rail that registers its callback
+  URL with the provider account (Stripe, PayPal, Notch Pay) vpay would register
+  its own endpoint, in a worker job and never on the boot path; MTN and Orange
+  take the URL per request and would be asked nothing. It proposes
+  `Capabilities::callback_url_mode` and `ProviderAdapter::ensure_callback_endpoint`,
+  **neither of which exists**. Its § 11 lists findings about vpay's own
+  documentation (for one, the claim that MTN retries a callback, which MTN's
+  documentation contradicts); vpay has not yet corrected them — see
+  `vpay-troubleshooting`'s known-wrong-docs page. See `vpay-provider-adapters`.
 
 ## Maintainer decisions recorded in place, not as an ADR status
 

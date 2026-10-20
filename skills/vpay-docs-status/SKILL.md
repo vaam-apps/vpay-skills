@@ -47,6 +47,7 @@ Everything else is an archive page under `docs/status/`.
 | Your change                                 | The page                                                                                       |
 | ------------------------------------------- | ---------------------------------------------------------------------------------------------- |
 | A capability, a route, an adapter behaviour | `docs/status/backend.md`                                                                       |
+| A provider's cell, or a new provider        | `docs/status/providers.md` (since 2026-10-20); a gap is `Unsupported` or a token               |
 | A browser or dashboard change               | `docs/status/frontend.md`                                                                      |
 | An image, chart, compose file, migration    | `docs/status/infrastructure.md`                                                                |
 | A schema or CrateStack change               | `docs/status/cratestack.md` (+ a dated page in `status/cratestack/` if you measured something) |

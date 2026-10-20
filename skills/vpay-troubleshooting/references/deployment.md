@@ -105,7 +105,12 @@ third arm refuses a `path` that is neither `/provider` nor `/` — "the literal
 belongs to `vpay-api`, and this chart does not get to rename it."
 
 Legitimate reason to turn it off: MTN allows an IP-allowlisted callback host of
-its own, reached through `providers[].callback_url`.
+its own, reached through `providers[].callback_url`. **Qualified 2026-10-20
+(RFC-0013 § 11, item 5):** no MTN page that RFC's research read says MTN
+requires or allows an IP-allowlisted host for callbacks; the claim rests on a
+comment in `vpay-config/src/config.rs`. MTN documents that the callback host
+must be on the domain registered with the API user, which in production is a
+step on MTN's portal. Treat the allowlist reason as unverified.
 
 ## `helm lint` refuses `images.worker`
 

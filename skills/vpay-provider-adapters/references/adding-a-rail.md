@@ -80,6 +80,16 @@ Mirror the two existing crates' module split — it is not cosmetic:
 | `mapping.rs` | the rail's error vocabulary → `vpay_core::FailureCode` | a table a reviewer can diff against the rail's documentation                                                                                         |
 | `token.rs`   | the rail's half of the token cache                     | the endpoint, grant, body shape and refresh margin are the rail's alone                                                                              |
 
+**One planned exception to this table, designed only (2026-10-20).** RFC-0012
+puts Notch Pay's wire in its own crate, `backends/crates/vpay-notchpay`, so
+that `vpay-adapter-notchpay` would hold `lib.rs` and `mapping.rs` and **no
+`wire.rs`** — and no `token.rs`, since Notch Pay authenticates with static
+keys. The client crate is built and linked by nothing; the adapter crate does
+not exist and is waiting on Notch Pay's written answer about ADR-0029 D1's
+third rule. If you are the one writing it, build on the client: see
+`vpay-provider-adapters` § "Proposed port changes that do not exist". The two
+shipping adapters follow the table above as it stands.
+
 Required in `Cargo.toml`: add the crate to the workspace `members` list in
 the root `Cargo.toml` and to `[workspace.dependencies]`.
 

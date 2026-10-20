@@ -184,7 +184,10 @@
         "backends/crates/vpay-provider",
         "backends/tests/conformance",
         "backends/crates/vpay-api/src/v1/boot.rs",
-        "backends/apps/vpay-server/src/lib.rs"
+        "backends/apps/vpay-server/src/lib.rs",
+        "docs/status/providers.md",
+        "docs/reference/vpay-notchpay.md",
+        "backends/crates/vpay-notchpay"
       ]
     },
     "vpay-mtn-momo": {

@@ -94,6 +94,29 @@ models" header, the route probe's nineteen-table list, `errors.md`'s two-leaf
 wrong in vpay" claim in a skill as a claim about the commit it is stamped
 with.**
 
+**Added 2026-10-20: five findings in RFC-0013 § 11, recorded in vpay and not yet
+fixed there** (read on vpay's unmerged `claude/happy-hopper-r3h6rz` branch; the
+RFC's delivery step 0 fixes them as dated corrections, so on a later `master`
+check whether it has). Three are sentences in vpay that are wrong or
+unsupported:
+
+- **"MTN and Orange both retry a non-2xx"** — in `provider_callback.rs`'s
+  module docs, `docs/flows/reconciler.md` and
+  `docs/reference/vpay-api/provider-callback.md`. MTN's documentation says
+  there is no retry; nothing read says either way for Orange. The oracle
+  argument for answering `202` to an unknown reference is unaffected.
+- **"MTN requires an IP-allowlisted callback host"** — a comment in
+  `vpay-config/src/config.rs`. No MTN page the RFC read says so.
+- **`reconciler.md` calls `scan:live` "hourly"**; the handler reschedules it
+  every ten minutes (`SCAN_INTERVAL`, `vpay-worker/src/handlers.rs`).
+
+Two more are risks, not errors: MTN's pages say its callback may be a `PUT`
+and vpay mounts `POST` only, and Orange's real notification may carry no
+`order_id`, which `parse_callback` requires (both unobserved, since no real
+callback has reached vpay). Where these skills repeated the first two, they
+carry a dated correction (`vpay-merchant-api`'s routes page, the `/provider`
+notes in `vpay-ops` and `vpay-troubleshooting`).
+
 Repository-wide, `grep -c "and was wrong\|Corrected 2026\|~~"` over `docs/`
 gives double digits on `docs/status/backend.md`, `docs/status/merchant-sdks.md`,
 `docs/status/cratestack.md`, `docs/status/frontend.md`,

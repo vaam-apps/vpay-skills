@@ -239,8 +239,19 @@ do.
 | reference names no charge here             | `202`                                               |
 | reference names a charge                   | `202`                                               |
 
-The last two are identical on purpose: a non-2xx makes the rail retry forever,
-and a distinct answer would be an oracle for "does this charge exist".
+The last two are identical on purpose: ~~a non-2xx makes the rail retry forever,
+and~~ a distinct answer would be an oracle for "does this charge exist".
+**Corrected 2026-10-20 (RFC-0013 § 11, item 1):** this page said a non-2xx makes
+the rail retry forever, which is what vpay's own module docs for
+`provider_callback.rs` ("MTN and Orange both do"), `docs/flows/reconciler.md`
+and `docs/reference/vpay-api/provider-callback.md` also say. MTN's
+documentation says the opposite, twice: "There is no retry mechanism if the
+partner system does not respond". No source read says either way for Orange.
+So the retry half is **unestablished for both shipping rails**; RFC-0013
+reads it as becoming true of the three rails that register their endpoint
+(Stripe, PayPal, Notch Pay), none of which has an adapter. The oracle argument
+stands on its own. Those three vpay texts were still uncorrected on the
+unmerged branch this was read on; RFC-0013's delivery step 0 corrects them.
 
 **There is no rate limit**, and the module says so plainly: a caller who knows
 a live `provider_reference_id` can hold one charge at roughly one rail request
