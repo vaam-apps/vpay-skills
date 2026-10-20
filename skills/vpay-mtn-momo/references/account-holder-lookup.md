@@ -149,19 +149,36 @@ some cultures have none. `{"given_name":"David"}` is `Some("David")`;
 one space, then trimmed); `{}` is `None` at the wire-type level, which the
 caller turns into `Malformed`.
 
-## The escaping, and the mutation that made it a function
+## The escaping, the refusal, and the mutation that made it a function
 
 ```rust
-fn account_holder_url(base: &str, msisdn: &str) -> String {
-    format!("{base}/collection/v1_0/accountholder/{ACCOUNT_HOLDER_ID_TYPE}/{}/basicuserinfo",
-        vpay_provider::http::path_segment(msisdn))
+fn account_holder_url(base: &str, msisdn: &str) -> Result<String, ProviderError> {
+    Ok(format!(
+        "{base}/collection/v1_0/accountholder/{ACCOUNT_HOLDER_ID_TYPE}/{}/basicuserinfo",
+        vpay_provider::http::path_segment(msisdn)?,
+    ))
 }
 ```
+
+**Corrected 2026-10-20:** this page quoted `account_holder_url(..) -> String`
+until that date. `path_segment` returns `Result<String, ProviderError>` since
+then, so this function does too, and `account_holder_name` calls
+`account_holder_url(..)?` **before** `send_authorized` — a refused reference
+costs no token request either.
 
 The `path_segment` call is the only thing standing between a caller and an
 arbitrary endpoint on MTN's API **under this deployment's own subscription
 key and bearer token**: an unescaped `/` moves the request, a `?` or `#`
-truncates the path.
+truncates the path. Escaping cannot stop the third way, a dot segment:
+`..` resolves to `/collection/v1_0/accountholder/basicuserinfo` and the empty
+reference to `…/msisdn//basicuserinfo`, and `%2E%2E` is read as `..` too, so
+`path_segment` **refuses** an empty or all-dots reference (`""`, `.`, `..`,
+`...`) as `ProviderError::Malformed` instead of encoding it. Unreachable
+through `/v1`, which admits digits only; reachable by any caller of the port.
+That `Malformed` is for a request that never left the process, the same
+compromise as `parse_destination`'s (see the `vpay-provider-adapters` skill).
+The argument is in `docs/reference/rails.md`, § "A path segment the caller
+chose"; do not copy the check into this adapter.
 
 It was inlined until 2026-09-06, and **a mutation that deleted the call left
 113 tests green**. The test that was supposed to hold it exercised
@@ -169,7 +186,12 @@ It was inlined until 2026-09-06, and **a mutation that deleted the call left
 it, and every stubbed MSISDN is digits-only, where escaping is a no-op.
 Extracting a pure function is what lets
 `the_lookup_url_escapes_the_payer_reference_it_interpolates` assert on the
-string the adapter would actually put on the wire.
+string the adapter would actually put on the wire — and, since 2026-10-20,
+that `""`, `.`, `..` and `...` are refused there.
+`a_dot_segment_reference_is_refused_before_any_request` asserts the same at
+the **method**: `config()` points at a port nothing listens on, so a request
+that left the process, the token fetch included, would come back `Transport`
+instead of `Malformed`. Both are needed; the first cannot see the call order.
 
 `ACCOUNT_HOLDER_ID_TYPE` is interpolated verbatim and **not** escaped: it is
 a constant in the file, not caller data.

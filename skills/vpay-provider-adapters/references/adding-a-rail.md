@@ -87,6 +87,17 @@ The pure-function split matters because it is what the crate's own unit tests
 assert row by row, and the conformance suite then proves the same rows arrive
 over a real socket.
 
+**A URL that interpolates a value the caller chose is one of those pure
+functions too** (added 2026-10-20). Build it in a function that returns
+`Result<String, ProviderError>`, route the value through
+`vpay_provider::http::path_segment(x)?`, and call that function **before**
+`send_authorized` or any request, so a refused value costs no token fetch.
+`vpay-adapter-mtn-momo`'s `account_holder_url` is the only one so far (as of
+2026-10-20). `path_segment` refuses an empty or all-dots value as `Malformed`;
+do not write your own copy of that check, and assert the dot inputs on _your_
+URL function and on the method, not on the helper alone. The reasoning and the
+tests are in [SKILL.md](../SKILL.md), "What the port owns".
+
 ## 3b. `payer_fields` — what the payer types, declared once
 
 Added 2026-09-16 (vpay#186). This page did not have the step until

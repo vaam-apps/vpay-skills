@@ -288,8 +288,41 @@ that call today gets `ProviderError::Config` naming the credential it lacks.
   named) and proxy environment variables are ignored. `read_rail_body`
   bounds every response at `MAX_RAIL_BODY_BYTES` (256 KiB);
   `Response::text()`/`bytes()` read to end of stream and let the peer decide
-  how much memory a worker allocates. `path_segment()` percent-encodes
-  anything interpolated into a URL path.
+  how much memory a worker allocates.
+- **`vpay_provider::http::path_segment(x)?`** — the one way a value you did
+  not write (a payer's number, a caller's reference; not a typed `Uuid` or a
+  constant of yours) gets into a URL path, because the request carries
+  **your deployment's credentials**. It percent-encodes everything outside
+  RFC 3986's unreserved set. It was `fn(&str) -> String` until 2026-10-20 and
+  now returns `Result<String, ProviderError>`: an **empty input, or one made
+  only of dots** (`""`, `.`, `..`, `...`), is refused as
+  `ProviderError::Malformed` before anything is sent, with a fixed message
+  that never quotes the input. Escaping cannot cover those inputs: `.` and
+  `..` are unreserved, and URL parsers read `%2E%2E` as `..` too, so
+  `…/payments/..` is the API root and `…/payments/` the collection. `...` is
+  not a dot segment to either URL standard and is refused **as a decision** —
+  nothing an adapter interpolates is legitimately all dots. The argument is
+  in `docs/reference/rails.md`, § "A path segment the caller chose". What that
+  asks of an adapter:
+  - **Call it and propagate with `?`.** Do not map the refusal to `Ok(None)`
+    or a decline. It is `Malformed` for a request that never left the
+    process — the same compromise as `parse_destination`'s (§ 4b of
+    [adding-a-rail.md](references/adding-a-rail.md)).
+  - **Build the URL before the request, the token fetch included**, so a
+    refused value costs the rail nothing. MTN's `account_holder_name` calls
+    `account_holder_url(..)?` before `send_authorized`.
+  - **Write no copy of the guard.** There is no unchecked variant to reach
+    for, and a private "reject `..`" check beside it is the second copy that
+    disagrees with the port's.
+  - **Test the adapter's _use_ of it, not the helper.** Put the URL in a pure
+    function and assert the dot inputs are refused there; then assert at the
+    method that they come back `Malformed` against a config pointing at a
+    port nothing listens on, where a request that did leave the process would
+    come back `Transport`. MTN's pair is
+    `the_lookup_url_escapes_the_payer_reference_it_interpolates` and
+    `a_dot_segment_reference_is_refused_before_any_request`; a test of the
+    helper alone stayed green when the adapter's call was deleted (the
+    `vpay-mtn-momo` skill's account-holder-lookup page).
 - **`vpay_provider::token`** — `fingerprint(&[&str])` (length-prefixed
   SHA-256; hash the **secret** halves too, so rotating only a secret evicts
   the cache on the next call), `usable_until()`, `CachedToken` with a
