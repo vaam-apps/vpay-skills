@@ -12,6 +12,24 @@ and the process is `docs/flows/dashboard-auth/sso.md`. `SKILL.md` has the
 password and TOTP steps; this page is what an agent touching
 `vpay_api::staff::sso` must not rediscover.
 
+## Off unless configured: an installation that sets nothing is unchanged
+
+- **No `staff_auth.sso` block means no SSO**, and staff sign-in is exactly the
+  password + TOTP flow of ADR-0017. `GET /dash/v1/staff/sso` answers
+  `200 {"enabled": false}`, the dashboard renders no "Sign in with Keycloak"
+  button, and `POST /dash/v1/staff/sso/start` and `/staff/sso/callback` are the
+  honest `404`. Pinned by `an_unconfigured_deployment_offers_no_sso`
+  (`backends/tests/integration/tests/staff_sso.rs`) and
+  `no_sso_block_means_no_sso` (`backends/crates/vpay-config/src/config.rs`).
+- **A block that is present but incomplete or unsafe refuses to boot**, so a
+  half-configured installation fails loudly instead of running without the
+  rules: `an_sso_block_with_no_second_factor_rule_is_refused_and_either_list_alone_is_enough`,
+  `sso_needs_a_dashboard_client_and_the_staff_secrets`,
+  `every_sso_shape_rule_refuses_its_own_value` and
+  `a_livemode_sso_block_needs_https_and_no_stub_host`.
+- **Password + TOTP stays mounted when SSO is configured**, as the break-glass
+  path: `configuring_sso_leaves_password_sign_in_mounted`.
+
 ## The shape, in six sentences
 
 vpay stays the OpenID Provider for `/dash/v1`; **only the human step
