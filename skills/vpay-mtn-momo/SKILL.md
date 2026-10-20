@@ -28,6 +28,13 @@ payer, and MTN's sandbox rejects XAF — EUR is load-bearing in
 same day. See `docs/status/verification/2026-09-15.md` and
 `docs/runbooks/live-sandbox-test.md`.
 
+**Aggregate clarified 2026-10-20 from the firsthand confirmation of Valantine Suh (@Valsuh45),
+who ran the tests:** the testing recorded on 2026-09-15 included **over seven
+successful payments against MTN's real sandbox**. The session described above
+had three attempts, two token-mint failures followed by one settlement; it is
+one documented session, not the total of the testing. "The one rail" means MTN
+was the only provider called for real, not that only one payment succeeded.
+
 ## Two products, two subscription keys, two token scopes
 
 `token.rs`'s `Product` is the value that makes this a type rather than a

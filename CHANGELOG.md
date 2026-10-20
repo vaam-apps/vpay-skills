@@ -12,6 +12,99 @@ publishes no release tags and its workspace version has never moved off
 `v0.5.0` as of 2026-09-23 — and its workspace version is `0.5.0`. The naming
 rule stands, for the reasons VERSIONING.md now gives.)_
 
+## 2026-10-20 — a runbook for Notch Pay's sandbox, run by a person
+
+Read against vaam-apps/vpay's `claude/notchpay-sandbox-runbook` branch.
+
+- `vpay-notchpay` names the runbook, the `sandbox_probe` example and the
+  `notchpay-sandbox` profile, and says the run is a person's, with real
+  egress, and not an agent's. Nothing has called Notch Pay yet.
+- Not added to `coverage.json` yet: the three paths exist only on that
+  branch, and the gate reads vpay's `master`. Claim them once it merges.
+  _(Done the same day, once vaam-apps/vpay#299 merged as `c5b0a80`:
+  `vpay-notchpay` claims the runbook, the profile and the probe
+  (`backends/crates/vpay-notchpay/examples/sandbox_probe.rs`).)_
+
+## 2026-10-20 — Notch Pay's real test keys carry `test.`
+
+Read against vaam-apps/vpay's `claude/notchpay-sandbox-key-shape` branch, cut
+from `357c825`. The first Notch Pay sandbox session made no request, but it
+measured the maintainer's test-mode keys. They carry `test` followed by `.`
+and not the documented `test_`. The boot rule now reads either.
+
+- **Claims that stopped being true:** "a sandbox key must contain `test_`"
+  and "a real Notch Pay test key carries `test_`" (`vpay-notchpay`,
+  `vpay-troubleshooting`, `vpay-ops`, `vpay-provider-adapters`). The rule
+  is `test.` or `test_`.
+- **Still true, and restated:** nothing has called Notch Pay. Steps 1 and 5
+  are not done, and `providers.md`'s cells still say "stub-only; never
+  called".
+- `vpay-notchpay` now says why that session could not run: a permission
+  policy, and an egress that re-terminates TLS, which vpay's vendored roots
+  correctly refuse.
+
+## 2026-10-20 — who ran the 2026-09-15 MTN sandbox tests
+
+Read against vaam-apps/vpay#297. No stamp moves.
+
+**A claim that stopped being true.** Seven passages credited "the
+tester/maintainer" with the 2026-09-15 MTN Collections sandbox tests and
+with confirming the over-seven count. Asked on 2026-10-20, the maintainer
+answered: "It was Valsuh", that is Valantine Suh (@Valsuh45). Each passage
+now names them, in `vpay`, `vpay-payments`, `vpay-mtn-momo`, `vpay-ops`,
+`vpay-troubleshooting` (`demo-compose`) and `vpay-sdks` (`tauri-plugin`,
+`flutter-plugin`). The counts and the evidence are unchanged. The older
+entries below keep their wording, as they were written.
+
+## 2026-10-20 — the Notch Pay adapter, admitted under ADR-0031
+
+Read against vaam-apps/vpay#295 at `bf96e50`, merged to `master` as `357c825`
+the same day. `vpay-notchpay` is stamped `357c825`; every other skill's stamp
+stays where it was, because moving one means re-verifying the whole page
+(VERSIONING.md).
+
+- **New skill: `vpay-notchpay`.** The third rail. A push rail through an
+  aggregator, admitted under ADR-0031 because its status read takes a key
+  Notch Pay calls public. **It has never called Notch Pay.** It covers
+  `docs/flows/adapter-notchpay.md`, the threat model, the adapter crate and
+  its stub.
+- **Claims that stopped being true** on that branch: RFC-0012 is "gated, not
+  buildable" (`vpay-provider-adapters`, `vpay-conventions`); the port has
+  "nine methods" (ten: `accepted_exposure`); `verify-status` reports "exactly
+  one" token (two: `notchpay::refund`); "neither rail is `Origin`"
+  (`vpay-sdks`, `vpay-merchant-api`); `vpay-notchpay` is "linked by nothing";
+  `expected_suites` (52); the version-reference count (26);
+  `REQUIRED_RAIL_KEYS` checks presence only (it gained three columns:
+  `vpay-ops`, `vpay-troubleshooting`); `callback_url_pattern` returns a
+  `String` (an `Option` now: `references/conformance.md`).
+- **Livemode acknowledgement** (`bf96e50`, same day): the maintainer answered
+  the question the adapter PR asked, "Livemode acknowledgement: YES, require
+  it." `vpay-notchpay` said boot "does **not** refuse" and "do not build one
+  unasked"; in livemode boot now refuses `notchpay` without
+  `settings.accept_public_key_exposure: true`
+  (`PublicKeyExposureNotAcknowledged`), still warning when it is set.
+  `REQUIRED_RAIL_KEYS` gained a fourth column, not three (`vpay-ops`,
+  `vpay-troubleshooting`, `vpay-provider-adapters`' `adding-a-rail.md`).
+
+## 2026-10-20 — MTN sandbox testing evidence correction
+
+~~Exactly one payment had settled against a real rail.~~ **Corrected
+2026-10-20 from the tester/maintainer's firsthand confirmation:** the testing
+recorded on 2026-09-15 included **over seven successful payments against MTN's
+real sandbox**. The three attempts in the original documented session were two
+token-mint failures followed by one successful settlement; that session was not
+the total of the testing.
+
+The orientation, payments, MTN, operations and troubleshooting briefings now
+distinguish the aggregate from that session. The Flutter and Tauri briefings
+still describe WireMock-only testing in their own lanes, without extending that
+claim to all vpay testing. No production rail or real payer is claimed, and the
+Orange, Disbursements/refund and account-holder lookup limitations are unchanged.
+
+This corrects the testing record, not the verified code baseline. Skill stamps
+and `coverage.json`'s baseline are unchanged; no full re-verification or release
+is claimed.
+
 ## v2026-10-09-69d822ab
 
 Verified against vpay `69d822ab` (2026-10-09), the squash of vaam-apps/vpay#273,
@@ -154,8 +247,10 @@ and `vpay-merchant-api`, `merchant_token_flow.rs` under `vpay-merchant-api`, and
 
 ### What did NOT change, and is the point
 
-- **The banner.** Exactly one real rail call has ever been made (MTN's sandbox,
-  2026-09-15), no rail has returned money, no cluster has run vpay. Nothing in the
+- **The banner.** ~~Exactly one real rail call has ever been made (MTN's sandbox,
+  2026-09-15).~~ **Count corrected 2026-10-20:** over seven payments succeeded
+  against MTN's real sandbox; see the firsthand correction above. No rail has
+  returned money, no cluster has run vpay. Nothing in the
   two pull requests moved it, and nothing here claims a cluster ran the wrapper
   chart: it proves the `file://` dependency only, and the published OCI chart has
   never been consumed as a dependency from a registry.
@@ -334,8 +429,10 @@ re-checked against `docs/status.md` and a grep for `NotImplemented`).
 
 ### What did NOT change, and is the point
 
-- **The banner.** Exactly one real rail call has ever been made (MTN's sandbox,
-  2026-09-15). Orange has never been called, no webhook has reached a merchant
+- **The banner.** ~~Exactly one real rail call has ever been made (MTN's sandbox,
+  2026-09-15).~~ **Count corrected 2026-10-20:** over seven payments succeeded
+  against MTN's real sandbox; see the firsthand correction above. Orange has
+  never been called, no webhook has reached a merchant
   outside the repository, no cluster has run vpay, and no rail has returned money.
   `orange_money::refund` is still the workspace's only declared `NotImplemented`
   token (re-grepped, not just re-read).
@@ -554,8 +651,11 @@ Nothing yet — this is the first release. Future entries go here, in the shape:
 Called out because they are the claims most likely to age, and an agent on a
 different tree needs to know which ones to re-check first:
 
-- **One real rail call has ever been made** — a EUR `mtn_momo` intent settled
-  against MTN's sandbox on 2026-09-15. Orange has never been called. Before
+- ~~**One real rail call has ever been made.**~~ **Corrected 2026-10-20:**
+  the tester/maintainer confirms firsthand **over seven successful payments
+  against MTN's real sandbox** in the testing recorded on 2026-09-15. The
+  original documented session had three attempts, two token-mint failures and
+  one settlement; it was not the overall total. Orange has never been called. Before
   `f063ee96`, no real rail call had been made at all, and
   `docs/runbooks/live-sandbox-test.md` and `config/application-live.yml` did not
   exist.

@@ -183,6 +183,23 @@ present-but-empty value counts as missing.** MTN:
 `credentials.merchant_key`, `credentials.client_id`,
 `credentials.client_secret`.
 
+**Notch Pay, since 2026-10-20** (vaam-apps/vpay#295, on
+`master` since `357c825`): `settings.channel`, `credentials.public_key`,
+`credentials.private_key`. The row also refuses a `channel` other than
+`cm.mobile`, a currency other than `XAF`, and a key whose test-key marker
+(`test.` or `test_`; real sandbox keys carry `test.`) disagrees with
+`deployment.livemode` _(corrected 2026-10-20: this said "`test_` marker"
+alone, which the maintainer's real test keys do not carry)_ (`RailKeyLivemodeMismatch`, which names
+the key and never prints it). **In livemode it also refuses the rail unless
+`settings.accept_public_key_exposure` is `true`**
+(`PublicKeyExposureNotAcknowledged`, ADR-0031 condition 4); a sandbox may
+omit it. Those are four new **columns** of the same table, not a second
+table. Every boot of a deployment configuring it also logs a `WARN` about the
+public key's exposure (ADR-0031), acknowledged or not. The block ships
+**commented out** in `config/application.yml`, because uncommenting it makes
+`NOTCHPAY_PUBLIC_KEY` and `NOTCHPAY_PRIVATE_KEY` mandatory for every
+deployment.
+
 This is a provider-code match outside an adapter crate — which ADR-0002 forbids
 — and it is a deliberate, recorded interim (ADR-0012) carrying a comment saying
 so. It moves behind the port the day `ProviderAdapter` grows a

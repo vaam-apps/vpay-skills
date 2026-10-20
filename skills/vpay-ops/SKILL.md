@@ -30,12 +30,19 @@ Postgres — and even its `kubectl` commands have been run nowhere.
 been performed, and no restore drill has ever run. ADR-0013 is `Proposed` and
 every number in it is proposed, not measured.
 
-What _has_ run: compose stacks, CI runners, and — once, on 2026-09-15 — a
-single MTN **sandbox** push (`docs/runbooks/live-sandbox-test.md`); and, since
-2026-09-20, `release.yml` itself: it has pushed images to GHCR since 2026-09-03,
-and its `publish-chart` job pushed **and signed** a chart on `v0.3.0` (a
-`cosign verify` of it has still never been run). Describing anything else in the
-present tense is the most damaging thing you can write here.
+What _has_ run: compose stacks, CI runners, and ~~a single MTN sandbox push
+on 2026-09-15~~ **over seven successful payments against MTN's real sandbox**.
+**Corrected 2026-10-20 from the firsthand confirmation of Valantine Suh (@Valsuh45), who ran the tests**
+of the testing recorded on 2026-09-15. The original documented session's three
+attempts (two token-mint failures, then one settlement) were not the overall
+total. See `docs/runbooks/live-sandbox-test.md` and
+`docs/status/verification/2026-09-15.md`. This is sandbox payment evidence,
+not evidence of production operation.
+
+Since 2026-09-20, `release.yml` itself has also run: it has pushed images to
+GHCR since 2026-09-03, and its `publish-chart` job pushed **and signed** a chart
+on `v0.3.0` (a `cosign verify` of it has still never been run). Describing
+anything else in the present tense is the most damaging thing you can write here.
 
 ## The configuration model
 

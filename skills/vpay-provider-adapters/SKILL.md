@@ -1,6 +1,6 @@
 ---
 name: vpay-provider-adapters
-description: The vpay provider port (`vpay-provider`) and how to add a payment rail — the `ProviderAdapter` trait and its nine methods (payer_fields since 2026-09-16), the `Unsupported` vs `NotImplemented` rule that decides which error a missing operation returns, the rail-agnostic refund destination (`RefundDestination`, `RefundTarget`, `parse_destination`), the capability flags the core branches on instead of provider codes, the shared HTTP/token modules, and the shared conformance suite a new adapter must pass. Load this before writing or changing any `vpay-adapter-*` crate, before touching `backends/crates/vpay-provider`, and before adding a rail.
+description: The vpay provider port (`vpay-provider`) and how to add a payment rail — the `ProviderAdapter` trait and its ten methods (payer_fields since 2026-09-16, accepted_exposure since 2026-10-20), the `Unsupported` vs `NotImplemented` rule that decides which error a missing operation returns, the rail-agnostic refund destination (`RefundDestination`, `RefundTarget`, `parse_destination`), the capability flags the core branches on instead of provider codes, the shared HTTP/token modules, the shared conformance suite a new adapter must pass, where per-provider state is written (`docs/status/providers.md`), the Draft designs for Stripe and PayPal adapters and for callback registration (RFC-0010, -0011, -0013), and the Notch Pay rail (RFC-0012), admitted under ADR-0031 and built on a vpay branch, never called (load `vpay-notchpay` for it). Load this before writing or changing any `vpay-adapter-*` crate, before touching `backends/crates/vpay-provider`, and before adding a rail.
 ---
 
 # The provider port, and adding a rail
@@ -61,9 +61,12 @@ would be a lie about Orange, and what is missing is vpay's work — this
 repository holds no Orange transfer specification. The reason changed, not
 just the value.
 
-`cargo xtask verify-status` therefore reports **exactly one** token as of
+`cargo xtask verify-status` therefore reported **exactly one** token from
 2026-09-16 — Orange's — down from eight on 2026-09-03 and from **two** partway
-through 2026-09-15. `orange_money::refund` is the same string that left the
+through 2026-09-15. **It reports two again with the Notch Pay adapter
+(2026-10-20, vaam-apps/vpay#295, `357c825`):
+`notchpay::refund`**, a third rail that refunds and whose refund vpay has not
+written (`vpay-notchpay` skill). `orange_money::refund` is the same string that left the
 list on 2026-09-03 meaning something else entirely (then: Orange has no refund
 API; now: vpay has not written the transfer), so do not read a token's
 reappearance as a regression. The gate also gained a **third direction** on
@@ -77,7 +80,29 @@ reaching that arm means the core skipped the `Capabilities` check it is
 supposed to branch on first, and logging it at `Conflict`'s default `Info`
 would bury our own bug among merchants' typos.
 
-## The nine methods
+**Where a provider's gaps are written down: `docs/status/providers.md`
+(since 2026-10-20).** One matrix, a row per provider (`mtn_momo`,
+`orange_money`, `notchpay`, `stripe`, `paypal` and `flutterwave` as of
+2026-10-20 — the last has no RFC and no code, and its admission is `unknown`)
+and a column per thing the port asks of an adapter. It writes a gap
+by the rule above and by no other: a cell reads **unsupported** where the rail
+cannot (`ProviderError::Unsupported`, the capability flag `false` beside it)
+and **token** where the rail can and vpay has not
+(`NotImplemented("rail::op")`, declared in `docs/status.md`). The rest of its
+legend — `proven`, `stub-only`, `sandbox`, `client`, `designed`, `gated`,
+`unknown` — says how far a real call is. It says no new error type is needed
+and none should be added: a third "not supported" would be a second way of
+saying one of these two. Read the row before you touch a rail, and move the
+row in the same change that moves the rail. **No gate reads the matrix**:
+`verify-status` reads the tokens in `docs/status.md` and nothing here, and the
+page itself says deriving its capability columns from each adapter's
+`Capabilities` is not built — so a stale cell fails nothing.
+
+## The ten methods
+
+**Ten since the Notch Pay adapter (2026-10-20, vaam-apps/vpay#295,
+on `master` since `357c825`, after this page's stamp):**
+`accepted_exposure`, below. Everything else in this section was nine.
 
 ~~The seven methods~~ **Corrected 2026-09-23:** the trait has **nine** `fn`s
 at `b747e5d5`. The code block below always listed eight, and
@@ -99,7 +124,21 @@ async fn refund(&self, charge, amount, destination: Option<&RefundTarget>, confi
                                             -> Result<Refunded, _>;   // default: Unsupported
 async fn account_holder_name(&self, msisdn, config)-> Result<Option<AccountHolder>, _>; // default: Unsupported
 fn payer_fields(&self) -> &'static [PayerField];  // default: &[] — since 2026-09-16
+fn accepted_exposure(&self) -> Option<AcceptedExposure>; // default: None — since 2026-10-20
 ```
+
+- **`accepted_exposure` is ADR-0031's boot warning, through the port**
+  (2026-10-20). ADR-0031 amended ADR-0029 D1 rule 3. A status read
+  authenticated by a key the provider calls **public** is admissible only if
+  the adapter declares what that key lets anyone else do. `None` (the
+  default) is right for every rail whose read takes a secret. `notchpay` is
+  the only rail that declares one. `vpay_api::boot::warn_about_accepted_exposures`
+  logs it at `WARN` for every _configured_ rail, in `serve` and `worker`.
+  `Measured` must forward it, like `payer_fields`: a wrapper that took the
+  default would silence the warning on every rail
+  (`the_accepted_exposure_is_forwarded_not_defaulted`). An adapter admitted
+  on ADR-0031's second limb that does not override it is the "way B done
+  silently" both RFC-0012 and ADR-0031 refuse.
 
 - **`payer_fields` is what the payer must type, and vpay enforces it
   generically** (since 2026-09-16, vpay#186). A push rail that collects an
@@ -124,6 +163,10 @@ fn payer_fields(&self) -> &'static [PayerField];  // default: &[] — since 2026
   included (it listed six, and said "three network methods" where there are
   four, until then). Its "Adding a rail" checklist still has **no step** for
   `payer_fields`, at `a33aac61`.
+
+- **RFC-0013 proposes a tenth method, `ensure_callback_endpoint`; it does not
+  exist** (checked 2026-10-20). Do not add it, or write a body for it, ahead
+  of the first adapter that registers an endpoint — see the proposals below.
 
 - **The error-surface table in the trait's own doc comment is the contract.**
   It is a markdown grid, one row per `ProviderError` variant and one column
@@ -158,7 +201,9 @@ fn payer_fields(&self) -> &'static [PayerField];  // default: &[] — since 2026
 `flow` (`Push` | `Redirect`), `supports_refunds`,
 `supports_partial_refunds`, `delivers_callbacks`, `requires_ip_allowlist`,
 `supports_account_holder_lookup`, and — **new on 2026-09-15** —
-`refund_destination: RefundDestination` (`Origin` | `Required`).
+`refund_destination: RefundDestination` (`Origin` | `Required`). RFC-0013
+proposes one more, `callback_url_mode`; **it does not exist** (checked
+2026-10-20), and this list is still complete.
 
 `Capabilities::is_coherent()` is `!supports_partial_refunds ||
 supports_refunds`. It is **mirrored by a real DB CHECK** —
@@ -366,11 +411,26 @@ the port's trait would not change.
 
 ## Proposed port changes that do not exist (2026-09-23)
 
-Four Draft RFCs, merged by vaam-apps/vpay#244 as `7997536b`
-(`docs/rfc/0004`, `0006`, `0007`, `0008`), would change this port.
-**None of it is built, and the capability list above is complete as of
-2026-09-23.** Do not write an adapter against any of the following, and do
-not treat a Draft section as a decision:
+~~Four Draft RFCs~~ **Ten RFCs as of 2026-10-20** — the four merged by
+vaam-apps/vpay#244 as `7997536b` (`docs/rfc/0004`, `0006`, `0007`, `0008`),
+and 0009 to 0014 added from 2026-10-16 to 2026-10-20 (0014 is the last
+paragraph of this section) — would change this port or add to it. (This
+sentence said "Four" until 2026-10-20, although the list below had grown to
+seven by 2026-10-17, and "Nine" for part of 2026-10-20.) **None of it is built beyond what each
+bullet says, and the capability list above is complete as of 2026-10-20.** Do
+not write an adapter against any of the following, and do not treat a Draft
+section as a decision:
+
+> **Rewritten 2026-10-20 for the Notch Pay adapter.** RFC-0012 and RFC-0013
+> were first read on vpay's `claude/happy-hopper-r3h6rz` branch, merged the
+> same day as `b8be107` (vaam-apps/vpay#285), and re-read at `b8be107`, whose
+> tree is identical to that branch's last commit; both RFCs had changed only in
+> formatting. The RFC-0012 bullet and the client-crate section below were then
+> rewritten from vaam-apps/vpay#295 (read at `bf96e50`), which builds the
+> adapter and merged to `master` as `357c825` the same day. On a tree older
+> than that, the client is linked by nothing and RFC-0012 is gated. This
+> page's stamp is not moved: moving it means re-verifying the whole page
+> (VERSIONING.md).
 
 > **Qualified 2026-09-23.** Since vaam-apps/vpay step A (RFC-0004 §§ 5–6,
 > merged in vaam-apps/vpay#251), RFC-0004 is Draft **except** § 5's `customer` list filters
@@ -456,12 +516,113 @@ not treat a Draft section as a decision:
   `sandbox` as a livemode stub marker — and shares RFC-0010's two. **No
   crate, no mapping, no stub exists**, and nothing has called PayPal from
   this repository.
+- **RFC-0012 — a Notch Pay adapter** (added 2026-10-20; Draft, **admitted
+  under ADR-0031 (rule 3 amended) and built the same day**, in
+  vaam-apps/vpay#295, `357c825`). Notch Pay fails ADR-0029 D1's third rule
+  **as ADR-0029 wrote it**: `GET /payments/{reference}` accepts the key
+  Notch Pay calls public. The maintainer first chose to ask Notch Pay in
+  writing (way A) and emailed them. With no answer the same day, they wrote
+  "Let's do a full implementation and warn the developer about the risks in
+  prod. They never answered to me too". **ADR-0031** then amended rule 3 for
+  every provider, on six conditions (way B, taken openly). The adapter,
+  `vpay-adapter-notchpay`, is a `Push` rail on `cm.mobile`, the first
+  shipping `Origin` rail, with refunds as the declared token
+  `notchpay::refund`. **It has never called Notch Pay**: RFC-0012's steps 1
+  and 5 (sandbox session, first test-mode call) did not run. Load the
+  `vpay-notchpay` skill before touching it. Write "admitted under ADR-0031",
+  **never** "rule 3 passes", and do not weaken any of ADR-0031's conditions:
+  `X-Grant` on every call, boot refusing a missing private key, the
+  documented exposure, the boot warning, the amount check, the open question.
+- **RFC-0013 — vpay registers its own callback endpoints** (added 2026-10-20;
+  Draft, **nothing in it is built**). On a rail whose callback URL is
+  registered with the provider account instead of sent on each request —
+  Stripe, PayPal and Notch Pay; only Notch Pay has an adapter, and only on a
+  vpay branch (2026-10-20) — vpay would make
+  sure one endpoint it created exists at the effective callback URL, in a
+  worker singleton job (proposed kind `ensure_callbacks`, hourly) and a
+  proposed command `vpay-server callbacks ensure`, **never on the boot path**,
+  and would never modify or delete an endpoint it did not create.
+  `mtn_momo` and `orange_money` take the URL per request (`X-Callback-Url`,
+  `notif_url`) and would be asked nothing. It proposes two port additions,
+  **`Capabilities::callback_url_mode`** (`PerRequest` | `Registered`) and
+  **`ProviderAdapter::ensure_callback_endpoint`** (defaulting to
+  `Unsupported`), and a `providers[].callbacks.register` setting. **None of
+  those names exists** — no `callback_url_mode`, `CallbackUrlMode`,
+  `ensure_callback_endpoint` or `EnsureCallbacks` appears under `backends/` as
+  of 2026-10-20. The RFC ties the port shape to the first adapter that
+  registers an endpoint (its delivery step 2, which also needs a pull request
+  against `vpay-skills`); until then do not add either to the port. The
+  maintainer's decision of 2026-10-20 is the premise — "never miss a
+  webhook" — and the design, the schedule and the open questions (seven as of
+  2026-10-20) are still Draft. One of them is a rail that can register its URL
+  only in a dashboard, as Flutterwave's documentation reads: it would declare
+  `Registered` and leave `ensure_callback_endpoint` at `Unsupported`, and
+  whether that needs a third mode is open (question 7).
+  **Until it lands, registering a webhook with Stripe, PayPal or Notch Pay is a
+  manual step for the merchant or operator** (RFC-0010 § 9, RFC-0011 § 9,
+  RFC-0012 § 9); on MTN a production callback host is a domain registered on
+  MTN's portal with the API user, and the RFC finds nothing there for vpay to
+  register at startup.
+  Registration would change how soon a hint arrives, not what a hint can do:
+  callbacks stay hints, and the poll ladder settles a charge whose callback
+  never came (RFC-0013 § "What a missed callback costs").
+
+**`backends/crates/vpay-notchpay` is the Notch Pay client** (2026-10-20;
+`docs/reference/vpay-notchpay.md`), an internal crate (`publish = false`)
+transcribed from Notch Pay's OpenAPI specification 2.1.0. On `master` at
+`b8be107` it was **linked by nothing**. Since `357c825` (vaam-apps/vpay#295),
+`vpay-adapter-notchpay` sits on it and `vpay-server` links the
+adapter. Nothing has called Notch Pay through it. What carries over to any
+change you make there:
+
+- **Do not write a `wire.rs` for Notch Pay, and do not re-transcribe the
+  specification.** This is the one rail whose wire is a crate boundary rather
+  than a module (see `references/adding-a-rail.md` § 3). The adapter keeps
+  `lib.rs` and `mapping.rs`. There is no `token.rs`, because Notch Pay
+  authenticates with static keys in headers.
+- **The client says what Notch Pay answered; the adapter decides what it
+  means.** A call returns `Result<Answer<T>, ProviderError>`: `Answer::Success`
+  or `Answer::Refused` (any other `4xx`, with Notch Pay's own words), and
+  `ProviderError` only for `Transport` (`408`, `429`, `5xx`, no answer),
+  `Malformed`, or `Config` at construction. What a `409` or a `422` means for a
+  charge is `mapping.rs`'s call, not the client's. The crate defines no error
+  type of its own, on purpose.
+- **It sends both keys on every request.** That is ADR-0031's condition 1,
+  and every conformance stub mapping requires `X-Grant`. Its
+  `reqwest::Client` must not follow redirects (a followed one replays
+  `X-Grant`); the clients in `vpay_provider::http` refuse them. **Since
+  2026-10-20 it applies a per-request deadline**
+  (`Client::with_request_timeout`), which the adapter sets from
+  `ProviderConfig::request_timeout`.
+- **What it deliberately omits**: refunds, cancel, webhook update and delete,
+  transfers, and webhook signature verification (the port's `parse_callback`
+  receives no headers, so a verifier would be code nothing can call).
+- **Where Notch Pay's own pages disagree with its specification**, the client
+  follows the specification, and RFC-0012 § 10 lists each disagreement for the
+  first sandbox session. Treat every one of them as unverified.
 
 A card PSP adapter is not blocked on engineering. The 2026-09-23 desk
 evaluation (`docs/plans/2026-09-23-card-provider-evaluation.md`,
 public documentation only) found **no provider shown to accept Visa and
 Mastercard for a Cameroon merchant on a hosted page**. The providers' written
 answers come first.
+
+**RFC-0014 — verifying rail callbacks** (added 2026-10-20, merged as vpay
+`0977616` in vaam-apps/vpay#296; Draft, **nothing in it is built**). The
+maintainer answered "Yes, as its own piece of work" on 2026-10-20 to whether
+vpay should verify Notch Pay's webhook signatures: for every rail that signs,
+and outside the Notch Pay adapter's pull request. It proposes a defaulted
+**`ProviderAdapter::verify_callback(request, charge, config)`**, run by the
+callback route **after** the charge is found, and **`Capabilities::callback_check`**
+(`None` | `BodyToken` | `Signature`). `parse_callback` keeps its signature.
+**None of those names exists** under `backends/` as of 2026-10-20, and no
+rail's callback is verified today. **Do not add a verifier inside an adapter
+ahead of the port change**, Notch Pay's included; RFC-0012's Hash Key stays
+out of configuration until the RFC's Notch Pay step. What the RFC keeps:
+**callbacks stay hints** (a verdict only decides whether the poll is pulled
+forward), and every answer stays a byte-identical `202`. Its first consumer
+is proposed to be Orange, comparing the `notif_token` that `submit` already
+stores. Five open questions are the maintainer's.
 
 ## Where to go next
 
@@ -472,5 +633,11 @@ answers come first.
   the mapping contract a new rail's stubs must satisfy, and the techniques.
 - `vpay-mtn-momo` skill — the push rail in detail.
 - `vpay-orange-money` skill — the redirect rail in detail.
+- `vpay-notchpay` skill — the aggregator push rail admitted under ADR-0031,
+  and its production risk.
+- `docs/status/providers.md` (the per-provider matrix, 2026-10-20),
+  `docs/reference/vpay-notchpay.md` (the client crate, 2026-10-20),
+  `docs/rfc/0012-notchpay-adapter.md`,
+  `docs/rfc/0013-vpay-registers-its-own-callbacks.md`.
 - `docs/reference/rails.md`, `docs/flows/provider-port.md`,
   `docs/adr/0002-provider-port.md`, `docs/adr/0011-error-modelling.md`.

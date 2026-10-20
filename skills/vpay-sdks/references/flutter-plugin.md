@@ -453,8 +453,11 @@ moment of dismissal. Full detail, screenshots and transaction ids:
   give it a write.
 - **No "Last used" badge on the rail picker** (2026-09-17) — the string is in
   both locales and nothing reads it.
-- **No real rail, anywhere.** WireMock behind every walk in this lane, as
-  everywhere else in this repository.
+- ~~**No real rail, anywhere.** WireMock behind every walk in this lane, as
+  everywhere else in this repository.~~ **Corrected 2026-10-20:** every walk
+  in this Flutter lane used WireMock. Separately, Valantine Suh (@Valsuh45), who ran the tests, confirms firsthand **over seven successful payments against MTN's real sandbox** in
+  the testing recorded on 2026-09-15; that evidence does not prove a real-MTN
+  checkout through this plugin.
 - **No CI gate runs any of the six `*flutter*` recipes** (D-M3, unchanged).
   Every count on this page is a human running the recipe by hand.
 - **The Android/web window proof from architecture 2 is retired, not

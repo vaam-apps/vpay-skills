@@ -184,7 +184,10 @@
         "backends/crates/vpay-provider",
         "backends/tests/conformance",
         "backends/crates/vpay-api/src/v1/boot.rs",
-        "backends/apps/vpay-server/src/lib.rs"
+        "backends/apps/vpay-server/src/lib.rs",
+        "docs/status/providers.md",
+        "docs/reference/vpay-notchpay.md",
+        "backends/crates/vpay-notchpay"
       ]
     },
     "vpay-mtn-momo": {
@@ -195,6 +198,17 @@
         "backends/crates/vpay-adapter-mtn-momo",
         "backends/tests/conformance/wiremock/mtn",
         "config/application-live.yml"
+      ]
+    },
+    "vpay-notchpay": {
+      "covers": [
+        "docs/flows/adapter-notchpay.md",
+        "docs/security/threat-models/notchpay.md",
+        "backends/crates/vpay-adapter-notchpay",
+        "backends/tests/conformance/wiremock/notchpay",
+        "docs/runbooks/notchpay-sandbox-test.md",
+        "config/application-notchpay-sandbox.yml",
+        "backends/crates/vpay-notchpay/examples/sandbox_probe.rs"
       ]
     },
     "vpay-orange-money": {

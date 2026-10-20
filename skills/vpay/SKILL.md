@@ -27,11 +27,14 @@ says "259 lines as of 2026-09-11"; the git history says 275 that day.)
 > **vpay is a scaffold. It compiles, lints clean, its tests pass — and it
 > cannot take a payment. Do not deploy it.**
 
-As of 2026-09-15 exactly one real rail call has ever been made: a EUR
-`mtn_momo` PaymentIntent created, confirmed and settled against **MTN's
-sandbox**. No real payer, no production rail, no rail other than MTN's sandbox,
-no webhook to any merchant endpoint outside the repository, no pod has ever run
-vpay.
+~~As of 2026-09-15 exactly one real rail call has ever been made.~~ **Corrected
+2026-10-20 from the firsthand confirmation of Valantine Suh (@Valsuh45), who ran the tests:** the testing
+recorded on 2026-09-15 included **over seven successful payments against MTN's
+real sandbox** — EUR `mtn_momo` PaymentIntents created, confirmed and settled.
+The original documented session had three attempts: two token-mint failures,
+then one settlement. That session was not the overall total. No real payer, no
+production rail, no rail other than MTN's sandbox, no webhook to any merchant
+endpoint outside the repository, no pod has ever run vpay.
 
 Everything else in this repository's history settled against a WireMock host
 that answered the way the documents say a rail answers.
@@ -148,6 +151,7 @@ Then state explicitly, in your summary, what you did _not_ do.
 | The port, failure taxonomy, conformance, adding a rail     | `vpay-provider-adapters` |
 | MTN MoMo specifics                                         | `vpay-mtn-momo`          |
 | Orange Money specifics                                     | `vpay-orange-money`      |
+| Notch Pay specifics, and its public-key production risk    | `vpay-notchpay`          |
 | The web workspace, Tailwind/daisyUI, the `verify-ui` gate  | `vpay-frontend`          |
 | The payer page — hosted and embedded checkout, the popup   | `vpay-checkout`          |
 | Mobile checkout — the Flutter plugin                       | `vpay-sdks`              |

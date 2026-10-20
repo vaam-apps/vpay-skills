@@ -385,7 +385,14 @@ handler's `CALLBACK_BODY_LIMIT_BYTES`.
 Turning it off is **opt-out with a sentence**: `enabled: false` needs one line
 in `servedElsewhere` naming what serves the prefix instead. Legitimate case:
 MTN allows an IP-allowlisted callback host of its own, reached through
-`providers[].callback_url`.
+`providers[].callback_url`. **Qualified 2026-10-20 (RFC-0013 § 11, item 5):**
+no MTN page the RFC's research read says MTN requires or allows an
+IP-allowlisted host for callbacks. The sentence rests on a comment in
+`vpay-config/src/config.rs` ("MTN requires one"); MTN's best-practices page
+lists IP whitelisting for Disbursements and other products, not for
+RequestToPay, and its callback page names no allowlist. What MTN does document
+is that the callback host must be on the domain registered with the API user.
+Treat the allowlist as an unverified reason for a separate host.
 
 **Gateway API** (`route.enabled: true`) renders `HTTPRoute`s instead of
 `Ingress`es, for a cluster running a Gateway rather than ingress-nginx. It is an

@@ -156,6 +156,12 @@ phone numbers**: the last three characters are a hex steering code the stub keys
 its scenario on.
 
 **A `succeeded` here means `vpay-worker` asked a stub and the stub said
-`SUCCESSFUL`. It does not mean anyone paid.** As of 2026-09-15 exactly one real
-rail call has ever been made — an MTN sandbox push, `docs/runbooks/live-sandbox-test.md`.
+`SUCCESSFUL`. It does not mean anyone paid.** ~~As of 2026-09-15 exactly one real
+rail call has ever been made.~~ **Corrected 2026-10-20 from the firsthand confirmation of Valantine Suh (@Valsuh45), who ran the tests:** the testing recorded on
+2026-09-15 included **over seven successful payments against MTN's real
+sandbox**. The original documented session's three attempts (two token-mint
+failures, then one settlement) were not the overall total. See
+`docs/runbooks/live-sandbox-test.md`. These were real sandbox calls, separate
+from `just demo`'s WireMock scenarios; they do not establish real-payer or
+production payments.
 Orange's redirect rail has still never been called.

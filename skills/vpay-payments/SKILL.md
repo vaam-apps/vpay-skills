@@ -301,19 +301,22 @@ RFC-0007's matcher. _(Corrected 2026-10-17: the router — RFC-0008 — is
 **accepted** through ADR-0029, less its § 7 on health, and still unbuilt;
 the prepaid balance and the statement matcher remain Draft.)_
 
-## Status, as of 2026-09-29 (unchanged since 2026-09-16)
+## Status, as of 2026-09-29; testing evidence corrected 2026-10-20
 
 The state functions, `Money`, the failure taxonomy and the settlement
 transaction are real and tested. A merchant can create a refund and the ledger
 records a capture — ~~the ledger posts nothing and nothing writes a refund~~,
 corrected 2026-09-16.
 
-What has **not** changed is the line that matters: exactly **one** payment
-has ever settled against a real rail — a EUR `mtn_momo` intent against MTN's
-sandbox on 2026-09-15, in the third of three runs that day (the first two
-stopped at the token mint on adapter bugs). _(This said "exactly one real
-rail call has ever been made" until 2026-09-23. Three runs means more than
-one call.)_ MTN's Disbursements product has never been called at
+~~Exactly one payment has ever settled against a real rail.~~ **Corrected
+2026-10-20 from the firsthand confirmation of Valantine Suh (@Valsuh45), who ran the tests:** the testing
+recorded on 2026-09-15 included **over seven successful payments against MTN's
+real sandbox**. The original documented session had three attempts: the first
+two stopped at the token mint on adapter bugs, and the third settled a EUR
+`mtn_momo` intent. Those three attempts were one session, not the total of the
+day's testing. _(The 2026-09-23 correction retired "exactly one real rail call"
+because there were multiple calls, but still understated successful payments.)_
+MTN's Disbursements product has never been called at
 all, Orange's redirect rail has never been called, no real payer has ever been
 prompted, and **no money has moved in either direction**. Mounting a route is
 not a rail call; `docs/status.md`'s load-bearing banner is unchanged, and a

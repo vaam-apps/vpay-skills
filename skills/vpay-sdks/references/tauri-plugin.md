@@ -309,8 +309,11 @@ were and are correct — only the gap count was mis-transcribed on arrival.
   `start`.** There is no stream-done signal on that seam. Named by the lane
   that built it, not fixed; a host whose `show` _rejects_ resolves
   `unresolved` correctly.
-- **No real rail.** The stack behind the runs below was WireMock, as
-  everywhere else in this repository, and it ran **GHCR `edge` images** of
+- **No real rail in these Tauri runs.** The stack behind the runs below was
+  WireMock — ~~as everywhere else in this repository~~ **corrected
+  2026-10-20:** Valantine Suh (@Valsuh45), who ran the tests, confirms firsthand **over seven successful
+  payments against MTN's real sandbox** in the testing recorded on 2026-09-15,
+  separately from this lane. The Tauri stack ran **GHCR `edge` images** of
   `vpay-server`/`vpay-checkout` — **not a build of this tree**. So the
   end-to-end runs prove the plugin against a published vpay, not against the
   branch they shipped on.

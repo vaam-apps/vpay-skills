@@ -47,6 +47,7 @@ Everything else is an archive page under `docs/status/`.
 | Your change                                 | The page                                                                                       |
 | ------------------------------------------- | ---------------------------------------------------------------------------------------------- |
 | A capability, a route, an adapter behaviour | `docs/status/backend.md`                                                                       |
+| A provider's cell, or a new provider        | `docs/status/providers.md` (since 2026-10-20); a gap is `Unsupported` or a token               |
 | A browser or dashboard change               | `docs/status/frontend.md`                                                                      |
 | An image, chart, compose file, migration    | `docs/status/infrastructure.md`                                                                |
 | A schema or CrateStack change               | `docs/status/cratestack.md` (+ a dated page in `status/cratestack/` if you measured something) |
@@ -94,7 +95,9 @@ fails the gate's docs→code half. `orange_money::refund` is the live one:
 2026-09-03 and from two partway through 2026-09-15. Re-confirmed 2026-09-29:
 the shipping `NotImplemented("…")` sites at `a33aac61` are still only
 `orange_money::refund`'s two in the Orange adapter; the others `git grep` finds
-are in tests._
+are in tests. **Two from the Notch Pay adapter on** (2026-10-20, vaam-apps/vpay#295,
+merged as `357c825`): `notchpay::refund` joins it, declared in
+`docs/status.md` in the same change, and `verify-status` prints 2._
 
 That is the gate working, not a trap. It is how `docs/status.md` can discuss
 unpopulated fields in the same section without declaring them unbuilt.
