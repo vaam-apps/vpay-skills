@@ -309,7 +309,7 @@ records a capture — ~~the ledger posts nothing and nothing writes a refund~~,
 corrected 2026-09-16.
 
 ~~Exactly one payment has ever settled against a real rail.~~ **Corrected
-2026-10-20 from the tester/maintainer's firsthand confirmation:** the testing
+2026-10-20 from the firsthand confirmation of Valantine Suh (@Valsuh45), who ran the tests:** the testing
 recorded on 2026-09-15 included **over seven successful payments against MTN's
 real sandbox**. The original documented session had three attempts: the first
 two stopped at the token mint on adapter bugs, and the third settled a EUR

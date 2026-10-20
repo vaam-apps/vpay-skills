@@ -28,8 +28,8 @@ payer, and MTN's sandbox rejects XAF — EUR is load-bearing in
 same day. See `docs/status/verification/2026-09-15.md` and
 `docs/runbooks/live-sandbox-test.md`.
 
-**Aggregate clarified 2026-10-20 from the tester/maintainer's firsthand
-confirmation:** the testing recorded on 2026-09-15 included **over seven
+**Aggregate clarified 2026-10-20 from the firsthand confirmation of Valantine Suh (@Valsuh45),
+who ran the tests:** the testing recorded on 2026-09-15 included **over seven
 successful payments against MTN's real sandbox**. The session described above
 had three attempts, two token-mint failures followed by one settlement; it is
 one documented session, not the total of the testing. "The one rail" means MTN

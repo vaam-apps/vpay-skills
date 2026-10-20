@@ -30,6 +30,19 @@ and not the documented `test_`. The boot rule now reads either.
   policy, and an egress that re-terminates TLS, which vpay's vendored roots
   correctly refuse.
 
+## 2026-10-20 — who ran the 2026-09-15 MTN sandbox tests
+
+Read against vaam-apps/vpay#297. No stamp moves.
+
+**A claim that stopped being true.** Seven passages credited "the
+tester/maintainer" with the 2026-09-15 MTN Collections sandbox tests and
+with confirming the over-seven count. Asked on 2026-10-20, the maintainer
+answered: "It was Valsuh", that is Valantine Suh (@Valsuh45). Each passage
+now names them, in `vpay`, `vpay-payments`, `vpay-mtn-momo`, `vpay-ops`,
+`vpay-troubleshooting` (`demo-compose`) and `vpay-sdks` (`tauri-plugin`,
+`flutter-plugin`). The counts and the evidence are unchanged. The older
+entries below keep their wording, as they were written.
+
 ## 2026-10-20 — the Notch Pay adapter, admitted under ADR-0031
 
 Read against vaam-apps/vpay#295 at `bf96e50`, merged to `master` as `357c825`

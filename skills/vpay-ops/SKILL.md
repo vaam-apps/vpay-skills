@@ -32,7 +32,7 @@ every number in it is proposed, not measured.
 
 What _has_ run: compose stacks, CI runners, and ~~a single MTN sandbox push
 on 2026-09-15~~ **over seven successful payments against MTN's real sandbox**.
-**Corrected 2026-10-20 from the tester/maintainer's firsthand confirmation**
+**Corrected 2026-10-20 from the firsthand confirmation of Valantine Suh (@Valsuh45), who ran the tests**
 of the testing recorded on 2026-09-15. The original documented session's three
 attempts (two token-mint failures, then one settlement) were not the overall
 total. See `docs/runbooks/live-sandbox-test.md` and

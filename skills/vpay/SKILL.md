@@ -28,7 +28,7 @@ says "259 lines as of 2026-09-11"; the git history says 275 that day.)
 > cannot take a payment. Do not deploy it.**
 
 ~~As of 2026-09-15 exactly one real rail call has ever been made.~~ **Corrected
-2026-10-20 from the tester/maintainer's firsthand confirmation:** the testing
+2026-10-20 from the firsthand confirmation of Valantine Suh (@Valsuh45), who ran the tests:** the testing
 recorded on 2026-09-15 included **over seven successful payments against MTN's
 real sandbox** — EUR `mtn_momo` PaymentIntents created, confirmed and settled.
 The original documented session had three attempts: two token-mint failures,
