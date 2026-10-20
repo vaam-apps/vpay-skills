@@ -1,8 +1,8 @@
 # Staff single sign-on (ADR-0030)
 
-_Written against the vpay change that carries ADR-0030 (branch
-`feat/staff-oidc-sso`; **this page is true only of a vpay that has merged it** —
-on `a33aac61` or `69d822ab` none of it exists). Read from the code and the flow
+_Written against the vpay change that carries ADR-0030, merged to `master` as
+`b69e14d1` (vaam-apps/vpay#280, 2026-10-20); on `a33aac61` or `69d822ab`, and in
+every release before the one that includes `b69e14d1`, none of it exists. Read from the code and the flow
 page, and the Keycloak behaviour below was measured by the change's own tests on
 `quay.io/keycloak/keycloak:26.6.1`, 2026-10-19/20. Nothing here has run in a
 cluster._
