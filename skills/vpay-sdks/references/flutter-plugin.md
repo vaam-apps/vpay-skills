@@ -455,8 +455,7 @@ moment of dismissal. Full detail, screenshots and transaction ids:
   both locales and nothing reads it.
 - ~~**No real rail, anywhere.** WireMock behind every walk in this lane, as
   everywhere else in this repository.~~ **Corrected 2026-10-20:** every walk
-  in this Flutter lane used WireMock. Separately, the tester/maintainer confirms
-  firsthand **over seven successful payments against MTN's real sandbox** in
+  in this Flutter lane used WireMock. Separately, Valantine Suh (@Valsuh45), who ran the tests, confirms firsthand **over seven successful payments against MTN's real sandbox** in
   the testing recorded on 2026-09-15; that evidence does not prove a real-MTN
   checkout through this plugin.
 - **No CI gate runs any of the six `*flutter*` recipes** (D-M3, unchanged).
