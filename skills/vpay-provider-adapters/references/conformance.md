@@ -66,8 +66,8 @@ in `Cargo.toml` plus the fact that nothing there would compile against it.
 
 Every case steers by **reference**: MTN matches the `X-Reference-Id` header,
 Orange matches the body's `order_id` (which is `ChargeRef::reference_id`
-rendered), and Notch Pay (2026-10-20, vpay's `claude/notchpay-adapter`
-branch) matches the initialize body's `reference` and the read's path. So
+rendered), and Notch Pay (2026-10-20, vaam-apps/vpay#295,
+`357c825`) matches the initialize body's `reference` and the read's path. So
 every rail stubs the **same UUIDs**, and adding a rail means adding one
 mappings directory and a row per table function rather than editing a
 case.
@@ -170,7 +170,7 @@ the premise guard became on 2026-10-17: a rail declaring
 rail declaring `Origin` must **not** have — the port's `Unsupported` is the
 permanent, correct answer there. It admits an `Origin` rail. On `master` at
 `b8be107` it drives none, because no shipping rail declares `Origin`.
-**`notchpay` does** (2026-10-20, vpay's `claude/notchpay-adapter` branch), so
+**`notchpay` does** (2026-10-20, vaam-apps/vpay#295, `357c825`), so
 there the `Origin` arm has a live case. _(Until 2026-10-17 it was
 `no_shipping_rail_returns_a_refund_to_the_paying_instrument`, which asserted
 that every shipping rail declares `Required` and listed three debts as the

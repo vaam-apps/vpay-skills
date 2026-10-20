@@ -14,8 +14,10 @@ rule stands, for the reasons VERSIONING.md now gives.)_
 
 ## 2026-10-20 — the Notch Pay adapter, admitted under ADR-0031
 
-Read against vpay's `claude/notchpay-adapter` branch at `bf96e50` (the adapter
-pull request, not on `master` yet); stamps stay on `b8be107` (VERSIONING.md).
+Read against vaam-apps/vpay#295 at `bf96e50`, merged to `master` as `357c825`
+the same day. `vpay-notchpay` is stamped `357c825`; every other skill's stamp
+stays where it was, because moving one means re-verifying the whole page
+(VERSIONING.md).
 
 - **New skill: `vpay-notchpay`.** The third rail. A push rail through an
   aggregator, admitted under ADR-0031 because its status read takes a key

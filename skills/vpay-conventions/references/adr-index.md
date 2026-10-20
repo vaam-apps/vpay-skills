@@ -49,7 +49,7 @@ the decision."
 | 0027 erasure-reaches-through-checkout-sessions         | **Accepted** (2026-09-23; vpay#257, merged 2026-09-24). Erasure also reaches payments through `checkout_sessions.customer_id`, via `vpay_db::customers::PAYERS_INTENTS`. See the notes below the table.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | 0028 a-spent-jti-outlives-the-validators-leeway        | **Accepted** (2026-10-08; vaam-apps/vpay#271, merged 2026-10-09). The housekeeping sweep keeps a spent client-assertion `jti` for `vpay_worker::CLIENT_ASSERTION_JTI_RETENTION` (5 minutes) past its `exp`, computed by Postgres, because the validator accepts an assertion for 61 s after `exp`. Concludes ADR-0026 D8's `jti` item. See the notes below the table.                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | 0029 card-and-bank-adapters-and-payment-method-routing | **Accepted in part** (2026-10-17, vaam-apps/vpay#275). D1–D11 are RFC-0004 § 7 and RFC-0008 as merged: one adapter per provider under four hard rules, the capabilities the port will grow (`method_types`, `amount_limits`, `supports_off_session` + `charge_stored`, `ProviderFlow::Instructions`), stored methods bound to their minting rail and decoupled from subscriptions, the cheapest capable rail first from configured fees, every decision recorded per charge, no cascading. **D12–D17 answer the RFCs' open questions and need the maintainer's confirmation**; D12 (`card` plus a `card.brand` attribute, not `visa_card`/`mtn_card`) refuses a spelling the maintainer proposed. **Nothing it decides is built**: none of those identifiers exists, and `payment_method_types` holds rail codes. See the notes below the table. |
-| 0031 a-status-read-authenticated-by-a-server-side-key  | **Accepted** (2026-10-20, on vpay's `claude/notchpay-adapter` branch, **not on `master` at `b8be107`**). Amends ADR-0029 D1's **third rule only**, for every provider. A status read authenticated by a key the provider calls public is admissible on six conditions: every secret sent on every call, boot refusing a config without it, the exposure documented and logged at boot (`ProviderAdapter::accepted_exposure`), the amount checked on every success, and the written question kept open. Notch Pay is "admitted under ADR-0031", never "rule 3 passes". Building such an adapter without the conditions is "way B done silently", refused.                                                                                                                                                                                         |
+| 0031 a-status-read-authenticated-by-a-server-side-key  | **Accepted** (2026-10-20, vaam-apps/vpay#295, on `master` since `357c825`). Amends ADR-0029 D1's **third rule only**, for every provider. A status read authenticated by a key the provider calls public is admissible on six conditions: every secret sent on every call, boot refusing a config without it, the exposure documented and logged at boot (`ProviderAdapter::accepted_exposure`), the amount checked on every success, and the written question kept open. Notch Pay is "admitted under ADR-0031", never "rule 3 passes". Building such an adapter without the conditions is "way B done silently", refused.                                                                                                                                                                                                                      |
 
 ### Notes on 0025–0028 (0025–0027 added 2026-09-29 against vpay `a33aac61`; the 0026 bullet corrected and 0028 added 2026-10-09 against `87166eaf`)
 
@@ -131,7 +131,7 @@ the decision."
   _authenticated_ because of Notch Pay, whose status read takes a public key;
   RFC-0012 was gated by it, waiting on Notch Pay's written answer (the
   maintainer's decision of 2026-10-20). **Superseded the same day by ADR-0031**
-  (on vpay's `claude/notchpay-adapter` branch), which amends that rule for
+  (vaam-apps/vpay#295, merged as `357c825`), which amends that rule for
   every provider after Notch Pay did not answer.
 
 ## Not accepted — read the status line before you build on it
@@ -212,9 +212,9 @@ with vpay#244, 0009 on 2026-10-16, 0010 and 0011 on 2026-10-17, and 0012,
   `Redirect` rail whose `query_status` **captures** an approved order,
   because PayPal's wallet is not auto-captured on approval). No crate,
   mapping or stub exists. See `vpay-provider-adapters`.
-- `docs/rfc/0012-notchpay-adapter.md` — **Draft**, proposed 2026-10-20. **On
-  vpay's `claude/notchpay-adapter` branch (2026-10-20, not on `master` at
-  `b8be107`) it is admitted under ADR-0031 and built**: the adapter exists,
+- `docs/rfc/0012-notchpay-adapter.md` — **Draft**, proposed 2026-10-20. **Since
+  `357c825` (2026-10-20, vaam-apps/vpay#295) it is admitted under ADR-0031
+  and built**: the adapter exists,
   has never called Notch Pay, and the `vpay-notchpay` skill is its briefing.
   What follows is the RFC as it stood on `master`, **not buildable as
   written**: Notch Pay (a Cameroon mobile-money aggregator)

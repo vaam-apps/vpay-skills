@@ -84,8 +84,8 @@ Mirror the two existing crates' module split — it is not cosmetic:
 wire in its own crate, `backends/crates/vpay-notchpay`, so
 `vpay-adapter-notchpay` holds `lib.rs` and `mapping.rs` (plus `tests.rs`) and
 **no `wire.rs`**, and no `token.rs`, since Notch Pay authenticates with
-static keys. The adapter is built on vpay's `claude/notchpay-adapter` branch,
-admitted under ADR-0031. On a `master` without it, the client is linked by
+static keys. The adapter, admitted under ADR-0031, is on `master` since `357c825`
+(vaam-apps/vpay#295, 2026-10-20). Before that, the client was linked by
 nothing. The `vpay-notchpay` skill is the briefing. MTN and Orange follow
 the table above as it stands.
 

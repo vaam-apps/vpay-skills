@@ -96,7 +96,7 @@ missing.**
   `credentials.subscription_key`, `credentials.api_key`.
 - Orange: `credentials.merchant_key`, `credentials.client_id`,
   `credentials.client_secret`.
-- Notch Pay (2026-10-20, vpay's `claude/notchpay-adapter` branch):
+- Notch Pay (2026-10-20, vaam-apps/vpay#295, `357c825`):
   `settings.channel`, `credentials.public_key`, `credentials.private_key`.
   Three more `78`s come from the same row: `ProviderSettingNotAllowed`
   (`channel` is not `cm.mobile`), `ProviderCurrencyNotAllowed` (not `XAF`),

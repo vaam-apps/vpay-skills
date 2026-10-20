@@ -64,7 +64,7 @@ just the value.
 `cargo xtask verify-status` therefore reported **exactly one** token from
 2026-09-16 — Orange's — down from eight on 2026-09-03 and from **two** partway
 through 2026-09-15. **It reports two again with the Notch Pay adapter
-(2026-10-20, on vpay's `claude/notchpay-adapter` branch):
+(2026-10-20, vaam-apps/vpay#295, `357c825`):
 `notchpay::refund`**, a third rail that refunds and whose refund vpay has not
 written (`vpay-notchpay` skill). `orange_money::refund` is the same string that left the
 list on 2026-09-03 meaning something else entirely (then: Orange has no refund
@@ -100,8 +100,8 @@ page itself says deriving its capability columns from each adapter's
 
 ## The ten methods
 
-**Ten since the Notch Pay adapter (2026-10-20, vpay's
-`claude/notchpay-adapter` branch, not on `master` at this page's stamp):**
+**Ten since the Notch Pay adapter (2026-10-20, vaam-apps/vpay#295,
+on `master` since `357c825`, after this page's stamp):**
 `accepted_exposure`, below. Everything else in this section was nine.
 
 ~~The seven methods~~ **Corrected 2026-09-23:** the trait has **nine** `fn`s
@@ -393,10 +393,10 @@ section as a decision:
 > same day as `b8be107` (vaam-apps/vpay#285), and re-read at `b8be107`, whose
 > tree is identical to that branch's last commit; both RFCs had changed only in
 > formatting. The RFC-0012 bullet and the client-crate section below were then
-> rewritten from vpay's `claude/notchpay-adapter` branch (read at `bf96e50`),
-> which builds the adapter and is not on `master` yet. On a `master` without
-> `backends/crates/vpay-adapter-notchpay`, the client is still linked by
-> nothing and RFC-0012 is still gated. This page's stamp is not moved
+> rewritten from vaam-apps/vpay#295 (read at `bf96e50`), which builds the
+> adapter and merged to `master` as `357c825` the same day. On a tree older
+> than that, the client is linked by nothing and RFC-0012 is gated. This
+> page's stamp is not moved: moving it means re-verifying the whole page
 > (VERSIONING.md).
 
 > **Qualified 2026-09-23.** Since vaam-apps/vpay step A (RFC-0004 §§ 5–6,
@@ -484,8 +484,8 @@ section as a decision:
   crate, no mapping, no stub exists**, and nothing has called PayPal from
   this repository.
 - **RFC-0012 — a Notch Pay adapter** (added 2026-10-20; Draft, **admitted
-  under ADR-0031 (rule 3 amended) and built the same day**, on vpay's
-  `claude/notchpay-adapter` branch). Notch Pay fails ADR-0029 D1's third rule
+  under ADR-0031 (rule 3 amended) and built the same day**, in
+  vaam-apps/vpay#295, `357c825`). Notch Pay fails ADR-0029 D1's third rule
   **as ADR-0029 wrote it**: `GET /payments/{reference}` accepts the key
   Notch Pay calls public. The maintainer first chose to ask Notch Pay in
   writing (way A) and emailed them. With no answer the same day, they wrote
@@ -537,8 +537,8 @@ section as a decision:
 **`backends/crates/vpay-notchpay` is the Notch Pay client** (2026-10-20;
 `docs/reference/vpay-notchpay.md`), an internal crate (`publish = false`)
 transcribed from Notch Pay's OpenAPI specification 2.1.0. On `master` at
-`b8be107` it is **linked by nothing**. On vpay's `claude/notchpay-adapter`
-branch, `vpay-adapter-notchpay` sits on it and `vpay-server` links the
+`b8be107` it was **linked by nothing**. Since `357c825` (vaam-apps/vpay#295),
+`vpay-adapter-notchpay` sits on it and `vpay-server` links the
 adapter. Nothing has called Notch Pay through it. What carries over to any
 change you make there:
 

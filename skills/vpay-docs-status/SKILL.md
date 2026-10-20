@@ -95,8 +95,8 @@ fails the gate's docs→code half. `orange_money::refund` is the live one:
 2026-09-03 and from two partway through 2026-09-15. Re-confirmed 2026-09-29:
 the shipping `NotImplemented("…")` sites at `a33aac61` are still only
 `orange_money::refund`'s two in the Orange adapter; the others `git grep` finds
-are in tests. **Two from the Notch Pay adapter on** (2026-10-20, vpay's
-`claude/notchpay-adapter` branch): `notchpay::refund` joins it, declared in
+are in tests. **Two from the Notch Pay adapter on** (2026-10-20, vaam-apps/vpay#295,
+merged as `357c825`): `notchpay::refund` joins it, declared in
 `docs/status.md` in the same change, and `verify-status` prints 2._
 
 That is the gate working, not a trap. It is how `docs/status.md` can discuss

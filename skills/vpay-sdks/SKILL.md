@@ -27,8 +27,8 @@ package has a release line of its own. _(Qualified 2026-10-20: "twenty-four"
 is the count of 2026-09-23. vaam-apps/vpay#285 (merged 2026-10-20 as `b8be107`)
 added one more annotated line, the `vpay-notchpay` pin in the root `Cargo.toml`:
 `cargo xtask verify-versions` counted 24 version references on 2026-10-17 at
-vpay `44c5bf5` and counts 25 at `b8be107`. The Notch Pay adapter branch
-(`claude/notchpay-adapter`, 2026-10-20) adds the `vpay-adapter-notchpay` pin
+vpay `44c5bf5` and counts 25 at `b8be107`. The Notch Pay adapter
+(vaam-apps/vpay#295, `357c825`, 2026-10-20) adds the `vpay-adapter-notchpay` pin
 and counts 26. `0.5.0` here is likewise a figure
 of 2026-09-23; vpay's workspace is at `0.8.0` since the release of 2026-10-20, vpay#282.)_ `sdks/stripe-compat` is `0.0.0`,
 private, and never released. `npm view` answers `0.5.0` for `@vaam-apps/vpay-sdk` and
@@ -131,8 +131,8 @@ normalises a payee's number on its way to the wire` are the cases; deleting
 a rail that refunds to the instrument that paid, and such a rail refuses one.
 Neither rail on `master` at `b8be107` is one — both declare
 `RefundDestination::Required` — so there a create with no `destination` is a
-`400`. **`notchpay` is one** (2026-10-20, vpay's `claude/notchpay-adapter`
-branch): it refuses a `destination`, and its `refund` is a declared
+`400`. **`notchpay` is one** (2026-10-20, vaam-apps/vpay#295,
+`357c825`): it refuses a `destination`, and its `refund` is a declared
 `NotImplemented` token. That branch also adds `notchpay` to both SDKs'
 `PaymentMethodType`, and a push-rail confirm shape: `ConfirmPaymentIntentParams::notchpay(msisdn)`
 in Rust and `NotchPayPaymentMethodData` in Node, with one parity row and a

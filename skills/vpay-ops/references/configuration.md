@@ -183,8 +183,8 @@ present-but-empty value counts as missing.** MTN:
 `credentials.merchant_key`, `credentials.client_id`,
 `credentials.client_secret`.
 
-**Notch Pay, since 2026-10-20** (vpay's `claude/notchpay-adapter` branch, not
-on `master` at `b8be107`): `settings.channel`, `credentials.public_key`,
+**Notch Pay, since 2026-10-20** (vaam-apps/vpay#295, on
+`master` since `357c825`): `settings.channel`, `credentials.public_key`,
 `credentials.private_key`. The row also refuses a `channel` other than
 `cm.mobile`, a currency other than `XAF`, and a key whose `test_` marker
 disagrees with `deployment.livemode` (`RailKeyLivemodeMismatch`, which names

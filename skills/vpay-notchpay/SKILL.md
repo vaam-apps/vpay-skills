@@ -5,13 +5,12 @@ description: "The Notch Pay adapter (`vpay-adapter-notchpay`, rail `notchpay`, 2
 
 # Notch Pay — the aggregator push rail
 
-> **Verified against vpay `b8be107` (2026-10-20)**, `master` before the
-> adapter, **and read on `bf96e50`**, the head of vpay's
-> `claude/notchpay-adapter` branch, which carries everything below and is
-> not on `master` yet. VERSIONING.md says stamp a commit that stays on
-> `master`, so the stamp is the base. Restamp when the branch merges. Until
-> then, check that `backends/crates/vpay-adapter-notchpay` exists in your
-> tree before trusting a line here. See
+> **Verified against vpay `357c825` (2026-10-20)**, the merge of
+> vaam-apps/vpay#295, which added everything below. It was read on the pull
+> request's branch at `bf96e50`; the adapter, its config rules and its stub
+> are unchanged between that commit and `357c825`; what came between is
+> RFC-0014 (merged from `master`) and links to it. On an older tree,
+> `backends/crates/vpay-adapter-notchpay` does not exist. See
 > [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
 
 `backends/crates/vpay-adapter-notchpay/` — `lib.rs`, `mapping.rs`,

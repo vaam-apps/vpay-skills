@@ -249,8 +249,8 @@ documentation says the opposite, twice: "There is no retry mechanism if the
 partner system does not respond". No source read says either way for Orange.
 So the retry half is **unestablished for both shipping rails**; RFC-0013
 reads it as becoming true of the three rails that register their endpoint
-(Stripe, PayPal, Notch Pay). On `master` at `b8be107` none has an adapter;
-Notch Pay's is built on vpay's `claude/notchpay-adapter` branch (2026-10-20),
+(Stripe, PayPal, Notch Pay). Stripe and PayPal have no adapter;
+Notch Pay's is on `master` since `357c825` (vaam-apps/vpay#295, 2026-10-20),
 and its webhook URL is registered by hand. The oracle argument stands on its
 own. Those three vpay texts are still uncorrected on `master` at `b8be107`
 (2026-10-20, the merge of vaam-apps/vpay#285, which added RFC-0013);
