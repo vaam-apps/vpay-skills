@@ -28,7 +28,19 @@ re-terminates TLS with its own CA, which `vpay_provider::http`'s
 vendored-roots client correctly rejects. Do not add a CA or a proxy to vpay
 to get past that; ADR-0003 forbids the environment branch. Run the session
 from a machine whose egress presents Notch Pay's real certificate
-(`docs/status/verification/2026-10-20-notchpay-sandbox.md`). Every status, error and reference rule below is
+(`docs/status/verification/2026-10-20-notchpay-sandbox.md`).
+
+**Since 2026-10-20 a person runs it, not an agent**, on the maintainer's
+decision, from `docs/runbooks/notchpay-sandbox-test.md`:
+`cargo run -p vpay-notchpay --example sandbox_probe` (phases `read`, then
+`payments`, then `webhooks`, plus `verify-signature`) for step 1, and
+`--profile notchpay-sandbox` (`config/application-notchpay-sandbox.yml`) for
+step 5. **Written, never run against Notch Pay.** An agent's part is to turn
+the redacted report the runner pastes into a dated verification page and a
+mapping fix. Do not run the probe yourself, and do not register a capture
+service for its webhooks; the tunnel is the runner's call. The probe is an
+example, not a test: making it a test moves `verify-ignored`'s pinned
+counts. Every status, error and reference rule below is
 transcribed from Notch Pay's `openapi.yaml` 2.1.0 and its guides, and every
 one is "To confirm" (`docs/flows/adapter-notchpay.md` § "To confirm with
 Notch Pay"). The conformance row proves the adapter against a WireMock stub

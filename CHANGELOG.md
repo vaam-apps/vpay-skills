@@ -12,6 +12,16 @@ publishes no release tags and its workspace version has never moved off
 `v0.5.0` as of 2026-09-23 — and its workspace version is `0.5.0`. The naming
 rule stands, for the reasons VERSIONING.md now gives.)_
 
+## 2026-10-20 — a runbook for Notch Pay's sandbox, run by a person
+
+Read against vaam-apps/vpay's `claude/notchpay-sandbox-runbook` branch.
+
+- `vpay-notchpay` names the runbook, the `sandbox_probe` example and the
+  `notchpay-sandbox` profile, and says the run is a person's, with real
+  egress, and not an agent's. Nothing has called Notch Pay yet.
+- Not added to `coverage.json` yet: the three paths exist only on that
+  branch, and the gate reads vpay's `master`. Claim them once it merges.
+
 ## 2026-10-20 — Notch Pay's real test keys carry `test.`
 
 Read against vaam-apps/vpay's `claude/notchpay-sandbox-key-shape` branch, cut
