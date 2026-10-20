@@ -28,7 +28,7 @@ is the count of 2026-09-23. vpay's unmerged `claude/happy-hopper-r3h6rz` branch
 adds one more annotated line, the `vpay-notchpay` pin in the root `Cargo.toml`:
 `cargo xtask verify-versions` counted 24 version references on 2026-10-17 at
 vpay `44c5bf5` and counts 25 on that branch. `0.5.0` here is likewise a figure
-of 2026-09-23; vpay's workspace is at `0.7.0` since 2026-10-18.)_ `sdks/stripe-compat` is `0.0.0`,
+of 2026-09-23; vpay's workspace is at `0.8.0` since the release of 2026-10-20, vpay#282.)_ `sdks/stripe-compat` is `0.0.0`,
 private, and never released. `npm view` answers `0.5.0` for `@vaam-apps/vpay-sdk` and
 `@vaam-apps/vpay-stripe-js`, and `404` for `@vaam-apps/vpay-tauri-checkout`
 (measured 2026-09-23).
