@@ -95,9 +95,9 @@ wrong in vpay" claim in a skill as a claim about the commit it is stamped
 with.**
 
 **Added 2026-10-20: five findings in RFC-0013 § 11, recorded in vpay and not yet
-fixed there** (read on vpay's unmerged `claude/happy-hopper-r3h6rz` branch; the
-RFC's delivery step 0 fixes them as dated corrections, so on a later `master`
-check whether it has). Three are sentences in vpay that are wrong or
+fixed there** (all five re-read on `master` at `b8be107`, 2026-10-20, the
+merge of vaam-apps/vpay#285, which added RFC-0013; the RFC's delivery step 0
+fixes them as dated corrections, so on a later `master` check whether it has). Three are sentences in vpay that are wrong or
 unsupported:
 
 - **"MTN and Orange both retry a non-2xx"** — in `provider_callback.rs`'s

@@ -3,9 +3,10 @@
 _Verified against vpay `87166eaf` (2026-10-09) for the ADR-0026 and ADR-0028
 rows, the notes on them, "Not accepted" and the numbering section; the rest of
 this page was last read at `a33aac61` (2026-09-29). **The RFC list below was
-extended on 2026-10-20 for RFC-0012 and RFC-0013, read on vpay's
-`claude/happy-hopper-r3h6rz` branch, which is not on `master`; no stamp moved
-for it.** Version-sensitive claims carry the date they became true — see
+extended on 2026-10-20 for RFC-0012 and RFC-0013, read on a vpay branch that
+merged to `master` the same day as `b8be107` (vaam-apps/vpay#285), where both
+rows still hold, and for RFC-0014, merged the same day as `0977616`
+(vaam-apps/vpay#296); no stamp moved for either.** Version-sensitive claims carry the date they became true — see
 [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 `docs/adr/`. An ADR is **immutable once accepted**: to change a decision you
@@ -174,10 +175,11 @@ itself has been exercised.
 
 ## RFCs — proposals, not decisions
 
-As of 2026-10-20 there are **thirteen** (this list named only 0001 and 0002
+As of 2026-10-20 there are **fourteen** (this list named only 0001 and 0002
 until 2026-09-23; 0003 arrived 2026-09-16 with vpay#178, 0004–0008 on 2026-09-23
-with vpay#244, 0009 on 2026-10-16, 0010 and 0011 on 2026-10-17, and 0012 and
-0013 on 2026-10-20 — it said "eleven" from 2026-10-17 until 2026-10-20, and
+with vpay#244, 0009 on 2026-10-16, 0010 and 0011 on 2026-10-17, and 0012,
+0013 and 0014 on 2026-10-20 — it said "thirteen" for part of 2026-10-20,
+"eleven" from 2026-10-17 until 2026-10-20, and
 "eight" before that):
 
 - `docs/rfc/0001-settlement-and-payouts.md` — **Draft**.
@@ -236,6 +238,13 @@ with vpay#244, 0009 on 2026-10-16, 0010 and 0011 on 2026-10-17, and 0012 and
   documentation (for one, the claim that MTN retries a callback, which MTN's
   documentation contradicts); vpay has not yet corrected them — see
   `vpay-troubleshooting`'s known-wrong-docs page. See `vpay-provider-adapters`.
+- `docs/rfc/0014-verifying-rail-callbacks.md` — **Draft**, proposed
+  2026-10-20 and merged as `0977616` (vaam-apps/vpay#296); **nothing in it
+  is built**. A defaulted `ProviderAdapter::verify_callback` and
+  `Capabilities::callback_check`, run after the charge is found; the verdict
+  gates only the pull-forward, so callbacks stay hints. Orange first, with
+  the `notif_token` vpay already stores; Stripe, PayPal and Notch Pay inside
+  their adapters' delivery. See `vpay-provider-adapters`.
 
 ## Maintainer decisions recorded in place, not as an ADR status
 

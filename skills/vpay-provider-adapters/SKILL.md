@@ -378,21 +378,23 @@ the port's trait would not change.
 
 ## Proposed port changes that do not exist (2026-09-23)
 
-~~Four Draft RFCs~~ **Nine RFCs as of 2026-10-20** — the four merged by
+~~Four Draft RFCs~~ **Ten RFCs as of 2026-10-20** — the four merged by
 vaam-apps/vpay#244 as `7997536b` (`docs/rfc/0004`, `0006`, `0007`, `0008`),
-and 0009 to 0013 added from 2026-10-16 to 2026-10-20 — would change this
-port or add to it. (This sentence said "Four" until 2026-10-20, although the list
-below had grown to seven by 2026-10-17.) **None of it is built beyond what each
+and 0009 to 0014 added from 2026-10-16 to 2026-10-20 (0014 is the last
+paragraph of this section) — would change this port or add to it. (This
+sentence said "Four" until 2026-10-20, although the list below had grown to
+seven by 2026-10-17, and "Nine" for part of 2026-10-20.) **None of it is built beyond what each
 bullet says, and the capability list above is complete as of 2026-10-20.** Do
 not write an adapter against any of the following, and do not treat a Draft
 section as a decision:
 
 > **Rewritten 2026-10-20 for the Notch Pay adapter.** RFC-0012 and RFC-0013
 > were first read on vpay's `claude/happy-hopper-r3h6rz` branch, merged the
-> same day as `b8be107` (vaam-apps/vpay#285). The RFC-0012 bullet and the
-> client-crate section below were then rewritten from vpay's
-> `claude/notchpay-adapter` branch (read at `bf96e50`), which builds the
-> adapter and is not on `master` yet. On a `master` without
+> same day as `b8be107` (vaam-apps/vpay#285), and re-read at `b8be107`, whose
+> tree is identical to that branch's last commit; both RFCs had changed only in
+> formatting. The RFC-0012 bullet and the client-crate section below were then
+> rewritten from vpay's `claude/notchpay-adapter` branch (read at `bf96e50`),
+> which builds the adapter and is not on `master` yet. On a `master` without
 > `backends/crates/vpay-adapter-notchpay`, the client is still linked by
 > nothing and RFC-0012 is still gated. This page's stamp is not moved
 > (VERSIONING.md).
@@ -571,6 +573,23 @@ evaluation (`docs/plans/2026-09-23-card-provider-evaluation.md`,
 public documentation only) found **no provider shown to accept Visa and
 Mastercard for a Cameroon merchant on a hosted page**. The providers' written
 answers come first.
+
+**RFC-0014 — verifying rail callbacks** (added 2026-10-20, merged as vpay
+`0977616` in vaam-apps/vpay#296; Draft, **nothing in it is built**). The
+maintainer answered "Yes, as its own piece of work" on 2026-10-20 to whether
+vpay should verify Notch Pay's webhook signatures: for every rail that signs,
+and outside the Notch Pay adapter's pull request. It proposes a defaulted
+**`ProviderAdapter::verify_callback(request, charge, config)`**, run by the
+callback route **after** the charge is found, and **`Capabilities::callback_check`**
+(`None` | `BodyToken` | `Signature`). `parse_callback` keeps its signature.
+**None of those names exists** under `backends/` as of 2026-10-20, and no
+rail's callback is verified today. **Do not add a verifier inside an adapter
+ahead of the port change**, Notch Pay's included; RFC-0012's Hash Key stays
+out of configuration until the RFC's Notch Pay step. What the RFC keeps:
+**callbacks stay hints** (a verdict only decides whether the poll is pulled
+forward), and every answer stays a byte-identical `202`. Its first consumer
+is proposed to be Orange, comparing the `notif_token` that `submit` already
+stores. Five open questions are the maintainer's.
 
 ## Where to go next
 
