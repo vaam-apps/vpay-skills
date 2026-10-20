@@ -147,8 +147,8 @@ which runs the real binary, and for livemode
 
 Refunds as a call (RFC-0012 § 10 item 6). Model B / Sync / `X-Sync` (§ 10
 item 9; not offered). `cm.mtn` / `cm.orange` (step 8). Webhook signature
-verification (needs a port change; the maintainer wants a separate RFC for
-it, so do not build it inside a Notch Pay change). Registering the webhook (RFC-0013).
+verification (needs a port change; RFC-0014, vaam-apps/vpay#296, a draft,
+designs it, so do not build it inside a Notch Pay change). Registering the webhook (RFC-0013).
 Cards and Notch Pay's hosted Collect page (out of scope). The epic,
 vaam-apps/vpay#291, stays open.
 
