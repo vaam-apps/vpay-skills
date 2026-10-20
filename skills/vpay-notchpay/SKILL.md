@@ -6,7 +6,7 @@ description: "The Notch Pay adapter (`vpay-adapter-notchpay`, rail `notchpay`, 2
 # Notch Pay — the aggregator push rail
 
 > **Verified against vpay `b8be107` (2026-10-20)**, `master` before the
-> adapter, **and read on `518eb5f`**, the head of vpay's
+> adapter, **and read on `bf96e50`**, the head of vpay's
 > `claude/notchpay-adapter` branch, which carries everything below and is
 > not on `master` yet. VERSIONING.md says stamp a commit that stays on
 > `master`, so the stamp is the base. Restamp when the branch merges. Until
@@ -65,9 +65,14 @@ ADR-0031's conditions are the admission. **Weakening any one of them is
 4. **The process says it at boot.** `Adapter::accepted_exposure` returns the
    four operations. `vpay_api::boot::warn_about_accepted_exposures` logs a
    `WARN` per configured rail in `serve` and `worker`, prefixed
-   `LIVEMODE, REAL MONEY` in livemode. **It never prints a key.** Boot does
-   **not** refuse. Whether livemode should need an acknowledgement key is an
-   open question to the maintainer; do not build one unasked.
+   `LIVEMODE, REAL MONEY` in livemode. **It never prints a key.** **In
+   livemode, boot also refuses the rail** unless its block says
+   `settings.accept_public_key_exposure: true`
+   (`ConfigError::PublicKeyExposureNotAcknowledged`, naming the setting and
+   `credentials.public_key`, never a value). The maintainer asked for it on
+   2026-10-20: "Livemode acknowledgement: YES, require it." A sandbox only
+   warns. An acknowledged livemode boot **still warns**: do not make the
+   setting silence the line, and do not make it optional in livemode.
 5. **A success is accepted only for the charge's own amount and currency.**
    Anything else is `Malformed`, and so is a float amount (`5000.0`).
 6. **The question to Notch Pay stays open** (RFC-0012 § 10 item 1). A yes
@@ -122,7 +127,10 @@ gained `setting_values`, `currencies` and `test_marked_credentials` on
 2026-10-20. **The livemode rule is on the keys**: in livemode a key
 containing `test_` refuses to boot, and outside livemode a key without
 `test_` refuses to boot. Notch Pay has one host for sandbox and production,
-so the host rule cannot help. Name fixture keys so a secret scanner cannot
+so the host rule cannot help. A fourth column, `livemode_acknowledgement`,
+carries condition 4's `settings.accept_public_key_exposure`: required as
+`true` in livemode, optional in a sandbox, and refused in either mode if it is
+anything but `true` or `false`. Name fixture keys so a secret scanner cannot
 read them as Stripe's (`stub-public-key-test_0001`, never `pk_test_…`).
 
 **`config/application.yml` carries the `notchpay` block commented out.** Boot
@@ -132,13 +140,15 @@ deployment of the image. No compose stack enables the rail. `wiremock-notchpay`
 exists with no host port. The proof that a Notch Pay config boots is
 `vpay-server`'s
 `a_notchpay_rail_is_warned_about_at_boot_and_its_keys_are_never_printed`,
-which runs the real binary.
+which runs the real binary, and for livemode
+`a_livemode_notchpay_rail_boots_only_acknowledged_and_still_warns`.
 
 ## Not built, and staying that way until its condition holds
 
 Refunds as a call (RFC-0012 § 10 item 6). Model B / Sync / `X-Sync` (§ 10
 item 9; not offered). `cm.mtn` / `cm.orange` (step 8). Webhook signature
-verification (needs a port change). Registering the webhook (RFC-0013).
+verification (needs a port change; the maintainer wants a separate RFC for
+it, so do not build it inside a Notch Pay change). Registering the webhook (RFC-0013).
 Cards and Notch Pay's hosted Collect page (out of scope). The epic,
 vaam-apps/vpay#291, stays open.
 

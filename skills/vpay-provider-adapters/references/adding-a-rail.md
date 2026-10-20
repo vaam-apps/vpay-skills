@@ -92,8 +92,10 @@ the table above as it stands.
 **A rail whose status read takes a key the provider calls public** is
 admissible only on ADR-0031's six conditions (2026-10-20). Two are code an
 agent writes: override `accepted_exposure` (see `vpay-provider-adapters` §
-"The ten methods"), and list the secret key in `REQUIRED_RAIL_KEYS`. If your
-rail is one, read ADR-0031 before step 4.
+"The ten methods"), and list the secret key in `REQUIRED_RAIL_KEYS`. A third
+is a row value: set the row's `livemode_acknowledgement`, so livemode refuses
+the rail until its block accepts the exposure (condition 4, amended
+2026-10-20). If your rail is one, read ADR-0031 before step 4.
 
 Required in `Cargo.toml`: add the crate to the workspace `members` list in
 the root `Cargo.toml` and to `[workspace.dependencies]`.
@@ -294,12 +296,13 @@ these fail in milliseconds rather than after a connection and a migration run:
 | a configured `providers[]` code the binary links no adapter for            | `ConfigError::ProviderWithoutAdapter` | **78** |
 | an adapter declaring `supports_partial_refunds` without `supports_refunds` | `ConfigError::IncoherentCapabilities` | **78** |
 
-Since 2026-10-20 `Config::validate_all` adds three per-row refusals
+Since 2026-10-20 `Config::validate_all` adds four per-row refusals
 (`ProviderSettingNotAllowed`, `ProviderCurrencyNotAllowed`,
-`RailKeyLivemodeMismatch`), all exit 78. The last names the key and never
-prints it. And right after the join, `vpay_api::boot::warn_about_accepted_exposures`
-logs a `WARN` for every configured rail whose adapter declares an
-`accepted_exposure`. It refuses nothing.
+`RailKeyLivemodeMismatch`, and in livemode `PublicKeyExposureNotAcknowledged`),
+all exit 78. Each names the key and never prints a value. And right after the
+join, `vpay_api::boot::warn_about_accepted_exposures` logs a `WARN` for every
+configured rail whose adapter declares an `accepted_exposure`. The warning
+itself refuses nothing; the livemode refusal is the config row's.
 
 `a_provider_code_with_no_linked_adapter_is_exit_78` in
 `backends/apps/vpay-server/tests/cli.rs` needs no container precisely because

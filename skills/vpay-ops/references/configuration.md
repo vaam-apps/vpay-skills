@@ -188,9 +188,12 @@ on `master` at `b8be107`): `settings.channel`, `credentials.public_key`,
 `credentials.private_key`. The row also refuses a `channel` other than
 `cm.mobile`, a currency other than `XAF`, and a key whose `test_` marker
 disagrees with `deployment.livemode` (`RailKeyLivemodeMismatch`, which names
-the key and never prints it). Those are three new **columns** of the same
-table, not a second table. Every boot of a deployment configuring it also
-logs a `WARN` about the public key's exposure (ADR-0031). The block ships
+the key and never prints it). **In livemode it also refuses the rail unless
+`settings.accept_public_key_exposure` is `true`**
+(`PublicKeyExposureNotAcknowledged`, ADR-0031 condition 4); a sandbox may
+omit it. Those are four new **columns** of the same table, not a second
+table. Every boot of a deployment configuring it also logs a `WARN` about the
+public key's exposure (ADR-0031), acknowledged or not. The block ships
 **commented out** in `config/application.yml`, because uncommenting it makes
 `NOTCHPAY_PUBLIC_KEY` and `NOTCHPAY_PRIVATE_KEY` mandatory for every
 deployment.

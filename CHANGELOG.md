@@ -14,7 +14,7 @@ rule stands, for the reasons VERSIONING.md now gives.)_
 
 ## 2026-10-20 — the Notch Pay adapter, admitted under ADR-0031
 
-Read against vpay's `claude/notchpay-adapter` branch at `518eb5f` (the adapter
+Read against vpay's `claude/notchpay-adapter` branch at `bf96e50` (the adapter
 pull request, not on `master` yet); stamps stay on `b8be107` (VERSIONING.md).
 
 - **New skill: `vpay-notchpay`.** The third rail. A push rail through an
@@ -31,6 +31,14 @@ pull request, not on `master` yet); stamps stay on `b8be107` (VERSIONING.md).
   `REQUIRED_RAIL_KEYS` checks presence only (it gained three columns:
   `vpay-ops`, `vpay-troubleshooting`); `callback_url_pattern` returns a
   `String` (an `Option` now: `references/conformance.md`).
+- **Livemode acknowledgement** (`bf96e50`, same day): the maintainer answered
+  the question the adapter PR asked, "Livemode acknowledgement: YES, require
+  it." `vpay-notchpay` said boot "does **not** refuse" and "do not build one
+  unasked"; in livemode boot now refuses `notchpay` without
+  `settings.accept_public_key_exposure: true`
+  (`PublicKeyExposureNotAcknowledged`), still warning when it is set.
+  `REQUIRED_RAIL_KEYS` gained a fourth column, not three (`vpay-ops`,
+  `vpay-troubleshooting`, `vpay-provider-adapters`' `adding-a-rail.md`).
 
 ## 2026-10-20 — MTN sandbox testing evidence correction
 

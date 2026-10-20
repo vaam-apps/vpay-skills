@@ -104,7 +104,13 @@ missing.**
   key must contain `test_` and a livemode key must not**, and the message
   says "carries" or "lacks" and names the key without printing it. A real
   Notch Pay test key carries `test_`; a fixture or stub key you invented
-  probably does not.
+  probably does not. In **livemode only**, a fourth:
+  `PublicKeyExposureNotAcknowledged` means the block lacks
+  `settings.accept_public_key_exposure: true`. That setting is the
+  operator's written acceptance of the public key's exposure (ADR-0031
+  condition 4, `docs/flows/adapter-notchpay.md` § "Production risks"); do not
+  add it to make a boot pass without that person's decision. An unquoted YAML
+  `true` works.
 
 `target_environment` is required because MTN answers a wrong one with a **500
 whose body says `NOT_ALLOWED_TARGET_ENVIRONMENT`** — "a failure that reads as

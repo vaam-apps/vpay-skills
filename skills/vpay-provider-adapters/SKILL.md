@@ -391,7 +391,7 @@ section as a decision:
 > were first read on vpay's `claude/happy-hopper-r3h6rz` branch, merged the
 > same day as `b8be107` (vaam-apps/vpay#285). The RFC-0012 bullet and the
 > client-crate section below were then rewritten from vpay's
-> `claude/notchpay-adapter` branch (read at `518eb5f`), which builds the
+> `claude/notchpay-adapter` branch (read at `bf96e50`), which builds the
 > adapter and is not on `master` yet. On a `master` without
 > `backends/crates/vpay-adapter-notchpay`, the client is still linked by
 > nothing and RFC-0012 is still gated. This page's stamp is not moved
