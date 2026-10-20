@@ -21,6 +21,9 @@ Read against vaam-apps/vpay's `claude/notchpay-sandbox-runbook` branch.
   egress, and not an agent's. Nothing has called Notch Pay yet.
 - Not added to `coverage.json` yet: the three paths exist only on that
   branch, and the gate reads vpay's `master`. Claim them once it merges.
+  _(Done the same day, once vaam-apps/vpay#299 merged as `c5b0a80`:
+  `vpay-notchpay` claims the runbook and the profile. The probe sits under
+  `backends/crates/vpay-notchpay`, which is already claimed.)_
 
 ## 2026-10-20 — Notch Pay's real test keys carry `test.`
 
