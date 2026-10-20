@@ -207,7 +207,8 @@
         "backends/crates/vpay-adapter-notchpay",
         "backends/tests/conformance/wiremock/notchpay",
         "docs/runbooks/notchpay-sandbox-test.md",
-        "config/application-notchpay-sandbox.yml"
+        "config/application-notchpay-sandbox.yml",
+        "backends/crates/vpay-notchpay/examples/sandbox_probe.rs"
       ]
     },
     "vpay-orange-money": {
