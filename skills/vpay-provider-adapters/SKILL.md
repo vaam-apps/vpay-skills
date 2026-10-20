@@ -367,12 +367,15 @@ not write an adapter against any of the following, and do not treat a Draft
 section as a decision:
 
 > **Added 2026-10-20: RFC-0012 and RFC-0013 below** were read on vpay's
-> `claude/happy-hopper-r3h6rz` branch, which is not on `master`. This page's
-> stamp is not moved to it (VERSIONING.md: stamp a commit that stays on
-> `master`). When that branch merges, re-read both RFCs,
-> `docs/status/providers.md` and `docs/reference/vpay-notchpay.md` before
-> trusting a figure here, and check that `vpay-notchpay` is still linked by
-> nothing.
+> `claude/happy-hopper-r3h6rz` branch, which merged to `master` the same day
+> as `b8be107` (vaam-apps/vpay#285). The re-read this note asked for was done
+> at `b8be107`. Its tree is identical to the branch's last commit, `88ec080`.
+> Since the read at `003197c`, both RFCs changed only in formatting: one table
+> cell, and five bold labels in RFC-0013 § 12 that are now headings. No figure
+> here moved. `vpay-notchpay` is still linked by nothing: it appears only as a
+> workspace member and as the root `Cargo.toml`'s workspace dependency, and no
+> crate names it. This page's stamp stays where it was. Moving it means
+> re-verifying the whole page (VERSIONING.md).
 
 > **Qualified 2026-09-23.** Since vaam-apps/vpay step A (RFC-0004 §§ 5–6,
 > merged in vaam-apps/vpay#251), RFC-0004 is Draft **except** § 5's `customer` list filters

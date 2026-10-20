@@ -3,9 +3,9 @@
 _Verified against vpay `87166eaf` (2026-10-09) for the ADR-0026 and ADR-0028
 rows, the notes on them, "Not accepted" and the numbering section; the rest of
 this page was last read at `a33aac61` (2026-09-29). **The RFC list below was
-extended on 2026-10-20 for RFC-0012 and RFC-0013, read on vpay's
-`claude/happy-hopper-r3h6rz` branch, which is not on `master`; no stamp moved
-for it.** Version-sensitive claims carry the date they became true — see
+extended on 2026-10-20 for RFC-0012 and RFC-0013, read on a vpay branch that
+merged to `master` the same day as `b8be107` (vaam-apps/vpay#285), where both
+rows still hold; no stamp moved for it.** Version-sensitive claims carry the date they became true — see
 [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 `docs/adr/`. An ADR is **immutable once accepted**: to change a decision you
