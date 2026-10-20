@@ -41,7 +41,7 @@ Password + TOTP is untouched and is the break-glass path.
   second factor. Everything else is a uniform `401`. The retry flow carries
   `is_retry` in the row; a retry that fails the same rule is refused.
 - **An IdP outage is a `401`**, not a `503`, with `sso identity provider
-  unavailable` in the log. Deliberate.
+unavailable` in the log. Deliberate.
 - **`redirect_uri` in `staff_auth.sso` is the dashboard's callback**, not a vpay
   URL. Do not confuse it with `dashboard_client.redirect_uris`, which is the
   OAuth leg between the dashboard and vpay-as-OP and still has no route.
@@ -51,22 +51,22 @@ Password + TOTP is untouched and is the break-glass path.
 
 ## The rules you can break by editing
 
-| Rule | Where | What proves it |
-| --- | --- | --- |
-| Linked by `(iss, sub)` only, **never email**; the address is written once at provisioning | `sso/mod.rs` `provision`, `Credentials::find_federated` | `a_second_sign_in_reuses_the_link_and_never_matches_on_email`, `an_email_that_belongs_to_an_unlinked_member_is_refused_not_linked` |
-| No claim touches `is_admin` or `merchant_id`; JIT members are non-admin members of `dashboard_client.merchant_id` | `sso/mod.rs` `provision` | `roles_stay_local_whatever_the_token_claims` |
-| A row for another issuer verifies nothing; discovery's `issuer` must equal the configured one byte for byte | `find_federated(configured issuer, sub)`, `provider.rs` `discover` | `a_credentials_row_for_another_issuer_verifies_nothing`, `a_discovery_document_for_another_issuer_is_refused` |
-| Order: state → code → verify → nonce → **group → disabled → second factor (+retry)** → link/provision. The retry is last so no other defect earns one | `sso/mod.rs` `callback` | `no_other_failure_earns_a_retry` (tokens that also lack the factor) |
-| Algorithm allow-list is asymmetric only; `kid` required; key family must match | `sso/verify.rs` `ALLOWED_ALGORITHMS` | `alg_none_and_hs256_are_refused`, `an_es256_token_verifies_against_an_ec_jwk` |
-| Provisioning is one transaction with the link | `vpay_db::staff::provision_federated_in_tx` (`run_in_tx`) | `provisioning_a_federated_member_is_atomic` |
-| `staff_auth.sso` with both `accepted_acr` and `accepted_amr` empty is a boot refusal; so is a block without `dashboard_client` or the staff secrets | `vpay_config::config::validate_staff_sso` | the `an_sso_block_with_no_second_factor_rule…` config cases |
+| Rule                                                                                                                                                  | Where                                                              | What proves it                                                                                                                     |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Linked by `(iss, sub)` only, **never email**; the address is written once at provisioning                                                             | `sso/mod.rs` `provision`, `Credentials::find_federated`            | `a_second_sign_in_reuses_the_link_and_never_matches_on_email`, `an_email_that_belongs_to_an_unlinked_member_is_refused_not_linked` |
+| No claim touches `is_admin` or `merchant_id`; JIT members are non-admin members of `dashboard_client.merchant_id`                                     | `sso/mod.rs` `provision`                                           | `roles_stay_local_whatever_the_token_claims`                                                                                       |
+| A row for another issuer verifies nothing; discovery's `issuer` must equal the configured one byte for byte                                           | `find_federated(configured issuer, sub)`, `provider.rs` `discover` | `a_credentials_row_for_another_issuer_verifies_nothing`, `a_discovery_document_for_another_issuer_is_refused`                      |
+| Order: state → code → verify → nonce → **group → disabled → second factor (+retry)** → link/provision. The retry is last so no other defect earns one | `sso/mod.rs` `callback`                                            | `no_other_failure_earns_a_retry` (tokens that also lack the factor)                                                                |
+| Algorithm allow-list is asymmetric only; `kid` required; key family must match                                                                        | `sso/verify.rs` `ALLOWED_ALGORITHMS`                               | `alg_none_and_hs256_are_refused`, `an_es256_token_verifies_against_an_ec_jwk`                                                      |
+| Provisioning is one transaction with the link                                                                                                         | `vpay_db::staff::provision_federated_in_tx` (`run_in_tx`)          | `provisioning_a_federated_member_is_atomic`                                                                                        |
+| `staff_auth.sso` with both `accepted_acr` and `accepted_amr` empty is a boot refusal; so is a block without `dashboard_client` or the staff secrets   | `vpay_config::config::validate_staff_sso`                          | the `an_sso_block_with_no_second_factor_rule…` config cases                                                                        |
 
 ## What Keycloak 26.6.1 really issues (measured; other providers differ)
 
 `acr` is a level, not a method: `"1"` after a password, `"0"` on an SSO-cookie
 re-entry. **`amr` is empty unless the realm's executions carry
 `default.reference.value`** (`pwd`, `otp`), a person whose OTP is enrolled
-*during* the sign-in (`CONFIGURE_TOTP`) gets `["pwd"]`, and **an SSO-cookie token
+_during_ the sign-in (`CONFIGURE_TOTP`) gets `["pwd"]`, and **an SSO-cookie token
 loses `amr` after about a second unless the executions carry
 `default.reference.maxAge`**. So production is `accepted_amr: ["otp"]`,
 `accepted_acr: []`, and the realm needs both settings; the fixture is

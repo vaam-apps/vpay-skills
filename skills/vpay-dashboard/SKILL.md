@@ -97,13 +97,13 @@ read cookies.
 
 ## Pages
 
-| Route                                                 | What it does                                                                                                                          |
-| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `/`                                                   | Redirects to `/payments` or `/login`                                                                                                  |
+| Route                                                 | What it does                                                                                                                                                                                                                                                                      |
+| ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/`                                                   | Redirects to `/payments` or `/login`                                                                                                                                                                                                                                              |
 | `/login`, `/login/totp`, `/login/password`            | Password → TOTP (a first sign-in also renders the enrolment QR and secret) → the forced password change. **With ADR-0030 merged**, `/login` also offers a "Sign in with Keycloak" button when `GET /dash/v1/staff/sso` says `enabled`; see [references/sso.md](references/sso.md) |
-| `/payments`, `/payments/{id}`                         | REST-backed. Status and date filters, cursor paging; the detail page adds charge, refunds, last error, timeline                       |
-| `/refunds`, `/deliveries`, `/customers`, `/checkouts` | Procedure-backed lists. Offset paged, no filters, no detail route yet                                                                 |
-| `/signed-out`, `/healthz`                             | Route handlers, not pages: clear a dead session cookie (since 2026-09-07); "Next is answering" (since 2026-09-16, ADR-0022, vpay#183) |
+| `/payments`, `/payments/{id}`                         | REST-backed. Status and date filters, cursor paging; the detail page adds charge, refunds, last error, timeline                                                                                                                                                                   |
+| `/refunds`, `/deliveries`, `/customers`, `/checkouts` | Procedure-backed lists. Offset paged, no filters, no detail route yet                                                                                                                                                                                                             |
+| `/signed-out`, `/healthz`                             | Route handlers, not pages: clear a dead session cookie (since 2026-09-07); "Next is answering" (since 2026-09-16, ADR-0022, vpay#183)                                                                                                                                             |
 
 All four procedure-backed lists are Server Components reading through
 `readProcedurePage`, and all four share `src/components/procedure-table.tsx`.
