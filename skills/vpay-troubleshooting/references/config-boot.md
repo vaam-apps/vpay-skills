@@ -101,10 +101,11 @@ missing.**
   Three more `78`s come from the same row: `ProviderSettingNotAllowed`
   (`channel` is not `cm.mobile`), `ProviderCurrencyNotAllowed` (not `XAF`),
   and `RailKeyLivemodeMismatch`. That last is the confusing one: **a sandbox
-  key must contain `test_` and a livemode key must not**, and the message
-  says "carries" or "lacks" and names the key without printing it. A real
-  Notch Pay test key carries `test_`; a fixture or stub key you invented
-  probably does not. In **livemode only**, a fourth:
+  key must contain `test.` or `test_` and a livemode key must contain
+  neither**, and the message says "carries" or "lacks" and names the key
+  without printing it. A real Notch Pay test key carries `test.` (measured
+  2026-10-20; the documentation's `test_` is not what real keys carry). A
+  fixture or stub key you invented probably carries neither. In **livemode only**, a fourth:
   `PublicKeyExposureNotAcknowledged` means the block lacks
   `settings.accept_public_key_exposure: true`. That setting is the
   operator's written acceptance of the public key's exposure (ADR-0031

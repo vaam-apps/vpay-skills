@@ -12,6 +12,24 @@ publishes no release tags and its workspace version has never moved off
 `v0.5.0` as of 2026-09-23 — and its workspace version is `0.5.0`. The naming
 rule stands, for the reasons VERSIONING.md now gives.)_
 
+## 2026-10-20 — Notch Pay's real test keys carry `test.`
+
+Read against vaam-apps/vpay's `claude/notchpay-sandbox-key-shape` branch, cut
+from `357c825`. The first Notch Pay sandbox session made no request, but it
+measured the maintainer's test-mode keys. They carry `test` followed by `.`
+and not the documented `test_`. The boot rule now reads either.
+
+- **Claims that stopped being true:** "a sandbox key must contain `test_`"
+  and "a real Notch Pay test key carries `test_`" (`vpay-notchpay`,
+  `vpay-troubleshooting`, `vpay-ops`, `vpay-provider-adapters`). The rule
+  is `test.` or `test_`.
+- **Still true, and restated:** nothing has called Notch Pay. Steps 1 and 5
+  are not done, and `providers.md`'s cells still say "stub-only; never
+  called".
+- `vpay-notchpay` now says why that session could not run: a permission
+  policy, and an egress that re-terminates TLS, which vpay's vendored roots
+  correctly refuse.
+
 ## 2026-10-20 — the Notch Pay adapter, admitted under ADR-0031
 
 Read against vaam-apps/vpay#295 at `bf96e50`, merged to `master` as `357c825`

@@ -1,6 +1,6 @@
 ---
 name: vpay-notchpay
-description: "The Notch Pay adapter (`vpay-adapter-notchpay`, rail `notchpay`, 2026-10-20) — a push rail for MTN MoMo and Orange Money through one aggregator account, admitted under ADR-0031 because its status read takes the key Notch Pay calls PUBLIC. Covers the production risk that admission accepts and the boot warning that states it, the six conditions an agent must not weaken, why every mapping is 'To confirm' (nothing has ever called Notch Pay), the read addressed by vpay's own reference with an empty `ref_extra`, the 404 rule, the amount check on every success, the `test_` livemode key rule, and why `refund` is a declared `NotImplemented` token. Load before changing `backends/crates/vpay-adapter-notchpay`, `backends/crates/vpay-notchpay`, its WireMock mappings or its config."
+description: "The Notch Pay adapter (`vpay-adapter-notchpay`, rail `notchpay`, 2026-10-20) — a push rail for MTN MoMo and Orange Money through one aggregator account, admitted under ADR-0031 because its status read takes the key Notch Pay calls PUBLIC. Covers the production risk that admission accepts and the boot warning that states it, the six conditions an agent must not weaken, why every mapping is 'To confirm' (nothing has ever called Notch Pay), the read addressed by vpay's own reference with an empty `ref_extra`, the 404 rule, the amount check on every success, the livemode key rule (`test.` or `test_`, corrected 2026-10-20), and why `refund` is a declared `NotImplemented` token. Load before changing `backends/crates/vpay-adapter-notchpay`, `backends/crates/vpay-notchpay`, its WireMock mappings or its config."
 ---
 
 # Notch Pay — the aggregator push rail
@@ -22,7 +22,13 @@ client crate `backends/crates/vpay-notchpay`, and Notch Pay uses static keys.
 **Nothing has ever called Notch Pay.** Not the sandbox, not production. No
 test-mode key was available when the adapter was written, so RFC-0012's
 delivery step 1 (the sandbox session) and step 5 (the first test-mode call)
-**did not happen**. Every status, error and reference rule below is
+**did not happen**. A later session the same day had the keys and **still
+made no request**: its permission policy refused the calls. Its egress also
+re-terminates TLS with its own CA, which `vpay_provider::http`'s
+vendored-roots client correctly rejects. Do not add a CA or a proxy to vpay
+to get past that; ADR-0003 forbids the environment branch. Run the session
+from a machine whose egress presents Notch Pay's real certificate
+(`docs/status/verification/2026-10-20-notchpay-sandbox.md`). Every status, error and reference rule below is
 transcribed from Notch Pay's `openapi.yaml` 2.1.0 and its guides, and every
 one is "To confirm" (`docs/flows/adapter-notchpay.md` § "To confirm with
 Notch Pay"). The conformance row proves the adapter against a WireMock stub
@@ -124,13 +130,19 @@ ADR-0031's conditions are the admission. **Weakening any one of them is
 The boot rules are in `vpay_config::config::REQUIRED_RAIL_KEYS`, whose rows
 gained `setting_values`, `currencies` and `test_marked_credentials` on
 2026-10-20. **The livemode rule is on the keys**: in livemode a key
-containing `test_` refuses to boot, and outside livemode a key without
-`test_` refuses to boot. Notch Pay has one host for sandbox and production,
+containing `test.` or `test_` refuses to boot, and outside livemode a key
+with neither refuses to boot (`TEST_KEY_MARKERS`). **Real Notch Pay sandbox
+keys carry `test.` (`pk…test.…`, `sk…test.…`), not the documented
+`test_`**: measured on the maintainer's test-mode keys on 2026-10-20. The
+rule read `test_` alone until then, which refused every genuine sandbox key
+and admitted one in livemode. Do not narrow it back to `test_`.
+`a_key_shaped_like_notch_pays_real_sandbox_keys_is_a_test_key` pins it. Notch Pay has one host for sandbox and production,
 so the host rule cannot help. A fourth column, `livemode_acknowledgement`,
 carries condition 4's `settings.accept_public_key_exposure`: required as
 `true` in livemode, optional in a sandbox, and refused in either mode if it is
 anything but `true` or `false`. Name fixture keys so a secret scanner cannot
-read them as Stripe's (`stub-public-key-test_0001`, never `pk_test_…`).
+read them as Stripe's (`public-key-test_0001` or `public-key-test.0005`,
+never `pk_test_…`).
 
 **`config/application.yml` carries the `notchpay` block commented out.** Boot
 checks every _configured_ rail, `enabled` or not, so uncommenting it makes

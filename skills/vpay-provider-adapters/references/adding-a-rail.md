@@ -279,8 +279,10 @@ Not in `docs/flows/provider-port.md`, but required:
 - `vpay_config::config::REQUIRED_RAIL_KEYS` — a row for the rail. **Since
   2026-10-20 a row has three more columns:** `setting_values` (a setting
   that must be one of a closed list), `currencies` (empty is any), and
-  `test_marked_credentials` (keys whose `test_` marker must agree with
-  `deployment.livemode`, for a provider whose sandbox and production share a
+  `test_marked_credentials` (keys whose test-key marker, one of
+  `TEST_KEY_MARKERS`, must agree with `deployment.livemode`; measure a real
+  test key's shape before writing the marker, as Notch Pay's documented
+  `test_` turned out wrong, for a provider whose sandbox and production share a
   host). MTN and Orange leave all three empty.
 - `justfile`'s `expected_suites`: a new adapter crate is one new test binary.
   Count it from `cargo metadata --no-deps` against `master` before building

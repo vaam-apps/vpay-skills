@@ -186,8 +186,9 @@ present-but-empty value counts as missing.** MTN:
 **Notch Pay, since 2026-10-20** (vaam-apps/vpay#295, on
 `master` since `357c825`): `settings.channel`, `credentials.public_key`,
 `credentials.private_key`. The row also refuses a `channel` other than
-`cm.mobile`, a currency other than `XAF`, and a key whose `test_` marker
-disagrees with `deployment.livemode` (`RailKeyLivemodeMismatch`, which names
+`cm.mobile`, a currency other than `XAF`, and a key whose test-key marker
+(`test.` or `test_`; real sandbox keys carry `test.`) disagrees with
+`deployment.livemode` (`RailKeyLivemodeMismatch`, which names
 the key and never prints it). **In livemode it also refuses the rail unless
 `settings.accept_public_key_exposure` is `true`**
 (`PublicKeyExposureNotAcknowledged`, ADR-0031 condition 4); a sandbox may
