@@ -151,6 +151,7 @@ Then state explicitly, in your summary, what you did _not_ do.
 | The port, failure taxonomy, conformance, adding a rail     | `vpay-provider-adapters` |
 | MTN MoMo specifics                                         | `vpay-mtn-momo`          |
 | Orange Money specifics                                     | `vpay-orange-money`      |
+| Notch Pay specifics, and its public-key production risk    | `vpay-notchpay`          |
 | The web workspace, Tailwind/daisyUI, the `verify-ui` gate  | `vpay-frontend`          |
 | The payer page — hosted and embedded checkout, the popup   | `vpay-checkout`          |
 | Mobile checkout — the Flutter plugin                       | `vpay-sdks`              |

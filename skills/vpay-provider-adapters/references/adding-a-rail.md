@@ -80,15 +80,20 @@ Mirror the two existing crates' module split — it is not cosmetic:
 | `mapping.rs` | the rail's error vocabulary → `vpay_core::FailureCode` | a table a reviewer can diff against the rail's documentation                                                                                         |
 | `token.rs`   | the rail's half of the token cache                     | the endpoint, grant, body shape and refresh margin are the rail's alone                                                                              |
 
-**One planned exception to this table, designed only (2026-10-20).** RFC-0012
-puts Notch Pay's wire in its own crate, `backends/crates/vpay-notchpay`, so
-that `vpay-adapter-notchpay` would hold `lib.rs` and `mapping.rs` and **no
-`wire.rs`** — and no `token.rs`, since Notch Pay authenticates with static
-keys. The client crate is built and linked by nothing; the adapter crate does
-not exist and is waiting on Notch Pay's written answer about ADR-0029 D1's
-third rule. If you are the one writing it, build on the client: see
-`vpay-provider-adapters` § "Proposed port changes that do not exist". The two
-shipping adapters follow the table above as it stands.
+**One exception to this table (2026-10-20).** RFC-0012 puts Notch Pay's
+wire in its own crate, `backends/crates/vpay-notchpay`, so
+`vpay-adapter-notchpay` holds `lib.rs` and `mapping.rs` (plus `tests.rs`) and
+**no `wire.rs`**, and no `token.rs`, since Notch Pay authenticates with
+static keys. The adapter is built on vpay's `claude/notchpay-adapter` branch,
+admitted under ADR-0031. On a `master` without it, the client is linked by
+nothing. The `vpay-notchpay` skill is the briefing. MTN and Orange follow
+the table above as it stands.
+
+**A rail whose status read takes a key the provider calls public** is
+admissible only on ADR-0031's six conditions (2026-10-20). Two are code an
+agent writes: override `accepted_exposure` (see `vpay-provider-adapters` §
+"The ten methods"), and list the secret key in `REQUIRED_RAIL_KEYS`. If your
+rail is one, read ADR-0031 before step 4.
 
 Required in `Cargo.toml`: add the crate to the workspace `members` list in
 the root `Cargo.toml` and to `[workspace.dependencies]`.
@@ -266,7 +271,18 @@ Not in `docs/flows/provider-port.md`, but required:
   bind-mounting the same mappings directory, with the
   `curl -fsS /__admin/health` healthcheck the other two use.
 - The rail code must appear in the documented `payment_method_types` values
-  (`docs/api/`, both SDKs).
+  (`docs/api/`, both SDKs). A push rail also gets a confirm shape in both
+  SDKs (`ConfirmPaymentIntentParams::notchpay(msisdn)` in Rust, a
+  `NotchPayPaymentMethodData` in Node) and a `docs/sdks/parity.md` row.
+- `vpay_config::config::REQUIRED_RAIL_KEYS` — a row for the rail. **Since
+  2026-10-20 a row has three more columns:** `setting_values` (a setting
+  that must be one of a closed list), `currencies` (empty is any), and
+  `test_marked_credentials` (keys whose `test_` marker must agree with
+  `deployment.livemode`, for a provider whose sandbox and production share a
+  host). MTN and Orange leave all three empty.
+- `justfile`'s `expected_suites`: a new adapter crate is one new test binary.
+  Count it from `cargo metadata --no-deps` against `master` before building
+  (51 → 52 for `notchpay`).
 
 ## 7. Boot refuses the half-done states
 
@@ -277,6 +293,13 @@ these fail in milliseconds rather than after a connection and a migration run:
 | -------------------------------------------------------------------------- | ------------------------------------- | ------ |
 | a configured `providers[]` code the binary links no adapter for            | `ConfigError::ProviderWithoutAdapter` | **78** |
 | an adapter declaring `supports_partial_refunds` without `supports_refunds` | `ConfigError::IncoherentCapabilities` | **78** |
+
+Since 2026-10-20 `Config::validate_all` adds three per-row refusals
+(`ProviderSettingNotAllowed`, `ProviderCurrencyNotAllowed`,
+`RailKeyLivemodeMismatch`), all exit 78. The last names the key and never
+prints it. And right after the join, `vpay_api::boot::warn_about_accepted_exposures`
+logs a `WARN` for every configured rail whose adapter declares an
+`accepted_exposure`. It refuses nothing.
 
 `a_provider_code_with_no_linked_adapter_is_exit_78` in
 `backends/apps/vpay-server/tests/cli.rs` needs no container precisely because

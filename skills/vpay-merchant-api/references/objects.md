@@ -136,8 +136,10 @@ The wire shape is `destination[<rail_code>][msisdn]` — nested under the rail's
 own code, for `payment_method_data`'s reason: a typed struct here would have to
 name `mtn_momo` as a field, and `if provider == "mtn_momo"` outside an adapter
 crate is what ADR-0002 forbids. It is **required** on a rail declaring
-`RefundDestination::Required` (both rails, today) and **refused** on one that
-returns money to the instrument that paid. The **adapter** parses the inner
+`RefundDestination::Required` (`mtn_momo`, `orange_money`) and **refused** on
+one that returns money to the instrument that paid (`notchpay`, since
+2026-10-20 on vpay's `claude/notchpay-adapter` branch, the first shipping one,
+whose refund is still a `NotImplemented` token). The **adapter** parses the inner
 map; the core's whole business with it is presence.
 
 **It is persisted nowhere**: there is no `destination` column on `refunds`,

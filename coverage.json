@@ -200,6 +200,14 @@
         "config/application-live.yml"
       ]
     },
+    "vpay-notchpay": {
+      "covers": [
+        "docs/flows/adapter-notchpay.md",
+        "docs/security/threat-models/notchpay.md",
+        "backends/crates/vpay-adapter-notchpay",
+        "backends/tests/conformance/wiremock/notchpay"
+      ]
+    },
     "vpay-orange-money": {
       "covers": [
         "docs/flows/adapter-orange-money.md",

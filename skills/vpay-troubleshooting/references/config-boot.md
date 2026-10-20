@@ -96,6 +96,15 @@ missing.**
   `credentials.subscription_key`, `credentials.api_key`.
 - Orange: `credentials.merchant_key`, `credentials.client_id`,
   `credentials.client_secret`.
+- Notch Pay (2026-10-20, vpay's `claude/notchpay-adapter` branch):
+  `settings.channel`, `credentials.public_key`, `credentials.private_key`.
+  Three more `78`s come from the same row: `ProviderSettingNotAllowed`
+  (`channel` is not `cm.mobile`), `ProviderCurrencyNotAllowed` (not `XAF`),
+  and `RailKeyLivemodeMismatch`. That last is the confusing one: **a sandbox
+  key must contain `test_` and a livemode key must not**, and the message
+  says "carries" or "lacks" and names the key without printing it. A real
+  Notch Pay test key carries `test_`; a fixture or stub key you invented
+  probably does not.
 
 `target_environment` is required because MTN answers a wrong one with a **500
 whose body says `NOT_ALLOWED_TARGET_ENVIRONMENT`** — "a failure that reads as

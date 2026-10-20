@@ -1,6 +1,6 @@
 ---
 name: vpay-provider-adapters
-description: The vpay provider port (`vpay-provider`) and how to add a payment rail — the `ProviderAdapter` trait and its nine methods (payer_fields since 2026-09-16), the `Unsupported` vs `NotImplemented` rule that decides which error a missing operation returns, the rail-agnostic refund destination (`RefundDestination`, `RefundTarget`, `parse_destination`), the capability flags the core branches on instead of provider codes, the shared HTTP/token modules, the shared conformance suite a new adapter must pass, where per-provider state is written (`docs/status/providers.md`), and the Draft designs for Stripe, PayPal and Notch Pay adapters and for callback registration (RFC-0010 to RFC-0013 — only the `vpay-notchpay` client crate is built). Load this before writing or changing any `vpay-adapter-*` crate, before touching `backends/crates/vpay-provider`, and before adding a rail.
+description: The vpay provider port (`vpay-provider`) and how to add a payment rail — the `ProviderAdapter` trait and its ten methods (payer_fields since 2026-09-16, accepted_exposure since 2026-10-20), the `Unsupported` vs `NotImplemented` rule that decides which error a missing operation returns, the rail-agnostic refund destination (`RefundDestination`, `RefundTarget`, `parse_destination`), the capability flags the core branches on instead of provider codes, the shared HTTP/token modules, the shared conformance suite a new adapter must pass, where per-provider state is written (`docs/status/providers.md`), the Draft designs for Stripe and PayPal adapters and for callback registration (RFC-0010, -0011, -0013), and the Notch Pay rail (RFC-0012), admitted under ADR-0031 and built on a vpay branch, never called (load `vpay-notchpay` for it). Load this before writing or changing any `vpay-adapter-*` crate, before touching `backends/crates/vpay-provider`, and before adding a rail.
 ---
 
 # The provider port, and adding a rail
@@ -61,9 +61,12 @@ would be a lie about Orange, and what is missing is vpay's work — this
 repository holds no Orange transfer specification. The reason changed, not
 just the value.
 
-`cargo xtask verify-status` therefore reports **exactly one** token as of
+`cargo xtask verify-status` therefore reported **exactly one** token from
 2026-09-16 — Orange's — down from eight on 2026-09-03 and from **two** partway
-through 2026-09-15. `orange_money::refund` is the same string that left the
+through 2026-09-15. **It reports two again with the Notch Pay adapter
+(2026-10-20, on vpay's `claude/notchpay-adapter` branch):
+`notchpay::refund`**, a third rail that refunds and whose refund vpay has not
+written (`vpay-notchpay` skill). `orange_money::refund` is the same string that left the
 list on 2026-09-03 meaning something else entirely (then: Orange has no refund
 API; now: vpay has not written the transfer), so do not read a token's
 reappearance as a regression. The gate also gained a **third direction** on
@@ -95,7 +98,11 @@ row in the same change that moves the rail. **No gate reads the matrix**:
 page itself says deriving its capability columns from each adapter's
 `Capabilities` is not built — so a stale cell fails nothing.
 
-## The nine methods
+## The ten methods
+
+**Ten since the Notch Pay adapter (2026-10-20, vpay's
+`claude/notchpay-adapter` branch, not on `master` at this page's stamp):**
+`accepted_exposure`, below. Everything else in this section was nine.
 
 ~~The seven methods~~ **Corrected 2026-09-23:** the trait has **nine** `fn`s
 at `b747e5d5`. The code block below always listed eight, and
@@ -117,7 +124,21 @@ async fn refund(&self, charge, amount, destination: Option<&RefundTarget>, confi
                                             -> Result<Refunded, _>;   // default: Unsupported
 async fn account_holder_name(&self, msisdn, config)-> Result<Option<AccountHolder>, _>; // default: Unsupported
 fn payer_fields(&self) -> &'static [PayerField];  // default: &[] — since 2026-09-16
+fn accepted_exposure(&self) -> Option<AcceptedExposure>; // default: None — since 2026-10-20
 ```
+
+- **`accepted_exposure` is ADR-0031's boot warning, through the port**
+  (2026-10-20). ADR-0031 amended ADR-0029 D1 rule 3. A status read
+  authenticated by a key the provider calls **public** is admissible only if
+  the adapter declares what that key lets anyone else do. `None` (the
+  default) is right for every rail whose read takes a secret. `notchpay` is
+  the only rail that declares one. `vpay_api::boot::warn_about_accepted_exposures`
+  logs it at `WARN` for every _configured_ rail, in `serve` and `worker`.
+  `Measured` must forward it, like `payer_fields`: a wrapper that took the
+  default would silence the warning on every rail
+  (`the_accepted_exposure_is_forwarded_not_defaulted`). An adapter admitted
+  on ADR-0031's second limb that does not override it is the "way B done
+  silently" both RFC-0012 and ADR-0031 refuse.
 
 - **`payer_fields` is what the payer must type, and vpay enforces it
   generically** (since 2026-09-16, vpay#186). A push rail that collects an
@@ -366,13 +387,15 @@ bullet says, and the capability list above is complete as of 2026-10-20.** Do
 not write an adapter against any of the following, and do not treat a Draft
 section as a decision:
 
-> **Added 2026-10-20: RFC-0012 and RFC-0013 below** were read on vpay's
-> `claude/happy-hopper-r3h6rz` branch, which is not on `master`. This page's
-> stamp is not moved to it (VERSIONING.md: stamp a commit that stays on
-> `master`). When that branch merges, re-read both RFCs,
-> `docs/status/providers.md` and `docs/reference/vpay-notchpay.md` before
-> trusting a figure here, and check that `vpay-notchpay` is still linked by
-> nothing.
+> **Rewritten 2026-10-20 for the Notch Pay adapter.** RFC-0012 and RFC-0013
+> were first read on vpay's `claude/happy-hopper-r3h6rz` branch, merged the
+> same day as `b8be107` (vaam-apps/vpay#285). The RFC-0012 bullet and the
+> client-crate section below were then rewritten from vpay's
+> `claude/notchpay-adapter` branch (read at `518eb5f`), which builds the
+> adapter and is not on `master` yet. On a `master` without
+> `backends/crates/vpay-adapter-notchpay`, the client is still linked by
+> nothing and RFC-0012 is still gated. This page's stamp is not moved
+> (VERSIONING.md).
 
 > **Qualified 2026-09-23.** Since vaam-apps/vpay step A (RFC-0004 §§ 5–6,
 > merged in vaam-apps/vpay#251), RFC-0004 is Draft **except** § 5's `customer` list filters
@@ -458,34 +481,28 @@ section as a decision:
   `sandbox` as a livemode stub marker — and shares RFC-0010's two. **No
   crate, no mapping, no stub exists**, and nothing has called PayPal from
   this repository.
-- **RFC-0012 — a Notch Pay adapter** (added 2026-10-20; Draft, **gated, and
-  not buildable as written**). `vpay-adapter-notchpay`, rail code `notchpay`,
-  Cameroon mobile money (MTN MoMo and Orange Money through one aggregator
-  account) as a `Push` rail: Notch Pay's direct charge, channel `cm.mobile`,
-  three calls on the charge path, `X-Grant` carrying the private key on every
-  one. It would be the second `RefundDestination::Origin` rail, but its
-  `refund` would be a declared `NotImplemented("notchpay::refund")` rather
-  than a call: Notch Pay's `POST /refunds` is in a guide and not in its
-  specification, and carries no reference that makes a replay safe (RFC-0012
-  § 7). **The gate is not an engineering question.** Notch Pay fails
-  ADR-0029 D1's third hard rule as documented — `GET /payments/{reference}`
-  accepts the key Notch Pay calls public — and D1 says a provider "whose
-  status read accepts a publishable key, gets no adapter". **Decided
-  2026-10-20: the maintainer asks Notch Pay in writing** (the RFC's way A:
-  does the read accept, and can an account require, the private key?) and
-  rule 3 stays as written. The maintainer emailed Notch Pay the same day. The
-  adapter — RFC-0012's delivery steps 2 to 5 — is **not written until Notch
-  Pay answers**, and no answer is recorded as of 2026-10-20. Do not build it
-  under the public key and call the rule satisfied in practice: the RFC names
-  that as amending the rule silently (way B) and refuses it. **What exists is the client crate below and
-  nothing else**: no adapter crate, mapping, stub host, config key or
-  `docs/status.md` token. The RFC's delivery steps 2 to 5 are one pull request
-  against vpay and one against `vpay-skills`; this page and the
-  `docs/status/providers.md` row change in them.
+- **RFC-0012 — a Notch Pay adapter** (added 2026-10-20; Draft, **admitted
+  under ADR-0031 (rule 3 amended) and built the same day**, on vpay's
+  `claude/notchpay-adapter` branch). Notch Pay fails ADR-0029 D1's third rule
+  **as ADR-0029 wrote it**: `GET /payments/{reference}` accepts the key
+  Notch Pay calls public. The maintainer first chose to ask Notch Pay in
+  writing (way A) and emailed them. With no answer the same day, they wrote
+  "Let's do a full implementation and warn the developer about the risks in
+  prod. They never answered to me too". **ADR-0031** then amended rule 3 for
+  every provider, on six conditions (way B, taken openly). The adapter,
+  `vpay-adapter-notchpay`, is a `Push` rail on `cm.mobile`, the first
+  shipping `Origin` rail, with refunds as the declared token
+  `notchpay::refund`. **It has never called Notch Pay**: RFC-0012's steps 1
+  and 5 (sandbox session, first test-mode call) did not run. Load the
+  `vpay-notchpay` skill before touching it. Write "admitted under ADR-0031",
+  **never** "rule 3 passes", and do not weaken any of ADR-0031's conditions:
+  `X-Grant` on every call, boot refusing a missing private key, the
+  documented exposure, the boot warning, the amount check, the open question.
 - **RFC-0013 — vpay registers its own callback endpoints** (added 2026-10-20;
   Draft, **nothing in it is built**). On a rail whose callback URL is
   registered with the provider account instead of sent on each request —
-  Stripe, PayPal and Notch Pay, none of them with an adapter — vpay would make
+  Stripe, PayPal and Notch Pay; only Notch Pay has an adapter, and only on a
+  vpay branch (2026-10-20) — vpay would make
   sure one endpoint it created exists at the effective callback URL, in a
   worker singleton job (proposed kind `ensure_callbacks`, hourly) and a
   proposed command `vpay-server callbacks ensure`, **never on the boot path**,
@@ -515,21 +532,18 @@ section as a decision:
   callbacks stay hints, and the poll ladder settles a charge whose callback
   never came (RFC-0013 § "What a missed callback costs").
 
-**`backends/crates/vpay-notchpay` is built, and linked by nothing**
-(2026-10-20; `docs/reference/vpay-notchpay.md`). It is the one built part of
-the designs above: an internal client crate (`publish = false`) transcribed
-from Notch Pay's OpenAPI specification 2.1.0, covering initialize, process and
-retrieve a payment, list and create webhook endpoints, and parse a webhook
-event, with 34 unit tests (vpay's verification page of 2026-10-20 records 34
-passed, 0 ignored, plus 1 doctest). **No adapter uses it, no binary
-links it (only the workspace manifest names it), and nothing has called Notch
-Pay** — not in a sandbox, not against a stub. So when the adapter is written,
-it builds on this crate:
+**`backends/crates/vpay-notchpay` is the Notch Pay client** (2026-10-20;
+`docs/reference/vpay-notchpay.md`), an internal crate (`publish = false`)
+transcribed from Notch Pay's OpenAPI specification 2.1.0. On `master` at
+`b8be107` it is **linked by nothing**. On vpay's `claude/notchpay-adapter`
+branch, `vpay-adapter-notchpay` sits on it and `vpay-server` links the
+adapter. Nothing has called Notch Pay through it. What carries over to any
+change you make there:
 
 - **Do not write a `wire.rs` for Notch Pay, and do not re-transcribe the
   specification.** This is the one rail whose wire is a crate boundary rather
-  than a module (see `references/adding-a-rail.md` § 3). The adapter would
-  keep `lib.rs` and `mapping.rs`; there is no `token.rs`, because Notch Pay
+  than a module (see `references/adding-a-rail.md` § 3). The adapter keeps
+  `lib.rs` and `mapping.rs`. There is no `token.rs`, because Notch Pay
   authenticates with static keys in headers.
 - **The client says what Notch Pay answered; the adapter decides what it
   means.** A call returns `Result<Answer<T>, ProviderError>`: `Answer::Success`
@@ -538,10 +552,13 @@ it builds on this crate:
   `Malformed`, or `Config` at construction. What a `409` or a `422` means for a
   charge is `mapping.rs`'s call, not the client's. The crate defines no error
   type of its own, on purpose.
-- **It sends both keys on every request**, which is what RFC-0012's way A
-  would need of the status read. Its `reqwest::Client` must not follow
-  redirects (a followed one replays `X-Grant`); the clients in
-  `vpay_provider::http` refuse them.
+- **It sends both keys on every request.** That is ADR-0031's condition 1,
+  and every conformance stub mapping requires `X-Grant`. Its
+  `reqwest::Client` must not follow redirects (a followed one replays
+  `X-Grant`); the clients in `vpay_provider::http` refuse them. **Since
+  2026-10-20 it applies a per-request deadline**
+  (`Client::with_request_timeout`), which the adapter sets from
+  `ProviderConfig::request_timeout`.
 - **What it deliberately omits**: refunds, cancel, webhook update and delete,
   transfers, and webhook signature verification (the port's `parse_callback`
   receives no headers, so a verifier would be code nothing can call).
@@ -564,6 +581,8 @@ answers come first.
   the mapping contract a new rail's stubs must satisfy, and the techniques.
 - `vpay-mtn-momo` skill — the push rail in detail.
 - `vpay-orange-money` skill — the redirect rail in detail.
+- `vpay-notchpay` skill — the aggregator push rail admitted under ADR-0031,
+  and its production risk.
 - `docs/status/providers.md` (the per-provider matrix, 2026-10-20),
   `docs/reference/vpay-notchpay.md` (the client crate, 2026-10-20),
   `docs/rfc/0012-notchpay-adapter.md`,

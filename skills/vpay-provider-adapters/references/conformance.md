@@ -38,7 +38,10 @@ table data. From the file's own header:
 The rail's name appears in **eight** table functions — seven until
 `refund_body_pattern` joined them on 2026-09-15 — `mappings_dir`, `start`,
 `documented_declines`, `declared_failure_codes`, `documented_callback_body`,
-`callback_url_pattern`, `refund_body_pattern`, `return_url_pattern`; plus the
+`callback_url_pattern` (an `Option` since 2026-10-20: `None` is a rail whose
+callback URL is registered with the account, and the shared case then asserts
+the URL appears **nowhere** in the stub's journal — RFC-0010 § 8's change,
+carried by `notchpay`), `refund_body_pattern`, `return_url_pattern`; plus the
 two places that construct **every** adapter rather than selecting one,
 `adapters()` and `a_required_rail_parses_its_own_destination`.
 `declared_failure_codes` reads the adapter's own `PRODUCED_FAILURE_CODES` —
@@ -63,8 +66,11 @@ in `Cargo.toml` plus the fact that nothing there would compile against it.
 
 Every case steers by **reference**: MTN matches the `X-Reference-Id` header,
 Orange matches the body's `order_id` (which is `ChargeRef::reference_id`
-rendered). So both rails stub the **same UUIDs**, and adding a rail means
-adding one mappings directory rather than editing the test file.
+rendered), and Notch Pay (2026-10-20, vpay's `claude/notchpay-adapter`
+branch) matches the initialize body's `reference` and the read's path. So
+every rail stubs the **same UUIDs**, and adding a rail means adding one
+mappings directory and a row per table function rather than editing a
+case.
 
 | constant          | UUID (low bits) | what your mappings must do                                                                                                                                                                                                                                                                                             |
 | ----------------- | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -162,9 +168,10 @@ can assert about itself — that a rail declaring `Required` has actually
 the premise guard became on 2026-10-17: a rail declaring
 `RefundDestination::Required` must have overridden `parse_destination`, and a
 rail declaring `Origin` must **not** have — the port's `Unsupported` is the
-permanent, correct answer there. It admits an `Origin` rail; it does not drive
-one, because this suite parameterises over the rails that ship and none of
-them declares `Origin`. _(Until 2026-10-17 it was
+permanent, correct answer there. It admits an `Origin` rail. On `master` at
+`b8be107` it drives none, because no shipping rail declares `Origin`.
+**`notchpay` does** (2026-10-20, vpay's `claude/notchpay-adapter` branch), so
+there the `Origin` arm has a live case. _(Until 2026-10-17 it was
 `no_shipping_rail_returns_a_refund_to_the_paying_instrument`, which asserted
 that every shipping rail declares `Required` and listed three debts as the
 price of relaxing it — an integration case sending `destination` to an
