@@ -5,8 +5,8 @@ description: "The Notch Pay adapter (`vpay-adapter-notchpay`, rail `notchpay`, 2
 
 # Notch Pay — the aggregator push rail
 
-> **Verified against vpay `4579dc7` (2026-10-21)**, the head of
-> vaam-apps/vpay#304 (stacked on #303), for "Read this before you believe
+> **Verified against vpay `5b4c583` (2026-10-21)**, the merge of
+> vaam-apps/vpay#304, for "Read this before you believe
 > anything else", condition 5 and "How the adapter behaves". The rest was
 > verified against vpay `357c825` (2026-10-20), the merge of
 > vaam-apps/vpay#295, which added everything below. It was read on the pull

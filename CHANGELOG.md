@@ -14,7 +14,8 @@ rule stands, for the reasons VERSIONING.md now gives.)_
 
 ## 2026-10-21 — the `notchpay` adapter addresses payments by Notch Pay's reference
 
-Read against vaam-apps/vpay#304 at `4579dc7`, stacked on #303.
+Read against vaam-apps/vpay's `master` at `5b4c583`, the merge of
+vaam-apps/vpay#304.
 
 - `vpay-notchpay`: process and read go to `/payments/{notchpay_reference}`,
   the `trx.…` kept in `ref_extra`; every answer's `trxref` must be ours; a
