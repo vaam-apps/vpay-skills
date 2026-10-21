@@ -5,7 +5,7 @@ description: "The Notch Pay adapter (`vpay-adapter-notchpay`, rail `notchpay`, 2
 
 # Notch Pay — the aggregator push rail
 
-> **Verified against vpay `b5db39b` (2026-10-21)**, the head of
+> **Verified against vpay `f7c7ae3` (2026-10-21)**, the merge of
 > vaam-apps/vpay#303, for "Read this before you believe anything else",
 > condition 5 and "How the adapter behaves". The rest was verified against
 > vpay `357c825` (2026-10-20), the merge of
