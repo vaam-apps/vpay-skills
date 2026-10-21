@@ -171,9 +171,10 @@ ADR-0031's conditions are the admission. **Weakening any one of them is
   and needs a conformance-suite change (the suite assumes a push rail's
   `ref_extra` is empty and that a duplicate submit always recovers). It is
   not built yet; until it is, the WireMock stubs keep the our-reference
-  addressing, and their metadata says it is contradicted. After an
-  unresolvable `409`, the adapter must fail closed (`Malformed`), never
-  report `Submitted` and never fail the charge.
+  addressing, and their metadata says it is contradicted. **Undecided:** what
+  the fix does after a `409` it cannot resolve to a payment. The proposal is
+  to fail closed (`Malformed`: fate unknown, not `Submitted`, not a failure);
+  it is with the maintainer, so do not build either answer as settled.
 - **A `404` is `NotFound` only if the message is Notch Pay's "Payment not
   found".** Any other `404` is `Config`: a wrong base path, or an unknown
   Sync account. Reading those as "no such payment" would resubmit a live
