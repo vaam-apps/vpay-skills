@@ -30,8 +30,8 @@ own key material back). "The 409 answer is undecided" (fail closed).
 
 ## 2026-10-21 — Notch Pay's sandbox answered step 1, and contradicted the adapter
 
-Read against vaam-apps/vpay#303 at `b5db39b`. It merges together with this
-change.
+Read against vaam-apps/vpay's `master` at `f7c7ae3`, the merge of
+vaam-apps/vpay#303.
 
 - `vpay-notchpay`: step 1 ran on 2026-10-21, through the probe, on the
   maintainer's approval in that session. The path takes Notch Pay's `trx.…`
