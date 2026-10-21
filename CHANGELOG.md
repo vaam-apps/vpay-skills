@@ -12,6 +12,22 @@ publishes no release tags and its workspace version has never moved off
 `v0.5.0` as of 2026-09-23 — and its workspace version is `0.5.0`. The naming
 rule stands, for the reasons VERSIONING.md now gives.)_
 
+## 2026-10-21 — the `notchpay` adapter addresses payments by Notch Pay's reference
+
+Read against vaam-apps/vpay#304 at `4579dc7`, stacked on #303.
+
+- `vpay-notchpay`: process and read go to `/payments/{notchpay_reference}`,
+  the `trx.…` kept in `ref_extra`; every answer's `trxref` must be ours; a
+  read with none held is `Config`; an unresolvable `409` is `Malformed` (the
+  maintainer's decision); callbacks prefer `data.trxref`. The crash window
+  is stated as a residual risk. The conformance suite selects key material
+  per rail.
+
+**Stopped being true.** "Every call addresses the payment by vpay's
+reference, and `ref_extra` is always empty". "The duplicate-submit case
+requires a push rail's `ref_extra` to be empty" (it requires the charge's
+own key material back). "The 409 answer is undecided" (fail closed).
+
 ## 2026-10-21 — Notch Pay's sandbox answered step 1, and contradicted the adapter
 
 Read against vaam-apps/vpay#303 at `b5db39b`. It merges together with this

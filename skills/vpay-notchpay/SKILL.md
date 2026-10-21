@@ -5,10 +5,10 @@ description: "The Notch Pay adapter (`vpay-adapter-notchpay`, rail `notchpay`, 2
 
 # Notch Pay — the aggregator push rail
 
-> **Verified against vpay `b5db39b` (2026-10-21)**, the head of
-> vaam-apps/vpay#303, for "Read this before you believe anything else",
-> condition 5 and "How the adapter behaves". The rest was verified against
-> vpay `357c825` (2026-10-20), the merge of
+> **Verified against vpay `4579dc7` (2026-10-21)**, the head of
+> vaam-apps/vpay#304 (stacked on #303), for "Read this before you believe
+> anything else", condition 5 and "How the adapter behaves". The rest was
+> verified against vpay `357c825` (2026-10-20), the merge of
 > vaam-apps/vpay#295, which added everything below. It was read on the pull
 > request's branch at `bf96e50`; the adapter, its config rules and its stub
 > are unchanged between that commit and `357c825`; what came between is
@@ -35,9 +35,9 @@ in that session. What it showed:
 - **The path takes Notch Pay's `trx.…` reference only** (item 2,
   contradicted). Process and read by vpay's UUID are `404` "Payment Not
   Found". Ours comes back as `trxref` and `merchant_reference`; `reference`
-  is the `trx.…`. **The adapter still addresses by ours, so its `submit` fails
-  closed against the real rail**: the process `404` is `Malformed` before any
-  prompt, and no money moves. The rail does not work until that is fixed.
+  is the `trx.…`. **Fixed in vaam-apps/vpay#304**: the adapter keeps the
+  `trx.…` as `ref_extra["notchpay_reference"]` and addresses process and
+  read by it. That fix has not met Notch Pay (step 5).
 - **`GET /payments?search=` finds the `trx.…` only**, not our reference and
   not the description, and list items carry no `trxref` (item 19). So the
   fix (carry the `trx.…` in `ref_extra`) keeps a **residual crash window**:
@@ -160,21 +160,31 @@ ADR-0031's conditions are the admission. **Weakening any one of them is
   network.
 - **Submit is two calls**: `POST /payments` (amount, `XAF`, `phone` as
   `+`-prefixed E.164, our UUID as `reference`, optional `description`, and
-  nothing else of the payer's), then `POST /payments/{reference}` with
-  `channel` and `data.phone`, which prompts the payer. A `409` on the first
-  is the crash-retry case: read, then process only if `pending`.
-- **Every call addresses the payment by vpay's reference, and `ref_extra` is
-  always empty. That is wrong against the real rail** (item 2, contradicted
-  2026-10-21): the path wants Notch Pay's `trx.…`. RFC-0012 § 3 had designed
-  "prefer Notch Pay's reference when held"; the build dropped it, and the
-  sandbox overturned the build. The fix carries the `trx.…` in `ref_extra`
-  and needs a conformance-suite change (the suite assumes a push rail's
-  `ref_extra` is empty and that a duplicate submit always recovers). It is
-  not built yet; until it is, the WireMock stubs keep the our-reference
-  addressing, and their metadata says it is contradicted. **Undecided:** what
-  the fix does after a `409` it cannot resolve to a payment. The proposal is
-  to fail closed (`Malformed`: fate unknown, not `Submitted`, not a failure);
-  it is with the maintainer, so do not build either answer as settled.
+  nothing else of the payer's), then `POST /payments/{notchpay_reference}`
+  with `channel` and `data.phone`, which prompts the payer.
+  `notchpay_reference` is the `trx.…` the first call returned as
+  `transaction.reference`; `Submitted` carries it as key material.
+- **Since vaam-apps/vpay#304, payments are addressed by Notch Pay's
+  reference** (`NOTCHPAY_REFERENCE`, `"notchpay_reference"` in `ref_extra`),
+  because the sandbox answered `404` to ours (item 2). Do not "simplify" it
+  back to our reference: every Notch Pay call would `404`. Every payment
+  answer must name the charge's reference as `trxref`, or it is
+  `Malformed`. A read of a charge with no `notchpay_reference` is `Config`
+  before any request, never `NotFound` (lost key material, as Orange's
+  `pay_token`).
+- **`409`** (crash retry): with `notchpay_reference` held, read it, and
+  process only if `pending`. **With none held, `Malformed`**: fate unknown,
+  never `Submitted`, never a decline. The maintainer decided this on
+  2026-10-21, because Notch Pay cannot find a payment by our reference.
+  **This leaves a crash window**: a crash after the prompt and before
+  `submit` returns leaves a payment vpay cannot read, and an operator
+  reconciles it in Notch Pay's dashboard. Do not claim it closed.
+- **The conformance suite selects key material per rail** since #304
+  (`submitted_key_material`, beside `documented_declines`), not by flow: a
+  push rail is not necessarily addressed by our reference. The submit and
+  duplicate cases assert that the key material round-trips, and
+  `notchpay_a_duplicate_it_cannot_resolve_fails_closed` pins the `409` rule.
+  The stub matches only `/payments/trx\.test_…`.
 - **A `404` is `NotFound` only if the message is Notch Pay's "Payment not
   found".** Any other `404` is `Config`: a wrong base path, or an unknown
   Sync account. Reading those as "no such payment" would resubmit a live
@@ -190,8 +200,10 @@ ADR-0031's conditions are the admission. **Weakening any one of them is
   `expired` and `abandoned` are `payer_timeout`. Anything else is
   `Malformed`. `PRODUCED_FAILURE_CODES` is four codes; nothing maps to
   `insufficient_funds`, because the read names no reason.
-- **Callbacks**: the five `payment.*` events only, `data.reference` must be
-  one of our UUIDs, and `ref_extra` is empty. The signature
+- **Callbacks**: the five `payment.*` events only; the charge is `data.trxref`
+  if it is one of our UUIDs, else `data.reference` (since #304, after the
+  measured payment shape; no webhook has been received to confirm the
+  event's), and `ref_extra` is empty. The signature
   (`x-notch-signature`) is **not** checked, because the port passes no
   headers. The URL is registered with the account by hand. RFC-0013 is not
   built.

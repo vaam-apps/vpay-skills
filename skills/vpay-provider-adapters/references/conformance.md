@@ -226,14 +226,18 @@ case passed. A leak is a leak of the halves.
 ## What a conformance charge stands for
 
 `Rail::charge` builds a charge as it looks **after `submit`**, because that
-is the only kind `query_status` ever sees in production. Selected by
-capability, never by rail name:
+is the only kind `query_status` ever sees in production.
 
-- **Push** → `payer_ref: Some("237600000000")`, `ref_extra: {}` (a push rail
-  is addressed by the reference we generated and carries no rail key
-  material).
-- **Redirect** → `payer_ref: None`, `ref_extra: {"pay_token": …}` (the rail
-  will not answer for our reference alone).
+- **`payer_ref`, by capability:** push → `Some("237600000000")`, redirect →
+  `None`.
+- **`ref_extra`, by rail, from `submitted_key_material`** (a per-rail data
+  table beside `documented_declines`, since vaam-apps/vpay#304,
+  2026-10-21): MTN `{}` (addressed by our reference), Orange
+  `{"pay_token": …}`, Notch Pay `{"notchpay_reference": "trx.test_{ref}"}`.
+  Until #304 it was chosen by flow (push: empty), which Notch Pay, a push
+  rail addressed by its own token, broke. The submit case asserts every
+  seeded key comes back from `submit`; the push half of the duplicate case
+  asserts the duplicate returns exactly the charge's key material.
 - **`return_url: Some(..)` on both** — deliberately _not_ selected by flow.
   The core fills it for any charge whose merchant sent one and leaves it to
   the adapter to decide whether the rail has a use for it. A push rail's case
