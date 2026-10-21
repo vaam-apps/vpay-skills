@@ -12,6 +12,24 @@ publishes no release tags and its workspace version has never moved off
 `v0.5.0` as of 2026-09-23 — and its workspace version is `0.5.0`. The naming
 rule stands, for the reasons VERSIONING.md now gives.)_
 
+## 2026-10-21 — the payer surfaces' dot-segment safety is pinned by test
+
+Read against vaam-apps/vpay#309's branch (`claude/admiring-swirles-9b668f`,
+`1468c3e`), from `master` at `865420b`. Merge this after #309. It cites
+`sdks/stripe-js/src/testing/unroutable-secrets.ts`, which exists only once
+#309 lands.
+
+- `vpay-sdks`: the payer-surface bullet now says the stripe-js and Flutter
+  client-secret parsers are pinned by tests on every route that builds a path.
+  It names the shared list of sixteen refused secrets and says where a new
+  method or a new refused shape goes. `references/parity.md` records the two
+  new payer rows and the 778 → 788 move.
+
+**Stopped being true.** "No test there names a dot segment, so loosening
+that prefix check would reopen it silently." Loosening it now fails four
+stripe-js tests and three Flutter tests. Five mutations were checked on
+#309's verification page.
+
 ## 2026-10-21 — an empty or all-dots path id is refused by both merchant SDKs
 
 Read against vaam-apps/vpay's `master` at `1ffd148`, the merge of

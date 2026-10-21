@@ -221,12 +221,22 @@ is on vpay's `docs/status/verification/2026-10-21-sdk-dot-segment-ids.md`.
   returned `Result<_, Error>` / a `Promise`, and `InvalidParams` already
   existed. A caller who saw a `404` for these inputs now gets the local
   refusal. Both READMEs' § Status say so.
-- **The payer surfaces are not exposed, and that is by construction.**
-  `@vaam-apps/vpay-stripe-js`'s `parseClientSecret` and the Flutter plugin's
-  `_tryParseClientSecret` take the id out of a client secret and require it to
-  start with `pi_` or `cs_`; the Tauri plugin builds no path of its own. No
-  test there names a dot segment, so loosening that prefix check would reopen
-  it silently.
+- **The payer surfaces are not exposed, by construction and, since
+  2026-10-21, by test.** `@vaam-apps/vpay-stripe-js`'s `parseClientSecret`
+  and the Flutter plugin's `_tryParseClientSecret` take the id out of a client
+  secret and require it to start with `pi_` or `cs_` and be longer than that
+  prefix. That rule is the only thing keeping `.` and `..` out of a
+  `/v1/browser` path, because escaping leaves dots alone. The Tauri plugin
+  builds no path of its own: its guest-JS calls stripe-js. Since
+  vaam-apps/vpay#309, tests drive every method that builds a path, the
+  embedded frame's `/e/{id}` included, through sixteen such secrets and
+  assert nothing is sent. The list is
+  `sdks/stripe-js/src/testing/unroutable-secrets.ts`, with a copy in
+  `sdks/flutter/vpay_checkout_flutter/test/browser_client_test.dart`. Other
+  tests pin that an id carrying `/../` stays one segment. A new payer method
+  that builds a path gets a line in those tests, and a new refused shape
+  goes in both lists. _(This said "No test there names a dot segment, so
+  loosening that prefix check would reopen it silently" until 2026-10-21.)_
 
 ## Parity is per capability, not per method name or per shape
 

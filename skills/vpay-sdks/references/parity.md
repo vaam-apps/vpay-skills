@@ -196,6 +196,13 @@ When you **rename** a test, edit the cell in the same commit. When you
   second row. That change added four rows to "Request validation" and moved
   `verify-sdk-parity` from 769 to **778** proving tests at 45 dated gaps,
   measured on the branch.
+- **The payer tables gained one row each the same day** (vaam-apps/vpay#309,
+  tests only): "A client secret whose id is empty or only dots is refused
+  without sending", in the stripe-js and Flutter tables, citing six and four
+  tests. That moved `verify-sdk-parity` from 778 to **788** proving tests,
+  still at 45 dated gaps, measured on the branch. The Tauri table has no such
+  row, because that plugin builds no path, and `parity.md`'s Tauri section
+  says so.
 
 ## Step A: the rows it moved
 
