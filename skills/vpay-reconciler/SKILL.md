@@ -98,6 +98,22 @@ properties to preserve if you touch it:
   there is no `Instant` in the signature.
 - **It branches on `ProviderFlow`, a capability value, never a rail code.**
 
+**What a `provider_requests` row says after an error is chosen by whoever writes
+it, not derived from the error** (as of 2026-10-21, vaam-apps/vpay#314).
+`recovery_step` reads `submit` rows only, and turns any recorded status into
+`Advance` — "the rail accepted it". So for a `submit` the worker writes
+`status_code IS NULL` for every `ProviderError`: a `Malformed` submit (Notch
+Pay's unresolvable `409`, MTN's unfollowed `307`) has an _unknown_ fate on
+purpose. For a `query_status` it writes the `0` sentinel for `Malformed` and
+`Rejected` (the rail answered) and `NULL` for `Transport`, `Config`,
+`Unsupported` and `NotImplemented`; nothing reads those rows. **Do not make the
+two match** — recording a refused submit as answered advances a charge the rail
+never accepted. The port cannot say whether a `Transport` or `Config` error
+followed an answer, so those stay `NULL` on a read and under-claim. Open, and not
+fixed as of that date: the worker does not fail a charge whose resubmit the rail
+declined (`Rejected` finishes the job and leaves the charge `submitting`). See
+`docs/reference/vpay-worker.md` § "What a refused answer is recorded as".
+
 `RecoveryPolicy`: `not_found_streak: 3`, `not_found_window: 60 s`,
 `lease: ≥ 4 × DEFAULT_REQUEST_TIMEOUT`, `unresolved_after: 24 h`.
 
