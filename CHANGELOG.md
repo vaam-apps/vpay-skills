@@ -15,20 +15,25 @@ rule stands, for the reasons VERSIONING.md now gives.)_
 ## 2026-10-21 — the payer surfaces' dot-segment safety is pinned by test
 
 Read against vaam-apps/vpay#309's branch (`claude/admiring-swirles-9b668f`,
-`1468c3e`), from `master` at `865420b`. Merge this after #309. It cites
-`sdks/stripe-js/src/testing/unroutable-secrets.ts`, which exists only once
-#309 lands.
+`93c5eb8`, with vpay `master` merged in at `73a5b5a`). Merge this after
+#309. It cites `sdks/stripe-js/src/testing/unroutable-secrets.ts`, which
+exists only once #309 lands.
 
 - `vpay-sdks`: the payer-surface bullet now says the stripe-js and Flutter
   client-secret parsers are pinned by tests on every route that builds a path.
   It names the shared list of sixteen refused secrets and says where a new
   method or a new refused shape goes. `references/parity.md` records the two
   new payer rows and the 778 → 788 move.
+- `vpay-sdks` (`references/flutter-plugin.md`): the example's `pubspec.lock`
+  now follows the plugin's version on release, because #309's
+  `release-please.yml` step rewrites it. A hand bump still has to refresh it.
 
 **Stopped being true.** "No test there names a dot segment, so loosening
 that prefix check would reopen it silently." Loosening it now fails four
 stripe-js tests and three Flutter tests. Five mutations were checked on
 #309's verification page.
+Also: "the Flutter example's `pubspec.lock` is deliberately not bumped"
+(vpay's `AGENTS.md`). It recorded `0.1.1` against a `0.9.1` plugin.
 
 ## 2026-10-21 — RFC-0012 step 5: the notchpay adapter met Notch Pay's sandbox
 

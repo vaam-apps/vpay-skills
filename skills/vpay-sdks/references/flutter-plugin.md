@@ -460,6 +460,14 @@ moment of dismissal. Full detail, screenshots and transaction ids:
   checkout through this plugin.
 - **No CI gate runs any of the six `*flutter*` recipes** (D-M3, unchanged).
   Every count on this page is a human running the recipe by hand.
+- **The example's `pubspec.lock` follows the plugin's version on release
+  (2026-10-21, vaam-apps/vpay#309).** It records the plugin, a path
+  dependency, at the plugin's version. It sat at `0.1.1` while the plugin went
+  to `0.9.1`, so every local `flutter test` rewrote it into an unrelated
+  change. `release-please.yml` now rewrites that one line on the release
+  branch, beside `Cargo.lock`. A **hand** version bump still has to run
+  `flutter pub get` in `example/` and commit the lockfile, because no gate
+  reads it. _(Until 2026-10-21, vpay listed it as deliberately not bumped.)_
 - **The Android/web window proof from architecture 2 is retired, not
   current**, for the one suite it depended on: `checkout_window_test.dart`
   and its debug-only JS-injection hook (`VpayCheckoutActivityTestHarness.kt`)
