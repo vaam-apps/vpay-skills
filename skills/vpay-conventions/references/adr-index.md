@@ -6,7 +6,10 @@ this page was last read at `a33aac61` (2026-09-29). **The RFC list below was
 extended on 2026-10-20 for RFC-0012 and RFC-0013, read on a vpay branch that
 merged to `master` the same day as `b8be107` (vaam-apps/vpay#285), where both
 rows still hold, and for RFC-0014, merged the same day as `0977616`
-(vaam-apps/vpay#296); no stamp moved for either.** Version-sensitive claims carry the date they became true — see
+(vaam-apps/vpay#296); no stamp moved for either.** The RFC-0012 row's
+sentence on what the adapter has called was re-read on 2026-10-21 against vpay
+`VPAY_STEP5_MERGE_SHA`, the merge of vaam-apps/vpay#310 (RFC-0012's
+step 5); the rest of that row is unchanged. Version-sensitive claims carry the date they became true — see
 [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 `docs/adr/`. An ADR is **immutable once accepted**: to change a decision you
@@ -215,7 +218,8 @@ with vpay#244, 0009 on 2026-10-16, 0010 and 0011 on 2026-10-17, and 0012,
 - `docs/rfc/0012-notchpay-adapter.md` — **Draft**, proposed 2026-10-20. **Since
   `357c825` (2026-10-20, vaam-apps/vpay#295) it is admitted under ADR-0031
   and built**: the adapter exists,
-  has never called Notch Pay, and the `vpay-notchpay` skill is its briefing.
+  has called only Notch Pay's sandbox (RFC-0012's step 5, 2026-10-21), and the
+  `vpay-notchpay` skill is its briefing.
   What follows is the RFC as it stood on `master`, **not buildable as
   written**: Notch Pay (a Cameroon mobile-money aggregator)
   fails ADR-0029 D1's third hard rule on its own documentation: its payment

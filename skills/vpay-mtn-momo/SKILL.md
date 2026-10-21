@@ -1,11 +1,13 @@
 ---
 name: vpay-mtn-momo
-description: The MTN MoMo Cameroon adapter (`vpay-adapter-mtn-momo`) — a push rail, and the only rail vpay has ever called for real. Covers the Collections token mint and the JSON-grant-body fix a real sandbox run found, the pure response-outcome functions (409 means accepted, 404 means NotFound), the wire-type serde and redaction rules, and the Disbursements `transfer` that `refund` became on 2026-09-15 — written, WireMock-proven and never once called against MTN. Load before changing anything under `backends/crates/vpay-adapter-mtn-momo` or its WireMock mappings.
+description: The MTN MoMo Cameroon adapter (`vpay-adapter-mtn-momo`) — a push rail, and the first rail vpay called for real (Notch Pay's sandbox followed on 2026-10-21). Covers the Collections token mint and the JSON-grant-body fix a real sandbox run found, the pure response-outcome functions (409 means accepted, 404 means NotFound), the wire-type serde and redaction rules, and the Disbursements `transfer` that `refund` became on 2026-09-15 — written, WireMock-proven and never once called against MTN. Load before changing anything under `backends/crates/vpay-adapter-mtn-momo` or its WireMock mappings.
 ---
 
 # MTN MoMo — the push rail
 
-> **Verified against vpay `a33aac61` (2026-09-29).** Version-sensitive claims below
+> **Verified against vpay `a33aac61` (2026-09-29).** The 2026-10-21 correction
+> under "Status as of 2026-09-16" was read against vpay `VPAY_STEP5_MERGE_SHA`
+> (2026-10-21), the merge of vaam-apps/vpay#310. Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -18,8 +20,10 @@ Push: the payer is prompted on their own handset, **we** supply the
 reference (`X-Reference-Id`), and status stays queryable by that reference
 indefinitely. Both are what the poll ladder is built on.
 
-**Status as of 2026-09-16**: the one rail vpay has ever called for real, and
-only on its **charge path**. A EUR PaymentIntent was created, confirmed and
+**Status as of 2026-09-16**: ~~the one rail vpay has ever called for real~~
+(**corrected 2026-10-21:** the first; vpay's `notchpay` adapter took
+test-mode payments through Notch Pay's sandbox on 2026-10-21, see the
+`vpay-notchpay` skill), and only on its **charge path**. A EUR PaymentIntent was created, confirmed and
 settled against **MTN's sandbox** on 2026-09-15. No production rail, no real
 payer, and MTN's sandbox rejects XAF — EUR is load-bearing in
 `config/application-live.yml`. That run exercised the token mint,
@@ -32,8 +36,9 @@ same day. See `docs/status/verification/2026-09-15.md` and
 who ran the tests:** the testing recorded on 2026-09-15 included **over seven
 successful payments against MTN's real sandbox**. The session described above
 had three attempts, two token-mint failures followed by one settlement; it is
-one documented session, not the total of the testing. "The one rail" means MTN
-was the only provider called for real, not that only one payment succeeded.
+one documented session, not the total of the testing. "The one rail" meant MTN
+was the only provider called for real (until 2026-10-21, see above), not that
+only one payment succeeded.
 
 ## Two products, two subscription keys, two token scopes
 

@@ -35,7 +35,7 @@ Start with `vpay`. It is the orientation skill and it routes to the rest.
 | [`vpay-provider-adapters`](skills/vpay-provider-adapters/) | The port, the failure taxonomy, conformance — and adding a rail                                           |
 | [`vpay-mtn-momo`](skills/vpay-mtn-momo/)                   | MTN MoMo specifics — the push flow, tokens, the sandbox                                                   |
 | [`vpay-orange-money`](skills/vpay-orange-money/)           | Orange Money specifics — the redirect flow and the payer window                                           |
-| [`vpay-notchpay`](skills/vpay-notchpay/)                   | Notch Pay specifics — the aggregator push rail admitted under ADR-0031, its production risk, never called |
+| [`vpay-notchpay`](skills/vpay-notchpay/)                   | Notch Pay specifics — the aggregator push rail admitted under ADR-0031, its production risk; sandbox only |
 | [`vpay-frontend`](skills/vpay-frontend/)                   | The web workspace, Tailwind v4 + daisyUI 5, and the `verify-ui` gate                                      |
 | [`vpay-checkout`](skills/vpay-checkout/)                   | The payer-facing surfaces: hosted, browser, mobile                                                        |
 | [`vpay-dashboard`](skills/vpay-dashboard/)                 | The merchant dashboard, `/dash/v1`, staff auth, the BFF                                                   |
