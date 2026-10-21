@@ -187,6 +187,17 @@ us to ask MTN, over an authenticated channel, about a charge of ours.
 same UUID by `RequestToPay`), and is `Malformed` if neither parses — failing
 closed.
 
+**MTN sends each callback once and never retries it**
+(<https://momodeveloper.mtn.com/api-documentation/callback>, read
+2026-10-20), and recommends polling — which the poll ladder already does. A
+callback only pulls the next poll forward, so a missed one costs latency.
+_(vpay said until 2026-10-21 that both rails retry a non-2xx;
+vaam-apps/vpay#319 corrects it.)_ MTN's pages also disagree on the method:
+`POST` on the callback page, `PUT` in "API Methods", and both allowed in the
+setup steps. The route mounts `POST` only. That is "To confirm with MTN" item
+1 in `docs/flows/adapter-mtn-momo.md`: unobserved, and not something to change
+from the documentation alone.
+
 ## The 500s that are our own misconfiguration
 
 `mapping::CONFIGURATION_CODES` — `INVALID_CURRENCY`,

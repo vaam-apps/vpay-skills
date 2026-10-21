@@ -140,6 +140,10 @@ snake_case the attribute would rename it away from the rail's own spelling.
 | `pay_token`   | no                                | yes, when present and non-blank             |
 | `status`      | —                                 | **there is no field for it**                |
 
+**Whether Orange sends `order_id` here at all is unconfirmed** (added
+2026-10-21): third-party sources say the notification is `status`,
+`notif_token` and `txnid` only. See [unverified.md](unverified.md), row 11.
+
 `pay_token` is carried through so a callback _could_ repair a charge whose
 `ref_extra` write was lost. It does not, today:
 `vpay_api::provider_callback` discards the whole `ref_extra`. Whether Orange

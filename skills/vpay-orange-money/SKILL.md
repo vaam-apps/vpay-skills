@@ -161,7 +161,11 @@ The rest of the ladder, the status table and the callback are in
 ## `parse_callback` fails closed — and nothing checks `notif_token`
 
 Requires `order_id` (parsing as a UUID we could have generated) **and** a
-non-blank `notif_token`; either missing is `Malformed`. `CallbackBody` has
+non-blank `notif_token`; either missing is `Malformed`. **Whether Orange's
+notification carries `order_id` at all is unconfirmed** (added 2026-10-21):
+third-party sources say the body is `status`, `notif_token` and `txnid` only,
+which would make every real Orange callback a `400` — see
+[references/unverified.md](references/unverified.md), row 11. `CallbackBody` has
 **no `status` field** — a callback is a hint, and the cheapest way to
 guarantee an adapter cannot leak a status out of an unauthenticated request
 is to give it nowhere to put one.

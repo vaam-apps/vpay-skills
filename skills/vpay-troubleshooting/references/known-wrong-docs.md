@@ -117,6 +117,19 @@ callback has reached vpay). Where these skills repeated the first two, they
 carry a dated correction (`vpay-merchant-api`'s routes page, the `/provider`
 notes in `vpay-ops` and `vpay-troubleshooting`).
 
+**Updated 2026-10-21: vaam-apps/vpay#319 lands step 0 for the retry sentence
+and both risks, and not for the other two.** On a vpay `master` that contains
+it, the retry sentence carries a dated correction in the three places above
+and in every other place that leaned on it (`docs/api/README.md`,
+`docs/status/backend.md`, the `values.yaml` burst comment, doc comments in
+`vpay-db` and `vpay-worker`, and the callback integration test); the `PUT`
+question is "To confirm with MTN" item 1 in `docs/flows/adapter-mtn-momo.md`,
+and the `order_id` question is "To confirm with Orange Cameroun" item 11 in
+`docs/flows/adapter-orange-money.md`, both with sources and neither acted on
+in code. The IP-allowlist comment and the "hourly" are still as described
+above. Of the rails linked today only Notch Pay's reference mentions retrying,
+and it asks for a `200` (RFC-0013 § 12, item 12, open).
+
 Repository-wide, `grep -c "and was wrong\|Corrected 2026\|~~"` over `docs/`
 gives double digits on `docs/status/backend.md`, `docs/status/merchant-sdks.md`,
 `docs/status/cratestack.md`, `docs/status/frontend.md`,

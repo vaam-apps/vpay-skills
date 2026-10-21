@@ -206,6 +206,12 @@ Source: `vpay_api::provider_callback`. One route.
 | ------ | --------------------------- |
 | POST   | `/provider/{code}/callback` |
 
+`POST` only. MTN's documentation says its callback is a `POST` on one page
+and a `PUT` on another, and a `PUT` here would get axum's bare `405`. That is
+unobserved and recorded, not fixed: "To confirm with MTN" item 1 in
+`docs/flows/adapter-mtn-momo.md` (added 2026-10-21, vaam-apps/vpay#319).
+Mounting `PUT` waits on a real MTN callback, not on the documentation.
+
 The path is not free: `vpay_config::ProviderHost::effective_callback_url`
 derives `{public_base_url}/provider/{code}/callback`, and that is what both
 adapters have been sending in `X-Callback-Url` / `notif_url` since Step 3.
@@ -254,7 +260,9 @@ Notch Pay's is on `master` since `357c825` (vaam-apps/vpay#295, 2026-10-20),
 and its webhook URL is registered by hand. The oracle argument stands on its
 own. Those three vpay texts are still uncorrected on `master` at `b8be107`
 (2026-10-20, the merge of vaam-apps/vpay#285, which added RFC-0013);
-RFC-0013's delivery step 0 corrects them.
+RFC-0013's delivery step 0 corrects them. **Updated 2026-10-21:**
+vaam-apps/vpay#319 is that step for this item; on a `master` that contains
+it, all three carry a dated correction.
 
 **There is no rate limit**, and the module says so plainly: a caller who knows
 a live `provider_reference_id` can hold one charge at roughly one rail request
