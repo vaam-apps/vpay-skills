@@ -12,6 +12,27 @@ publishes no release tags and its workspace version has never moved off
 `v0.5.0` as of 2026-09-23 — and its workspace version is `0.5.0`. The naming
 rule stands, for the reasons VERSIONING.md now gives.)_
 
+## 2026-10-21 — Notch Pay's sandbox answered step 1, and contradicted the adapter
+
+Read against vaam-apps/vpay#303 at `b5db39b`. It merges together with this
+change.
+
+- `vpay-notchpay`: step 1 ran on 2026-10-21, through the probe, on the
+  maintainer's approval in that session. The path takes Notch Pay's `trx.…`
+  reference only, so the adapter's `submit` fails closed against the real
+  rail (not yet fixed). `search` does not find our reference, so the fix
+  will keep a residual crash window. The "insufficient funds" number read
+  `complete` for less than asked: a success now also needs `amounts.total`
+  to be the charge's amount. `canceled` is `payer_declined`. A payment
+  answer has no `id`. The probe gained a `search` phase.
+
+**Stopped being true.** "Nothing has ever called Notch Pay" (the probe has;
+the adapter still has not). "`canceled` is not `payer_declined`".
+"`PRODUCED_FAILURE_CODES` is three codes" (four). "Every mapping is To
+confirm" (items 3, 4, 5, 15 and 19 are answered). "The read addressed by
+vpay's own reference" is still what the code does, but it is now known to be
+wrong against Notch Pay.
+
 ## 2026-10-20 — the sandbox probe's `--ca-bundle`, and who may run step 1
 
 Read against vaam-apps/vpay's `master` at `d14cbe9`, the merge of

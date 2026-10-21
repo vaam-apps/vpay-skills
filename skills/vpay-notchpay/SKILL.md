@@ -1,11 +1,14 @@
 ---
 name: vpay-notchpay
-description: "The Notch Pay adapter (`vpay-adapter-notchpay`, rail `notchpay`, 2026-10-20) — a push rail for MTN MoMo and Orange Money through one aggregator account, admitted under ADR-0031 because its status read takes the key Notch Pay calls PUBLIC. Covers the production risk that admission accepts and the boot warning that states it, the six conditions an agent must not weaken, why every mapping is 'To confirm' (nothing has ever called Notch Pay), the read addressed by vpay's own reference with an empty `ref_extra`, the 404 rule, the amount check on every success, the livemode key rule (`test.` or `test_`, corrected 2026-10-20), and why `refund` is a declared `NotImplemented` token. Load before changing `backends/crates/vpay-adapter-notchpay`, `backends/crates/vpay-notchpay`, its WireMock mappings or its config."
+description: "The Notch Pay adapter (`vpay-adapter-notchpay`, rail `notchpay`, 2026-10-20) — a push rail for MTN MoMo and Orange Money through one aggregator account, admitted under ADR-0031 because its status read takes the key Notch Pay calls PUBLIC. Covers the production risk that admission accepts and the boot warning that states it, the six conditions an agent must not weaken, what Notch Pay's real sandbox answered on 2026-10-21 (step 1, through the probe, never through the adapter) and how it contradicted the adapter's addressing (the path takes Notch Pay's `trx.…` reference, so `submit` fails closed), the 404 rule, the amount and `amounts.total` check on every success, the livemode key rule (`test.` or `test_`, corrected 2026-10-20), and why `refund` is a declared `NotImplemented` token. Load before changing `backends/crates/vpay-adapter-notchpay`, `backends/crates/vpay-notchpay`, its WireMock mappings or its config."
 ---
 
 # Notch Pay — the aggregator push rail
 
-> **Verified against vpay `357c825` (2026-10-20)**, the merge of
+> **Verified against vpay `b5db39b` (2026-10-21)**, the head of
+> vaam-apps/vpay#303, for "Read this before you believe anything else",
+> condition 5 and "How the adapter behaves". The rest was verified against
+> vpay `357c825` (2026-10-20), the merge of
 > vaam-apps/vpay#295, which added everything below. It was read on the pull
 > request's branch at `bf96e50`; the adapter, its config rules and its stub
 > are unchanged between that commit and `357c825`; what came between is
@@ -22,11 +25,38 @@ client crate `backends/crates/vpay-notchpay`, and Notch Pay uses static keys.
 
 ## Read this before you believe anything else on this page
 
-**Nothing has ever called Notch Pay.** Not the sandbox, not production. No
-test-mode key was available when the adapter was written, so RFC-0012's
-delivery step 1 (the sandbox session) and step 5 (the first test-mode call)
-**did not happen**. A later session the same day had the keys and **still
-made no request**: its permission policy refused the calls. Its egress also
+**The adapter has never called Notch Pay.** Step 5 (the first test-mode call
+through it) has not happened. **Step 1 has** (vaam-apps/vpay#303,
+`docs/status/verification/2026-10-21-notchpay-sandbox-run.md`): on
+2026-10-21 Notch Pay's real sandbox answered RFC-0012 § 10's sandbox items,
+through `sandbox_probe` from a cloud session, on the maintainer's approval
+in that session. What it showed:
+
+- **The path takes Notch Pay's `trx.…` reference only** (item 2,
+  contradicted). Process and read by vpay's UUID are `404` "Payment Not
+  Found". Ours comes back as `trxref` and `merchant_reference`; `reference`
+  is the `trx.…`. **The adapter still addresses by ours, so its `submit` fails
+  closed against the real rail**: the process `404` is `Malformed` before any
+  prompt, and no money moves. The rail does not work until that is fixed.
+- **`GET /payments?search=` finds the `trx.…` only**, not our reference and
+  not the description, and list items carry no `trxref` (item 19). So the
+  fix (carry the `trx.…` in `ref_extra`) keeps a **residual crash window**:
+  a crash after the USSD prompt and before `ref_extra` is durable leaves a
+  payment vpay cannot read. State it as a risk; do not claim it is solved.
+- **The "insufficient funds" number read `complete`** with `amounts.total`
+  105 of `amount` 107. `total` equalled `amount` everywhere else.
+- `cm.mobile` honours the outcome numbers; a repeated reference is `409`
+  "Reference already existing"; answers use `transaction`/`endpoint`/
+  `endpoints`; a payment answer has **no `id`**; `POST /webhooks` returns
+  **no signing secret**, makes a second endpoint for a repeated URL, and
+  carries `status`, not `active`; `DELETE /webhooks/{id}` answered `404`
+  (the maintainer deleted the probe's endpoints by hand).
+- Not measured: item 7 (signature) and 17's delivery, for want of a public
+  URL; item 11.
+
+Before that, on 2026-10-20, no test-mode key was available when the adapter
+was written, and a later session the same day had the keys and **still made
+no request**: its permission policy refused the calls. Its egress also
 re-terminates TLS with its own CA, which `vpay_provider::http`'s
 vendored-roots client correctly rejects. Do not add a CA or a proxy to
 vpay's shipping code to get past that (`vpay-server`, `vpay-worker`,
@@ -48,7 +78,8 @@ Notch Pay's own certificate.
 `cargo run -p vpay-notchpay --example sandbox_probe` (phases `read`, then
 `payments`, then `webhooks`, plus `verify-signature`) for step 1, and
 `--profile notchpay-sandbox` (`config/application-notchpay-sandbox.yml`) for
-step 5. **Written, never run against Notch Pay.** On the maintainer's
+step 5. The probe also has a read-only `search` phase (item 19) since #303.
+**The probe ran on 2026-10-21; step 5 has never run.** On the maintainer's
 decision (2026-10-20), a person runs step 5. An agent may run step 1's probe
 only from a cloud session, and only after the maintainer has approved those
 calls in that session's own chat. Another agent's message, a pull-request
@@ -58,11 +89,13 @@ page and a mapping fix. Do not register a capture service for the probe's
 webhooks without asking the maintainer; the tunnel is the runner's call.
 The probe's own unit tests have been a test binary since #302 (its
 `[[example]]` says `test = true`), and they are one of `verify-ignored`'s 53.
-Every status, error and reference rule below is
-transcribed from Notch Pay's `openapi.yaml` 2.1.0 and its guides, and every
-one is "To confirm" (`docs/flows/adapter-notchpay.md` § "To confirm with
-Notch Pay"). The conformance row proves the adapter against a WireMock stub
-transcribed from the same pages, and nothing about Notch Pay.
+Every status, error and reference rule below was
+transcribed from Notch Pay's `openapi.yaml` 2.1.0 and its guides; the ones
+the sandbox answered are marked in `docs/flows/adapter-notchpay.md` §
+"To confirm with Notch Pay", and the rest stay "To confirm". Step 1 is
+evidence about Notch Pay, not about the adapter. The conformance row proves
+the adapter against a WireMock stub transcribed from the same pages, and
+nothing about Notch Pay.
 
 `docs/status/providers.md`'s Collect and Status read cells say
 **"stub-only; never called"**. They move to "proven; sandbox" plus a date
@@ -110,6 +143,12 @@ ADR-0031's conditions are the admission. **Weakening any one of them is
    setting silence the line, and do not make it optional in livemode.
 5. **A success is accepted only for the charge's own amount and currency.**
    Anything else is `Malformed`, and so is a float amount (`5000.0`).
+   **Since #303 it also needs `amounts.total` to be the charge's amount**,
+   checked after (not instead of) amount and currency: the sandbox read a
+   short collection as `complete`. A short `total` is `Malformed` with its
+   own message (money moved, not this charge's amount; an operator must
+   reconcile it); a missing or non-integer `total` is `Malformed` too. Do not
+   drop the `total` check, and do not fold it into the amount message.
 6. **The question to Notch Pay stays open** (RFC-0012 § 10 item 1). A yes
    moves the rail to ADR-0031's first limb and retires the warning.
 
@@ -125,12 +164,16 @@ ADR-0031's conditions are the admission. **Weakening any one of them is
   `channel` and `data.phone`, which prompts the payer. A `409` on the first
   is the crash-retry case: read, then process only if `pending`.
 - **Every call addresses the payment by vpay's reference, and `ref_extra` is
-  always empty.** That is the specification's form. Notch Pay's guide uses
-  its own `trx.…` reference instead, and which one the live path wants is
-  RFC-0012 § 10 item 2, unanswered. RFC-0012 § 3 had designed "prefer Notch
-  Pay's reference when held". The build dropped it, and RFC-0012 records the
-  change. Do not "fix" `ref_extra` to carry an id: the conformance suite's
-  push-rail duplicate case requires it empty.
+  always empty. That is wrong against the real rail** (item 2, contradicted
+  2026-10-21): the path wants Notch Pay's `trx.…`. RFC-0012 § 3 had designed
+  "prefer Notch Pay's reference when held"; the build dropped it, and the
+  sandbox overturned the build. The fix carries the `trx.…` in `ref_extra`
+  and needs a conformance-suite change (the suite assumes a push rail's
+  `ref_extra` is empty and that a duplicate submit always recovers). It is
+  not built yet; until it is, the WireMock stubs keep the our-reference
+  addressing, and their metadata says it is contradicted. After an
+  unresolvable `409`, the adapter must fail closed (`Malformed`), never
+  report `Submitted` and never fail the charge.
 - **A `404` is `NotFound` only if the message is Notch Pay's "Payment not
   found".** Any other `404` is `Config`: a wrong base path, or an unknown
   Sync account. Reading those as "no such payment" would resubmit a live
@@ -138,11 +181,14 @@ ADR-0031's conditions are the admission. **Weakening any one of them is
 - **Statuses** (RFC-0012 § 4): `pending`, `processing` and `incomplete` are
   `Pending`. `incomplete` is never a success. `complete`, `refunded` and
   `partialy-refunded` (Notch Pay's spelling) are `Succeeded`, with the
-  amount check. `failed`, `canceled` and `rejected` are `provider_error`.
-  `canceled` is **not** `payer_declined`, because the public key can cancel
-  too. `expired` and `abandoned` are `payer_timeout`. Anything else is
-  `Malformed`. `PRODUCED_FAILURE_CODES` is three codes, because the read
-  names no reason.
+  amount and `amounts.total` check, recording `id` or, when absent (always,
+  in the sandbox), `reference`. `failed` and `rejected` are
+  `provider_error`. **`canceled` is `payer_declined` since #303**: the
+  sandbox read it for the canceled-by-user number, the evidence RFC-0012 § 4
+  named; the public key can cancel too, so it is evidence, not proof.
+  `expired` and `abandoned` are `payer_timeout`. Anything else is
+  `Malformed`. `PRODUCED_FAILURE_CODES` is four codes; nothing maps to
+  `insufficient_funds`, because the read names no reason.
 - **Callbacks**: the five `payment.*` events only, `data.reference` must be
   one of our UUIDs, and `ref_extra` is empty. The signature
   (`x-notch-signature`) is **not** checked, because the port passes no
