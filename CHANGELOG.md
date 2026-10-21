@@ -12,6 +12,24 @@ publishes no release tags and its workspace version has never moved off
 `v0.5.0` as of 2026-09-23 — and its workspace version is `0.5.0`. The naming
 rule stands, for the reasons VERSIONING.md now gives.)_
 
+## 2026-10-21 — an empty or all-dots path id is refused by both merchant SDKs
+
+Read against vaam-apps/vpay's `master` at `1ffd148`, the merge of
+vaam-apps/vpay#306. The skill change is vaam-apps/vpay-skills#48 (`c535b6c`),
+which merged without this entry.
+
+- `vpay-sdks`: both SDKs put a caller's id into a URL path through one helper
+  each (`path_segment(id)?` in `sdks/rust`, `pathSegment(id)` in
+  `sdks/nodejs`). It refuses `""` and any id made only of dots before any
+  request, the token request included: `Error::InvalidParams` in Rust, a
+  `TypeError` in Node. `...` and longer runs are refused by decision, as the
+  server-side port's `path_segment` does. Both test suites pin the 21
+  id-taking methods.
+
+**Stopped being true.** "The merchant SDKs pass an id through
+`encodeURIComponent`'s rule and nothing else." A `""`, `.` or `..` id no
+longer reaches vpay: before #306, `customers.del("..")` was a `DELETE /v1/`.
+
 ## 2026-10-21 — the `notchpay` adapter addresses payments by Notch Pay's reference
 
 Read against vaam-apps/vpay's `master` at `5b4c583`, the merge of
