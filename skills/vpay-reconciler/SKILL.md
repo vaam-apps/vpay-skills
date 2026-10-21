@@ -107,8 +107,9 @@ decline**: a `Malformed` submit (Notch Pay's unresolvable `409`, MTN's unfollowe
 `307`) has an _unknown_ fate on purpose. A `Rejected` resubmit **fails the charge
 first** (`settle_failed_with`: charge `failed`, intent back to the payer, one
 `payment_intent.payment_failed`) and only then records its row answered
-(`0` + `charge_declined`) — settlement first, so no `submitting` charge ever sits
-beside an answered row. Before #316 nothing failed it: the charge stayed
+(`0` + `charge_declined`) — settlement first, so no worker path leaves a
+`submitting` charge beside an answered row. `vpay-api`'s confirm does the opposite
+order (row, then `persist_decline`, two commits), so a crash between them can. Before #316 nothing failed it: the charge stayed
 `submitting` and was resent after every third poll until the 24-hour horizon. A
 `Rejected` on a status _read_ does not fail the charge (Notch Pay raises it for
 our own refused keys). For a `query_status` the worker writes the `0` sentinel for
