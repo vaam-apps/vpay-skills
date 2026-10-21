@@ -188,14 +188,23 @@ When you **rename** a test, edit the cell in the same commit. When you
   proving tests assert the four are known **and** that those two are not.
 - **`invoice_items` is the route and `InvoiceLine` is the type.** Stripe has
   two objects where vpay has one. Both spellings are the wire's.
-- **An empty or all-dots path id is `Error::InvalidParams` in Rust and a
-  `TypeError` in Node** (2026-10-21, vaam-apps/vpay#306). Same inputs,
+- ~~**An empty or all-dots path id is `Error::InvalidParams` in Rust and a
+  `TypeError` in Node**~~ (2026-10-21, vaam-apps/vpay#306). Same inputs,
   same moment (before any request), same message text; the type differs the
   way the amount refusal's already did, and the `⛔` on "the refusal is one of
   this SDK's own error types" was widened to say so rather than split into a
   second row. That change added four rows to "Request validation" and moved
   `verify-sdk-parity` from 769 to **778** proving tests at 45 dated gaps,
-  measured on the branch.
+  measured on the branch. **Corrected later the same day
+  (vaam-apps/vpay#315):** the type no longer differs. Every local refusal
+  in Node, this one included, is a `VpayInvalidParamsError extends
+VpayError` with `param`, so "the refusal is one of this SDK's own error
+  types" is `✅/✅` and its gap ledger entry is gone. That moved
+  `verify-sdk-parity` from 778 to **780** proving tests and from 45 to **44**
+  dated gaps, measured against vpay `master` `73a5b5af` and the branch. One
+  cited test was renamed in that change, to
+  `throws VpayInvalidParamsError on an integer past MAX_SAFE_INTEGER`, along
+  with nine other titles that said `TypeError`.
 
 ## Step A: the rows it moved
 
@@ -220,7 +229,8 @@ tests (45 / 35 / 40 unchanged). Quote the gate, not the page.
   `pay(id, { outOfBand: { method?, reference?, receivedAt? } })`, where
   `PayInvoiceParams` became a union whose hosted arm is the old shape. An
   empty object is Stripe's bare flag. A URL beside it is refused before any
-  request (`Error::InvalidParams` / `TypeError`): the Node type makes it
+  request (`Error::InvalidParams` / `TypeError`, a `VpayInvalidParamsError`
+  naming the URL since 2026-10-21): the Node type makes it
   unrepresentable, the Rust struct cannot, so Rust relies on the runtime check.
   Both `Invoice` types decode `paid_out_of_band` and `out_of_band_payment`
   with a default, so an older server still decodes. Each live suite gained a
