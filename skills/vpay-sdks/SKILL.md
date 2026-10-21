@@ -188,6 +188,46 @@ was added**; two existing ones take more:
 SDK to match the other. Shapes, counts and the corrected parity note:
 [references/parity.md](references/parity.md) § "Step A".
 
+## A path `id` that is empty or only dots is refused (2026-10-21)
+
+Since vaam-apps/vpay#306 (2026-10-21); absent from any vpay older than that.
+Both merchant SDKs put a caller's id into a URL path through **one helper
+each** — `path_segment(id)?` in `sdks/rust/src/resources.rs` and
+`pathSegment(id)` in `sdks/nodejs/src/validate.ts` — and it refuses `""` and
+any id made only of dots before anything is sent, the token request included:
+`Error::InvalidParams { param: "id", .. }` in Rust, a `TypeError` in Node, one
+fixed message that never quotes the id. Escaping could not do this, because
+the URL parser under each SDK reads `%2E%2E` as `..`: before the fix,
+`customers.del("..")` was a `DELETE /v1/`. What vpay answered for each method
+is on vpay's `docs/status/verification/2026-10-21-sdk-dot-segment-ids.md`.
+
+- **A new method that takes an id calls the helper and gets a line in both
+  test lists**, `every_id_taking_call` (`sdks/rust/tests/resources.rs`) and
+  `everyIdTakingCall` (`sdks/nodejs/src/client.test.ts`). Never interpolate
+  `percent_encode(id)` or `encodeURIComponent(id)` directly. Both tests count
+  the id-taking methods off the source text and fail when the list is
+  shorter, and both pin **21**; move that number and the prose citing it
+  together.
+- **`...` and longer runs are refused by decision**, the same one the
+  server-side port's `vpay_provider::http::path_segment` took on 2026-10-20
+  (`vpay-provider-adapters`). They are not dot segments to either URL
+  standard. Do not relax the guard to `""`, `.` and `..`: a mutation that did
+  is one of the cases the tests were checked against.
+- **Node's `TypeError` is deliberate.** It matches the amount refusal, and the
+  dated `⛔` "the refusal is one of this SDK's own error types" covers both.
+  Turning one into a `VpayError` without the other leaves the package with two
+  refusal types.
+- **It is a behaviour change, not a signature change.** Every method already
+  returned `Result<_, Error>` / a `Promise`, and `InvalidParams` already
+  existed. A caller who saw a `404` for these inputs now gets the local
+  refusal. Both READMEs' § Status say so.
+- **The payer surfaces are not exposed, and that is by construction.**
+  `@vaam-apps/vpay-stripe-js`'s `parseClientSecret` and the Flutter plugin's
+  `_tryParseClientSecret` take the id out of a client secret and require it to
+  start with `pi_` or `cs_`; the Tauri plugin builds no path of its own. No
+  test there names a dot segment, so loosening that prefix check would reopen
+  it silently.
+
 ## Parity is per capability, not per method name or per shape
 
 ADR-0015 decision 1. Two deliberate asymmetries you will meet:

@@ -188,6 +188,14 @@ When you **rename** a test, edit the cell in the same commit. When you
   proving tests assert the four are known **and** that those two are not.
 - **`invoice_items` is the route and `InvoiceLine` is the type.** Stripe has
   two objects where vpay has one. Both spellings are the wire's.
+- **An empty or all-dots path id is `Error::InvalidParams` in Rust and a
+  `TypeError` in Node** (2026-10-21, vaam-apps/vpay#306). Same inputs,
+  same moment (before any request), same message text; the type differs the
+  way the amount refusal's already did, and the `⛔` on "the refusal is one of
+  this SDK's own error types" was widened to say so rather than split into a
+  second row. That change added four rows to "Request validation" and moved
+  `verify-sdk-parity` from 769 to **778** proving tests at 45 dated gaps,
+  measured on the branch.
 
 ## Step A: the rows it moved
 
