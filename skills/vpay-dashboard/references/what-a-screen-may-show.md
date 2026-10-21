@@ -1,6 +1,8 @@
 # What a dashboard screen may and may not show
 
-_Verified against vpay `f68fda09` (2026-09-25). Version-sensitive claims
+_Verified against vpay `73c3a7cf` (2026-10-21); the sections about the
+shell, the filters, loading states, the imported components and status colour
+were re-read there, and the rest last at `f68fda09` (2026-09-25). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 vpay's cardinal rule — nothing may look more finished than it is — has a
@@ -58,6 +60,23 @@ read one colour in the list and another on the detail page.
 `@vaam-apps/ui` cutover). Do not reintroduce a per-screen tone map;
 `verify-ui`'s check 7a-ii refuses a raw status-colour token written in an app.
 
+**Three more status systems since 2026-10-21 (vaam-apps/vpay#318).**
+`src/status-systems.ts` declares `REFUND_STATUS_SYSTEM`,
+`DELIVERY_STATE_SYSTEM` and `CHECKOUT_STATUS_SYSTEM` (and
+`RefundStatusPill`, `DeliveryStatePill`, `CheckoutStatusPill`) the same way.
+Until that merge `/refunds`, `/deliveries` and `/checkouts` printed their state
+column as the raw wire string. The words come from `@vpay/tokens`
+(`refundStatusLabel`, `deliveryStateLabel`, `checkoutStatusLabel`), and each
+vocabulary (`REFUND_STATUS`, `DELIVERY_STATE`, `CHECKOUT_STATUS`) is copied
+from its table's `CHECK` constraint. So a refund's `succeeded` reads
+"Refunded" and a delivery's `pending` reads "Attempt owed". Only a failed
+refund and an exhausted delivery are `attention: "loud"`. A value outside the
+list is still rendered as **text**: `asRefundStatus` and its siblings answer
+`null` and the column prints the wire value. `@vpay/tokens` also gained
+`statusShortLabel`, the five payment statuses in two words or fewer, for the
+Overview's tiles. Add a state to the `CHECK` constraint and to its token list
+together, or the new state renders as plain text.
+
 `data-theme` is `dark` and `src/layout.test.tsx` pins it. ~~`@vaam-apps/ui`
 registers its one theme under daisyUI's built-in name `dark`, so a `data-theme`
 that says anything else renders the page **completely unthemed** in a real
@@ -88,6 +107,26 @@ browser, with no error anywhere.~~ **Corrected 2026-09-23, in two parts.**
    "compiles no styling at all", and the dashboard README says it renders
    "completely unthemed". Both are wrong at `f68fda09`. Fix them in vpay.
 
+**`@vaam-apps/ui` 0.5.0 changed the values above (2026-10-21,
+vaam-apps/vpay#318), and nobody has re-run the probe.** 0.5.0 generates its
+palette from a Material 3 seed. `--color-base-100` is now
+`var(--md-sys-color-surface)`, so the literal `#0a0b0d` the measurement found
+no longer exists. Both apps' `styling-gate.test.ts` asserted that literal and
+were re-pinned to the chain and to the package's own dark `surface` value,
+read from the package. Whether an unregistered `data-theme` still renders dark
+on 0.5.0 was **not re-measured**. Pin `dark` and do not rely on the fallback.
+
+**The stored theme is applied before the first paint since 2026-10-21.**
+`app/layout.tsx` runs the package's `themeInitScript` in `<head>` (a fixed
+string, nothing interpolated). It reads the operator's stored choice and sets
+`data-theme` before the body paints. `<html>` still says `data-theme="dark"`
+and carries `suppressHydrationWarning` for that one attribute. Without the
+script a light-theme operator saw every document load paint dark and then
+flip. The same file self-hosts Roboto Flex and JetBrains Mono
+(`@fontsource-variable/*`), which `theme.css` names and the app never loaded
+before: until then every glyph fell back to the system fonts. A width written
+in `ch` of the mono face changed with it (see the date filter below).
+
 ~~`layout.test.tsx`'s case is still titled "the only theme @vaam-apps/ui
 actually compiles", which is stale.~~ **Corrected 2026-09-25:**
 vaam-apps/vpay#255 (2026-09-24) retitled it "sets the dark theme —
@@ -108,20 +147,35 @@ API change, among them the `SideNav` width below `xl` and the dark theme
 applying without a `data-theme`. So a green typecheck does not show that a
 screen still looks right.
 
-**Imported by the app as of vpay `f68fda09` (2026-09-25, `@vaam-apps/ui`
-0.4.0)**, read off every `import … from "@vaam-apps/ui"` under
-`frontends/apps/dashboard/`: `Table` and its parts
-(`TableHeader`/`TableBody`/`TableRow`/`TableHead`/`TableCell`), `FormField`
-(was `Field`), `Input`, `Button`, `InlineBanner` (was `Alert`),
-`InlineEmptyState`, `Code`, `ScreenStack`, `SideNav`, `Skeleton`,
-`DetailList`/`DetailRow`, `InstrumentPanel`, `DateRangePicker` and its parts
-(with `IsoDateRange`), `ThemeSwitcher`, `createStatusPill`/`defineStatusSystem`.
-The dashboard imports no `Pagination`, `Timeline`, `DataList`/`DataListRow`,
+**`^0.5.0` since vaam-apps/vpay#318 (merged 2026-10-21 as vpay `73c3a7cf`),
+the Material 3 Expressive release.** It was `^0.4.0` from #258 until then.
+
+**Imported by the app as of vpay `73c3a7cf` (2026-10-21, `@vaam-apps/ui`
+0.5.0)**, read off every `import … from "@vaam-apps/ui"` under
+`frontends/apps/dashboard/` outside stories and tests: `Table` and its parts
+(`TableHeader`/`TableBody`/`TableRow`/`TableHead`/`TableCell`), `FormField`,
+`Input`, `Button`, `Badge`, `Card`/`CardHeader`/`CardBody`, `Separator`,
+`InlineBanner`, `InlineEmptyState`, `Code`, `IdDisplay`, `CopyButton`,
+`ScreenStack`, `SideNav`, `Skeleton`, `StatTile`, `DetailList`/`DetailRow`,
+`InstrumentPanel`, `DateRangePicker` and its parts (with `IsoDateRange`),
+`ThemeSwitcher`, `useTheme`, `themeInitScript`,
+`createStatusPill`/`defineStatusSystem` (with the `StatusSystem` type). New
+since 0.4.0: `Badge`, the `Card` parts, `Separator`, `IdDisplay`,
+`CopyButton`, `StatTile`, `useTheme` and `themeInitScript`. The dashboard
+still imports no `Pagination`, `Timeline`, `DataList`/`DataListRow`,
 `RouteSkeleton`, `MoreDetailDrawer` or `DrawerClose`. The timeline and the
 paging links are the app's own markup.
 
-The list was corrected twice, a day apart, and both earlier versions are kept
+The list has been corrected three times, and the earlier versions are kept
 because an agent on an older tree will meet them:
+
+- ~~Imported by the app as of vpay `f68fda09` (2026-09-25, `@vaam-apps/ui`
+  0.4.0): `Table` and its parts, `FormField`, `Input`, `Button`,
+  `InlineBanner`, `InlineEmptyState`, `Code`, `ScreenStack`, `SideNav`,
+  `Skeleton`, `DetailList`/`DetailRow`, `InstrumentPanel`, `DateRangePicker`
+  and its parts (with `IsoDateRange`), `ThemeSwitcher`,
+  `createStatusPill`/`defineStatusSystem`.~~ True from `f68fda09` until
+  #318.
 
 - ~~`Table`, `FormField` (was `Field`), `Input`, `Button`, `InlineBanner` (was
   `Alert`), `InlineEmptyState`, `Code`, `ScreenStack`, `SideNav`,
@@ -145,16 +199,33 @@ because an agent on an older tree will meet them:
 
 Two things that changed shape rather than name: `InlineBanner` renders **no
 `role`** where `Alert` defaulted to `role="alert"`, so every site relying on
-that default now wraps it and names the role explicitly. And
-`payments-filters.tsx` uses a **native `<select>`** — ~~`@vaam-apps/ui`'s
-`Select` cannot be named by a `<label>`.~~ **Corrected 2026-09-24:** it can.
-`SelectTrigger` takes an `id` (on `0.2.4`, `0.3.0` and `0.4.0`), so a
-`FormField` label names it. The native `<select>` stays for the reason the file
-itself gives: the
+that default now wraps it and names the role explicitly. ~~And
+`payments-filters.tsx` uses a **native `<select>`**.~~ **Corrected
+2026-10-21:** the status `<select>` and its Apply button are gone
+(vaam-apps/vpay#318). Until then the native `<select>` stayed because the
 package's `Select` wraps a Headless UI `Listbox` and forwards no `name`, and no
 ref a plain `onChange` can read.
 
-**The date filter, since vaam-apps/vpay#258** (merged 2026-09-25;
+**Filters are chips that are links, since 2026-10-21.** `FilterChips`
+(`src/components/filter-chips.tsx`) renders a single-choice filter as a
+`<nav aria-label=…>` of M3 filter chips, each a `next/link` to the filtered
+URL, the selected one marked `aria-current="true"`. The URL stays the only
+filter state: a chip works before hydration, a middle click opens the
+filtered list in a new tab, and the Server Component reads the URL. `/payments`
+offers "All" plus one chip per `PAYMENT_STATUS` (words from `statusLabel`);
+every href drops the cursor (`paymentsHref`). The procedure lists take theirs
+from `src/dash/list-screens.ts`: refunds and checkouts by `status`, deliveries
+by `state`, customers none. `ProcedureListScreen` passes the URL's value to the
+procedure unchanged, so a value vpay does not know is a `400` naming the field,
+rendered as a refusal and not as an empty list. An empty filtered list says
+`Nothing matches this filter. Choose "All" to see every row.` The selected chip
+and the unselected one are two literal branches, because `verify-ui` refuses a
+computed `className`; the selected one is `primary-container`, the one hue in
+the theme that is never a status. Paging a filtered procedure list keeps the
+filter on both pager links.
+
+**The date filter, since vaam-apps/vpay#258** (merged 2026-09-25; it navigates
+on its own since #318, see below;
 `@vaam-apps/ui` 0.3.0's picker, unchanged in the 0.4.0 that merge ships; not
 on `master` before it).
 `DateRangePicker` is compound parts:
@@ -171,38 +242,60 @@ A pick is staged: it reaches the filter only on **Save**, and Cancel, Escape or
 a press outside discards it. Taps follow M3's range rule: the first sets the
 start, a tap on or after it sets the end, and any other tap starts again. A
 start saved alone sends `created_from` only, "from that day on", where the old
-picker's first click was a one-day range. While the picker is open the page is
-inert, so the first press on Apply only closes it.
+picker's first click was a one-day range. ~~While the picker is open the page is
+inert, so the first press on Apply only closes it.~~ Since 2026-10-21 there is
+no Apply: the picker's Save (its `onValueChange`) or its Clear navigates to the
+filtered URL, with the cursor dropped.
 
-The trigger has a fixed width, `w-[calc(23ch+16px+3.5rem)]`, sized to the
-longest value `YYYY-MM-DD → YYYY-MM-DD`. The `16px` and `3.5rem` are kept apart
-on purpose. The rem chrome grows with the browser's default font size and the
-14px value does not, so a single pixel figure cut the range short at Chrome's
-"Large" setting. `font-mono text-prose` on it only sets the font that `ch` is
-measured in; keep it. `max-w-full` on the trigger and on both filters'
-`FormField`s caps them at the row, so below a 314px window the field truncates
-rather than push the page sideways. The Status `<select>` is `h-10`, so the two
-labels and controls line up. The row is `flex-wrap` at every width and never
-scrolls sideways: one line wherever it fits, more lines where it doesn't.
-Don't add a breakpoint or `overflow-x-auto` to it. The `FiltersWithRange`
-(1280×800) and `FiltersWithRangePhone` (375×812) stories measure all of this in
-a real browser, including at a 20px root.
+The trigger has a fixed width, ~~`w-[calc(23ch+16px+3.5rem)]`~~
+`w-[calc(25ch+16px+3.5rem)]` since 2026-10-21, sized to the longest value
+`YYYY-MM-DD → YYYY-MM-DD`. It grew because the value is now set in the
+self-hosted JetBrains Mono, which needed `25ch` where the system monospace
+fitted in `23ch`. #318's stories caught the value truncated. The `16px` and
+`3.5rem` are kept apart on purpose. The rem chrome grows with the browser's
+default font size and the 14px value does not, so a single pixel figure cut
+the range short at Chrome's "Large" setting. `font-mono` on it sets the font
+that `ch` is measured in; keep it (it was `font-mono text-prose` until
+2026-10-21). `max-w-full` on the trigger and on its `FormField` caps them at
+the row, so a narrow window truncates the field rather than push the page
+sideways. ~~The Status `<select>` is `h-10`, so the two labels and controls
+line up. The row is `flex-wrap` at every width and never scrolls sideways.
+Don't add a breakpoint or `overflow-x-auto` to it.~~ **Corrected 2026-10-21:**
+the filter row is a column below `lg` and a row from `lg` (chips, then the
+date field), and the chips wrap inside it. Still don't add `overflow-x-auto`.
+The `FiltersWithRange` (1280×800) and `FiltersWithRangePhone` (375×812) stories
+measure the date field in a real browser, including at a 20px root; this
+paragraph's numbers before #318 were measured on the old row.
+
+**The top app bar, since 2026-10-21 (vaam-apps/vpay#318).** `AppShell`
+renders a sticky bar at the top of `<main>` on every signed-in screen: the
+mark (`Brand`, not a heading), the merchant as a `Badge`, the theme shortcut
+(`ThemeToggle`), and from 640 to 1279px `SignedInBar` with Sign out. The
+document's one `<h1>` is a `sr-only` "vpay dashboard" in a bare `<header>`, and
+every screen's title is an `<h2>` (`PageHeader`) under it, which is what
+`dashboard.cy.ts` finds. Each screen is `PageHeader`, then its filters, then a
+`Card`.
 
 **Floating chrome, since vaam-apps/vpay#258** (2026-09-25, `@vaam-apps/ui`
-0.4.0). Below
+0.4.0; `toolbarVariant="vibrant"` since 2026-10-21, so the toolbar's edge stays
+visible over the Overview's tiles). Below
 1280px `SideNav`'s floating toolbar ends in a **More** control that opens a
-modal sheet: a bottom sheet from the phone bar below 640px (288px wide with the
-dashboard's five destinations, as of 2026-09-24), a drawer from the left edge
-from 640 to 1279px. The phone bar's sheet holds the destinations the bar has no
-room for (Customers); the drawer lists every destination, labelled. Both end
+modal sheet: a bottom sheet from the phone bar below 640px ~~(288px wide with
+the dashboard's five destinations, as of 2026-09-24)~~, a drawer from the left
+edge from 640 to 1279px. ~~The phone bar's sheet holds the destinations the bar
+has no room for (Customers)~~. **Since 2026-10-21** there are six destinations
+(the Overview plus five resources): at 375px the phone bar shows Overview,
+Payments, Refunds and Checkouts, and Deliveries and Customers are behind its
+More (#318's own note; not re-measured here). The drawer lists every
+destination, labelled. Both end
 with the account block, `SignedInBar` then a "Theme" caption and
 `ThemeSwitcher`, which `app-shell.tsx` passes as `accountSlot` at every width.
 There is no Menu pill any more (on `master` before this merge there was one, at
 `bottom-3 left-3`), so don't add your own `fixed` account or menu button.
 Anything else pinned near the bottom must clear the bar's top edge, 80px up
 (its 16px offset plus 64px): `bottom-24` sits 16px above it. `main` carries
-`pb-20` below 640px, `sm:pl-24` from 640px and `xl:pl-0` from 1280px, where the
-sidebar is in flow.
+~~`pb-20`~~ `pb-24` below 640px (since 2026-10-21), `sm:pl-24` from 640px and
+`xl:pl-0` from 1280px, where the sidebar is in flow.
 
 The account block is in the page more than once, and tests have to allow for
 it. The sidebar's copy is always in the DOM, hidden by CSS below 1280px and
@@ -225,7 +318,13 @@ Sign out ever asks for confirmation, use `InlineConfirm`, not a `Dialog`: a
 dialog opened from the modal sheet opens under its scrim, out of a pointer's
 reach.
 
-**Loading states, since vaam-apps/vpay#258 (2026-09-25).** Both payments
+**Loading states, since vaam-apps/vpay#258 (2026-09-25).** ~~Both payments
+screens load in their own shape.~~ **Since 2026-10-21 every route under
+`app/(dash)` has a `loading.tsx`**, so `<main>` shows the screen's skeleton the
+moment a link is followed: `OverviewSkeleton` (`overview-skeleton.tsx`),
+`ListSkeleton` (`list-skeleton.tsx`, built from the same `list-screens.ts`
+copy the four procedure lists render, so a description wraps where the page's
+does), and the two below. Both payments
 screens load in
 their own shape: `PaymentsSkeleton` (`payments-skeleton.tsx`) for the list and
 `PaymentSkeleton` (`payment-skeleton.tsx`) for one payment. On `master` before
@@ -233,30 +332,39 @@ that merge both rendered `RouteSkeleton`, whose header, filter bar and rows
 matched neither page, so everything moved when the read returned. Headings are
 one-line `h-lh` placeholders. Text that wraps (the list's description, the "At
 a glance" caption) and values whose width decides where a row wraps (the filter
-row's select and Apply, a four-digit XAF amount, a status pill) are invisible
-copies of the real thing, so they wrap where the page does. The
+row's ~~select and Apply~~ chips since 2026-10-21, a four-digit XAF amount, a
+status pill) are invisible copies of the real thing, so they wrap where the
+page does. An unselected chip's placeholder keeps its transparent border:
+without it the `PaymentsLoading` stories fail by 2px a chip. The
 `PaymentsLoading`, `PaymentsLoadingPhone`, `PaymentLoading` and
 `PaymentLoadingPhone` stories compare the claimed boxes within 1px at 1280 and
 375px, in the shell's narrower columns and at a 20px root, and
 `screens.test.tsx` fails if either loading branch renders `RouteSkeleton` again.
 So a change to a page's header, description, filter row or panel changes its
-skeleton in the same commit. Neither skeleton renders an `<h2>`, and the
+skeleton in the same commit. No skeleton renders an `<h2>`, and the
 payment's renders no `data-testid="detail-id"`: `dashboard.cy.ts` waits on
 those as the sign the page has loaded. The rows below the filter row or the
 Summary heading are data, and nothing claims they line up.
 
 `ProcedureTable` (`src/components/procedure-table.tsx`) is the app's own shell
 shared by the four procedure lists, because they differ only in their columns.
-Its `secondary` flag hides a column below `sm` as a **static class per column,
-never a computed one** — `verify-ui` refuses a computed `className` anywhere in
-an app. `Table` already wraps itself in `w-full overflow-x-auto`, so a wide
+Since 2026-10-21 the four pages also share one server component,
+`ProcedureListScreen` (`procedure-list-screen.tsx`: gate, read, filter chips,
+refusal or empty state or table, pager), and each page is its columns and its
+words. A row's id is `IdDisplay` (`IdCell`), and refunds and checkouts link
+each row's payment through `PaymentLinkCell`. Its `secondary` flag hides a column below `sm`, ~~as a **static class per column,
+never a computed one**~~ since 2026-10-21 through `Table`'s own `hideBelow`
+prop (`@vaam-apps/ui` 0.5.0). Before that it was two literal branches, because
+`verify-ui` refuses a computed `className` anywhere in an app. `Table` already wraps itself in `w-full overflow-x-auto`, so a wide
 table _can_ be swiped on a phone; the flag exists because an operator who does
 not know to swipe reads the first two columns as the whole answer.
 
 ## What this app still cannot do
 
-As of vpay `f68fda09` (2026-09-25), unchanged since 2026-09-23. _(This said
-"As of 2026-09-16" until 2026-09-23, when the last entry was added.)_
+As of vpay `73c3a7cf` (2026-10-21). _(This said "As of 2026-09-16" until
+2026-09-23, when the last entry was added, and "As of vpay `f68fda09`" until
+2026-10-21, when the BFF entry changed.)_ #318 added no write and moved no read
+to the browser.
 
 - **Anything at all to a payment.** `/dash/v1` refuses every non-`GET` method
   **at the boundary, before the router matches** — no re-poll, no replay, no
@@ -272,8 +380,11 @@ As of vpay `f68fda09` (2026-09-25), unchanged since 2026-09-23. _(This said
   landmark, `region` went 0 → 1 violation, and every other gate stayed green.
   Colour is answered only by `just test-storybook`, in a real Chromium.
 - **Most reads through the BFF.** Only the payments list and the payment
-  detail call it, and only for reads after their first render (since 2026-09-12;
-  this line said "No page and no component calls it" until 2026-09-23).
+  detail are wired to it. ~~and only for reads after their first render~~
+  Since 2026-10-21 their server-seeded reads do not reach it, and #318's
+  click-through made zero BFF fetches (this line said "No page and no
+  component calls it" until 2026-09-23, and "only for reads after their first
+  render" until 2026-10-21).
 - **Show a refund's events on the payment timeline.** This was read from the
   code on 2026-09-23 and is untested. Refund events are keyed on the `re_…`
   id, and the detail read fetches events for the intent and the charge only.
@@ -332,16 +443,21 @@ first one's advice is now spent:
    `ShellPhone`, `ShellRail`, `ShellLaptop` and `ShellDesktop` stories (375,
    700, 1100 and 1280px) assert exactly one exposed `Primary` landmark.
 
-The dashboard's Storybook has 33 stories as of vpay `f68fda09`
-(vaam-apps/vpay#258, merged 2026-09-25). It had 25 from 2026-09-13, when it
-was added, through `b747e5d5` (counted 2026-09-23). They are bound to the same
+The dashboard's Storybook has 36 stories as of vpay `73c3a7cf`
+(vaam-apps/vpay#318, merged 2026-10-21), 31 rendered `dark` and 5 `light`. It
+had 33 from vaam-apps/vpay#258 (merged 2026-09-25), and 25 from 2026-09-13,
+when it was added, through `b747e5d5` (counted 2026-09-23). Both a11y lists in
+`src/a11y-gate.test.ts` are still empty at `73c3a7cf`. They are bound to the same
 `src/testing/fixtures.ts` `a11y.test.tsx` renders, so a screen cannot gain a
 story without a test already covering it.
 
 ## The decisive mutations
 
 Each was applied to the tree, the suite run, and the mutation reverted, when
-the row was written. None has been re-run for a restamp since. Re-read, not
+the row was written. The three rows marked #318 are that change's own record
+(its commit message and its verification page,
+`docs/status/verification/2026-10-21-dashboard-md3e.md`), not re-run for this
+page. None has been re-run for a restamp since. Re-read, not
 re-run, against `f68fda09` on 2026-09-25: every file and identifier named is
 still there, and between `b747e5d5` and `f68fda09` none of the files behind
 these rows changed except `layout.test.tsx` (its theme case, not its nav
@@ -360,6 +476,9 @@ case).
 | The BFF serves the parsed upstream document instead of the named fields      | `src/server/bff.test.ts` — the **detail** case, plus a second case about the envelope's key names |
 | `middleware` returns `NextResponse.next()` unconditionally                   | `middleware.test.ts`, three times                                                                 |
 | `apiIsSameOrigin` drops its `Sec-Fetch-Site` comparison                      | `dashboard.cy.ts`'s frame case, in a browser                                                      |
+| `AppShell` loses the rail's `onClick` (2026-10-21, #318)                     | `src/components/app-shell.test.tsx` — the href is followed instead of routed                      |
+| `inAppNavigationTarget` drops its origin or modifier-key guards (#318)       | `src/client-navigation.test.ts`                                                                   |
+| `readOverview`'s failure branch becomes `{ ok: true, value: 0 }` (#318)      | `src/dash/overview.test.ts`, "keeps a refused count refused — never a zero"                       |
 
 `oauth.test.ts`'s stub echoes the challenge into the code it returns, so the
 assertion is that the exchange presents the verifier whose `S256` **is** the

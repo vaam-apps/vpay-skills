@@ -12,6 +12,67 @@ publishes no release tags and its workspace version has never moved off
 `v0.5.0` as of 2026-09-23 — and its workspace version is `0.5.0`. The naming
 rule stands, for the reasons VERSIONING.md now gives.)_
 
+## 2026-10-21 — the dashboard's Material 3 Expressive redesign, Overview home, and no more reloads
+
+Read against vaam-apps/vpay's `master` at `73c3a7cf`, the merge of
+vaam-apps/vpay#318. Its measurements ran against a fake of the `/dash/v1`
+contract, not a real vpay, and `dashboard.cy.ts` was updated and not run; this
+release repeats those numbers and re-ran none of them.
+
+- `vpay-dashboard`: restamped `73c3a7cf`. `/` now redirects to `/overview`
+  (`HOME_PATH`), a new route of twelve exact procedure counts that each link
+  to the filtered list; new sections on why navigation no longer reloads the
+  document (the rail's plain anchors routed client-side, `authProvider.check`
+  without a request, `staleTime: Infinity` on server-seeded queries, the shell
+  mounted once in `app/(dash)/layout.tsx` with `requireStaff` memoised per
+  request) and on the Overview; the rail's Overview top item and sections;
+  the merchant always on screen in the top app bar; Sign out as an outlined
+  button; `@vaam-apps/ui` `^0.5.0`.
+- `vpay-dashboard` (`references/what-a-screen-may-show.md`): the three new
+  status systems, `themeInitScript` and the self-hosted fonts, the 0.5.0
+  import list, filter chips that are links, the date filter's new width and
+  Save-to-apply, the top app bar, six rail destinations, a `loading.tsx` on
+  every route, `ProcedureListScreen`, 36 stories, and three new decisive
+  mutations from #318's own record.
+- `vpay-dashboard` (`references/read-seam-and-bff.md`): `searchPaymentIntents`
+  has a caller (the Overview, twelve parallel procedure calls per render);
+  `formatIsoInstant` moved to `src/format.ts`; the README's stale passages are
+  five, not seven, and its latest suite figure is 455 passed, 1 skipped, in 35
+  files.
+- `vpay-frontend`: restamped `73c3a7cf`. `@vaam-apps/ui ^0.5.0` in both apps,
+  the `minimumReleaseAgeExclude` entry for 0.5.0, the dashboard's self-hosted
+  fonts, the `@vpay/tokens` vocabularies, and the re-pinned styling gates. Also
+  pnpm `11.18.0`, which this skill had as `9.15.0` since vaam-apps/vpay#217
+  (2026-09-19).
+- `vpay-checkout` (`references/testing-and-gates.md`): the checkout moved to
+  `^0.5.0` and was not redesigned; its styling gate, contrast helper and
+  forward-button reference ratio (16.34 → 6.109) changed, and merchant
+  branding on 0.5.0 is unmeasured.
+
+**Stopped being true.**
+
+- "`/` redirects to `/payments`", and a signed-in staff member landing on
+  `/payments`. They land on `/overview`.
+- "The payments list and the payment detail … later reads, paging and
+  refetches, go through `dashDataProvider("/api/dash")`", and "deleting the
+  route files and `src/server/bff.ts` now breaks the payments screens'
+  paging". The server reads every page and #318 measured zero BFF fetches. The
+  provider still points at the BFF, so deleting it is still not shown safe.
+- "`/refunds`, `/deliveries`, `/customers`, `/checkouts`: … no filters".
+  Refunds and checkouts filter by `status`, deliveries by `state`.
+- "`payments-filters.tsx` uses a native `<select>`" and its Apply button. The
+  status filter is chips that are links, and the date range applies on Save.
+- "Below 640px [the merchant] has been one tap away". It is in the top app bar
+  at every width.
+- "Its `secondary` flag hides a column … as a static class per column". It is
+  `Table`'s `hideBelow` prop.
+- `w-[calc(23ch+16px+3.5rem)]` for the date trigger (now `25ch`), `pb-20` on
+  `<main>` below 640px (now `pb-24`), "the phone bar's sheet holds … (Customers)"
+  (now Deliveries and Customers), and "the Storybook has 33 stories" (now 36).
+- The `#0a0b0d` dark `base-100` the styling gates pinned. 0.5.0 has no such
+  literal.
+- "pnpm 9.15.0" (`vpay-frontend`), stale since 2026-09-19.
+
 ## 2026-10-21 — the payer surfaces' dot-segment safety is pinned by test
 
 Read against vaam-apps/vpay#309's branch (`claude/admiring-swirles-9b668f`,
@@ -790,9 +851,9 @@ factual accuracy against the tree, and fitness for purpose. Both were run
 against vpay `f063ee96`.
 
 The factual sweep mechanically extracted and grepped every backticked identifier
-across all twenty skills — 339 file paths, 429 snake_case names, 146 constants,
+across all twenty skills — 339 file paths, 429 snake*case names, 146 constants,
 351 CamelCase names, 26 env vars, 11 metric names — and every one resolves,
-except two whose absence _is_ the claim (`SQLX_OFFLINE`, `ChargeObject`). All 35
+except two whose absence \_is* the claim (`SQLX_OFFLINE`, `ChargeObject`). All 35
 route claims are mounted.
 
 Nine factual defects and six fitness defects were found and fixed before this

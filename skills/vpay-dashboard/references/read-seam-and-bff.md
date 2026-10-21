@@ -1,6 +1,8 @@
 # The `/dash/v1` read seam, the token lifecycle, and the BFF
 
-_Verified against vpay `f68fda09` (2026-09-25). Version-sensitive claims
+_Verified against vpay `73c3a7cf` (2026-10-21) for the Overview's procedure
+reads, the BFF's callers, the formatters and the README's stale prose; the
+rest last at `f68fda09` (2026-09-25). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 ## Two transports, one seam
@@ -103,11 +105,25 @@ If you add a procedure, add a probe for it in that test and fix the test's
 name while you are there. As of `f68fda09` it still ends
 `only_the_one_procedure_is`.
 
+### `searchPaymentIntents` has a dashboard caller since 2026-10-21
+
+Until vaam-apps/vpay#318 no screen called it: `/payments` reads the REST
+route. The Overview (`src/dash/overview.ts`, `readOverview`) now calls it six
+times per render (all payments with the latest six rows, then one per status,
+each `limit: 1`) beside six calls to the other procedures, **twelve in
+parallel on the server**, and reads each count from `totalCount`. `requireStaff`
+re-mints the token at 80 % of its TTL before they start. A `401` still re-mints
+once and retries (`callDashProcedure`), and each re-mint writes the same
+session row, so twelve parallel calls can mean more than one mint on one
+render; the module's own comment says no call is answered with another's
+token. Nothing here measured how many mints that is under load.
+
 ## Instants: two formatters, because there are two wire shapes
 
 `src/format.ts`'s `formatInstant` takes **unix seconds** (the REST list
-serialises an integer). `src/dash/procedure-list.ts`'s `formatIsoInstant`
-takes an **RFC 3339 string** (a CrateStack procedure serialises a `DateTime`).
+serialises an integer). `formatIsoInstant` takes an **RFC 3339 string**. It
+lives in `src/format.ts` since 2026-10-21 and is re-exported from
+`src/dash/procedure-list.ts`, where it was defined before (a CrateStack procedure serialises a `DateTime`).
 Passing one to the other yields `Invalid Date` or, worse, a plausible date in 1970. An unparseable value is returned **verbatim** rather than replaced: if
 vpay answers something this cannot read, an operator should see what it said.
 
@@ -174,6 +190,13 @@ nothing else, because `/dash/v1`'s `ListObject` is `{ object, data, has_more,
 url }`. A count invented here — `data.length`, or a `0` standing in for
 "unknown" — would be a number a pager could divide by, and the control it drew
 would be decorative.
+
+This is still true of `/payments` after 2026-10-21. The Overview's payment
+counts are not a total this list could borrow: they come from a different
+read (`searchPaymentIntents`, offset-paged, with `totalCount`), and a count
+from one statement says nothing about the next page of the cursor list. The
+procedure lists' pager does print `1–20 of N so far`, from their own
+`totalCount`, and says "so far" for the same reason.
 
 `has_more` means "a row exists past the limit **in the direction just
 walked**", which is a different sentence backwards than forwards:
@@ -256,10 +279,13 @@ rather than repeating either number.
 `Sec-Fetch-Site` is not merely "a pre-2020 browser" question — **Safari has
 sent it only since 16.4 (March 2023)**, so this surface answers `403` to every
 older WebKit. ~~That costs nothing while nothing calls it~~ (true until
-2026-09-12). Since the payments screens began making their reads after the
+2026-09-12). ~~Since the payments screens began making their reads after the
 first render through it, it means, by the code's own logic, that on a Safari
 older than 16.4 those screens render their first page but their paging and
-refetches are refused. Nobody has measured it in such a browser.
+refetches are refused.~~ **Corrected 2026-10-21:** after vaam-apps/vpay#318
+the server reads every page and the browser does not re-read it, so paging no
+longer depends on this surface. A read that did reach it from such a Safari
+would still be refused. Nobody has measured it in such a browser.
 
 ### Browser evidence
 
@@ -276,20 +302,24 @@ green.
 
 ## Known-stale prose
 
-Two, both verified 2026-09-16 and re-read 2026-09-23 and 2026-09-25
-(`f68fda09`).
+Two, both verified 2026-09-16 and re-read 2026-09-23, 2026-09-25
+(`f68fda09`) and, for the README, 2026-10-21 (`73c3a7cf`).
 
 **The "one procedure" sentences in the Rust transport are stale — five are
 mounted.** Full detail above. Code wins.
 
-**`frontends/apps/dashboard/README.md` lags the code: its test count, and seven
-passages about what the app does.** _(Until 2026-09-25 this said its
+**`frontends/apps/dashboard/README.md` lags the code: its test count, and
+~~seven~~ five passages about what the app does** (two fixed by
+vaam-apps/vpay#318, 2026-10-21; see the list). _(Until 2026-09-25 this said its
 "counts are a 2026-09-11 snapshot", and that the README "says the BFF is
 '**Two** `GET` route handlers'". True at `b747e5d5`; see the corrections
 below.)_ Its test count is a 2026-09-11 snapshot: it quotes a suite of "22
-files, 243 tests". The latest
+files, 243 tests", still at `73c3a7cf`. ~~The latest
 recorded suite figure is **311 cases in 30 files, 0 skipped**, taken
-2026-09-13 and cited in `docs/flows/dashboard/status-built-and-not-built.md`.
+2026-09-13 and cited in `docs/flows/dashboard/status-built-and-not-built.md`.~~
+The latest recorded figure is **455 passed, 1 skipped, in 35 files**, on
+#318's final head (`docs/status/verification/2026-10-21-dashboard-md3e.md`);
+311 cases in 30 files was the 2026-09-13 figure.
 The tree had 31 `*.test.ts(x)` files on 2026-09-23 and has 30 at `f68fda09`,
 since vaam-apps/vpay#258 deleted `more-menu.test.tsx`. The suite was not re-run for
 this page. ~~Since vpay#247 (2026-09-23) the README's struck BFF paragraph
@@ -310,12 +340,15 @@ the README still says:
   session. In the code only `/oauth/authorize` refuses it; see `SKILL.md`.
 - There is no "current password" field. There has been one since 2026-09-10
   (vpay#97).
-- There is no "Sign out" in the nav. There has been one since 2026-09-14.
+- ~~There is no "Sign out" in the nav. There has been one since 2026-09-14.~~
+  Fixed by vaam-apps/vpay#318 (2026-10-21): the README now says Sign out is
+  in the rail's account block and the top app bar.
 - A `data-theme` that names neither theme renders "completely unthemed".
   Measured false on `@vaam-apps/ui` 0.4.0; see
   `what-a-screen-may-show.md`.
-- Its pages table lists six routes and none of the four procedure-backed
-  lists, which have been on `master` since 2026-09-14.
+- ~~Its pages table lists six routes and none of the four procedure-backed
+  lists, which have been on `master` since 2026-09-14.~~ Fixed by #318: the
+  table lists `/overview` and all four lists.
 - "Contrast checking" is among what the app cannot do. Its Storybook's axe
   run has checked `color-contrast` in Chromium since 2026-09-13 (vpay#171).
 

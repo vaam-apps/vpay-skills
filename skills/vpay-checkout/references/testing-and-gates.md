@@ -1,6 +1,7 @@
 # Testing the checkout, and the gates that guard the gates
 
-_Verified against vpay `a33aac61` (2026-09-29). Version-sensitive claims
+_Verified against vpay `a33aac61` (2026-09-29); the `@vaam-apps/ui` 0.5.0
+notes re-read against `73c3a7cf` (2026-10-21). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 > **Added 2026-09-29, and it is a limit on every number below.** The checkout
@@ -17,6 +18,23 @@ carry the date they became true — see [VERSIONING.md](https://github.com/vaam-
 > 2026-09-29 found none for the checkout. So the 22-story, axe, `--color-base-100` and byte-count figures here
 > were measured at `^0.1.2` and have not been re-evidenced at `^0.4.0` in any
 > vpay page. The gates still run in CI; their _numbers_ are history.
+>
+> **Added 2026-10-21.** vaam-apps/vpay#318 moved the checkout to `^0.5.0`,
+> the Material 3 Expressive release, with the dashboard. The checkout was
+> upgraded and **not redesigned**, but two of its tests and its contrast helper
+> changed, because
+> 0.5.0 replaced the palette and the `#0a0b0d` literal they pinned no longer
+> exists: `src/styling-gate.test.ts` now asserts that `base-100` is
+> `var(--md-sys-color-surface)` and that the compiled sheet carries the
+> package's own dark `surface` value; `src/testing/contrast.ts` follows
+> `var()` chains and composites over a ground named by token; and
+> `outcome-contrast.test.ts`'s hand-computed forward-button ratio moved from
+> 16.34:1 (`#e8eaed` on `#0a0b0d`) to **6.109:1** (`#cfcdff` / `#424179`,
+> the dark `primary` / `on-primary` roles, recomputed in Python). #318's
+> verification page records one thing it did not measure: the checkout's
+> brand retarget sets `--color-primary`, and a component that reads an M3
+> role directly may not follow a merchant's colour. Treat merchant branding
+> on 0.5.0 as unverified.
 
 The theme through this whole page: **every one of these checks has, at some
 point, gone green while measuring nothing.** Each fix is a test that asserts the

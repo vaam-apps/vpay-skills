@@ -1,19 +1,22 @@
 ---
 name: vpay-dashboard
-description: The staff operator console at frontends/apps/dashboard — it is the OAuth client and runs the code leg in its own process, the /dash/v1 read seam over two transports, the BFF that only the payments screens call, and only after their first render, navigation enforced as a gate rather than a comment, and the honest-absence rules that decide what a screen may and may not show. Load before adding a page, a column, a nav entry, a CrateStack procedure or any read, and before assuming a row you see is backed by a column something writes.
+description: The staff operator console at frontends/apps/dashboard — it is the OAuth client and runs the code leg in its own process, the /dash/v1 read seam over two transports, the BFF the payments screens are wired to, the shell mounted once in a layout so navigation does not reload the document, navigation enforced as a gate rather than a comment, the Overview's exact counts, and the honest-absence rules that decide what a screen may and may not show. Load before adding a page, a column, a nav entry, a filter, a CrateStack procedure or any read, before touching the shell, Refine's providers or a loading state, and before assuming a row you see is backed by a column something writes.
 ---
 
 # vpay dashboard
 
-> **Verified against vpay `69d822ab` (2026-10-09).** Version-sensitive claims below
+> **Verified against vpay `73c3a7cf` (2026-10-21).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
 
 `frontends/apps/dashboard` (`@vpay/dashboard`). Next ~~15.5.25~~ **`^15.5.27`** (since 2026-10-09, vaam-apps/vpay#272) App Router, React
-19, Refine 5. Its own `README.md` is the best in-repo companion, but seven of
-its passages are stale at `f68fda09` (listed under "Known-stale prose" in
-`references/read-seam-and-bff.md`). The flow docs are
+19, Refine 5, `@vaam-apps/ui` `^0.5.0` (Material 3 Expressive) since
+2026-10-21 (vaam-apps/vpay#318, merged as `73c3a7cf`; it was `^0.4.0`). Its
+own `README.md` is the best in-repo companion, but ~~seven~~ five of its
+passages are stale at `73c3a7cf` (listed under "Known-stale prose" in
+`references/read-seam-and-bff.md`; #318 fixed the pages table and the
+Sign-out sentence). The flow docs are
 `docs/flows/dashboard.md` plus the four pages under `docs/flows/dashboard/`
 and `docs/flows/dashboard-auth.md` (plus `dashboard-auth/sso.md` on a vpay that has merged ADR-0030). Decisions: ADR-0008, ADR-0017, and ADR-0030 for single sign-on.
 
@@ -41,20 +44,33 @@ that string is an identifier the two OAuth legs must spell identically —
 matched byte for byte by `ClientRegistration::allows_redirect_uri`, no prefix,
 no wildcard — and not a page. A route there would be a page nobody can reach.
 
-**Two screens call the BFF, and only after their first render (since
-2026-09-12, vaam-apps/vpay#138).** The payments list and the payment detail are
-Refine screens. Their first render is read on the server and handed to Refine
-as `initialData`. Their _later_ reads, paging and refetches, go through
-`dashDataProvider("/api/dash")` in `app/(dash)/layout.tsx`, to
-`/api/dash/payment_intents` and `/api/dash/payment_intents/{id}`. There are six
+**Two screens are wired to the BFF, and since 2026-10-21 a server-seeded
+read no longer reaches it.** The payments list and the payment detail are
+Refine screens (since 2026-09-12, vaam-apps/vpay#138). Every render, the first
+and every page after it, is read on the server and handed to Refine as
+`initialData`. ~~Their _later_ reads, paging and refetches, go through
+`dashDataProvider("/api/dash")` in `app/(dash)/layout.tsx`.~~ **Corrected
+2026-10-21 (vaam-apps/vpay#318):** with TanStack's default `staleTime: 0`, a
+next page was read twice, once by the Server Component and again by the
+browser through `/api/dash`. `DashProviders` (`src/dash/providers.tsx`, where
+`<Refine>` moved out of the layout) now sets `staleTime: Infinity` and
+`gcTime: 0`, and #318's measured click-through made **zero** BFF fetches over
+twelve steps. The provider is still `dashDataProvider("/api/dash")`, routed to
+`/api/dash/payment_intents` and `/api/dash/payment_intents/{id}`, so a read
+Refine makes without a server-seeded answer would still go there. #318
+measured one click-through against a fake of `/dash/v1`, not every path. There are six
 handlers under `app/api/dash/`; the four added 2026-09-14 (`refunds`,
 `deliveries`, `customers`, `checkouts`) have no caller, because those four
 screens render on the server and use no client data layer. _(vpay's README
 has dated the first three 2026-09-13 since vaam-apps/vpay#255, after
 `f9c7d2cd`, the branch commit that wrote them. None of the four was on
-`master` before 2026-09-14, and this page dates a claim by `master`.)_ So
+`master` before 2026-09-14, and this page dates a claim by `master`.)_ ~~So
 **deleting the route files and `src/server/bff.ts` now breaks the payments
-screens' paging.**
+screens' paging.**~~ **Corrected 2026-10-21:** after #318 the paging is read
+by the server, so that sentence no longer follows. But nobody has shown that
+nothing reaches the BFF (a refetch, a key without `initialData`), and the
+provider still points at it, so **do not delete the route files or
+`src/server/bff.ts` on the strength of #318's measurement.**
 Whether this app should have an authenticated browser-reachable surface at all
 still **reverses a stated property of its security model** and is RD5 in the
 Refine plan — a maintainer's call, not this code's. _(This said "Nothing in
@@ -70,18 +86,20 @@ stale sentences: `references/read-seam-and-bff.md`.
 
 ## The layout
 
-| Directory               | What lives there                                                                    |
-| ----------------------- | ----------------------------------------------------------------------------------- |
-| `app/`                  | Routes only. Composition, a redirect, a fetch — no logic worth testing alone        |
-| `app/api/dash/`         | The BFF's route handlers. Four lines each; `src/server/bff.ts` is the substance     |
-| `middleware.ts`         | Next reads a middleware **only** from the project root                              |
-| `src/components/`       | Every rendered component. Pure props in, markup out — no `fetch`, no `next/headers` |
-| `src/server/`           | Everything touching vpay, cookies or PKCE. Imported only by `app/` and itself       |
-| `src/dash/`             | The `/dash/v1` read seam — `getList`/`getOne` over `readDash`. No framework         |
-| `src/config/`           | `settings.ts` decides what a configuration means; `runtime.ts` reads the env once   |
-| `src/format.ts`         | Money, instants, the em dash                                                        |
-| `src/payments-query.ts` | The URL's filter vocabulary ↔ the API's, and the two paging links                   |
-| `src/testing/`          | Fixtures. Imported by tests and by nothing under `app/`                             |
+| Directory                  | What lives there                                                                                                                |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `app/`                     | Routes only. Composition, a redirect, a fetch — no logic worth testing alone                                                    |
+| `app/api/dash/`            | The BFF's route handlers. Four lines each; `src/server/bff.ts` is the substance                                                 |
+| `middleware.ts`            | Next reads a middleware **only** from the project root                                                                          |
+| `src/components/`          | Every rendered component. Pure props in, markup out — no `fetch`, no `next/headers`                                             |
+| `src/server/`              | Everything touching vpay, cookies or PKCE. Imported only by `app/` and itself                                                   |
+| `src/dash/`                | The `/dash/v1` read seam — `getList`/`getOne` over `readDash` — and, since 2026-10-21, `providers.tsx` (the `<Refine>` wrapper) |
+| `src/config/`              | `settings.ts` decides what a configuration means; `runtime.ts` reads the env once                                               |
+| `src/format.ts`            | Money, instants, the em dash                                                                                                    |
+| `src/payments-query.ts`    | The URL's filter vocabulary ↔ the API's, and the two paging links                                                               |
+| `src/client-navigation.ts` | Which plain-`<a>` clicks the shell routes client-side (since 2026-10-21)                                                        |
+| `src/status-systems.ts`    | Refund, delivery and checkout status systems (since 2026-10-21)                                                                 |
+| `src/testing/`             | Fixtures. Imported by tests and by nothing under `app/`                                                                         |
 
 The split that matters is `src/server/` vs `src/components/`: a component that
 fetched would be a component no test could render, and a `fetch` inside a
@@ -90,23 +108,30 @@ component is how a page ends up unable to say _why_ it is empty.
 `src/server/actions.ts` is a `'use server'` file and may export **only async
 functions** — a constant exported from there is a build error, not a lint
 warning. That is why `FormState`/`NO_ERROR` live in `src/form-state.ts` and the
-route paths in `src/server/session.ts`.
+route paths in `src/server/session.ts`. Since 2026-10-21 it exports one
+function fewer: `checkSession`, the Server Action Refine's
+`authProvider.check()` called, is deleted (see "Navigation does not reload
+the document" below).
 
 Every page is `export const dynamic = "force-dynamic"`, and has to be: they all
 read cookies.
 
 ## Pages
 
-| Route                                                 | What it does                                                                                                                                                                                                                                                                      |
-| ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/`                                                   | Redirects to `/payments` or `/login`                                                                                                                                                                                                                                              |
-| `/login`, `/login/totp`, `/login/password`            | Password → TOTP (a first sign-in also renders the enrolment QR and secret) → the forced password change. **With ADR-0030 merged**, `/login` also offers a "Sign in with Keycloak" button when `GET /dash/v1/staff/sso` says `enabled`; see [references/sso.md](references/sso.md) |
-| `/payments`, `/payments/{id}`                         | REST-backed. Status and date filters, cursor paging; the detail page adds charge, refunds, last error, timeline                                                                                                                                                                   |
-| `/refunds`, `/deliveries`, `/customers`, `/checkouts` | Procedure-backed lists. Offset paged, no filters, no detail route yet                                                                                                                                                                                                             |
-| `/signed-out`, `/healthz`                             | Route handlers, not pages: clear a dead session cookie (since 2026-09-07); "Next is answering" (since 2026-09-16, ADR-0022, vpay#183)                                                                                                                                             |
+| Route                                                 | What it does                                                                                                                                                                                                                                                                                                                                                                         |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `/`                                                   | Redirects to `/overview` or `/login`. ~~Redirects to `/payments` or `/login`~~: `HOME_PATH` (`src/server/session.ts`) was `/payments` until 2026-10-21 (vaam-apps/vpay#318), and the TOTP, password-change and SSO success paths send a browser to the same constant                                                                                                                 |
+| `/login`, `/login/totp`, `/login/password`            | Password → TOTP (a first sign-in also renders the enrolment QR and secret) → the forced password change. **With ADR-0030 merged**, `/login` also offers a "Sign in with Keycloak" button when `GET /dash/v1/staff/sso` says `enabled`; see [references/sso.md](references/sso.md). Since 2026-10-21 each signed-out page is one card with the mark and a theme shortcut, and no rail |
+| `/overview`                                           | Home since 2026-10-21. Twelve exact counts read from the search procedures, each a link to the list filtered by the same value, and the latest six payments. See "The Overview" below                                                                                                                                                                                                |
+| `/payments`, `/payments/{id}`                         | REST-backed. Status filter chips (links) and a date range, cursor paging; the detail page adds charge, refunds, last error, timeline. ~~Status and date filters~~: the status `<select>` and its Apply button are gone since 2026-10-21                                                                                                                                              |
+| `/refunds`, `/deliveries`, `/customers`, `/checkouts` | Procedure-backed lists, offset paged, no detail route yet. ~~No filters~~: since 2026-10-21 refunds and checkouts filter by `status` and deliveries by `state`, as chips, and refunds and checkouts link each row to its payment. Customers has no filter                                                                                                                            |
+| `/signed-out`, `/healthz`                             | Route handlers, not pages: clear a dead session cookie (since 2026-09-07); "Next is answering" (since 2026-09-16, ADR-0022, vpay#183)                                                                                                                                                                                                                                                |
 
 All four procedure-backed lists are Server Components reading through
-`readProcedurePage`, and all four share `src/components/procedure-table.tsx`.
+`readProcedurePage`, and all four share `src/components/procedure-table.tsx`
+and, since 2026-10-21, one server component,
+`src/components/procedure-list-screen.tsx`, with their words and filters in
+`src/dash/list-screens.ts`.
 
 `/healthz` takes no dependency and probes nothing. Probing `/dash/v1` from it
 would take the dashboard pod's readiness down with every `vpay-server`
@@ -193,10 +218,14 @@ falls back to comparing with `Host`, never to allowing everything.
 The **merchant** is not configured here at all — it comes from
 `GET /dash/v1/staff/session` and is rendered beside the staff address on every
 signed-in page, so an operator looking at an empty list can tell "this merchant
-has no payments" from "I am looking at the wrong merchant". From 640px it is
+has no payments" from "I am looking at the wrong merchant". ~~From 640px it is
 on screen. Below 640px it has been one tap away since 2026-09-14: in the Menu
 drawer until vaam-apps/vpay#258, and in `SideNav`'s More sheet since that
-merge (2026-09-25).
+merge (2026-09-25).~~ **Corrected 2026-10-21 (vaam-apps/vpay#318):** it is on
+screen at every width, as a `Badge` in the sticky top app bar `AppShell`
+renders above every signed-in screen. The struck sentence was true from
+2026-09-25 until that merge. The account block (`SignedInBar`) still names the
+merchant too.
 
 ## Navigation is a gate, not a comment
 
@@ -210,6 +239,18 @@ the rail renders from `NAV_ENTRIES`, derived from the same array.
 `page.tsx` on disk, every resource Refine routes on does too, and the rail's
 hrefs are exactly the registry's list routes. Adding a `resources` entry for
 `/webhooks` fails two of the three.
+
+**The rail has an Overview and sections since 2026-10-21 (vaam-apps/vpay#318).**
+`OVERVIEW_NAV` (`/overview`) is `SideNav`'s `topItem` and the one destination
+that is **not** a Refine resource: it lists nothing, it counts. The resources
+are grouped by a `group` field on each `DASH_RESOURCES` entry, rendered as
+`NAV_GROUPS` in `NAV_GROUP_NAMES` order: Money (Payments, Refunds,
+Checkouts), Customers (Customers), Integrations (Deliveries). A field on the
+entry rather than a second list, so a resource cannot be routed and missing
+from the rail. `layout.test.tsx` gained two cases with it: the Overview's
+href resolves to a page, and the sections hold every resource exactly once
+and nothing else. A new destination that is not a resource has to pass the
+same page-exists check the Overview does.
 
 `pageExists` resolves **route groups**: `app/(dash)/payments` serves
 `/payments`, so the helper tries the direct path and then each top-level
@@ -232,8 +273,96 @@ out included, and `ThemeSwitcher`) as `accountSlot`. That was in the ≥1280px
 sidebar only from 2026-09-14, and has been at every width since
 vaam-apps/vpay#258 (2026-09-25), behind the toolbar's More control below
 1280px. Sign out stays a form that POSTs to the `signOut` Server Action.
+Since 2026-10-21 it is also in the top app bar from 640 to 1279px, and it is
+an outlined (`variant="secondary"`) button with an avatar beside the address,
+where it was a filled `destructive` one: signing out destroys nothing, and the
+red button was the loudest thing on every screen.
 `references/what-a-screen-may-show.md` says where the block's copies are and
 how a test finds the visible one.
+
+## Navigation does not reload the document (since 2026-10-21)
+
+Until vaam-apps/vpay#318 every rail click was a **full document load**:
+re-download, re-hydrate, Refine's cache thrown away. #318 measured one fixed
+click-through at 1440px on a production build against a fake of the
+`/dash/v1` contract (not a real vpay): **6 document loads → 1**, **2 session
+reads per navigation → 1**, a next page of payments read **twice → once**, and
+a rail click **~1.0–1.2 s → ~0.37 s** to full content. Four causes, each fixed
+where it lives, and each easy to put back:
+
+1. **`SideNav` renders plain `<a href>`.** `@vaam-apps/ui` has no Next
+   dependency, so it cannot render `next/link`. `AppShell` wraps the rail in
+   one `onClick` that asks `inAppNavigationTarget` (`src/client-navigation.ts`)
+   whether the click is an ordinary same-tab navigation and, if so, calls
+   `router.push`. A modified click, a middle click, a link with `target` or
+   `download`, another origin, or a click something already handled goes to
+   the browser. React events bubble through the portalled rails and the More
+   sheet, so one handler covers them. `app-shell.test.tsx`'s "routes a rail
+   click through the app router, not a document load" and
+   `client-navigation.test.ts` fail if you drop the handler or a guard. **A new
+   plain `<a>` inside the rail is client-routed for free; a plain `<a>`
+   anywhere else in the app is a full document load.** Use `next/link` there.
+2. **Refine's `authProvider.check()` makes no request.** Refine's internal
+   `RouteChangeHandler` calls it on every pathname change and discards the
+   answer. It called the `checkSession` Server Action, so every navigation paid
+   a POST and a second `GET /dash/v1/staff/session`. `check` now returns
+   `{ authenticated: true }` with no network, and `checkSession` is deleted.
+   This is safe only because nothing acts on `check`: every page under
+   `app/(dash)` runs `requireStaff()` on the server, and a `401` from a read
+   still reaches `onError`. **Do not add `<Authenticated>` or
+   `useIsAuthenticated`**: `auth-provider.test.ts` fails if either appears,
+   because either would act on an answer that no longer checks anything.
+3. **A server-seeded query is never re-read by the browser.** `DashProviders`
+   sets `staleTime: Infinity` and `gcTime: 0` (see the BFF note above). Do not
+   lower `staleTime` to "keep data fresh": the server is what reads, on every
+   navigation.
+4. **The shell is mounted once.** Each page rendered its own `AppShell`, so
+   every navigation unmounted and remounted the rail. `app/(dash)/layout.tsx`
+   is now a Server Component that calls `requireStaff()` and renders
+   `DashProviders` and `AppShell` around the page, and Next keeps a layout
+   mounted. `requireStaff` is wrapped in React's `cache()`, so the layout and
+   the page share one session read per request. **Every page still calls
+   `requireStaff()` itself**: on a client navigation Next re-renders the page
+   and not the layout, so the page's call is the gate. Do not remove it on the
+   grounds that the layout already gated. A page that meets an outage renders
+   it without a shell, because there is no session to say who is signed in.
+
+Every route under `app/(dash)` has a `loading.tsx`, so `<main>` shows the
+screen's skeleton the moment a link is followed. #318 records the cost: a row
+link reaches full content ~0.38 s where it was ~0.25 s, because React holds a
+revealed skeleton for about 300 ms. `dashboard.cy.ts` was updated for the new
+landing route and the chip filter and **was not run**.
+
+## The Overview (since 2026-10-21)
+
+`/overview`, `HOME_PATH`, read by `readOverview` in `src/dash/overview.ts`:
+**twelve procedure calls in parallel on the server**, each with `limit: 1`
+and the procedure's own filter, and each number is the procedure's
+`totalCount` (`count(*) OVER ()`, exact for that statement). The twelve: every
+payment (with the latest six rows), one per `PAYMENT_STATUS` (five), failed and
+pending refunds, failed and exhausted deliveries, open checkouts, and
+customers. Each tile links to the list filtered by the same value
+(`/payments?status=succeeded`, `/refunds?status=failed`,
+`/deliveries?state=exhausted`, …), so a number always opens the rows it
+counted.
+
+Three rules, the first two tested by `overview.test.ts` ("reports each count
+exactly as vpay's totalCount, never summed" and the case below):
+
+- **Nothing is summed or estimated.** "All payments" is its own unfiltered
+  call, never the sum of the five statuses, which could disagree under
+  concurrent writes and would then be a number vpay never said.
+- **A refused read stays refused, per number.** Each count is its own
+  `ApiResult`, and a refused one is drawn as a dash beside the refusal, never
+  as `0`. Replacing the failure branch with `{ ok: true, value: 0 }` fails
+  "keeps a refused count refused — never a zero".
+- **These are counts, not sums.** The payment detail's "vpay exposes no
+  aggregates" caption is still true of amounts, and nothing on the Overview
+  adds money up.
+
+The payment counts come from `searchPaymentIntents`, the procedure. `/payments`
+itself still reads the cursor-paged REST route, which has no total, so the
+list still shows no count. See `references/read-seam-and-bff.md`.
 
 ## The demo stack's dashboard (from `docs/flows/dashboard/status-styling-and-demo.md`)
 
@@ -270,16 +399,16 @@ route table above, and this is what that costs them.)
 
 ## Flow pages, and where each is covered
 
-| Page                                                 | Covered in                                                                                    |
-| ---------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| `docs/flows/dashboard/slice-1-gaps.md`               | this page's refund and `customer` sections; what slice 1 did not build, corrections since     |
-| `docs/flows/dashboard/status-built-and-not-built.md` | `references/what-a-screen-may-show.md` (the shell, the 0.3.0 and 0.4.0 chrome, the a11y gate) |
-| `docs/flows/dashboard/status-read-seam-and-bff.md`   | `references/read-seam-and-bff.md`                                                             |
-| `docs/flows/dashboard/status-styling-and-demo.md`    | the demo section above; the styling stack is `vpay-frontend`'s                                |
-| `docs/flows/dashboard-auth/rate-limiting.md`         | `references/staff-auth.md`                                                                    |
-| `docs/flows/dashboard-auth/sessions-and-refusals.md` | `references/staff-auth.md`; the forced password change is above                               |
-| `docs/flows/dashboard-auth/scope-and-tokens.md`      | `references/staff-auth.md`, and the re-mint in `references/read-seam-and-bff.md`              |
-| `docs/flows/dashboard-auth/sso.md`                   | `references/sso.md` (only on a vpay that has merged ADR-0030)                                 |
+| Page                                                 | Covered in                                                                                                                                                                      |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `docs/flows/dashboard/slice-1-gaps.md`               | this page's refund and `customer` sections; what slice 1 did not build, corrections since                                                                                       |
+| `docs/flows/dashboard/status-built-and-not-built.md` | `references/what-a-screen-may-show.md` (the shell, the 0.3.0 and 0.4.0 chrome, the a11y gate)                                                                                   |
+| `docs/flows/dashboard/status-read-seam-and-bff.md`   | `references/read-seam-and-bff.md`                                                                                                                                               |
+| `docs/flows/dashboard/status-styling-and-demo.md`    | the demo section above; the 2026-10-21 redesign in the reload and Overview sections above and in `references/what-a-screen-may-show.md`; the styling stack is `vpay-frontend`'s |
+| `docs/flows/dashboard-auth/rate-limiting.md`         | `references/staff-auth.md`                                                                                                                                                      |
+| `docs/flows/dashboard-auth/sessions-and-refusals.md` | `references/staff-auth.md`; the forced password change is above                                                                                                                 |
+| `docs/flows/dashboard-auth/scope-and-tokens.md`      | `references/staff-auth.md`, and the re-mint in `references/read-seam-and-bff.md`                                                                                                |
+| `docs/flows/dashboard-auth/sso.md`                   | `references/sso.md` (only on a vpay that has merged ADR-0030)                                                                                                                   |
 
 ## More
 
@@ -298,7 +427,8 @@ route table above, and this is what that costs them.)
   procedures, `PROCEDURE_OF`, the token lifecycle, the BFF's properties and its
   method policy. **Read this before adding a procedure or a read.**
 - `references/what-a-screen-may-show.md` — the honest-absence rules, status
-  colour, which `@vaam-apps/ui` components the app imports, the 0.4.0 chrome
-  (the More sheet and `accountSlot`, the loading skeletons, the date filter),
-  the a11y gate, and what this app still cannot do. **Read this before
+  colour, which `@vaam-apps/ui` components the app imports, the 0.5.0
+  chrome (the top app bar, the More sheet and `accountSlot`, the loading
+  skeletons, the filter chips and the date filter), the a11y gate, and what
+  this app still cannot do. **Read this before
   touching the shell, a loading state or a filter.**
