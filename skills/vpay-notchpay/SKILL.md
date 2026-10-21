@@ -171,10 +171,10 @@ ADR-0031's conditions are the admission. **Weakening any one of them is
   and needs a conformance-suite change (the suite assumes a push rail's
   `ref_extra` is empty and that a duplicate submit always recovers). It is
   not built yet; until it is, the WireMock stubs keep the our-reference
-  addressing, and their metadata says it is contradicted. **Undecided:** what
-  the fix does after a `409` it cannot resolve to a payment. The proposal is
-  to fail closed (`Malformed`: fate unknown, not `Submitted`, not a failure);
-  it is with the maintainer, so do not build either answer as settled.
+  addressing, and their metadata says it is contradicted. **Decided by the
+  maintainer on 2026-10-21:** after a `409` it cannot resolve to a payment,
+  the fix fails closed (`Malformed`: fate unknown, not `Submitted`, not a
+  failure). It is built in vaam-apps/vpay#304, not yet on `master`.
 - **A `404` is `NotFound` only if the message is Notch Pay's "Payment not
   found".** Any other `404` is `Config`: a wrong base path, or an unknown
   Sync account. Reading those as "no such payment" would resubmit a live
