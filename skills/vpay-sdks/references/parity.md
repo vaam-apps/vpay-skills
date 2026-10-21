@@ -205,6 +205,14 @@ VpayError` with `param`, so "the refusal is one of this SDK's own error
   cited test was renamed in that change, to
   `throws VpayInvalidParamsError on an integer past MAX_SAFE_INTEGER`, along
   with nine other titles that said `TypeError`.
+- **On `master`, 2026-10-21:** the "780" above is #315's branch, which did
+  not hold vaam-apps/vpay#309. On `master`, `verify-sdk-parity` printed **778**
+  proving tests at 45 dated gaps on `73a5b5a`. vaam-apps/vpay#309 (`f554f87`)
+  made it **788** at 45, by adding proving tests for the payer surfaces'
+  dot-segment refusals to vpay's `docs/sdks/parity.md` (its stripe-js,
+  Flutter and Tauri sections changed). #315's merge (`8796705`) made it
+  **790** proving tests and **44** dated gaps. That is also what `e393116`,
+  v0.10.0's release commit, prints, with 35 methods across 41 rows.
 
 ## Step A: the rows it moved
 
