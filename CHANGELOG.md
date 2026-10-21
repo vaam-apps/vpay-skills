@@ -14,7 +14,7 @@ rule stands, for the reasons VERSIONING.md now gives.)_
 
 ## 2026-10-21 — the dashboard's theme script runs first in `<body>`, not in `<head>`
 
-Read against vaam-apps/vpay's `master` at `VPAY_323_MERGE_SHA`, the merge of
+Read against vaam-apps/vpay's `master` at `63c395d`, the merge of
 vaam-apps/vpay#323.
 
 - `vpay-dashboard` (`references/what-a-screen-may-show.md`): `app/layout.tsx`
