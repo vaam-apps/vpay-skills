@@ -6,7 +6,7 @@ description: The MTN MoMo Cameroon adapter (`vpay-adapter-mtn-momo`) — a push 
 # MTN MoMo — the push rail
 
 > **Verified against vpay `a33aac61` (2026-09-29).** The 2026-10-21 correction
-> under "Status as of 2026-09-16" was read against vpay `VPAY_STEP5_MERGE_SHA`
+> under "Status as of 2026-09-16" was read against vpay `e28292d`
 > (2026-10-21), the merge of vaam-apps/vpay#310. Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the

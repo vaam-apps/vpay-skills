@@ -8,7 +8,7 @@ merged to `master` the same day as `b8be107` (vaam-apps/vpay#285), where both
 rows still hold, and for RFC-0014, merged the same day as `0977616`
 (vaam-apps/vpay#296); no stamp moved for either.** The RFC-0012 row's
 sentence on what the adapter has called was re-read on 2026-10-21 against vpay
-`VPAY_STEP5_MERGE_SHA`, the merge of vaam-apps/vpay#310 (RFC-0012's
+`e28292d`, the merge of vaam-apps/vpay#310 (RFC-0012's
 step 5); the rest of that row is unchanged. Version-sensitive claims carry the date they became true — see
 [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 

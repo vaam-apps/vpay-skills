@@ -7,7 +7,7 @@ description: The vpay provider port (`vpay-provider`) and how to add a payment r
 
 > **Verified against vpay `a33aac61` (2026-09-29).** The two Notch Pay passages
 > that say what step 5 did ("RFC-0012" in the RFC list, and "`backends/crates/vpay-notchpay`
-> is the Notch Pay client") were also read against vpay `VPAY_STEP5_MERGE_SHA`
+> is the Notch Pay client") were also read against vpay `e28292d`
 > (2026-10-21), the merge of vaam-apps/vpay#310. Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the

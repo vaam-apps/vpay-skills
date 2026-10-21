@@ -14,7 +14,7 @@ rule stands, for the reasons VERSIONING.md now gives.)_
 
 ## 2026-10-21 — RFC-0012 step 5: the notchpay adapter met Notch Pay's sandbox
 
-Read against vaam-apps/vpay's `master` at `VPAY_STEP5_MERGE_SHA`, the merge of
+Read against vaam-apps/vpay's `master` at `e28292d`, the merge of
 vaam-apps/vpay#310.
 
 - `vpay-notchpay`: step 5 ran on 2026-10-21. vpay itself (server, worker,

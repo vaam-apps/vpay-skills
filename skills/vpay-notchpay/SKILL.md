@@ -8,7 +8,7 @@ description: "The Notch Pay adapter (`vpay-adapter-notchpay`, rail `notchpay`, 2
 > **Verified against vpay `5b4c583` (2026-10-21)**, the merge of
 > vaam-apps/vpay#304, for "Read this before you believe
 > anything else", condition 5 and "How the adapter behaves", and against vpay
-> `VPAY_STEP5_MERGE_SHA` (2026-10-21), the merge of
+> `e28292d` (2026-10-21), the merge of
 > vaam-apps/vpay#310, for what step 5 showed in that first section
 > and for the Part B expectations under "How it runs". The rest was
 > verified against vpay `357c825` (2026-10-20), the merge of
