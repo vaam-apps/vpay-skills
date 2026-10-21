@@ -30,6 +30,67 @@ that prefix check would reopen it silently." Loosening it now fails four
 stripe-js tests and three Flutter tests. Five mutations were checked on
 #309's verification page.
 
+## 2026-10-21 — RFC-0012 step 5: the notchpay adapter met Notch Pay's sandbox
+
+Read against vaam-apps/vpay's `master` at `e28292d`, the merge of
+vaam-apps/vpay#310.
+
+- `vpay-notchpay`: step 5 ran on 2026-10-21. vpay itself (server, worker,
+  Postgres) took three test-mode payments through the adapter against Notch
+  Pay's real sandbox, from the maintainer's MacBook in a Claude Code desktop
+  session, after the maintainer approved the calls in that chat.
+  `+237670000000` (210 XAF) `succeeded` with `provider_txn_id` the
+  `trx.test_…` and one balanced ledger capture. `+237670000002` (220 XAF)
+  `failed`: charge `failed`, `provider_error`, intent
+  `requires_payment_method`. `+237670000001` (230 XAF) read `complete` with a
+  short `amounts.total`; the first read answered `pending`, and the eleven
+  after it (reads 2 to 12, in 15 minutes) were refused as `Malformed`. At 15
+  minutes the charge was `pending` and the intent `processing`: never a
+  success. Becoming `unresolved`, with an alert, at the 24 h horizon is read
+  from the code, not observed. #304's addressing worked against the real
+  rail: every charge's `ref_extra` held `notchpay_reference`. The skill
+  states what is still open (webhooks, production, a live key's prefix,
+  refunds, Orange through vpay, the 24 h escalation, the short
+  `amounts.total` value), records two observations (`provider_requests`
+  keeps a refused read as "no answer"; "needs an operator" wakes nobody for
+  24 h), and carries the corrected Part B expectations: `…000002` is the
+  failure number, `…000001` must never be `succeeded`, set `VPAY_AMOUNT` on
+  every payment. `providers.md`'s `notchpay` Collect and Status read cells
+  say "proven; sandbox 2026-10-21", and the skill says that is the whole
+  claim.
+- `vpay-provider-adapters`: the RFC-0012 entry and the client-crate note say
+  the adapter has called Notch Pay's sandbox, and nothing else.
+- `vpay-conventions`: `references/adr-index.md`'s RFC-0012 row says the same.
+- `vpay`, `vpay-mtn-momo`: MTN is no longer the only rail called for real;
+  both strike the old claim and date the correction.
+- `README.md`: the `vpay-notchpay` row no longer says "never called".
+
+**Stopped being true.**
+
+- "The adapter has never called Notch Pay. Step 5 (the first test-mode call
+  through it) has not happened" (`vpay-notchpay`). It ran on 2026-10-21,
+  against the sandbox only. The same claim, reworded, in
+  `vpay-provider-adapters` ("It has never called Notch Pay", "Nothing has
+  called Notch Pay through it", "built on a vpay branch, never called"), in
+  `vpay-conventions`' `references/adr-index.md` ("has never called Notch
+  Pay") and in `README.md` ("never called").
+- "That fix has not met Notch Pay (step 5)" and "never yet met Notch Pay:
+  step 5". #304's addressing met the sandbox and worked.
+- "The probe ran on 2026-10-21; step 5 has never run". Both ran.
+- `docs/status/providers.md`'s "stub-only; never called" for `notchpay`'s
+  Collect and Status read cells. They say "proven; sandbox 2026-10-21", and
+  that is the whole claim.
+- Runbook B3's "`…000001` reaches `requires_payment_method` with a
+  `failure_code`". It reaches neither that state nor a success; `…000002` is
+  the failure number. Also its "about two minutes" (about 15 s) and a ladder
+  that "asks at 10, 20, 30, 45, 60 and 90 s" (it also reads about 0.5 s after
+  submit, then every 120 s).
+- `vpay` and `vpay-mtn-momo`: "no rail other than MTN's sandbox", "the one
+  rail vpay has ever called for real" and "Everything else in this
+  repository's history settled against a WireMock host". Notch Pay's sandbox
+  is a second rail called for real; Orange Money's rail has still never been
+  called.
+
 ## 2026-10-21 — an empty or all-dots path id is refused by both merchant SDKs
 
 Read against vaam-apps/vpay's `master` at `1ffd148`, the merge of

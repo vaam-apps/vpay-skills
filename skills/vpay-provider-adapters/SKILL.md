@@ -1,11 +1,14 @@
 ---
 name: vpay-provider-adapters
-description: The vpay provider port (`vpay-provider`) and how to add a payment rail — the `ProviderAdapter` trait and its ten methods (payer_fields since 2026-09-16, accepted_exposure since 2026-10-20), the `Unsupported` vs `NotImplemented` rule that decides which error a missing operation returns, the rail-agnostic refund destination (`RefundDestination`, `RefundTarget`, `parse_destination`), the capability flags the core branches on instead of provider codes, the shared HTTP/token modules, the shared conformance suite a new adapter must pass, where per-provider state is written (`docs/status/providers.md`), the Draft designs for Stripe and PayPal adapters and for callback registration (RFC-0010, -0011, -0013), and the Notch Pay rail (RFC-0012), admitted under ADR-0031 and built on a vpay branch, never called (load `vpay-notchpay` for it). Load this before writing or changing any `vpay-adapter-*` crate, before touching `backends/crates/vpay-provider`, and before adding a rail.
+description: The vpay provider port (`vpay-provider`) and how to add a payment rail — the `ProviderAdapter` trait and its ten methods (payer_fields since 2026-09-16, accepted_exposure since 2026-10-20), the `Unsupported` vs `NotImplemented` rule that decides which error a missing operation returns, the rail-agnostic refund destination (`RefundDestination`, `RefundTarget`, `parse_destination`), the capability flags the core branches on instead of provider codes, the shared HTTP/token modules, the shared conformance suite a new adapter must pass, where per-provider state is written (`docs/status/providers.md`), the Draft designs for Stripe and PayPal adapters and for callback registration (RFC-0010, -0011, -0013), and the Notch Pay rail (RFC-0012), admitted under ADR-0031 and merged, called against Notch Pay's sandbox only (2026-10-21, step 5; load `vpay-notchpay` for it). Load this before writing or changing any `vpay-adapter-*` crate, before touching `backends/crates/vpay-provider`, and before adding a rail.
 ---
 
 # The provider port, and adding a rail
 
-> **Verified against vpay `a33aac61` (2026-09-29).** Version-sensitive claims below
+> **Verified against vpay `a33aac61` (2026-09-29).** The two Notch Pay passages
+> that say what step 5 did ("RFC-0012" in the RFC list, and "`backends/crates/vpay-notchpay`
+> is the Notch Pay client") were also read against vpay `e28292d`
+> (2026-10-21), the merge of vaam-apps/vpay#310. Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -527,9 +530,13 @@ section as a decision:
   every provider, on six conditions (way B, taken openly). The adapter,
   `vpay-adapter-notchpay`, is a `Push` rail on `cm.mobile`, the first
   shipping `Origin` rail, with refunds as the declared token
-  `notchpay::refund`. **It has never called Notch Pay**: RFC-0012's steps 1
-  and 5 (sandbox session, first test-mode call) did not run. Load the
-  `vpay-notchpay` skill before touching it. Write "admitted under ADR-0031",
+  `notchpay::refund`. **It has called Notch Pay's sandbox, and nothing
+  else**: RFC-0012's step 5 ran on 2026-10-21 (three test-mode payments
+  through the adapter, from the maintainer's MacBook: one `succeeded`, one
+  `failed`, one short `amounts.total` refused as `Malformed` and never a
+  success), after step 1's probe the same day. No production, no live key,
+  no webhook received, no refund. Load the `vpay-notchpay` skill before
+  touching it. Write "admitted under ADR-0031",
   **never** "rule 3 passes", and do not weaken any of ADR-0031's conditions:
   `X-Grant` on every call, boot refusing a missing private key, the
   documented exposure, the boot warning, the amount check, the open question.
@@ -572,7 +579,8 @@ section as a decision:
 transcribed from Notch Pay's OpenAPI specification 2.1.0. On `master` at
 `b8be107` it was **linked by nothing**. Since `357c825` (vaam-apps/vpay#295),
 `vpay-adapter-notchpay` sits on it and `vpay-server` links the
-adapter. Nothing has called Notch Pay through it. What carries over to any
+adapter. Since 2026-10-21 (RFC-0012's step 5) it has called Notch Pay's
+sandbox, and only that. What carries over to any
 change you make there:
 
 - **Do not write a `wire.rs` for Notch Pay, and do not re-transcribe the

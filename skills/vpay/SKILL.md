@@ -5,7 +5,9 @@ description: "Orientation for working in the vpay repository — a Rust + TypeSc
 
 # vpay
 
-> **Verified against vpay `a33aac61` (2026-09-29).** Version-sensitive claims below
+> **Verified against vpay `a33aac61` (2026-09-29).** The 2026-10-21 correction
+> in "The one thing to get right" was read against vpay `e28292d`
+> (2026-10-21), the merge of vaam-apps/vpay#310. Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -33,11 +35,20 @@ recorded on 2026-09-15 included **over seven successful payments against MTN's
 real sandbox** — EUR `mtn_momo` PaymentIntents created, confirmed and settled.
 The original documented session had three attempts: two token-mint failures,
 then one settlement. That session was not the overall total. No real payer, no
-production rail, no rail other than MTN's sandbox, no webhook to any merchant
+production rail, ~~no rail other than MTN's sandbox~~ **(corrected 2026-10-21:
+Notch Pay's sandbox too, below)**, no webhook to any merchant
 endpoint outside the repository, no pod has ever run vpay.
 
-Everything else in this repository's history settled against a WireMock host
-that answered the way the documents say a rail answers.
+**Corrected 2026-10-21:** in RFC-0012's step 5, on that date, vpay's own
+server, worker and Postgres took three test-mode payments through the
+`notchpay` adapter against Notch Pay's real sandbox: one `succeeded`, one
+`failed`, and one whose short `amounts.total` the adapter refused as
+`Malformed`, never a success. It is sandbox only, with no production, no live
+key, no webhook received and no refund; see the `vpay-notchpay` skill.
+~~Everything else in this repository's history settled against a WireMock host
+that answered the way the documents say a rail answers.~~ Everything other
+than MTN's and Notch Pay's sandboxes did, Orange Money's rail included, and
+that rail has never been called.
 
 **The failure mode this repository is organised against is making itself look
 more finished than it is.** In descending order of damage:
