@@ -12,6 +12,26 @@ publishes no release tags and its workspace version has never moved off
 `v0.5.0` as of 2026-09-23 — and its workspace version is `0.5.0`. The naming
 rule stands, for the reasons VERSIONING.md now gives.)_
 
+## 2026-10-21 — the dashboard's theme script runs first in `<body>`, not in `<head>`
+
+Read against vaam-apps/vpay's `master` at `VPAY_323_MERGE_SHA`, the merge of
+vaam-apps/vpay#323.
+
+- `vpay-dashboard` (`references/what-a-screen-may-show.md`): `app/layout.tsx`
+  runs `themeInitScript` as the first child of `<body>` and renders nothing
+  in `<head>`. The page says why: in `<head>` the script was the one node
+  React expected there, Cypress's document puts a whitespace text node in
+  front of it, and hydration failed (React #418). `dashboard.cy.ts` was 17 of
+  18 red on vpay `master` at `0706cd5`. It names `src/layout.test.tsx` as the
+  guard, and it says not to move the script back or add a React-rendered
+  child to `<head>`.
+
+**Stopped being true.**
+
+- "`app/layout.tsx` runs the package's `themeInitScript` in `<head>`"
+  (`vpay-dashboard`, `references/what-a-screen-may-show.md`). It runs first
+  in `<body>`.
+
 ## 2026-10-21 — restamps: three entries merged before the vpay change they describe
 
 Read against vaam-apps/vpay's `master` at `e393116`, the merge of
