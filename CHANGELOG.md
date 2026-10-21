@@ -12,6 +12,28 @@ publishes no release tags and its workspace version has never moved off
 `v0.5.0` as of 2026-09-23 — and its workspace version is `0.5.0`. The naming
 rule stands, for the reasons VERSIONING.md now gives.)_
 
+## 2026-10-21 — a declined confirm settles before it records the attempt
+
+Read against vaam-apps/vpay's `master` at `b7cc6c9`, the merge of
+vaam-apps/vpay#322.
+
+- `vpay-reconciler`: the `provider_requests` paragraph now says `vpay-api`'s
+  `finish_confirm` settles a decline (`persist_decline`) **before** it
+  completes the `submit` row, as the worker's resubmit already did. If
+  completing the row fails after that, it logs and still answers `409`
+  `charge_declined`. It also says why the accepted arm keeps the row first:
+  there `submitting` + answered is `Advance`'s input. It warns against making
+  the two arms match. Checked on `b7cc6c9`: in `payment_intents.rs` the
+  `Rejected` arm calls `persist_decline` before `record_response`, and logs
+  with `tracing::error!` when the second write fails.
+
+**Stopped being true.**
+
+- "`vpay-api`'s confirm does the opposite order (row, then `persist_decline`,
+  two commits), so a crash between them can" (`vpay-reconciler`). Since
+  vaam-apps/vpay#322, a refused or interrupted settlement leaves the charge
+  `submitting` with the row unanswered. Recovery already resolves that pair.
+
 ## 2026-10-21 — the dashboard's theme script runs first in `<body>`, not in `<head>`
 
 Read against vaam-apps/vpay's `master` at `63c395d`, the merge of
