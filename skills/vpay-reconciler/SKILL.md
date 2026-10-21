@@ -98,6 +98,29 @@ properties to preserve if you touch it:
   there is no `Instant` in the signature.
 - **It branches on `ProviderFlow`, a capability value, never a rail code.**
 
+**What a `provider_requests` row says after an error is chosen by whoever writes
+it, not derived from the error** (as of 2026-10-21, vaam-apps/vpay#314 and
+vaam-apps/vpay#316). `recovery_step` reads `submit` rows only, and turns any
+recorded status into `Advance` — "the rail accepted it". So for a `submit` the
+worker writes `status_code IS NULL` for every `ProviderError` **except a
+decline**: a `Malformed` submit (Notch Pay's unresolvable `409`, MTN's unfollowed
+`307`) has an _unknown_ fate on purpose. A `Rejected` resubmit **fails the charge
+first** (`settle_failed_with`: charge `failed`, intent back to the payer, one
+`payment_intent.payment_failed`) and only then records its row answered
+(`0` + `charge_declined`) — settlement first, so no worker path leaves a
+`submitting` charge beside an answered row. `vpay-api`'s confirm does the opposite
+order (row, then `persist_decline`, two commits), so a crash between them can. Before #316 nothing failed it: the charge stayed
+`submitting` and was resent after every third poll until the 24-hour horizon. A
+`Rejected` on a status _read_ does not fail the charge (Notch Pay raises it for
+our own refused keys). For a `query_status` the worker writes the `0` sentinel for
+`Malformed` and `Rejected` (the rail answered) and `NULL` for `Transport`,
+`Config`, `Unsupported` and `NotImplemented`; nothing reads those rows. **Do not
+make the submit side match the read side** — recording a refused submit as
+answered, without failing the charge, advances a charge the rail never accepted.
+The port cannot say whether a `Transport` or `Config` error followed an answer, so
+those stay `NULL` on a read and under-claim. See `docs/reference/vpay-worker.md`
+§ "What a refused answer is recorded as".
+
 `RecoveryPolicy`: `not_found_streak: 3`, `not_found_window: 60 s`,
 `lease: ≥ 4 × DEFAULT_REQUEST_TIMEOUT`, `unresolved_after: 24 h`.
 

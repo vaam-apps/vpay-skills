@@ -195,8 +195,10 @@ Both merchant SDKs put a caller's id into a URL path through **one helper
 each** — `path_segment(id)?` in `sdks/rust/src/resources.rs` and
 `pathSegment(id)` in `sdks/nodejs/src/validate.ts` — and it refuses `""` and
 any id made only of dots before anything is sent, the token request included:
-`Error::InvalidParams { param: "id", .. }` in Rust, a `TypeError` in Node, one
-fixed message that never quotes the id. Escaping could not do this, because
+`Error::InvalidParams { param: "id", .. }` in Rust, a
+`VpayInvalidParamsError` with `param === "id"` in Node (a bare `TypeError`
+until vaam-apps/vpay#315, later the same day), one fixed message that never
+quotes the id. Escaping could not do this, because
 the URL parser under each SDK reads `%2E%2E` as `..`: before the fix,
 `customers.del("..")` was a `DELETE /v1/`. What vpay answered for each method
 is on vpay's `docs/status/verification/2026-10-21-sdk-dot-segment-ids.md`.
@@ -213,10 +215,20 @@ is on vpay's `docs/status/verification/2026-10-21-sdk-dot-segment-ids.md`.
   (`vpay-provider-adapters`). They are not dot segments to either URL
   standard. Do not relax the guard to `""`, `.` and `..`: a mutation that did
   is one of the cases the tests were checked against.
-- **Node's `TypeError` is deliberate.** It matches the amount refusal, and the
-  dated `⛔` "the refusal is one of this SDK's own error types" covers both.
-  Turning one into a `VpayError` without the other leaves the package with two
-  refusal types.
+- ~~**Node's `TypeError` is deliberate.** It matches the amount refusal, and
+  the dated `⛔` "the refusal is one of this SDK's own error types" covers
+  both.~~ **Corrected 2026-10-21, later the same day (vaam-apps/vpay#315):
+  every local refusal in `sdks/nodejs` is a `VpayInvalidParamsError` now**:
+  amount, id, the form encoder's, and `invoices.pay`'s URL beside
+  `outOfBand`. The class `extends VpayError` and carries `param`, and the
+  `⛔` is closed. A new refusal in Node throws
+  `new VpayInvalidParamsError(param, detail)`, never `TypeError` and never a
+  bare `Error`. Its `message` is Rust's `Display`,
+  `invalid request parameter {param}: {detail}`. It is **not** a `TypeError`
+  and cannot be one, because a class has one superclass. Code that matched
+  `instanceof TypeError` broke on purpose (that PR's title carries `!`). Do
+  not "restore" the old behaviour by making `VpayError` extend `TypeError`,
+  which would make every error the package throws one.
 - **It is a behaviour change, not a signature change.** Every method already
   returned `Result<_, Error>` / a `Promise`, and `InvalidParams` already
   existed. A caller who saw a `404` for these inputs now gets the local
