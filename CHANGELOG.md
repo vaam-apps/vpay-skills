@@ -14,7 +14,7 @@ rule stands, for the reasons VERSIONING.md now gives.)_
 
 ## 2026-10-22 — Notch Pay's sandbox answers `403` to `POST /refunds`; refused reads are recorded as answered
 
-Read against vaam-apps/vpay's `master` at `PENDING-MERGE-SHA`, the merge of
+Read against vaam-apps/vpay's `master` at `9086ba4`, the merge of
 vaam-apps/vpay#334.
 
 - `vpay-notchpay` gains a bullet: the sandbox refuses `POST /refunds`. On
@@ -33,7 +33,7 @@ vaam-apps/vpay#334.
   read is recorded as answered, `status_code` 0 with its `error_kind`, since
   vaam-apps/vpay#314 (`6d9dfbf`). A refused submit stays `NULL`.
 
-Checked on `PENDING-MERGE-SHA`:
+Checked on `9086ba4`:
 
 - `notchpay::refund` is still declared in `docs/status.md`.
 - `docs/status/verification/2026-10-22-notchpay-refunds.md` and its report
