@@ -130,6 +130,17 @@ in code. The IP-allowlist comment and the "hourly" are still as described
 above. Of the rails linked today only Notch Pay's reference mentions retrying,
 and it asks for a `200` (RFC-0013 § 12, item 12, open).
 
+**Updated 2026-10-22: vaam-apps/vpay#326 lands the other two, which completes
+step 0.** On a vpay `master` that contains it, "hourly" is corrected in
+`reconciler.md`, `crash-safety.md` and the worker-queue runbook (`scan:live`
+has run every ten minutes since Step 4). The IP-allowlist reason is corrected
+in `vpay-config` and everywhere else it appeared: the chart's values,
+templates and README, `docs/reference/rails.md` and an MTN WireMock mapping.
+What MTN does document is that the `X-Callback-Url` must be on the domain
+registered as the API user's `providerCallbackHost`. `mtn_momo` still declares
+`requires_ip_allowlist: true`; its stated reason is now MTN's best-practices
+entry for Disbursements, which `refund` calls.
+
 Repository-wide, `grep -c "and was wrong\|Corrected 2026\|~~"` over `docs/`
 gives double digits on `docs/status/backend.md`, `docs/status/merchant-sdks.md`,
 `docs/status/cratestack.md`, `docs/status/frontend.md`,

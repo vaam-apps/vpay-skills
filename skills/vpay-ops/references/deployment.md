@@ -384,8 +384,11 @@ handler's `CALLBACK_BODY_LIMIT_BYTES`.
 
 Turning it off is **opt-out with a sentence**: `enabled: false` needs one line
 in `servedElsewhere` naming what serves the prefix instead. Legitimate case:
-MTN allows an IP-allowlisted callback host of its own, reached through
-`providers[].callback_url`. **Qualified 2026-10-20 (RFC-0013 § 11, item 5):**
+~~MTN allows an IP-allowlisted callback host of its own~~ a callback host of
+the deployment's own, reached through `providers[].callback_url`.
+**Corrected 2026-10-22 (vaam-apps/vpay#326):** vpay's chart, `vpay-config`
+and `docs/reference/rails.md` no longer give MTN's allowlist as the reason.
+**Qualified 2026-10-20 (RFC-0013 § 11, item 5):**
 no MTN page the RFC's research read says MTN requires or allows an
 IP-allowlisted host for callbacks. The sentence rests on a comment in
 `vpay-config/src/config.rs` ("MTN requires one"); MTN's best-practices page

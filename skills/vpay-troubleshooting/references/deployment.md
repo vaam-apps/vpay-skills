@@ -104,8 +104,11 @@ sentence while an **enabled** provider carries no `callback_url` override. A
 third arm refuses a `path` that is neither `/provider` nor `/` — "the literal
 belongs to `vpay-api`, and this chart does not get to rename it."
 
-Legitimate reason to turn it off: MTN allows an IP-allowlisted callback host of
-its own, reached through `providers[].callback_url`. **Qualified 2026-10-20
+Legitimate reason to turn it off: ~~MTN allows an IP-allowlisted callback host
+of its own~~ a callback host of the deployment's own, reached through
+`providers[].callback_url`. **Corrected 2026-10-22 (vaam-apps/vpay#326):**
+the chart no longer gives MTN as the reason either; for MTN the host must be on
+the domain registered as the API user's `providerCallbackHost`. **Qualified 2026-10-20
 (RFC-0013 § 11, item 5):** no MTN page that RFC's research read says MTN
 requires or allows an IP-allowlisted host for callbacks; the claim rests on a
 comment in `vpay-config/src/config.rs`. MTN documents that the callback host
