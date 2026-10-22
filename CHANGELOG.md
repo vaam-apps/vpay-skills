@@ -12,6 +12,47 @@ publishes no release tags and its workspace version has never moved off
 `v0.5.0` as of 2026-09-23 — and its workspace version is `0.5.0`. The naming
 rule stands, for the reasons VERSIONING.md now gives.)_
 
+## 2026-10-21 — MTN sends a callback once; `PUT`/`POST` and Orange's `order_id` are open
+
+Read against vaam-apps/vpay's `master` at `90fe1b9` (release v0.10.2), which
+holds vaam-apps/vpay#319 (`0706cd5`). No commit after `0706cd5` touches the
+vpay files these notes cite.
+
+- `vpay-mtn-momo`: MTN sends each callback once and never retries it, and
+  recommends polling, which the poll ladder already does. MTN's pages disagree
+  on the callback's method (`POST` or `PUT`). The route mounts `POST` only, and
+  that is "To confirm with MTN" item 1 in `docs/flows/adapter-mtn-momo.md`,
+  not something to change from the documentation.
+- `vpay-orange-money`: whether Orange's notification carries `order_id` at all
+  is unconfirmed (`references/unverified.md` row 11, with pointers from
+  `SKILL.md` and `references/the-three-calls.md`). If it does not, every real
+  Orange callback is a `400` and the poll ladder settles the charge anyway.
+  The repair is a design decision, not relaxing `parse_callback`'s check.
+- `vpay-merchant-api` (`references/routes.md`): the callback route is `POST`
+  only, and a `PUT` would get axum's bare `405`. The vpay texts that said a
+  rail retries a callback now carry a dated correction.
+- `vpay-troubleshooting` (`references/known-wrong-docs.md`) and
+  `vpay-conventions` (`references/adr-index.md`): vaam-apps/vpay#319 is
+  RFC-0013's delivery step 0 for § 11 items 1–3. Items 4 and 5 are still
+  uncorrected on `90fe1b9`: `docs/flows/reconciler.md` still calls `scan:live`
+  "hourly" (line 120), and `vpay-config/src/config.rs` still says MTN requires
+  an IP-allowlisted callback host (line 149).
+
+Checked on `90fe1b9`: both "To confirm" items exist with the numbers cited;
+`provider_callback.rs` documents `POST` only; and #319 changed every place
+`known-wrong-docs.md` lists (`docs/api/README.md`, `docs/status/backend.md`,
+`values.yaml`, `vpay-db` and `vpay-worker`'s `jobs.rs`, the callback
+integration test). RFC-0013's dated note says step 0 landed for items 1–3 and
+not for 4 and 5.
+
+**Stopped being true.**
+
+- "vpay has not yet corrected them" (`vpay-conventions`, of RFC-0013 § 11's
+  findings). vaam-apps/vpay#319 corrects items 1–3.
+- Any reading that MTN, or "both rails", retries a callback that is not
+  answered with a 2xx. MTN documents that it does not, and no Orange source
+  says either way.
+
 ## 2026-10-21 — a declined confirm settles before it records the attempt
 
 Read against vaam-apps/vpay's `master` at `b7cc6c9`, the merge of
