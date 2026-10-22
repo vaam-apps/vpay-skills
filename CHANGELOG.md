@@ -15,8 +15,9 @@ rule stands, for the reasons VERSIONING.md now gives.)_
 ## 2026-10-22 — RFC-0013 step 0 complete: `scan:live` is not hourly, and MTN names no callback allowlist
 
 Read against vaam-apps/vpay's `master` at `1b2543b`, the merge of
-vaam-apps/vpay#326. This entry stamps #59, which merged without one. The entry
-below still says items 4 and 5 are open, as they were on `90fe1b9`.
+vaam-apps/vpay#326. This entry stamps #59, which merged without one. #55's
+entry (2026-10-21, read against `90fe1b9`) still says items 4 and 5 are open,
+as they were then.
 
 - `vpay-troubleshooting` (`references/known-wrong-docs.md`): a dated update
   says vaam-apps/vpay#326 corrects RFC-0013 § 11 items 4 and 5, which completes
@@ -52,11 +53,26 @@ Checked on `1b2543b`:
 
 **Stopped being true.**
 
-- "Items 4 and 5 are still uncorrected on `90fe1b9`" (this file, the entry
-  below). Both are corrected on `1b2543b`.
+- "Items 4 and 5 are still uncorrected on `90fe1b9`" (this file, #55's
+  2026-10-21 entry). Both are corrected on `1b2543b`.
 - "The IP-allowlist comment and the "hourly" are still as described above"
   (`vpay-troubleshooting`, `references/known-wrong-docs.md`). The dated update
   that follows it supersedes it.
+
+## 2026-10-22 — the Flutter example's lockfile sync is confirmed by three releases
+
+Read against vaam-apps/vpay's `master` at `90fe1b9` (release `v0.10.2`). The
+vpay side is vaam-apps/vpay#329, which flips
+`docs/status/infrastructure.md`'s row to ✅.
+
+- `vpay-sdks` (`references/flutter-plugin.md`): the example's `pubspec.lock`
+  bullet gains an observed note. `v0.10.0`, `v0.10.1` and `v0.10.2` each
+  carried release-please's lockfile sync commit, and the line moved with
+  `pubspec.yaml` every time with no hand edit.
+
+**Stopped being true.** vpay's "no real release has run it yet" on the
+`release-please.yml` step that #309 added. No skill said it; this entry
+records that the claim the 2026-10-21 entry rests on is now proven.
 
 ## 2026-10-21 — MTN sends a callback once; `PUT`/`POST` and Orange's `order_id` are open
 
