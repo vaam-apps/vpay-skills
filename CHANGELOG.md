@@ -16,8 +16,9 @@ rule stands, for the reasons VERSIONING.md now gives.)_
 
 Read against vaam-apps/vpay's `master` at `e7406dda`, the merge of
 vaam-apps/vpay#333 (`v0.10.2-4-ge7406dda`; first released in `v0.10.3`).
-`verify-coverage` also passes against `master` at `760fbb9` (`v0.10.4`), and
-nothing after `e7406dda` touches a passage cited below. #333 corrects
+`verify-coverage` also passes against `master` at `760fbb9` (`v0.10.4`) and
+`e8e70ef` (vaam-apps/vpay#338). Nothing after `e7406dda` touches a passage
+cited below. #333 corrects
 fourteen places where vpay's docs contradicted its own code at `v0.10.2`, as
 dated notes. Its evidence page is
 `docs/status/verification/2026-10-22-self-contradictions.md`. That page names
@@ -43,7 +44,8 @@ twelve found two more.
   `docs/flows/adapter-orange-money.md` Status.
 - `vpay-ops` (`SKILL.md`): "What has run" named only MTN's sandbox. A dated
   note adds Notch Pay's, run on 2026-10-21 through
-  `docs/runbooks/notchpay-sandbox-test.md`. #333 changed vpay's
+  `docs/runbooks/notchpay-sandbox-test.md`, and the three B3b payments of
+  2026-10-22 (vaam-apps/vpay#338). #333 changed vpay's
   `docs/runbooks/README.md` from "the one page" run against a real rail to
   "the first".
 
@@ -85,6 +87,48 @@ and cites #333 or the vpay file it now matches.
   `references/unverified.md`). There are eleven.
 - "What _has_ run", naming MTN's sandbox alone (`vpay-ops`, `SKILL.md`).
   Notch Pay's ran too, on 2026-10-21.
+
+## 2026-10-22 — Notch Pay's timeout, canceled and Orange numbers through vpay (runbook B3b)
+
+Read against vaam-apps/vpay's `master` at `e8e70ef`, the merge of
+vaam-apps/vpay#338.
+
+- `vpay-notchpay` gains a bullet on what runbook B3b showed. It ran on the
+  maintainer's MacBook and approval, through `vpay-server`, its worker and
+  Postgres, with `livemode=false` and test keys:
+  - `+237670000003` (MTN timeout, 240 XAF) read `expired`: charge `failed`,
+    `payer_timeout`.
+  - `+237670000004` (MTN canceled, 250 XAF) read `canceled`: charge
+    `failed`, `payer_declined`.
+  - `+237690000000` (Orange success, 260 XAF) `succeeded`, with a balanced
+    260 XAF capture.
+  - Each was terminal on the worker's second read, 11 to 12 s after create.
+    vpay sent 3 submits and 6 reads. Nothing differed from `mapping.rs`.
+- `vpay-notchpay`'s "Still open" list now follows step 5 and B3b. It drops
+  Orange, timeout and canceled through vpay, and names Orange's failure
+  path, which Notch Pay documents no test number for.
+- `vpay-notchpay`'s Part B bullets gain B3b's amounts and timing, and runbook
+  B0's loopback-only Postgres.
+- `vpay-notchpay`'s `providers.md` paragraph: the cells' evidence covers an
+  Orange payer, and the cell wording is unchanged.
+
+Checked on `e8e70ef`:
+
+- `docs/status/verification/2026-10-22-notchpay-b3b.md` exists.
+- `adapter-notchpay.md` § Status has the B3b bullet, and its "To confirm"
+  item 5 carries the through-vpay result.
+- The runbook's B0 publishes `127.0.0.1:5434:5432`.
+- `mapping.rs` is unchanged since `e7406dd`.
+
+**Stopped being true.**
+
+- "Orange, timeout and canceled through vpay (step 1's probe ran them; step 5
+  did not; runbook B3b is written for them)" in `vpay-notchpay`'s "Still
+  open after step 5" list. All three ran through vpay on 2026-10-22.
+- "Orange through vpay" in the list of what `providers.md`'s `notchpay` cells
+  do not cover.
+- Runbook B0's `docker run … -p 5434:5432`, as a command to copy: it
+  published Postgres on every interface. It is `-p 127.0.0.1:5434:5432` now.
 
 ## 2026-10-22 — RFC-0009 revised: one company first, connected accounts later
 

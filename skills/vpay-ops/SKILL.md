@@ -44,8 +44,11 @@ day `docs/runbooks/notchpay-sandbox-test.md` ran, and vpay's own server,
 worker and Postgres took three test-mode payments through the `notchpay`
 adapter: one `succeeded`, one `failed`, and one whose short `amounts.total`
 the adapter refused as `Malformed` (`docs/status/verification/2026-10-21-notchpay-step5.md`;
-the `vpay-notchpay` skill). Sandbox only, like MTN's. Until this note the
-list above named MTN alone. vpay's `docs/runbooks/README.md` likewise called
+the `vpay-notchpay` skill). On 2026-10-22 the same runbook's B3b took three
+more through the same stack: Notch Pay's MTN timeout and canceled numbers,
+and an Orange payer (`docs/status/verification/2026-10-22-notchpay-b3b.md`,
+vaam-apps/vpay#338). Sandbox only, like MTN's. Until this note the list above
+named MTN alone. vpay's `docs/runbooks/README.md` likewise called
 `live-sandbox-test.md` "the one page whose commands have been run against a
 real rail" until vaam-apps/vpay#333 made it "the first", on 2026-10-22.
 
