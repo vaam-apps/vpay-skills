@@ -12,6 +12,41 @@ publishes no release tags and its workspace version has never moved off
 `v0.5.0` as of 2026-09-23 — and its workspace version is `0.5.0`. The naming
 rule stands, for the reasons VERSIONING.md now gives.)_
 
+## 2026-10-22 — Notch Pay's sandbox answers `403` to `POST /refunds`; refused reads are recorded as answered
+
+Read against vaam-apps/vpay's `master` at `PENDING-MERGE-SHA`, the merge of
+vaam-apps/vpay#334.
+
+- `vpay-notchpay` gains a bullet: the sandbox refuses `POST /refunds`. On
+  2026-10-22 `sandbox_probe refunds` sent it four times against a
+  `complete` 200 XAF payment, through the probe and not the adapter. Every
+  answer was `403` `{"code":"403","status":"Forbidden"}`, with no message,
+  and nothing was refunded.
+  - A hand-made `GET /refunds` answered `200` with an empty list.
+  - `GET /payments/{trx}/refunds` answered `404`.
+  - So RFC-0012 § 10 items 6 and 12 stay open. The bullet says not to build
+    refunds on this evidence.
+  - The "Not built" section and the "Still open after step 5" list now
+    carry the same date. That list also names the timeout and canceled
+    numbers beside Orange, and runbook B3b, written for all three.
+- `vpay-notchpay`'s `provider_requests` bullet now says a refused status
+  read is recorded as answered, `status_code` 0 with its `error_kind`, since
+  vaam-apps/vpay#314 (`6d9dfbf`). A refused submit stays `NULL`.
+
+Checked on `PENDING-MERGE-SHA`:
+
+- `notchpay::refund` is still declared in `docs/status.md`.
+- `docs/status/verification/2026-10-22-notchpay-refunds.md` and its report
+  exist.
+- `adapter-notchpay.md` § Status carries the same #314 correction.
+
+**Stopped being true.**
+
+- "`provider_requests` records that refused read as "no answer"
+  (`status_code` and `responded_at` NULL)" (`vpay-notchpay`). It stopped
+  being true when #314 merged on 2026-10-21, a day before this skill caught
+  up. vpay's own `adapter-notchpay.md` said the same until #334.
+
 ## 2026-10-22 — RFC-0013 step 0 complete: `scan:live` is not hourly, and MTN names no callback allowlist
 
 Read against vaam-apps/vpay's `master` at `1b2543b`, the merge of
