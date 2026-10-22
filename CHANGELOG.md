@@ -12,6 +12,45 @@ publishes no release tags and its workspace version has never moved off
 `v0.5.0` as of 2026-09-23 — and its workspace version is `0.5.0`. The naming
 rule stands, for the reasons VERSIONING.md now gives.)_
 
+## 2026-10-22 — `scan:live` is not hourly, and MTN's callback host is the registered one
+
+Read against vaam-apps/vpay's `master` at `VPAY_327_MERGE_SHA`, the merge of
+vaam-apps/vpay#327, which completes RFC-0013's delivery step 0.
+
+- `vpay-troubleshooting` (`references/known-wrong-docs.md`): the five
+  RFC-0013 § 11 findings now all carry a dated correction in vpay, and the page
+  warns against flipping MTN's `requires_ip_allowlist` on documentation alone.
+  Items 4 and 5 landed in vaam-apps/vpay#327:
+  - "hourly" corrected in three docs, not only the one the RFC named;
+  - the `callback_url` comment now uses MTN's registered-domain rule;
+  - the "IP-allowlisted callback host" sentence corrected in five places.
+- `vpay-ops` and `vpay-troubleshooting` (`references/deployment.md`): the
+  legitimate reason to turn the `/provider` Ingress off is a rail pointed at a
+  callback host of its own. For MTN, that host must be the domain registered
+  with the API user, not an IP-allowlisted one. The chart's `sourceRange`
+  stays an operator's choice and empty by default.
+- `vpay-conventions` (`references/adr-index.md`): RFC-0013's delivery step 0
+  is complete.
+
+Checked on `VPAY_327_MERGE_SHA`:
+
+- `SCAN_INTERVAL` is ten minutes and `SWEEP_INTERVAL` an hour (both in
+  `vpay-worker/src/handlers.rs`);
+- the three docs, the `config.rs` comment and the five corrected places say
+  what these notes say;
+- MTN's `requires_ip_allowlist` is still `true`, with its new comment.
+
+**Stopped being true.**
+
+- "The IP-allowlist comment and the "hourly" are still as described above"
+  (`vpay-troubleshooting`, `references/known-wrong-docs.md`). Both are
+  corrected.
+- "MTN allows an IP-allowlisted callback host of its own" (`vpay-ops` and
+  `vpay-troubleshooting`, `references/deployment.md`, already qualified on
+  2026-10-20). vpay no longer says it either.
+- "vaam-apps/vpay#319 corrects items 1–3 and leaves 4 and 5"
+  (`vpay-conventions`). vaam-apps/vpay#327 corrects 4 and 5.
+
 ## 2026-10-21 — MTN sends a callback once; `PUT`/`POST` and Orange's `order_id` are open
 
 Read against vaam-apps/vpay's `master` at `90fe1b9` (release v0.10.2), which

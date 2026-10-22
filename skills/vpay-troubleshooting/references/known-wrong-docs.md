@@ -126,9 +126,31 @@ and in every other place that leaned on it (`docs/api/README.md`,
 question is "To confirm with MTN" item 1 in `docs/flows/adapter-mtn-momo.md`,
 and the `order_id` question is "To confirm with Orange Cameroun" item 11 in
 `docs/flows/adapter-orange-money.md`, both with sources and neither acted on
-in code. The IP-allowlist comment and the "hourly" are still as described
-above. Of the rails linked today only Notch Pay's reference mentions retrying,
-and it asks for a `200` (RFC-0013 § 12, item 12, open).
+in code. ~~The IP-allowlist comment and the "hourly" are still as described
+above.~~ (Corrected 2026-10-22; see below.) Of the rails linked today only
+Notch Pay's reference mentions retrying, and it asks for a `200` (RFC-0013
+§ 12, item 12, open).
+
+**Updated 2026-10-22: vaam-apps/vpay#327 lands the other two, which completes
+step 0.** On a vpay `master` that contains it, all five findings carry a dated
+correction:
+
+- **"hourly":** `docs/flows/reconciler.md`, `docs/flows/crash-safety.md` and
+  `docs/runbooks/worker-queue.md` each say `scan:live` runs every ten minutes
+  (`SCAN_INTERVAL`). RFC-0013 named only the first; the other two said the same
+  thing. `sweep:expired` really is hourly (`SWEEP_INTERVAL`), and what is said
+  about it stands.
+- **The IP-allowlist comment:** `vpay-config`'s `callback_url` comment now
+  grounds the override in what MTN does document. `X-Callback-Url` must be on
+  the domain registered as the API user's `providerCallbackHost`.
+- **The sentence that comment seeded,** "MTN additionally allows an
+  IP-allowlisted callback host of its own", is corrected in five places:
+  `docs/reference/rails.md`; the chart's `values.yaml`, `README.md` and
+  `ingress-provider.yaml`; and the MTN `requesttopay` WireMock mapping.
+- **MTN's `requires_ip_allowlist: true`** is unchanged. A comment now says it is
+  not a callback requirement, and that it rests on MTN's Best Practices listing
+  IP whitelisting for Disbursements (what `refund` calls), unconfirmed. Do not
+  flip it on documentation alone.
 
 Repository-wide, `grep -c "and was wrong\|Corrected 2026\|~~"` over `docs/`
 gives double digits on `docs/status/backend.md`, `docs/status/merchant-sdks.md`,

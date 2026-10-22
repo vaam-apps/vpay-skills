@@ -384,15 +384,23 @@ handler's `CALLBACK_BODY_LIMIT_BYTES`.
 
 Turning it off is **opt-out with a sentence**: `enabled: false` needs one line
 in `servedElsewhere` naming what serves the prefix instead. Legitimate case:
-MTN allows an IP-allowlisted callback host of its own, reached through
-`providers[].callback_url`. **Qualified 2026-10-20 (RFC-0013 § 11, item 5):**
+~~MTN allows an IP-allowlisted callback host of its own~~ a rail pointed at a
+callback host of its own, reached through `providers[].callback_url`. For MTN
+that host must be the domain registered with the API user. **Qualified
+2026-10-20 (RFC-0013 § 11, item 5):**
 no MTN page the RFC's research read says MTN requires or allows an
 IP-allowlisted host for callbacks. The sentence rests on a comment in
 `vpay-config/src/config.rs` ("MTN requires one"); MTN's best-practices page
 lists IP whitelisting for Disbursements and other products, not for
 RequestToPay, and its callback page names no allowlist. What MTN does document
 is that the callback host must be on the domain registered with the API user.
-Treat the allowlist as an unverified reason for a separate host.
+Treat the allowlist as an unverified reason for a separate host. **Updated
+2026-10-22:** vaam-apps/vpay#327 corrects the comment and every place that
+repeated it (`docs/reference/rails.md`, the chart's `README.md`, `values.yaml`
+and `ingress-provider.yaml`). On a vpay `master` that contains it, they give the
+registered-domain rule instead. `ingress.provider.sourceRange` stays an
+operator's choice. MTN says its callbacks come from approved IP ranges and
+publishes none, so it stays empty unless someone has been given them.
 
 **Gateway API** (`route.enabled: true`) renders `HTTPRoute`s instead of
 `Ingress`es, for a cluster running a Gateway rather than ingress-nginx. It is an

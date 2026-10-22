@@ -241,8 +241,10 @@ with vpay#244, 0009 on 2026-10-16, 0010 and 0011 on 2026-10-17, and 0012,
   **neither of which exists**. Its § 11 lists findings about vpay's own
   documentation (for one, the claim that MTN retries a callback, which MTN's
   documentation contradicts); ~~vpay has not yet corrected them~~
-  **updated 2026-10-21:** vaam-apps/vpay#319 corrects items 1–3 and leaves 4
-  and 5 — see `vpay-troubleshooting`'s known-wrong-docs page. See `vpay-provider-adapters`.
+  **updated 2026-10-21:** vaam-apps/vpay#319 corrects items 1–3 ~~and leaves 4
+  and 5~~; **updated 2026-10-22:** vaam-apps/vpay#327 corrects 4 and 5, which
+  completes delivery step 0 — see `vpay-troubleshooting`'s known-wrong-docs
+  page. See `vpay-provider-adapters`.
 - `docs/rfc/0014-verifying-rail-callbacks.md` — **Draft**, proposed
   2026-10-20 and merged as `0977616` (vaam-apps/vpay#296); **nothing in it
   is built**. A defaulted `ProviderAdapter::verify_callback` and

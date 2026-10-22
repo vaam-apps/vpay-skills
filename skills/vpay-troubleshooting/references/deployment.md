@@ -104,13 +104,18 @@ sentence while an **enabled** provider carries no `callback_url` override. A
 third arm refuses a `path` that is neither `/provider` nor `/` — "the literal
 belongs to `vpay-api`, and this chart does not get to rename it."
 
-Legitimate reason to turn it off: MTN allows an IP-allowlisted callback host of
-its own, reached through `providers[].callback_url`. **Qualified 2026-10-20
+Legitimate reason to turn it off: ~~MTN allows an IP-allowlisted callback host
+of its own~~ a rail pointed at a callback host of its own, reached through
+`providers[].callback_url`. For MTN that host must be the domain registered
+with the API user. **Qualified 2026-10-20
 (RFC-0013 § 11, item 5):** no MTN page that RFC's research read says MTN
 requires or allows an IP-allowlisted host for callbacks; the claim rests on a
 comment in `vpay-config/src/config.rs`. MTN documents that the callback host
 must be on the domain registered with the API user, which in production is a
-step on MTN's portal. Treat the allowlist reason as unverified.
+step on MTN's portal. Treat the allowlist reason as unverified. **Updated
+2026-10-22:** vaam-apps/vpay#327 corrects that comment and the chart's wording.
+On a vpay `master` that contains it, the guard's own example reads "a callback
+host of the rail's own (providers[].callback_url)".
 
 ## `helm lint` refuses `images.worker`
 
