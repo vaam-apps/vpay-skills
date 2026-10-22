@@ -13,10 +13,11 @@ description: The staff operator console at frontends/apps/dashboard — it is th
 `frontends/apps/dashboard` (`@vpay/dashboard`). Next ~~15.5.25~~ **`^15.5.27`** (since 2026-10-09, vaam-apps/vpay#272) App Router, React
 19, Refine 5, `@vaam-apps/ui` `^0.5.0` (Material 3 Expressive) since
 2026-10-21 (vaam-apps/vpay#318, merged as `73c3a7cf`; it was `^0.4.0`). Its
-own `README.md` is the best in-repo companion, but ~~seven~~ five of its
-passages are stale at `73c3a7cf` (listed under "Known-stale prose" in
+own `README.md` is the best in-repo companion, but ~~seven~~ ~~five~~ four of
+its passages are stale at `e7406dda` (listed under "Known-stale prose" in
 `references/read-seam-and-bff.md`; #318 fixed the pages table and the
-Sign-out sentence). The flow docs are
+Sign-out sentence, and vaam-apps/vpay#333, 2026-10-22, the "no current
+password field" one). The flow docs are
 `docs/flows/dashboard.md` plus the four pages under `docs/flows/dashboard/`
 and `docs/flows/dashboard-auth.md` (plus `dashboard-auth/sso.md` on a vpay that has merged ADR-0030). Decisions: ADR-0008, ADR-0017, and ADR-0030 for single sign-on.
 

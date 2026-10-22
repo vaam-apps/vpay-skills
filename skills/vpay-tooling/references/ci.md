@@ -30,7 +30,19 @@ and gate vpay: `ci.yml`, `docs.yml` and `release.yml`. The other five:
   separate workflow, so it cannot block a release. It mints a `vaam-apps` App
   token scoped to `vaam-apps/vpay-docs` only (`contents: write`) and sends
   `repository_dispatch: vpay-release`, so the human docs site's parity check
-  runs at once (2026-09-23). It has not run on a real tag.
+  runs at once (2026-09-23). ~~It has not run on a real tag.~~ **Corrected
+  2026-10-22 (vaam-apps/vpay#333):** it has run on every `v*` tag from
+  `v0.5.0`, the first release after it merged, to `v0.10.2`, nine tags, and
+  every run succeeded. Each was followed in vaam-apps/vpay-docs by a
+  `release-parity` run whose event is `repository_dispatch`. vpay's
+  `docs/runbooks/release.md` § 9 says so since #333, and
+  `docs/status/verification/2026-10-22-self-contradictions.md` lists every
+  run id on both sides. The same held for `v0.10.3` and `v0.10.4`, both cut
+  after #333 on 2026-10-22: `gh run list` shows both `notify-docs` runs green
+  (measured 2026-10-22), and a dispatch run followed each within twenty
+  seconds. The struck sentence landed with vaam-apps/vpay-skills#20 at
+  09:47:55Z on 2026-09-23 and was already stale then: `v0.5.0`'s run had
+  started at 09:45:44Z.
 
 _(This said "Three workflows … `ci.yml`, `docs.yml`, `release.yml`. Re-read
 2026-09-16." until 2026-09-23. It was wrong from 2026-09-17, when

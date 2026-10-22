@@ -18,8 +18,14 @@ writing one would mean inventing a money-path wire call.
 ## The one item that blocks a shipping token: Orange's transfer product
 
 > **Item 5 of the flow doc's "To confirm with Orange Cameroun" list**, and
-> since 2026-09-15 it is not one assumption among ten — it is the thing
-> `orange_money::refund` waits on.
+> since 2026-09-15 it is not one assumption among ~~ten~~ the others — it is
+> the thing `orange_money::refund` waits on.
+
+_(This said "among ten" until 2026-10-22. The list has had **eleven** items
+since 2026-10-21, when vaam-apps/vpay#319 added item 11 below, whether the
+notification carries `order_id`. vpay's `docs/flows/adapter-orange-money.md`
+made the same slip in its Status, "All **ten**", until vaam-apps/vpay#333
+corrected it to eleven on 2026-10-22.)_
 
 **No Orange transfer API is documented anywhere in vpay — not even
 reconstructed — and none has been invented.** The three calls this adapter

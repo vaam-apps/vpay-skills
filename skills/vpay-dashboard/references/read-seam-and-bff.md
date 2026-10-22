@@ -303,18 +303,20 @@ green.
 ## Known-stale prose
 
 Two, both verified 2026-09-16 and re-read 2026-09-23, 2026-09-25
-(`f68fda09`) and, for the README, 2026-10-21 (`73c3a7cf`).
+(`f68fda09`) and, for the README, 2026-10-21 (`73c3a7cf`) and 2026-10-22
+(`e7406dda`, the merge of vaam-apps/vpay#333).
 
 **The "one procedure" sentences in the Rust transport are stale — five are
 mounted.** Full detail above. Code wins.
 
 **`frontends/apps/dashboard/README.md` lags the code: its test count, and
-~~seven~~ five passages about what the app does** (two fixed by
-vaam-apps/vpay#318, 2026-10-21; see the list). _(Until 2026-09-25 this said its
+~~seven~~ ~~five~~ four passages about what the app does** (two fixed by
+vaam-apps/vpay#318, 2026-10-21, and one by vaam-apps/vpay#333, 2026-10-22;
+see the list). _(Until 2026-09-25 this said its
 "counts are a 2026-09-11 snapshot", and that the README "says the BFF is
 '**Two** `GET` route handlers'". True at `b747e5d5`; see the corrections
 below.)_ Its test count is a 2026-09-11 snapshot: it quotes a suite of "22
-files, 243 tests", still at `73c3a7cf`. ~~The latest
+files, 243 tests", still at `73c3a7cf` and at `e7406dda`. ~~The latest
 recorded suite figure is **311 cases in 30 files, 0 skipped**, taken
 2026-09-13 and cited in `docs/flows/dashboard/status-built-and-not-built.md`.~~
 The latest recorded figure is **455 passed, 1 skipped, in 35 files**, on
@@ -338,8 +340,10 @@ the README still says:
   credential's `must_change` since migration `0044` (vpay#168, 2026-09-13).
 - ADR-0017 decision 1 refuses "every authenticated route" to such a
   session. In the code only `/oauth/authorize` refuses it; see `SKILL.md`.
-- There is no "current password" field. There has been one since 2026-09-10
-  (vpay#97).
+- ~~There is no "current password" field. There has been one since 2026-09-10
+  (vpay#97).~~ Fixed by vaam-apps/vpay#333 (2026-10-22): the README strikes
+  the sentence and says the page asks for the current password, and that vpay
+  refuses a change without one with the same `401` as a wrong one.
 - ~~There is no "Sign out" in the nav. There has been one since 2026-09-14.~~
   Fixed by vaam-apps/vpay#318 (2026-10-21): the README now says Sign out is
   in the rail's account block and the top app bar.

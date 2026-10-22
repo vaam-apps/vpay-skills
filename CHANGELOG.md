@@ -12,6 +12,80 @@ publishes no release tags and its workspace version has never moved off
 `v0.5.0` as of 2026-09-23 — and its workspace version is `0.5.0`. The naming
 rule stands, for the reasons VERSIONING.md now gives.)_
 
+## 2026-10-22 — vpay corrects fourteen self-contradictions; four skills repeated one
+
+Read against vaam-apps/vpay's `master` at `e7406dda`, the merge of
+vaam-apps/vpay#333 (`v0.10.2-4-ge7406dda`; first released in `v0.10.3`).
+`verify-coverage` also passes against `master` at `760fbb9` (`v0.10.4`), and
+nothing after `e7406dda` touches a passage cited below. #333 corrects
+fourteen places where vpay's docs contradicted its own code at `v0.10.2`, as
+dated notes. Its evidence page is
+`docs/status/verification/2026-10-22-self-contradictions.md`. That page names
+two skills that repeat an old claim. A grep of every skill for the other
+twelve found two more.
+
+- `vpay-tooling` (`references/ci.md`): "`notify-docs.yml` has not run on a
+  real tag" is struck. It has run on every `v*` tag from `v0.5.0` to
+  `v0.10.2`, and every run succeeded. Each was followed by a vpay-docs
+  `release-parity` run whose event is `repository_dispatch`. The note cites
+  vpay's `docs/runbooks/release.md` § 9 and the evidence page, which has the
+  run ids, and does not repeat them. `v0.10.3` and `v0.10.4`, both cut after
+  #333, ran green as well, each followed by a dispatch run within twenty
+  seconds (`gh run list`, 2026-10-22).
+- `vpay-dashboard` (`references/read-seam-and-bff.md`, `SKILL.md`): the
+  README's "There is no current password field" is marked fixed by #333, the
+  way the "Sign out" entry is marked fixed by #318. Four README passages are
+  stale now, not five. The other four and the "22 files, 243 tests" count are
+  still in the README at `e7406dda`.
+- `vpay-orange-money` (`references/unverified.md`): "one assumption among
+  ten" is struck. The list has had eleven items since vaam-apps/vpay#319
+  (2026-10-21). #333 made the same correction in vpay's
+  `docs/flows/adapter-orange-money.md` Status.
+- `vpay-ops` (`SKILL.md`): "What has run" named only MTN's sandbox. A dated
+  note adds Notch Pay's, run on 2026-10-21 through
+  `docs/runbooks/notchpay-sandbox-test.md`. #333 changed vpay's
+  `docs/runbooks/README.md` from "the one page" run against a real rail to
+  "the first".
+
+Checked and left alone, because no skill repeats the old claim:
+
+- `vpay-dashboard` already had the SSO and `HOME_PATH` landing on
+  `/overview`, the customers list without a filter, the Overview's twelve
+  counts, and the payments screens' paging read by the server (all from
+  #318).
+- `vpay-notchpay` already describes the short collection as read and never
+  settled.
+- `vpay/SKILL.md` already narrows "every settlement came from WireMock" to
+  MTN's and Notch Pay's sandboxes.
+- The vpay-docs paragraph in `README.md` does not say `release-parity` opens
+  an issue.
+- No skill says no Notch Pay status has been read from Notch Pay, or that no
+  real rail has declined a charge. `vpay-sdks/references/flutter-plugin.md`
+  already says every walk in its lane used WireMock, and that MTN's sandbox
+  evidence does not prove a checkout through the plugin.
+- `vpay-provider-adapters/SKILL.md`'s "the poll ladder settles a charge whose
+  callback never came" is not the claim #333 corrected ("settles **every**
+  charge"). It cites RFC-0013 § "What a missed callback costs", which says a
+  missed callback costs one rung and never an outcome.
+
+The `SKILL.md` stamps did not move. Each edited passage carries its own date
+and cites #333 or the vpay file it now matches.
+
+**Stopped being true.**
+
+- "`notify-docs.yml` … has not run on a real tag" (`vpay-tooling`,
+  `references/ci.md`). It has run on eleven as of 2026-10-22, `v0.5.0` to
+  `v0.10.4`.
+- "There is no "current password" field" in the dashboard README, listed as
+  still wrong (`vpay-dashboard`, `references/read-seam-and-bff.md`). The
+  README strikes it since #333.
+- "~~seven~~ five of its passages are stale" (`vpay-dashboard`, `SKILL.md`
+  and `references/read-seam-and-bff.md`). Four are stale.
+- "not one assumption among ten" (`vpay-orange-money`,
+  `references/unverified.md`). There are eleven.
+- "What _has_ run", naming MTN's sandbox alone (`vpay-ops`, `SKILL.md`).
+  Notch Pay's ran too, on 2026-10-21.
+
 ## 2026-10-22 — RFC-0013 step 0 complete: `scan:live` is not hourly, and MTN names no callback allowlist
 
 Read against vaam-apps/vpay's `master` at `1b2543b`, the merge of
