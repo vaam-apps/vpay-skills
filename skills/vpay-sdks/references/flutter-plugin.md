@@ -468,6 +468,11 @@ moment of dismissal. Full detail, screenshots and transaction ids:
   branch, beside `Cargo.lock`. A **hand** version bump still has to run
   `flutter pub get` in `example/` and commit the lockfile, because no gate
   reads it. _(Until 2026-10-21, vpay listed it as deliberately not bumped.)_
+  _(Observed 2026-10-22: `v0.10.0`, `v0.10.1` and `v0.10.2` (vpay #307, #321,
+  #324) each carried a `chore: sync the lockfiles with the release version`
+  commit that moved this line with `pubspec.yaml`, with no hand edit. The
+  step succeeded on every release-please run that opened or updated a
+  release PR. vpay's infrastructure status row is ✅ on it.)_
 - **The Android/web window proof from architecture 2 is retired, not
   current**, for the one suite it depended on: `checkout_window_test.dart`
   and its debug-only JS-injection hook (`VpayCheckoutActivityTestHarness.kt`)

@@ -12,6 +12,21 @@ publishes no release tags and its workspace version has never moved off
 `v0.5.0` as of 2026-09-23 — and its workspace version is `0.5.0`. The naming
 rule stands, for the reasons VERSIONING.md now gives.)_
 
+## 2026-10-22 — the Flutter example's lockfile sync is confirmed by three releases
+
+Read against vaam-apps/vpay's `master` at `90fe1b9` (release `v0.10.2`). The
+vpay side is vaam-apps/vpay#329, which flips
+`docs/status/infrastructure.md`'s row to ✅.
+
+- `vpay-sdks` (`references/flutter-plugin.md`): the example's `pubspec.lock`
+  bullet gains an observed note. `v0.10.0`, `v0.10.1` and `v0.10.2` each
+  carried release-please's lockfile sync commit, and the line moved with
+  `pubspec.yaml` every time with no hand edit.
+
+**Stopped being true.** vpay's "no real release has run it yet" on the
+`release-please.yml` step that #309 added. No skill said it; this entry
+records that the claim the 2026-10-21 entry rests on is now proven.
+
 ## 2026-10-21 — MTN sends a callback once; `PUT`/`POST` and Orange's `order_id` are open
 
 Read against vaam-apps/vpay's `master` at `90fe1b9` (release v0.10.2), which
