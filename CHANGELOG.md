@@ -12,6 +12,41 @@ publishes no release tags and its workspace version has never moved off
 `v0.5.0` as of 2026-09-23 — and its workspace version is `0.5.0`. The naming
 rule stands, for the reasons VERSIONING.md now gives.)_
 
+## 2026-10-22 — RFC-0009 revised: one company first, connected accounts later
+
+Read against vaam-apps/vpay's `master` at `PENDING-MERGE-SHA`, the merge of
+vaam-apps/vpay#336.
+
+- `vpay-provider-adapters`, § "`ProviderConfig` is per deployment today":
+  - a new paragraph: what decides aggregation is whose money it is, not how
+    many `merchant_id`s there are;
+  - the operator's rule is now one deployment per legal entity, on the
+    maintainer's 2026-10-22 decision that the merchants are projects of one
+    company;
+  - nothing in code enforces it yet, and counsel has not been asked.
+- `vpay-provider-adapters`, the RFC-0009 bullet under "Proposed port changes":
+  - phase A: `deployment.legal_entity`, a `legal_entity` per merchant, a boot
+    refusal for a second company, and `charges.provider_account_id` set to
+    `default`;
+  - phase B, on Stripe Connect's shape: accounts, the platform client and
+    `Stripe-Account`, a separate onboarding application, per-account
+    callbacks, sealed secrets, and application fees (the one trait change,
+    blocked on an ADR amending ADR-0029 D1 rule 1 and on counsel).
+
+Checked on `PENDING-MERGE-SHA`: nothing of RFC-0009 is built.
+- `Stripe-Account` is still accepted and ignored.
+- `application_fee_amount`, `transfer_data` and `on_behalf_of` are still
+  refused with a `400`.
+- No source file names a provider account or a legal entity.
+
+**Stopped being true.**
+
+- The RFC-0009 bullet's "**No trait method changes**", as a description of
+  the whole RFC. It still holds for phase A and for § 2. Phase B's
+  application fee would change the submit request.
+- "Run one deployment per merchant" (vaam-apps/vpay `docs/status/backend.md`).
+  It is now one deployment per legal entity.
+
 ## 2026-10-22 — Notch Pay's sandbox answers `403` to `POST /refunds`; refused reads are recorded as answered
 
 Read against vaam-apps/vpay's `master` at `9086ba4`, the merge of
