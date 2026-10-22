@@ -1,6 +1,6 @@
 ---
 name: vpay-notchpay
-description: "The Notch Pay adapter (`vpay-adapter-notchpay`, rail `notchpay`, 2026-10-20) — a push rail for MTN MoMo and Orange Money through one aggregator account, admitted under ADR-0031 because its status read takes the key Notch Pay calls PUBLIC. Covers the production risk that admission accepts and the boot warning that states it, the six conditions an agent must not weaken, what Notch Pay's real sandbox answered on 2026-10-21 (step 1, through the probe) and what vpay itself did against it the same day (step 5: three test-mode payments through the adapter, sandbox only, one short `amounts.total` refused as `Malformed`), why payments are addressed by Notch Pay's `trx.…` reference kept in `ref_extra` (fixed in vaam-apps/vpay#304, and met by Notch Pay's sandbox in step 5), the fail-closed `409` and its residual crash window, the 404 rule, the amount and `amounts.total` check on every success, the livemode key rule (`test.` or `test_`, corrected 2026-10-20), and why `refund` is a declared `NotImplemented` token. Load before changing `backends/crates/vpay-adapter-notchpay`, `backends/crates/vpay-notchpay`, its WireMock mappings or its config."
+description: "The Notch Pay adapter (`vpay-adapter-notchpay`, rail `notchpay`, 2026-10-20) — a push rail for MTN MoMo and Orange Money through one aggregator account, admitted under ADR-0031 because its status read takes the key Notch Pay calls PUBLIC. Covers the production risk that admission accepts and the boot warning that states it, the six conditions an agent must not weaken, what Notch Pay's real sandbox answered on 2026-10-21 (step 1, through the probe) and what vpay itself did against it the same day (step 5: three test-mode payments through the adapter, sandbox only, one short `amounts.total` refused as `Malformed`), then the MTN timeout, MTN canceled and Orange success numbers through vpay on 2026-10-22 (runbook B3b, all as mapped), why payments are addressed by Notch Pay's `trx.…` reference kept in `ref_extra` (fixed in vaam-apps/vpay#304, and met by Notch Pay's sandbox in step 5), the fail-closed `409` and its residual crash window, the 404 rule, the amount and `amounts.total` check on every success, the livemode key rule (`test.` or `test_`, corrected 2026-10-20), and why `refund` is a declared `NotImplemented` token. Load before changing `backends/crates/vpay-adapter-notchpay`, `backends/crates/vpay-notchpay`, its WireMock mappings or its config."
 ---
 
 # Notch Pay — the aggregator push rail
@@ -10,7 +10,10 @@ description: "The Notch Pay adapter (`vpay-adapter-notchpay`, rail `notchpay`, 2
 > anything else", condition 5 and "How the adapter behaves", and against vpay
 > `e28292d` (2026-10-21), the merge of
 > vaam-apps/vpay#310, for what step 5 showed in that first section
-> and for the Part B expectations under "How it runs". The rest was
+> and for the Part B expectations under "How it runs". What runbook B3b
+> showed, the "Still open" list after it, B3b's Part B bullet and the
+> `providers.md` paragraph were verified against vpay `e8e70ef`
+> (2026-10-22), the merge of vaam-apps/vpay#338. The rest was
 > verified against vpay `357c825` (2026-10-20), the merge of
 > vaam-apps/vpay#295, which added everything below. It was read on the pull
 > request's branch at `bf96e50`; the adapter, its config rules and its stub
@@ -58,13 +61,38 @@ after create):
 - **#304's addressing worked against the real rail.** After submit every
   charge's `provider_ref_extra` held `notchpay_reference` `trx.test_…`, and
   every read by it was answered.
-- **Still open after step 5:** webhooks (RFC-0012 § 10 items 7 and 17: none
-  was received), production, a live key's prefix (item 8), refunds (the
-  sandbox answered `403` to the probe's `POST /refunds` on 2026-10-22), Orange,
-  timeout and canceled through vpay (step 1's probe ran them; step 5 did not;
-  runbook B3b is written for them), the 24 h
-  `unresolved` escalation below, and the `amounts.total` value Notch Pay
-  returned for `…000001`, which the run did not capture.
+- **Runbook B3b ran the other three numbers through vpay on 2026-10-22**
+  (vaam-apps/vpay#338,
+  `docs/status/verification/2026-10-22-notchpay-b3b.md`). It used the same
+  stack and the same approval rule, with 240, 250 and 260 XAF.
+  - `+237670000003` (MTN timeout) read `expired`: charge `failed`,
+    `failure_code` `payer_timeout`.
+  - `+237670000004` (MTN canceled by user) read `canceled`: charge `failed`,
+    `payer_declined`.
+  - Both intents went back to `requires_payment_method`, each with
+    `payment_intent.payment_failed`.
+  - **`+237690000000` (Orange success) `succeeded`**, with a balanced 260 XAF
+    capture. An Orange payer on `cm.mobile` settles through the same read as
+    MTN's.
+
+  All three were terminal on the worker's second read, 11 to 12 s after
+  create, after 3 submits and 6 reads, and nothing differed from
+  `mapping.rs`. So the sandbox's "timeout" number does not wait out a payer.
+  What a real unanswered prompt reads, and when, a test number cannot show.
+
+- **Still open after step 5 and B3b:**
+  - webhooks (RFC-0012 § 10 items 7 and 17: none was received);
+  - production, and a live key's prefix (item 8);
+  - refunds (the sandbox answered `403` to the probe's `POST /refunds` on
+    2026-10-22);
+  - Orange's failure path: Notch Pay documents no Orange failure number;
+  - the 24 h `unresolved` escalation below;
+  - the `amounts.total` value Notch Pay returned for `…000001`, which step
+    5 did not capture.
+
+  _(This list was headed "Still open after step 5" and named "Orange, timeout
+  and canceled through vpay (step 1's probe ran them; step 5 did not; runbook
+  B3b is written for them)" until 2026-10-22, when B3b ran them.)_
 
 What step 1 showed:
 
@@ -143,6 +171,8 @@ runbook's egress check showed `api.notchpay.co` under Let's Encrypt `YR1`,
 `--profile notchpay-sandbox` (`config/application-notchpay-sandbox.yml`) for
 step 5. The probe also has a read-only `search` phase (item 19) since #303.
 **Both ran on 2026-10-21: the probe (step 1), then vpay itself (step 5).**
+Runbook B3b ran vpay itself again on 2026-10-22, on a new approval that named
+its three numbers, amounts and calls.
 Who may run them. On 2026-10-20 the maintainer decided that a person runs
 step 5; on 2026-10-21 the maintainer instead asked a Claude Code desktop
 session on their own MacBook to run it, and it sent nothing to Notch Pay
@@ -188,16 +218,24 @@ merchant example defaults to 5000 XAF, and step 5 used 210, 220 and 230.
   passed no `--observability-bind`, so the server's observability listener
   bound `0.0.0.0:9090`, all interfaces; since vaam-apps/vpay#310
   B1 passes `127.0.0.1:9090` (B2 already passed `127.0.0.1:9091`).
+- **B3b** (`…000003`, `…000004`, `+237690000000`) used 240, 250 and 260 XAF.
+  Each was terminal on the second read, about 12 s after create, though the
+  runbook allows 15 minutes. B0 publishes Postgres on `127.0.0.1:5434`
+  since vaam-apps/vpay#338. Its `-p 5434:5432` exposed it, with password
+  `vpay`, on every interface.
 
 `docs/status/providers.md`'s `notchpay` Collect and Status read cells said
 **"stub-only; never called"** until 2026-10-21 and now say **"proven; sandbox
 2026-10-21"**: a dated page under `docs/status/verification/` recorded
 test-mode payments read to a terminal status. **"Sandbox" is the whole claim.**
 It does not cover webhooks (items 7 and 17), production, a live key's prefix,
-refunds, Orange through vpay, the 24 h `unresolved` escalation or the short
+refunds, Orange's failure path, the 24 h `unresolved` escalation or the short
 `amounts.total` value, and Notch Pay has one host for sandbox and production,
 so nothing in the host separates the two. Do not widen the cells, or write
-"proven" without "sandbox", on anything less.
+"proven" without "sandbox", on anything less. Since 2026-10-22 the
+`providers.md` note says the cells' evidence covers an Orange payer too
+(runbook B3b), and the cell wording did not change. _(This paragraph listed
+"Orange through vpay" among what the cells do not cover until 2026-10-22.)_
 
 ## The admission, and the risk it accepts
 
