@@ -125,7 +125,9 @@ paid_out_of_band)` at `invoices_payment_record_key`, a six-column `UNIQUE`
   re-derived. The rule is "a **shipped** migration is never edited".
   ~~Once step A merges, `0049` is shipped.~~ **It merged on 2026-09-23
   (#251): `0049` is shipped, and not a byte of it may change.** The next
-  change is `0050`.
+  change is `0050`. _(2026-10-22: `0050` is `staff_sso_attempts` and `0051`
+  is `jobs-ensure-callbacks`, which reopens `jobs.kind_is_known` for
+  RFC-0013's `ensure_callbacks`; the next is `0052`.)_
 - **The ADD COLUMN backfills with a DEFAULT and drops it in the next
   statement** (`0042`'s device), which is why `model Invoice.paid_out_of_band`
   carries no `@default` and costs the drift nothing.

@@ -208,8 +208,8 @@ in Rust. ADR-0026 (vaam-apps/vpay#256, merged 2026-09-24) removed it at the
 source, as of vpay `a33aac61`:
 
 - `TxRepositories::enqueue_in_tx` takes a **`Duration`** and the statement
-  computes `now() + delay`; `seed_singletons` enqueues all five singletons at
-  `Duration::ZERO`, so a seeded job is due at the database's own `now()`. Its
+  computes `now() + delay`; `seed_singletons` enqueues all five singletons
+  (six since 2026-10-22: `ensure:callbacks`, RFC-0013) at `Duration::ZERO`, so a seeded job is due at the database's own `now()`. Its
   doc comment says so ("until 2026-09-23 it was this host's
   `OffsetDateTime::now_utc()`").
 - `WebhookDeliveries::record_attempt` takes the **retry rung**

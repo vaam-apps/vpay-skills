@@ -257,7 +257,8 @@ So the retry half is **unestablished for both shipping rails**; RFC-0013
 reads it as becoming true of the three rails that register their endpoint
 (Stripe, PayPal, Notch Pay). Stripe and PayPal have no adapter;
 Notch Pay's is on `master` since `357c825` (vaam-apps/vpay#295, 2026-10-20),
-and its webhook URL is registered by hand. The oracle argument stands on its
+and its webhook URL is registered by hand (_by vpay itself since 2026-10-22,
+RFC-0013 steps 2–4; see `vpay-notchpay`_). The oracle argument stands on its
 own. Those three vpay texts are still uncorrected on `master` at `b8be107`
 (2026-10-20, the merge of vaam-apps/vpay#285, which added RFC-0013);
 RFC-0013's delivery step 0 corrects them. **Updated 2026-10-21:**

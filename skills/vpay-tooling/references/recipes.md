@@ -448,7 +448,13 @@ placeholders resolve), and it must be at least 32 bytes
 a correctly written `${VAR}` holding `a` is still a refusal to boot).
 
 The CLI is **one binary** since issue #77 (2026-09-07): no subcommand serves
-the API, `worker` runs the job loop, `staff add` creates a dashboard account.
+the API, `worker` runs the job loop, `staff add` creates a dashboard account,
+and — since 2026-10-22 (RFC-0013) — `callbacks ensure [--check]` runs one
+callback-registration pass in the foreground and prints one line per rail,
+`{rail} {register} {state} {detail}`, exiting non-zero when a rail is
+`missing`, `locked` or `failed`. It needs `--database-url` (the pass takes an
+advisory lock) and writes to the provider unless `--check` or the rail's
+`callbacks.register` says otherwise.
 Anything you read describing `vpay-worker-bin` as a separate binary is stale.
 
 `.env.live.example` → `.env.live` (git-ignored) is for the `live` profile test

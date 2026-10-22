@@ -12,6 +12,52 @@ publishes no release tags and its workspace version has never moved off
 `v0.5.0` as of 2026-09-23 — and its workspace version is `0.5.0`. The naming
 rule stands, for the reasons VERSIONING.md now gives.)_
 
+## 2026-10-22 — vpay registers Notch Pay's callback endpoint itself (RFC-0013 steps 2–4)
+
+Read against vaam-apps/vpay's `master` at `PENDING-MERGE-SHA`, the merge of
+RFC-0013 delivery steps 2–4, whose branch was cut from `e8e70ef` (the merge
+of vaam-apps/vpay#338). The maintainer asked that "the webhook registration should
+be done automatically then, e.g via cli or at startup fo the providers that
+supports it". vpay's evidence page is
+`docs/status/verification/2026-10-22-rfc-0013-callback-registration.md`.
+
+- `vpay-provider-adapters` (`SKILL.md`, `references/adding-a-rail.md`): the
+  port's eleventh method, `ensure_callback_endpoint`, and the capability
+  `callback_url_mode` exist, with `callbacks_are_coherent` kept apart from
+  `is_coherent`; the RFC-0013 entry says what was built and where it differs
+  from the RFC; two boot refusals join the table.
+- `vpay-notchpay` (`SKILL.md`): the webhook endpoint is registered by vpay,
+  recognised by its description because Notch Pay answers `"url": null`,
+  and never modified or deleted; the sandbox profile sets
+  `callbacks.register: check`; "Registering the webhook (RFC-0013)" leaves
+  the "Not built" list.
+- `vpay-ops` (`references/observability.md`, `references/configuration.md`):
+  a fourteenth metric, `vpay_callback_endpoint_checks_total`, and the
+  `providers[].callbacks.register` setting.
+- `vpay-tooling` (`references/recipes.md`): the `callbacks ensure` subcommand
+  and its `--check`.
+- `vpay-reconciler`, `vpay-troubleshooting` (`references/docker-testcontainers.md`):
+  six singletons, not five.
+- `vpay-data-layer`: the next migration is `0052`.
+- `vpay-merchant-api` (`references/routes.md`), `vpay-conventions`
+  (`references/adr-index.md`): dated notes on two "registered by hand" and
+  "nothing in it is built" passages.
+
+### Stopped being true
+
+- "RFC-0013 proposes a tenth method, `ensure_callback_endpoint`; it does not
+  exist." It exists, as the eleventh.
+- "RFC-0013 proposes one more [capability], `callback_url_mode`; it does not
+  exist." It does.
+- "The [Notch Pay webhook] URL is registered with the account by hand.
+  RFC-0013 is not built." vpay registers it.
+- "`seed_singletons` enqueues its five singletons." Six.
+- "The next change is `0050`." `0050` and `0051` exist; the next is `0052`.
+
+Still true, and worth repeating: vpay has **never** registered an endpoint
+with a real Notch Pay account (RFC-0013 step 5 is not done), and it cannot
+see an endpoint someone registered by hand at its URL.
+
 ## 2026-10-22 — vpay corrects fourteen self-contradictions; four skills repeated one
 
 Read against vaam-apps/vpay's `master` at `e7406dda`, the merge of

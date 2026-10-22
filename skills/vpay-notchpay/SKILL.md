@@ -13,7 +13,10 @@ description: "The Notch Pay adapter (`vpay-adapter-notchpay`, rail `notchpay`, 2
 > and for the Part B expectations under "How it runs". What runbook B3b
 > showed, the "Still open" list after it, B3b's Part B bullet and the
 > `providers.md` paragraph were verified against vpay `e8e70ef`
-> (2026-10-22), the merge of vaam-apps/vpay#338. The rest was
+> (2026-10-22), the merge of vaam-apps/vpay#338. The webhook-registration
+> bullet under "How the adapter behaves", the `callbacks.register` paragraph
+> and the "Not built" list were verified against vpay `PENDING-MERGE-SHA`
+> (2026-10-22), the merge of RFC-0013 steps 2–4. The rest was
 > verified against vpay `357c825` (2026-10-20), the merge of
 > vaam-apps/vpay#295, which added everything below. It was read on the pull
 > request's branch at `bf96e50`; the adapter, its config rules and its stub
@@ -340,8 +343,27 @@ ADR-0031's conditions are the admission. **Weakening any one of them is
   measured payment shape; no webhook has been received to confirm the
   event's), and `ref_extra` is empty. The signature
   (`x-notch-signature`) is **not** checked, because the port passes no
-  headers. The URL is registered with the account by hand. RFC-0013 is not
-  built.
+  headers.
+- **The webhook endpoint is registered by vpay** since 2026-10-22
+  (RFC-0013, vaam-apps/vpay merge `PENDING-MERGE-SHA`): `notchpay` declares
+  `CallbackUrlMode::Registered`, and `src/callbacks.rs` implements
+  `ensure_callback_endpoint`, called by the worker's `ensure_callbacks` job
+  (every worker start, hourly) and `vpay-server callbacks ensure [--check]`.
+  It lists **every page** of `GET /webhooks`, recognises vpay's endpoint **by
+  its description**, `vpay:{deployment.name}:notchpay:default
+url:{16 hex of SHA-256(callback URL)}`, because Notch Pay answers
+  `"url": null`, and creates one with the five `payment.*` events when none
+  is current and the setting is `ensure`. **It never modifies or deletes
+  anything**: no `PUT` in the client, and `DELETE /webhooks/{id}` answered
+  `404`. A superseded or duplicate endpoint is logged by id for an operator
+  to delete in the dashboard. A hand-registered endpoint at vpay's URL is
+  **invisible** to it (no URL echoed), so a deployment that registered one by
+  hand gets a second; each callback then arrives twice, which costs a second
+  pull-forward. Proven against `mappings/webhooks.json` and a real Postgres
+  (`callback_registration.rs`); **never against a real Notch Pay account**
+  (RFC-0013 step 5, runbook B4, needs the maintainer's approval to call
+  Notch Pay). _(This bullet said "The URL is registered with the account by
+  hand. RFC-0013 is not built." until 2026-10-22.)_
 - **`refund` is `NotImplemented("notchpay::refund")`**, declared in
   `docs/status.md`. `supports_refunds` and `supports_partial_refunds` are
   `true` and `refund_destination` is `Origin`, because Notch Pay documents
@@ -393,13 +415,21 @@ exists with no host port. The proof that a Notch Pay config boots is
 which runs the real binary, and for livemode
 `a_livemode_notchpay_rail_boots_only_acknowledged_and_still_warns`.
 
+**`callbacks.register`** (2026-10-22): `ensure` by default, `check`, or `off`.
+`config/application-notchpay-sandbox.yml` sets **`check`**, so the worker
+started by runbook B2 lists the real sandbox account's endpoints and never
+creates one. Do not change it to `ensure` outside runbook B4: that is a
+write to a real account, and Notch Pay's API cannot delete what it creates.
+
 ## Not built, and staying that way until its condition holds
 
 Refunds as a call (RFC-0012 § 10 item 6; the sandbox answered `403` to
 `POST /refunds` on 2026-10-22, so nothing about replay is known). Model B / Sync / `X-Sync` (§ 10
 item 9; not offered). `cm.mtn` / `cm.orange` (step 8). Webhook signature
 verification (needs a port change; RFC-0014, vaam-apps/vpay#296, a draft,
-designs it, so do not build it inside a Notch Pay change). Registering the webhook (RFC-0013).
+designs it, so do not build it inside a Notch Pay change). Retiring or
+repairing a webhook endpoint (no working `DELETE`, no `PUT` in the client).
+_(The last item was "Registering the webhook (RFC-0013)" until 2026-10-22.)_
 Cards and Notch Pay's hosted Collect page (out of scope). The epic,
 vaam-apps/vpay#291, stays open.
 

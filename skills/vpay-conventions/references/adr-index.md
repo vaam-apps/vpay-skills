@@ -233,7 +233,11 @@ with vpay#244, 0009 on 2026-10-16, 0010 and 0011 on 2026-10-17, and 0012,
   unit tests), which no adapter uses and no binary links. See
   `vpay-provider-adapters`.
 - `docs/rfc/0013-vpay-registers-its-own-callbacks.md` — **Draft**, proposed
-  2026-10-20; **nothing in it is built**. On a rail that registers its callback
+  2026-10-20; **steps 2–4 built 2026-10-22 for Notch Pay** (its § "As built";
+  `ensure_callbacks`, `vpay-server callbacks ensure`). _(The rest of this
+  entry, from "nothing in it is built" to "neither of which exists", is as
+  written on 2026-10-20; both names exist now.)_ ~~**nothing in it is
+  built**.~~ On a rail that registers its callback
   URL with the provider account (Stripe, PayPal, Notch Pay) vpay would register
   its own endpoint, in a worker job and never on the boot path; MTN and Orange
   take the URL per request and would be asked nothing. It proposes

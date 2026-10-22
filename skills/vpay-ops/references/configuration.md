@@ -115,7 +115,8 @@ no `display_name()` — "a placeholder that is honest about being one".
 
 `backends/crates/vpay-config/src/config.rs`. The resolved per-rail
 configuration: `host` (`url` + `label`), `currency`, `settings`, `credentials`,
-`enabled`, optional `callback_url`.
+`enabled`, optional `callback_url`, and — since 2026-10-22 (RFC-0013) —
+optional `callbacks: { register: ensure | check | off }`.
 
 **It hand-writes its own `Debug`, which redacts `credentials` and prints
 `settings` in full.** A derived `Debug` would format a rail secret into any log
@@ -137,6 +138,19 @@ already on it stay observable — while `reconcile` writes `enabled = false` int
 unless `providers[].callback_url` overrides it. The **effective** value — not
 just the override — is put through `validate_host`, so a livemode deployment
 cannot hand a live rail a plaintext or stub callback host.
+
+**`callbacks.register`** says what the worker's `ensure_callbacks` job and
+`vpay-server callbacks ensure` may do about the rail's callback endpoint at
+the provider: `ensure` (absent block, or `{}`) lists and creates vpay's when
+it is missing, `check` lists and never creates, `off` never asks. It applies
+only to an **enabled** rail whose adapter declares
+`CallbackUrlMode::Registered` — `notchpay` today. On a `PerRequest` rail
+(`mtn_momo`, `orange_money`) the block is refused at boot,
+`ConfigError::CallbacksOnPerRequestRail` → **78**, whatever it says. A
+misspelt key inside it is refused (`deny_unknown_fields`), never read as
+`ensure`. `config/application-notchpay-sandbox.yml` sets `check`, so a
+worker started against the real sandbox never creates an endpoint by
+itself.
 
 **`to_provider_config(&Deployment)`** is "the only place a
 `vpay_provider::ProviderConfig` is built from configuration, so the server and

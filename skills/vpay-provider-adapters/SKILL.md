@@ -167,9 +167,20 @@ fn accepted_exposure(&self) -> Option<AcceptedExposure>; // default: None — si
   four, until then). Its "Adding a rail" checklist still has **no step** for
   `payer_fields`, at `a33aac61`.
 
-- **RFC-0013 proposes a tenth method, `ensure_callback_endpoint`; it does not
-  exist** (checked 2026-10-20). Do not add it, or write a body for it, ahead
-  of the first adapter that registers an endpoint — see the proposals below.
+- **`ensure_callback_endpoint` is the eleventh method (2026-10-22, RFC-0013).**
+  `async`, defaulting to `ProviderError::Unsupported`; called only on a rail
+  whose `callback_url_mode` is `Registered`, by the worker's
+  `ensure_callbacks` job and `vpay-server callbacks ensure`, under the
+  registration lock. It takes `EndpointCheck { marker, write }` and the
+  rail's `ProviderConfig`, and answers `EndpointReport { state, retirable }`,
+  `state` one of `Present { endpoint_id, repaired }`, `Created`, `Drifted`,
+  `Foreign`, `Missing`. **Four rules** (its doc comment): list the account's
+  endpoints whole, every page; create at most once per call, and only when
+  `write`; never modify or delete an endpoint without this deployment's
+  marker; a create whose answer was lost is not repeated in the same call.
+  `Measured` forwards and counts it (operation `ensure_callback_endpoint`).
+  Only `notchpay` overrides it. _(This bullet said "RFC-0013 proposes a tenth
+  method …; it does not exist" until 2026-10-22.)_
 
 - **The error-surface table in the trait's own doc comment is the contract.**
   It is a markdown grid, one row per `ProviderError` variant and one column
@@ -203,10 +214,16 @@ fn accepted_exposure(&self) -> Option<AcceptedExposure>; // default: None — si
 
 `flow` (`Push` | `Redirect`), `supports_refunds`,
 `supports_partial_refunds`, `delivers_callbacks`, `requires_ip_allowlist`,
-`supports_account_holder_lookup`, and — **new on 2026-09-15** —
-`refund_destination: RefundDestination` (`Origin` | `Required`). RFC-0013
-proposes one more, `callback_url_mode`; **it does not exist** (checked
-2026-10-20), and this list is still complete.
+`supports_account_holder_lookup`, `refund_destination: RefundDestination`
+(`Origin` | `Required`, **new on 2026-09-15**), and — **new on 2026-10-22**
+(RFC-0013) — `callback_url_mode: CallbackUrlMode` (`PerRequest` |
+`Registered`): whether the rail is told its callback URL on every submit
+(`mtn_momo`'s `X-Callback-Url`, `orange_money`'s `notif_url`) or holds it
+registered with the account (`notchpay`). A new adapter must set it; the
+conformance case `the_submit_tells_the_rail_where_to_call_back` now asserts
+its per-rail census against this value, and
+`the_endpoint_check_is_unsupported_exactly_on_a_per_request_rail` holds the
+method to it.
 
 `Capabilities::is_coherent()` is `!supports_partial_refunds ||
 supports_refunds`. It is **mirrored by a real DB CHECK** —
@@ -216,6 +233,14 @@ supports_refunds`. It is **mirrored by a real DB CHECK** —
 `backends/tests/integration/tests/postgres_smoke.rs`. Belt and braces, not a
 substitute either way. `vpay_api::v1::boot::boot_seeds` also refuses an
 incoherent pair at boot (`ConfigError::IncoherentCapabilities`, exit 78).
+
+`Capabilities::callbacks_are_coherent()` is the second rule, kept **apart**
+from `is_coherent` on purpose: `Registered` requires `delivers_callbacks`.
+It has no CHECK, because `callback_url_mode` is not persisted; boot refuses
+it as `ConfigError::IncoherentCallbackMode` (exit 78), and `vpay-server`'s
+`every_registered_callback_url_belongs_to_a_rail_that_calls_back` asserts it
+over every linked adapter. Do not fold it into `is_coherent`, whose rules are
+exactly the ones a database CHECK mirrors.
 
 `supports_account_holder_lookup` and `refund_destination` are **deliberately
 not persisted**: unlike the other four they have no column in `providers` and
@@ -573,8 +598,30 @@ section as a decision:
   **never** "rule 3 passes", and do not weaken any of ADR-0031's conditions:
   `X-Grant` on every call, boot refusing a missing private key, the
   documented exposure, the boot warning, the amount check, the open question.
-- **RFC-0013 — vpay registers its own callback endpoints** (added 2026-10-20;
-  Draft, **nothing in it is built**). On a rail whose callback URL is
+- **RFC-0013 — vpay registers its own callback endpoints. Steps 2–4 built
+  2026-10-22, for Notch Pay** (vaam-apps/vpay merge `PENDING-MERGE-SHA`).
+  Read `docs/rfc/0013-vpay-registers-its-own-callbacks.md` § "As built"
+  before touching it. What exists: the port's `CallbackUrlMode`,
+  `callback_url_mode`, `callbacks_are_coherent` and
+  `ensure_callback_endpoint` (above); `JobKind::EnsureCallbacks`, the sixth
+  singleton, dedupe key `ensure:callbacks`, migration `0051`, hourly and
+  five minutes after a `Transport` or database failure, **never `Err`**; the
+  lock `vpay_db::lock_keys::CALLBACK_REGISTRATION` (`vpaycbk`,
+  `pg_try_advisory_xact_lock`, one transaction per rail);
+  `providers[].callbacks.register` (`ensure` default | `check` | `off`,
+  refused on a `PerRequest` rail as `ConfigError::CallbacksOnPerRequestRail`);
+  `vpay-server callbacks ensure [--check]`; the counter
+  `vpay_callback_endpoint_checks_total{provider,state}`. The marker is
+  `vpay:{deployment.name}:{rail}:default`. **Never run against a real Notch
+  Pay account** (delivery step 5); Stripe and PayPal have no adapter. Where
+  it differs from the RFC: `Drifted` and `retirable` are new; Notch Pay's
+  endpoint is recognised by a URL tag in its description, because Notch Pay
+  answers `"url": null`; nothing is ever retired or repaired on Notch Pay
+  (no working `DELETE`, no `PUT`); a counter, not a gauge.
+  _(The original entry, "added 2026-10-20; Draft, nothing in it is built", is
+  kept below as written.)_
+- ~~**RFC-0013 — vpay registers its own callback endpoints** (added 2026-10-20;
+  Draft, **nothing in it is built**).~~ On a rail whose callback URL is
   registered with the provider account instead of sent on each request —
   Stripe, PayPal and Notch Pay; only Notch Pay has an adapter, and only on a
   vpay branch (2026-10-20) — vpay would make
@@ -600,7 +647,7 @@ section as a decision:
   whether that needs a third mode is open (question 7).
   **Until it lands, registering a webhook with Stripe, PayPal or Notch Pay is a
   manual step for the merchant or operator** (RFC-0010 § 9, RFC-0011 § 9,
-  RFC-0012 § 9); on MTN a production callback host is a domain registered on
+  RFC-0012 § 9) — _no longer true of Notch Pay from 2026-10-22_; on MTN a production callback host is a domain registered on
   MTN's portal with the API user, and the RFC finds nothing there for vpay to
   register at startup.
   Registration would change how soon a hint arrives, not what a hint can do:

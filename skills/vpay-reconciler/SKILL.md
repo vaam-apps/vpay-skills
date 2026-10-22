@@ -197,7 +197,8 @@ early or late by the skew between the two hosts. Concretely, as of vpay
 `a33aac61`:
 
 - `seed_singletons` enqueues its five singletons at `Duration::ZERO` (one
-  transaction, unchanged); the callback route's enqueue is `ZERO`; the confirm's
+  transaction, unchanged; **six** since 2026-10-22, when RFC-0013 added
+  `ensure_callbacks` on dedupe key `ensure:callbacks`, migration `0051`); the callback route's enqueue is `ZERO`; the confirm's
   poll is `POLL_AFTER_CONFIRM_GRACE` out, added to _the database's_ `now()` (an
   API host a few seconds behind used to eat that much of the grace);
   `resubmit_charge`, its follow-up poll and every fan-out's `deliver_webhook`

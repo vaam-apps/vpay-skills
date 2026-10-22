@@ -305,10 +305,12 @@ Not in `docs/flows/provider-port.md`, but required:
 `vpay_api::v1::boot::boot_seeds` runs **before the database is touched**, so
 these fail in milliseconds rather than after a connection and a migration run:
 
-| condition                                                                  | error                                 | exit   |
-| -------------------------------------------------------------------------- | ------------------------------------- | ------ |
-| a configured `providers[]` code the binary links no adapter for            | `ConfigError::ProviderWithoutAdapter` | **78** |
-| an adapter declaring `supports_partial_refunds` without `supports_refunds` | `ConfigError::IncoherentCapabilities` | **78** |
+| condition                                                                                      | error                                    | exit   |
+| ---------------------------------------------------------------------------------------------- | ---------------------------------------- | ------ |
+| a configured `providers[]` code the binary links no adapter for                                | `ConfigError::ProviderWithoutAdapter`    | **78** |
+| an adapter declaring `supports_partial_refunds` without `supports_refunds`                     | `ConfigError::IncoherentCapabilities`    | **78** |
+| an adapter declaring `callback_url_mode: Registered` without `delivers_callbacks` (2026-10-22) | `ConfigError::IncoherentCallbackMode`    | **78** |
+| a `providers[].callbacks` block on a rail whose adapter declares `PerRequest` (2026-10-22)     | `ConfigError::CallbacksOnPerRequestRail` | **78** |
 
 Since 2026-10-20 `Config::validate_all` adds four per-row refusals
 (`ProviderSettingNotAllowed`, `ProviderCurrencyNotAllowed`,
