@@ -117,12 +117,22 @@ read from the package. Whether an unregistered `data-theme` still renders dark
 on 0.5.0 was **not re-measured**. Pin `dark` and do not rely on the fallback.
 
 **The stored theme is applied before the first paint since 2026-10-21.**
-`app/layout.tsx` runs the package's `themeInitScript` in `<head>` (a fixed
-string, nothing interpolated). It reads the operator's stored choice and sets
-`data-theme` before the body paints. `<html>` still says `data-theme="dark"`
+`app/layout.tsx` runs the package's `themeInitScript` (a fixed string,
+nothing interpolated) as the **first child of `<body>`**, and renders nothing
+in `<head>`. The script reads the operator's stored choice and sets
+`data-theme` before anything paints. `<html>` still says `data-theme="dark"`
 and carries `suppressHydrationWarning` for that one attribute. Without the
 script a light-theme operator saw every document load paint dark and then
-flip. The same file self-hosts Roboto Flex and JetBrains Mono
+flip. ~~It ran in `<head>`.~~ **Corrected later on 2026-10-21
+(vaam-apps/vpay#323):** in `<head>` it was the one node React rendered
+there, so React hydrated `<head>` expecting it first. The document Cypress
+serves puts a whitespace text node in front, so hydration failed (React
+#418), and `dashboard.cy.ts` went 17 of 18 red on `master` at `0706cd5`.
+**Do not move it back into `<head>`, and do not add a React-rendered child
+there.** `suppressHydrationWarning` covers an element's attributes, not its
+children's structure. `src/layout.test.tsx` fails if the script leaves the
+start of `<body>`. The `vaam-ui` skill's setup page still says `<head>`: in
+this app, that advice is what broke the spec. The same file self-hosts Roboto Flex and JetBrains Mono
 (`@fontsource-variable/*`), which `theme.css` names and the app never loaded
 before: until then every glyph fell back to the system fonts. A width written
 in `ch` of the mono face changed with it (see the date filter below).

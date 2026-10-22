@@ -12,6 +12,99 @@ publishes no release tags and its workspace version has never moved off
 `v0.5.0` as of 2026-09-23 — and its workspace version is `0.5.0`. The naming
 rule stands, for the reasons VERSIONING.md now gives.)_
 
+## 2026-10-21 — a declined confirm settles before it records the attempt
+
+Read against vaam-apps/vpay's `master` at `b7cc6c9`, the merge of
+vaam-apps/vpay#322.
+
+- `vpay-reconciler`: the `provider_requests` paragraph now says `vpay-api`'s
+  `finish_confirm` settles a decline (`persist_decline`) **before** it
+  completes the `submit` row, as the worker's resubmit already did. If
+  completing the row fails after that, it logs and still answers `409`
+  `charge_declined`. It also says why the accepted arm keeps the row first:
+  there `submitting` + answered is `Advance`'s input. It warns against making
+  the two arms match. Checked on `b7cc6c9`: in `payment_intents.rs` the
+  `Rejected` arm calls `persist_decline` before `record_response`, and logs
+  with `tracing::error!` when the second write fails.
+
+**Stopped being true.**
+
+- "`vpay-api`'s confirm does the opposite order (row, then `persist_decline`,
+  two commits), so a crash between them can" (`vpay-reconciler`). Since
+  vaam-apps/vpay#322, a refused or interrupted settlement leaves the charge
+  `submitting` with the row unanswered. Recovery already resolves that pair.
+
+## 2026-10-21 — the dashboard's theme script runs first in `<body>`, not in `<head>`
+
+Read against vaam-apps/vpay's `master` at `63c395d`, the merge of
+vaam-apps/vpay#323.
+
+- `vpay-dashboard` (`references/what-a-screen-may-show.md`): `app/layout.tsx`
+  runs `themeInitScript` as the first child of `<body>` and renders nothing
+  in `<head>`. The page says why: in `<head>` the script was the one node
+  React expected there, Cypress's document puts a whitespace text node in
+  front of it, and hydration failed (React #418). `dashboard.cy.ts` was 17 of
+  18 red on vpay `master` at `0706cd5`. It names `src/layout.test.tsx` as the
+  guard, and it says not to move the script back or add a React-rendered
+  child to `<head>`.
+
+**Stopped being true.**
+
+- "`app/layout.tsx` runs the package's `themeInitScript` in `<head>`"
+  (`vpay-dashboard`, `references/what-a-screen-may-show.md`). It runs first
+  in `<body>`.
+
+## 2026-10-21 — restamps: three entries merged before the vpay change they describe
+
+Read against vaam-apps/vpay's `master` at `e393116`, the merge of
+vaam-apps/vpay#307 (release v0.10.0). It holds vaam-apps/vpay#309
+(`f554f87`), vaam-apps/vpay#314 with vaam-apps/vpay#316 (`6d9dfbf`) and
+vaam-apps/vpay#315 (`8796705`).
+
+vaam-apps/vpay-skills#50, #52 and #53 merged between 13:05 and 13:07 UTC on
+2026-10-21, each before the vpay pull request it describes: #309 merged at
+13:07:46, #314 at 13:19:46 and #315 at 13:32:25. For those minutes these
+skills described code that `master` did not have. For #53 that lasted 27
+minutes, and the code was a `VpayInvalidParamsError` class that `sdks/nodejs`
+did not export. `tools/verify-coverage.mjs` passed throughout, because it
+checks paths and names and not a class name. #52 and #53 also merged with no
+entry in this file. No claim changes here. Each one is now stamped against
+the `master` commit that makes it true, and one record that #50 said it made
+is made here.
+
+- `vpay-reconciler` (#52): what a `provider_requests` row says after an error
+  is chosen by whoever writes it. Read against `6d9dfbf`, the merge of
+  vaam-apps/vpay#314. #314 carries vaam-apps/vpay#316, which merged into
+  #314's branch rather than into `master`. Spot-checked on that commit:
+  `record_read_failure`, `read_failure_status` and `settle_failed_with` are in
+  `backends/crates/vpay-worker/src/handlers.rs`.
+- `vpay-sdks` (#53): Node's local refusals are a `VpayInvalidParamsError`.
+  Read against `8796705`, the merge of vaam-apps/vpay#315. Spot-checked on
+  that commit: `sdks/nodejs/src/errors.ts` exports
+  `VpayInvalidParamsError extends VpayError`.
+- `vpay-sdks` (`references/parity.md`): records `verify-sdk-parity` as
+  `master` prints it. It was **778** proving tests at 45 dated gaps on
+  `73a5b5a`, **788** at 45 on `f554f87` (#309) and **790** at **44** on
+  `8796705` (#315) and on `e393116`, with 35 methods across 41 rows
+  throughout. Its "778 to 780" was measured on #315's branch, which did not
+  hold #309.
+- `vpay-sdks` (#50): restamped from #309's branch to `f554f87` in its own
+  entry below. That entry's claim that `references/parity.md` "records the two
+  new payer rows and the 778 → 788 move" was not true of the merged change,
+  which never touched that file. It is corrected in place.
+
+**Stopped being true.**
+
+- "Read against vaam-apps/vpay#309's branch … Merge this after #309" (this
+  file, the dot-segment entry). It merged before #309, and it is read against
+  `f554f87` now.
+- "`references/parity.md` records the two new payer rows and the 778 → 788
+  move" (the same entry). It did not, until this entry.
+- `references/parity.md`'s "from 778 to **780** proving tests and from 45 to
+  **44** dated gaps, measured against vpay `master` `73a5b5af` and the
+  branch", read as the current count. That was #315's branch. `master` prints
+  790 and 44.
+
 ## 2026-10-21 — the dashboard's Material 3 Expressive redesign, Overview home, and no more reloads
 
 Read against vaam-apps/vpay's `master` at `73c3a7cf`, the merge of
@@ -75,16 +168,21 @@ release repeats those numbers and re-ran none of them.
 
 ## 2026-10-21 — the payer surfaces' dot-segment safety is pinned by test
 
-Read against vaam-apps/vpay#309's branch (`claude/admiring-swirles-9b668f`,
-`93c5eb8`, with vpay `master` merged in at `73a5b5a`). Merge this after
-#309. It cites `sdks/stripe-js/src/testing/unroutable-secrets.ts`, which
-exists only once #309 lands.
+Read against vaam-apps/vpay's `master` at `f554f87`, the merge of
+vaam-apps/vpay#309, whose tree is identical to the branch head `93c5eb8` this
+was first read on. _(This said it was read against #309's branch
+(`claude/admiring-swirles-9b668f`, `93c5eb8`, with vpay `master` merged in at
+`73a5b5a`) and "Merge this after #309" until 2026-10-21. It merged 51 seconds
+before #309 did, so for those seconds it cited
+`sdks/stripe-js/src/testing/unroutable-secrets.ts` before `master` had it.)_
 
 - `vpay-sdks`: the payer-surface bullet now says the stripe-js and Flutter
   client-secret parsers are pinned by tests on every route that builds a path.
   It names the shared list of sixteen refused secrets and says where a new
-  method or a new refused shape goes. `references/parity.md` records the two
-  new payer rows and the 778 → 788 move.
+  method or a new refused shape goes. ~~`references/parity.md` records the
+  two new payer rows and the 778 → 788 move.~~ It did not: the merged change
+  never touched `references/parity.md`. The 778 → 788 move is recorded there
+  since the restamp entry of the same date, above.
 - `vpay-sdks` (`references/flutter-plugin.md`): the example's `pubspec.lock`
   now follows the plugin's version on release, because #309's
   `release-please.yml` step rewrites it. A hand bump still has to refresh it.
