@@ -14,7 +14,7 @@ rule stands, for the reasons VERSIONING.md now gives.)_
 
 ## 2026-10-22 — RFC-0009 revised: one company first, connected accounts later
 
-Read against vaam-apps/vpay's `master` at `PENDING-MERGE-SHA`, the merge of
+Read against vaam-apps/vpay's `master` at `facbb67`, the merge of
 vaam-apps/vpay#336.
 
 - `vpay-provider-adapters`, § "`ProviderConfig` is per deployment today":
@@ -33,7 +33,7 @@ vaam-apps/vpay#336.
     callbacks, sealed secrets, and application fees (the one trait change,
     blocked on an ADR amending ADR-0029 D1 rule 1 and on counsel).
 
-Checked on `PENDING-MERGE-SHA`: nothing of RFC-0009 is built.
+Checked on `facbb67`: nothing of RFC-0009 is built.
 
 - `Stripe-Account` is still accepted and ignored.
 - `application_fee_amount`, `transfer_data` and `on_behalf_of` are still
