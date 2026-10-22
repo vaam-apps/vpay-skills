@@ -59,8 +59,10 @@ after create):
   charge's `provider_ref_extra` held `notchpay_reference` `trx.test_…`, and
   every read by it was answered.
 - **Still open after step 5:** webhooks (RFC-0012 § 10 items 7 and 17: none
-  was received), production, a live key's prefix (item 8), refunds, Orange
-  through vpay (step 1's probe ran it; step 5 did not), the 24 h
+  was received), production, a live key's prefix (item 8), refunds (the
+  sandbox answered `403` to the probe's `POST /refunds` on 2026-10-22), Orange,
+  timeout and canceled through vpay (step 1's probe ran them; step 5 did not;
+  runbook B3b is written for them), the 24 h
   `unresolved` escalation below, and the `amounts.total` value Notch Pay
   returned for `…000001`, which the run did not capture.
 
@@ -92,12 +94,18 @@ What step 1 showed:
   retries it on the ladder and wakes nobody; only at the 24 h poll horizon
   (`unresolved_after`) does the charge become `unresolved`, with an alert.
   Until then "needs an operator" is a repeated WARN line and nothing else.
-- **`provider_requests` records that refused read as "no answer"**
-  (`status_code` and `responded_at` NULL) although Notch Pay answered it,
-  because the worker's `record_failure` runs for every `ProviderError`,
-  `Malformed` included. Nothing reads that table yet, so the cost is audit
-  imprecision, not money. It is the worker's and `vpay-db`'s, not the
-  adapter's, and step 5 changed neither.
+- **`provider_requests` records that refused read as answered**:
+  `status_code` 0 with its `error_kind`, since vaam-apps/vpay#314
+  (`6d9dfbf`, 2026-10-21). A refused _status read_ moves no money and is
+  recorded as answered. A refused _submit_ stays `NULL` (unresolved), because
+  recovery would read an answered submit row as acceptance. In step 5 itself
+  the eleven refused reads were written as "no answer" (`status_code` and
+  `responded_at` NULL), because `record_failure` then ran for every
+  `ProviderError`. Evidence:
+  `docs/status/verification/2026-10-21-provider-requests-refused-answers.md`.
+  _(This bullet said `provider_requests` "records that refused read as "no
+  answer"", in the present tense, until 2026-10-22. vpay's
+  `adapter-notchpay.md` said the same until vaam-apps/vpay#334.)_
 - `cm.mobile` honours the outcome numbers; a repeated reference is `409`
   "Reference already existing"; answers use `transaction`/`endpoint`/
   `endpoints`; a payment answer has **no `id`**; `POST /webhooks` returns
@@ -302,6 +310,21 @@ ADR-0031's conditions are the admission. **Weakening any one of them is
   them. It is **the first shipping `Origin` rail**: the core refuses a
   `destination` with a `400` before the token. Do not answer `Unsupported`.
   That would be a claim about Notch Pay rather than vpay's gap.
+- **The sandbox refuses `POST /refunds` (2026-10-22, through the probe, not
+  the adapter).** `sandbox_probe refunds` made a 200 XAF payment that read
+  `complete`, then sent `POST /refunds` four times. All four answered `403`
+  `{"code":"403","status":"Forbidden"}`, with no message, and nothing was
+  refunded. Two of the bodies were the guide's; two added an undocumented
+  `reference`. A hand-made `GET /refunds` answered `200` with an empty list.
+  `GET /payments/{trx}/refunds` answered `404` "Payment Not Found" for a
+  payment that had just been read.
+  - **So item 6 (replay safety) is still unmeasured.** Item 12 (an IP
+    allowlist) is not answered either: the `403` fits it and fits refunds
+    being disabled for the account just as well.
+  - **Do not build refunds on this evidence**, and do not read the `403` as
+    "Notch Pay has no refunds".
+  - Evidence: `docs/status/verification/2026-10-22-notchpay-refunds.md`
+    (vaam-apps/vpay#334). Runbook A6 reruns it.
 
 ## Configuration, and the trap in it
 
@@ -334,7 +357,8 @@ which runs the real binary, and for livemode
 
 ## Not built, and staying that way until its condition holds
 
-Refunds as a call (RFC-0012 § 10 item 6). Model B / Sync / `X-Sync` (§ 10
+Refunds as a call (RFC-0012 § 10 item 6; the sandbox answered `403` to
+`POST /refunds` on 2026-10-22, so nothing about replay is known). Model B / Sync / `X-Sync` (§ 10
 item 9; not offered). `cm.mtn` / `cm.orange` (step 8). Webhook signature
 verification (needs a port change; RFC-0014, vaam-apps/vpay#296, a draft,
 designs it, so do not build it inside a Notch Pay change). Registering the webhook (RFC-0013).

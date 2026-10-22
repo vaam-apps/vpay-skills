@@ -412,6 +412,19 @@ that assumes it is handed a particular merchant's account, and do not describe
 a multi-merchant deployment as pass-through. Draft RFC-0009 proposes the fix;
 the port's trait would not change.
 
+**What decides aggregation is whose money it is, not how many `merchant_id`s
+there are (2026-10-22).** The maintainer decided the merchants served for now
+are projects of one company. RFC-0009's revision (vaam-apps/vpay#336) treats
+that as the company being a merchant: one account per rail holding the
+company's own money is not aggregation. The operator's rule is therefore one
+deployment per **legal entity**: several projects of one company may share
+one, and a merchant that is another company, a subsidiary included, needs its
+own. **Nothing in code enforces this yet.** RFC-0009's phase A
+(`deployment.legal_entity`, a `legal_entity` on each merchant, a boot refusal
+for a second company, `charges.provider_account_id`) is unbuilt, and counsel
+has not been asked. Do not configure a second company onto a deployment, and
+do not describe phase A as built.
+
 ## Proposed port changes that do not exist (2026-09-23)
 
 ~~Four Draft RFCs~~ **Ten RFCs as of 2026-10-20** — the four merged by
@@ -479,14 +492,34 @@ section as a decision:
   `mtn_wallet`, `orange_wallet`, `paypal` are the ADR's D12, proposed; no
   router exists._
 - **RFC-0009 — provider accounts per merchant** (added 2026-10-16, not
-  part of vaam-apps/vpay#244). A `provider_accounts` list on each merchant
-  registration, merged per call with rail-level `providers[]` keys (a key at
-  both levels refuses to boot), an account id recorded on every charge, and a
-  rail offered only to a merchant with an account on it. **No trait method
-  changes**; what changes is which `ProviderConfig` the core hands the
-  adapter. Stripe Connect direct charges and PayPal's third-party model are
-  why it needs two levels. None of it exists: see the section above for what
-  the tree does today.
+  part of vaam-apps/vpay#244; **revised 2026-10-22** in vaam-apps/vpay#336).
+  It has two phases:
+  - **Phase A** is for projects of one company: `deployment.legal_entity`, a
+    `legal_entity` on each merchant, a boot refusal for a second company, and
+    `charges.provider_account_id`, recorded as `default`. No trait change.
+  - **Phase B** is for other companies, on Stripe Connect's shape, the
+    maintainer's preference:
+    - `acct_…` accounts in the database;
+    - the operator's platform client honouring `Stripe-Account`;
+    - a separate onboarding application (`frontends/apps/onboarding`, with
+      `/onboard/v1` and account links);
+    - per-account callbacks at
+      `/provider/{code}/{provider_account_id}/callback`;
+    - sealed rail secrets;
+    - the original § 2 two-level merge, where a key at both levels refuses
+      to boot;
+    - **application fees**, the one place the trait would change: the
+      submit request would carry the fee, and only rails that can split a
+      payment may take it. They conflict with ADR-0029 D1 rule 1 as
+      written, and need an amending ADR and counsel first.
+
+  **None of it exists**: see the section above for what the tree does today.
+  `Stripe-Account` is still accepted and ignored for every client, and
+  `application_fee_amount`, `transfer_data` and `on_behalf_of` are still
+  refused with a `400`. _(This bullet described only the 2026-10-16 proposal
+  — `provider_accounts` in YAML, "No trait method changes" — until
+  2026-10-22.)_
+
 - **RFC-0010 — a Stripe adapter** (added 2026-10-17). `vpay-adapter-stripe`,
   rail code `stripe`, Stripe's hosted Checkout as one more `Redirect` rail:
   `POST /v1/checkout/sessions` with the charge reference as the

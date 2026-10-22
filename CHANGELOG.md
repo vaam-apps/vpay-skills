@@ -86,6 +86,77 @@ and cites #333 or the vpay file it now matches.
 - "What _has_ run", naming MTN's sandbox alone (`vpay-ops`, `SKILL.md`).
   Notch Pay's ran too, on 2026-10-21.
 
+## 2026-10-22 — RFC-0009 revised: one company first, connected accounts later
+
+Read against vaam-apps/vpay's `master` at `facbb67`, the merge of
+vaam-apps/vpay#336.
+
+- `vpay-provider-adapters`, § "`ProviderConfig` is per deployment today":
+  - a new paragraph: what decides aggregation is whose money it is, not how
+    many `merchant_id`s there are;
+  - the operator's rule is now one deployment per legal entity, on the
+    maintainer's 2026-10-22 decision that the merchants are projects of one
+    company;
+  - nothing in code enforces it yet, and counsel has not been asked.
+- `vpay-provider-adapters`, the RFC-0009 bullet under "Proposed port changes":
+  - phase A: `deployment.legal_entity`, a `legal_entity` per merchant, a boot
+    refusal for a second company, and `charges.provider_account_id` set to
+    `default`;
+  - phase B, on Stripe Connect's shape: accounts, the platform client and
+    `Stripe-Account`, a separate onboarding application, per-account
+    callbacks, sealed secrets, and application fees (the one trait change,
+    blocked on an ADR amending ADR-0029 D1 rule 1 and on counsel).
+
+Checked on `facbb67`: nothing of RFC-0009 is built.
+
+- `Stripe-Account` is still accepted and ignored.
+- `application_fee_amount`, `transfer_data` and `on_behalf_of` are still
+  refused with a `400`.
+- No source file names a provider account or a legal entity.
+
+**Stopped being true.**
+
+- The RFC-0009 bullet's "**No trait method changes**", as a description of
+  the whole RFC. It still holds for phase A and for § 2. Phase B's
+  application fee would change the submit request.
+- "Run one deployment per merchant" (vaam-apps/vpay `docs/status/backend.md`).
+  It is now one deployment per legal entity.
+
+## 2026-10-22 — Notch Pay's sandbox answers `403` to `POST /refunds`; refused reads are recorded as answered
+
+Read against vaam-apps/vpay's `master` at `9086ba4`, the merge of
+vaam-apps/vpay#334.
+
+- `vpay-notchpay` gains a bullet: the sandbox refuses `POST /refunds`. On
+  2026-10-22 `sandbox_probe refunds` sent it four times against a
+  `complete` 200 XAF payment, through the probe and not the adapter. Every
+  answer was `403` `{"code":"403","status":"Forbidden"}`, with no message,
+  and nothing was refunded.
+  - A hand-made `GET /refunds` answered `200` with an empty list.
+  - `GET /payments/{trx}/refunds` answered `404`.
+  - So RFC-0012 § 10 items 6 and 12 stay open. The bullet says not to build
+    refunds on this evidence.
+  - The "Not built" section and the "Still open after step 5" list now
+    carry the same date. That list also names the timeout and canceled
+    numbers beside Orange, and runbook B3b, written for all three.
+- `vpay-notchpay`'s `provider_requests` bullet now says a refused status
+  read is recorded as answered, `status_code` 0 with its `error_kind`, since
+  vaam-apps/vpay#314 (`6d9dfbf`). A refused submit stays `NULL`.
+
+Checked on `9086ba4`:
+
+- `notchpay::refund` is still declared in `docs/status.md`.
+- `docs/status/verification/2026-10-22-notchpay-refunds.md` and its report
+  exist.
+- `adapter-notchpay.md` § Status carries the same #314 correction.
+
+**Stopped being true.**
+
+- "`provider_requests` records that refused read as "no answer"
+  (`status_code` and `responded_at` NULL)" (`vpay-notchpay`). It stopped
+  being true when #314 merged on 2026-10-21, a day before this skill caught
+  up. vpay's own `adapter-notchpay.md` said the same until #334.
+
 ## 2026-10-22 — RFC-0013 step 0 complete: `scan:live` is not hourly, and MTN names no callback allowlist
 
 Read against vaam-apps/vpay's `master` at `1b2543b`, the merge of
