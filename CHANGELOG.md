@@ -12,6 +12,52 @@ publishes no release tags and its workspace version has never moved off
 `v0.5.0` as of 2026-09-23 — and its workspace version is `0.5.0`. The naming
 rule stands, for the reasons VERSIONING.md now gives.)_
 
+## 2026-10-22 — RFC-0013 step 0 complete: `scan:live` is not hourly, and MTN names no callback allowlist
+
+Read against vaam-apps/vpay's `master` at `1b2543b`, the merge of
+vaam-apps/vpay#326. This entry stamps #59, which merged without one. The entry
+below still says items 4 and 5 are open, as they were on `90fe1b9`.
+
+- `vpay-troubleshooting` (`references/known-wrong-docs.md`): a dated update
+  says vaam-apps/vpay#326 corrects RFC-0013 § 11 items 4 and 5, which completes
+  delivery step 0.
+- `vpay-ops` and `vpay-troubleshooting` (`references/deployment.md`): the
+  legitimate reason to turn the `/provider` Ingress off is now a callback host
+  of the deployment's own. "MTN allows an IP-allowlisted callback host of its
+  own" is struck. For MTN the host must be on the domain registered as the API
+  user's `providerCallbackHost`.
+- `vpay-conventions` (`references/adr-index.md`): items 4 and 5 are corrected
+  too.
+
+Checked on `1b2543b`:
+
+- `SCAN_INTERVAL` is ten minutes and `SWEEP_INTERVAL` an hour
+  (`vpay-worker/src/handlers.rs`). `reconciler.md`, `crash-safety.md` and the
+  worker-queue runbook each say ten minutes for `scan:live`, with a dated
+  correction.
+- The allowlist reason is corrected, with a dated note, in every place it
+  appeared:
+  - `vpay-config`'s `callback_url` comment;
+  - the chart's `values.yaml`, `ingress-provider.yaml`, `_validate.tpl` and
+    `README.md`;
+  - `docs/reference/rails.md`;
+  - the MTN `requesttopay` WireMock mapping.
+
+  Outside dated corrections and RFC-0013 § 11's own text, no tracked file says
+  it any more.
+
+- `mtn_momo` still declares `requires_ip_allowlist: true`. Its comment gives
+  MTN's best-practices entry for Disbursements (what `refund` calls), and says
+  no MTN page names an allowlisted callback host.
+
+**Stopped being true.**
+
+- "Items 4 and 5 are still uncorrected on `90fe1b9`" (this file, the entry
+  below). Both are corrected on `1b2543b`.
+- "The IP-allowlist comment and the "hourly" are still as described above"
+  (`vpay-troubleshooting`, `references/known-wrong-docs.md`). The dated update
+  that follows it supersedes it.
+
 ## 2026-10-21 — MTN sends a callback once; `PUT`/`POST` and Orange's `order_id` are open
 
 Read against vaam-apps/vpay's `master` at `90fe1b9` (release v0.10.2), which
