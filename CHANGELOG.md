@@ -34,6 +34,7 @@ vaam-apps/vpay#336.
     blocked on an ADR amending ADR-0029 D1 rule 1 and on counsel).
 
 Checked on `PENDING-MERGE-SHA`: nothing of RFC-0009 is built.
+
 - `Stripe-Account` is still accepted and ignored.
 - `application_fee_amount`, `transfer_data` and `on_behalf_of` are still
   refused with a `400`.
