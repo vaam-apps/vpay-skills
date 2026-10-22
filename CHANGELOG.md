@@ -14,8 +14,8 @@ rule stands, for the reasons VERSIONING.md now gives.)_
 
 ## 2026-10-22 — vpay registers Notch Pay's callback endpoint itself (RFC-0013 steps 2–4)
 
-Read against vaam-apps/vpay's `master` at `PENDING-MERGE-SHA`, the merge of
-RFC-0013 delivery steps 2–4, whose branch was cut from `e8e70ef` (the merge
+Read against vaam-apps/vpay's `master` at `8504536f`, the merge of
+vaam-apps/vpay#340 (RFC-0013 delivery steps 2–4), whose branch was cut from `e8e70ef` (the merge
 of vaam-apps/vpay#338). The maintainer asked that "the webhook registration should
 be done automatically then, e.g via cli or at startup fo the providers that
 supports it". vpay's evidence page is

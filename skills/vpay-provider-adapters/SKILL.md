@@ -599,7 +599,7 @@ section as a decision:
   `X-Grant` on every call, boot refusing a missing private key, the
   documented exposure, the boot warning, the amount check, the open question.
 - **RFC-0013 — vpay registers its own callback endpoints. Steps 2–4 built
-  2026-10-22, for Notch Pay** (vaam-apps/vpay merge `PENDING-MERGE-SHA`).
+  2026-10-22, for Notch Pay** (vaam-apps/vpay#340, merged as `8504536f`).
   Read `docs/rfc/0013-vpay-registers-its-own-callbacks.md` § "As built"
   before touching it. What exists: the port's `CallbackUrlMode`,
   `callback_url_mode`, `callbacks_are_coherent` and

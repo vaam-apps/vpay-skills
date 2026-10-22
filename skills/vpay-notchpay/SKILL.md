@@ -15,8 +15,8 @@ description: "The Notch Pay adapter (`vpay-adapter-notchpay`, rail `notchpay`, 2
 > `providers.md` paragraph were verified against vpay `e8e70ef`
 > (2026-10-22), the merge of vaam-apps/vpay#338. The webhook-registration
 > bullet under "How the adapter behaves", the `callbacks.register` paragraph
-> and the "Not built" list were verified against vpay `PENDING-MERGE-SHA`
-> (2026-10-22), the merge of RFC-0013 steps 2–4. The rest was
+> and the "Not built" list were verified against vpay `8504536f`
+> (2026-10-22), the merge of vaam-apps/vpay#340 (RFC-0013 steps 2–4). The rest was
 > verified against vpay `357c825` (2026-10-20), the merge of
 > vaam-apps/vpay#295, which added everything below. It was read on the pull
 > request's branch at `bf96e50`; the adapter, its config rules and its stub
@@ -345,7 +345,7 @@ ADR-0031's conditions are the admission. **Weakening any one of them is
   (`x-notch-signature`) is **not** checked, because the port passes no
   headers.
 - **The webhook endpoint is registered by vpay** since 2026-10-22
-  (RFC-0013, vaam-apps/vpay merge `PENDING-MERGE-SHA`): `notchpay` declares
+  (RFC-0013, vaam-apps/vpay#340, merged as `8504536f`): `notchpay` declares
   `CallbackUrlMode::Registered`, and `src/callbacks.rs` implements
   `ensure_callback_endpoint`, called by the worker's `ensure_callbacks` job
   (every worker start, hourly) and `vpay-server callbacks ensure [--check]`.
