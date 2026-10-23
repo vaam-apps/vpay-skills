@@ -12,6 +12,55 @@ publishes no release tags and its workspace version has never moved off
 `v0.5.0` as of 2026-09-23 — and its workspace version is `0.5.0`. The naming
 rule stands, for the reasons VERSIONING.md now gives.)_
 
+## 2026-10-23 — a rail-issued reference is committed before the prompt (ADR-0032)
+
+Read against vaam-apps/vpay's `master` at `c672fffc` (the merge of
+vaam-apps/vpay#341), restamped with the merge of the pull request that lands
+this when it does. The maintainer asked how to close Notch Pay's crash
+window ("#13: how do we do then?") and, answered with this design, said "Fan
+out the work via sub-agents". ADR-0032 is **Proposed**: the decisions in it
+are the implementing agent's. vpay's evidence page is
+`docs/status/verification/2026-10-23-two-step-submit.md`. No `SKILL.md` stamp
+moved.
+
+- `vpay-provider-adapters` (`SKILL.md`, `references/conformance.md`,
+  `references/adding-a-rail.md`): `prepare`, the twelfth method;
+  `submit_steps`, the capability that gates it; the error table's `prepare`
+  column; the conformance suite submitting a two-step rail through `prepare`,
+  Notch Pay's duplicate case split by `PriorSubmits`, and the census that
+  holds the method to the capability. "The ten methods" heading is "The
+  methods".
+- `vpay-notchpay` (`SKILL.md`): `prepare` is initialize and prompts nobody,
+  `submit` is process by the committed `trx.…`; the `409` decided by whether
+  a `submit` row exists; the residual crash window, struck through and
+  dated.
+- `vpay-reconciler` (`SKILL.md`): a two-step rail's resubmit prepares first,
+  and `recovery_step` still reads `submit` rows only.
+- `vpay-conventions` (`references/errors.md`, `references/adr-index.md`):
+  the `409` row of `NeedsReconciliation`, and ADR-0032's row.
+
+### Stopped being true
+
+- "Submit is two calls" (Notch Pay). It is two **port** calls, `prepare`
+  then `submit`, with the `trx.…` committed between them; the wire is the
+  same two requests.
+- "With `notchpay_reference` held, read it, and process only if `pending`"
+  (the `409`). A charge holding the reference is never initialized again.
+- "With none held, `NeedsReconciliation`" (the `409`). Only when a `submit`
+  row exists; with none, `Rejected { provider_unavailable }` and the charge
+  fails cleanly.
+- "This leaves a crash window … Do not claim it closed" and "a residual
+  crash window … State it as a risk; do not claim it is solved". Closed on
+  vpay's side; still never run against Notch Pay.
+- `notchpay_a_duplicate_it_cannot_resolve_fails_closed`, which no longer
+  exists; its two successors are named.
+- "its ten methods" (`vpay-provider-adapters`'s description). Twelve.
+
+Still true: a charge the one-call build left with an unanswered `submit` row
+and no `trx.…` is `NeedsReconciliation`, escalated at once; MTN and Orange
+are `One` and their paths are unchanged; and the proof is WireMock and a
+real Postgres, not Notch Pay.
+
 ## 2026-10-23 — an alert on the callback-endpoint counter, and unit tests for every alert rule
 
 Read against vaam-apps/vpay's `master` at `a008c05a`, the merge of

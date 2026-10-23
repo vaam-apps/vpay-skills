@@ -109,9 +109,14 @@ What step 1 showed:
   above.
 - **`GET /payments?search=` finds the `trx.…` only**, not our reference and
   not the description, and list items carry no `trxref` (item 19). So the
-  fix (carry the `trx.…` in `ref_extra`) keeps a **residual crash window**:
-  a crash after the USSD prompt and before `ref_extra` is durable leaves a
-  payment vpay cannot read. State it as a risk; do not claim it is solved.
+  fix (carry the `trx.…` in `ref_extra`) kept a **residual crash window**:
+  a crash after the USSD prompt and before `ref_extra` was durable left a
+  payment vpay could not read. ~~State it as a risk; do not claim it is
+  solved.~~ **Corrected 2026-10-23 (ADR-0032, Proposed, built on the
+  maintainer's instruction):** closed on vpay's side by committing the
+  `trx.…` before the prompt (§ "How the adapter behaves"). Notch Pay's
+  sandbox has not run the split; say "closed in vpay, proven against
+  WireMock and Postgres", not "proven against Notch Pay".
 - **The "insufficient funds" number read `complete`** with `amounts.total`
   105 of `amount` 107. `total` equalled `amount` everywhere else. **In step
   5 (230 XAF) the adapter refused it**: the first read answered `pending`,
@@ -303,12 +308,19 @@ ADR-0031's conditions are the admission. **Weakening any one of them is
   currency. `cm.mtn` and `cm.orange` wait for ADR-0029 D6 (RFC-0012 step 8):
   configured for a whole deployment, either fails every payer on the other
   network.
-- **Submit is two calls**: `POST /payments` (amount, `XAF`, `phone` as
-  `+`-prefixed E.164, our UUID as `reference`, optional `description`, and
-  nothing else of the payer's), then `POST /payments/{notchpay_reference}`
-  with `channel` and `data.phone`, which prompts the payer.
-  `notchpay_reference` is the `trx.…` the first call returned as
-  `transaction.reference`; `Submitted` carries it as key material.
+- **A charge is two port calls, with a commit between them** (since
+  2026-10-23, ADR-0032; `submit` was both wire calls until then). The
+  adapter declares `SubmitSteps::PrepareThenSubmit`. **`prepare`** is
+  `POST /payments` (amount, `XAF`, `phone` as `+`-prefixed E.164, our UUID
+  as `reference`, optional `description`, and nothing else of the payer's):
+  it creates the payment, **prompts nobody**, and returns the `trx.…` from
+  `transaction.reference` as `notchpay_reference`. The core commits it on
+  the charge (`Charges::record_prepared`) and writes the `submit` row.
+  **`submit`** is then `POST /payments/{notchpay_reference}` with `channel`
+  and `data.phone`, which prompts the payer; `Submitted` carries the same
+  key material. `submit` on a charge holding no `notchpay_reference` is
+  `NeedsReconciliation` before any request; the core never sends one. The
+  wire is unchanged: the same two requests, bodies and order step 5 sent.
 - **Since vaam-apps/vpay#304, payments are addressed by Notch Pay's
   reference** (`NOTCHPAY_REFERENCE`, `"notchpay_reference"` in `ref_extra`),
   because the sandbox answered `404` to ours (item 2). Do not "simplify" it
@@ -318,21 +330,38 @@ ADR-0031's conditions are the admission. **Weakening any one of them is
   `NeedsReconciliation` before any request, never `NotFound` (lost key
   material, as Orange's `pay_token`, which moved with it). It was `Config`
   until 2026-10-23, which dead-lettered the poll job.
-- **`409`** (crash retry): with `notchpay_reference` held, read it, and
-  process only if `pending`. **With none held, `NeedsReconciliation`**
-  (`Malformed` until 2026-10-23): fate unknown, never `Submitted`, never a
-  decline. The maintainer decided this on 2026-10-21, because Notch Pay cannot
-  find a payment by our reference. Since 2026-10-23 the worker's resubmit
-  escalates the charge to `unresolved` on that `409` and never sends it
-  again.
-  **This leaves a crash window**: a crash after the prompt and before
-  `submit` returns leaves a payment vpay cannot read, and an operator
-  reconciles it in Notch Pay's dashboard. Do not claim it closed.
+- **`409`** (crash retry) is now `prepare`'s, and `PriorSubmits` decides it
+  (2026-10-23, ADR-0032). **No `submit` row for the charge**
+  (`PriorSubmits::None`): an earlier initialize lost its answer and nobody
+  was prompted, so it is `Rejected { provider_unavailable }` — the charge
+  fails through the declined path and the payer retries on a new charge.
+  **A `submit` row exists** (`Some`): a one-call build's process may have
+  prompted, so it stays `NeedsReconciliation` (`Malformed` until
+  2026-10-23; the maintainer's decision of 2026-10-21, because Notch Pay
+  cannot find a payment by our reference), and the worker escalates the
+  charge to `unresolved` and never sends it again. A charge that holds
+  `notchpay_reference` is never prepared again: `prepare` answers it back
+  with no request, and the resubmit goes straight to `submit`, whose own
+  repeat ("already processed") is read and reported `Submitted`.
+  ~~**This leaves a crash window** … Do not claim it closed.~~
+  **Corrected 2026-10-23:** the window after the prompt is closed on vpay's
+  side, because the prompt is sent only once the `trx.…` is committed. A
+  crash now leaves one of: nobody prompted and nothing held (the charge
+  fails); nobody prompted and the reference held (the resubmit prompts by
+  it); possibly prompted and the reference held (the read decides).
+  Charges a one-call build left in flight — an unanswered `submit` row and
+  no `trx.…` — stay with an operator. The orphan a lost initialize leaves
+  expires on Notch Pay; until then the public key could process it, which
+  is ADR-0031's accepted exposure, not a new one. **Not run against Notch
+  Pay**: proven against WireMock and a real Postgres only.
 - **The conformance suite selects key material per rail** since #304
   (`submitted_key_material`, beside `documented_declines`), not by flow: a
   push rail is not necessarily addressed by our reference. The submit and
   duplicate cases assert that the key material round-trips, and
-  `notchpay_a_duplicate_it_cannot_resolve_fails_closed` pins the `409` rule.
+  ~~`notchpay_a_duplicate_it_cannot_resolve_fails_closed`~~ (until
+  2026-10-23) `notchpay_a_duplicate_a_submit_may_have_prompted_for_fails_closed`
+  and `notchpay_a_duplicate_no_submit_prompted_for_is_a_clean_decline` pin
+  the `409` rule, one per `PriorSubmits`.
   The stub matches only `/payments/trx\.test_…`.
 - **A `404` is `NotFound` only if the message is Notch Pay's "Payment not
   found".** Any other `404` is `Config`: a wrong base path, or an unknown

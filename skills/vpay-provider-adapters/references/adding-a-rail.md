@@ -92,7 +92,7 @@ the table above as it stands.
 **A rail whose status read takes a key the provider calls public** is
 admissible only on ADR-0031's six conditions (2026-10-20). Two are code an
 agent writes: override `accepted_exposure` (see `vpay-provider-adapters` §
-"The ten methods"), and list the secret key in `REQUIRED_RAIL_KEYS`. A third
+"The methods"), and list the secret key in `REQUIRED_RAIL_KEYS`. A third
 is a row value: set the row's `livemode_acknowledgement`, so livemode refuses
 the rail until its block accepts the exposure (condition 4, amended
 2026-10-20). If your rail is one, read ADR-0031 before step 4.

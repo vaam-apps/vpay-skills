@@ -236,7 +236,10 @@ Raise it when the adapter **understood** the rail and asking again cannot
 change the answer. Today only `notchpay` and `orange_money` do:
 
 - a `complete` for a sum that is not the charge's;
-- Notch Pay's `409` for a charge that lost its `trx.…`;
+- Notch Pay's `409` for a charge that lost its `trx.…` — since ADR-0032
+  (2026-10-23), `prepare`'s `409` and only when a `submit` row exists
+  (`PriorSubmits::Some`); with none, nobody was prompted and it is
+  `Rejected { provider_unavailable }`, a clean decline;
 - a charge with no rail key material to ask by.
 
 Raise `Malformed` when the answer could not be read: a later read may fix it,

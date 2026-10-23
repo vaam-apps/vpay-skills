@@ -1,6 +1,6 @@
 ---
 name: vpay-provider-adapters
-description: The vpay provider port (`vpay-provider`) and how to add a payment rail — the `ProviderAdapter` trait and its ten methods (payer_fields since 2026-09-16, accepted_exposure since 2026-10-20), the `Unsupported` vs `NotImplemented` rule that decides which error a missing operation returns, the rail-agnostic refund destination (`RefundDestination`, `RefundTarget`, `parse_destination`), the capability flags the core branches on instead of provider codes, the shared HTTP/token modules, the shared conformance suite a new adapter must pass, where per-provider state is written (`docs/status/providers.md`), the Draft designs for Stripe and PayPal adapters and for callback registration (RFC-0010, -0011, -0013), and the Notch Pay rail (RFC-0012), admitted under ADR-0031 and merged, called against Notch Pay's sandbox only (2026-10-21, step 5; load `vpay-notchpay` for it). Load this before writing or changing any `vpay-adapter-*` crate, before touching `backends/crates/vpay-provider`, and before adding a rail.
+description: The vpay provider port (`vpay-provider`) and how to add a payment rail — the `ProviderAdapter` trait and its twelve methods as of 2026-10-23 (payer_fields since 2026-09-16, accepted_exposure since 2026-10-20, prepare since 2026-10-23), the `Unsupported` vs `NotImplemented` rule that decides which error a missing operation returns, the rail-agnostic refund destination (`RefundDestination`, `RefundTarget`, `parse_destination`), the capability flags the core branches on instead of provider codes, the shared HTTP/token modules, the shared conformance suite a new adapter must pass, where per-provider state is written (`docs/status/providers.md`), the Draft designs for Stripe and PayPal adapters and for callback registration (RFC-0010, -0011, -0013), and the Notch Pay rail (RFC-0012), admitted under ADR-0031 and merged, called against Notch Pay's sandbox only (2026-10-21, step 5; load `vpay-notchpay` for it). Load this before writing or changing any `vpay-adapter-*` crate, before touching `backends/crates/vpay-provider`, and before adding a rail.
 ---
 
 # The provider port, and adding a rail
@@ -102,11 +102,14 @@ row in the same change that moves the rail. **No gate reads the matrix**:
 page itself says deriving its capability columns from each adapter's
 `Capabilities` is not built — so a stale cell fails nothing.
 
-## The ten methods
+## The methods
 
-**Ten since the Notch Pay adapter (2026-10-20, vaam-apps/vpay#295,
-on `master` since `357c825`, after this page's stamp):**
-`accepted_exposure`, below. Everything else in this section was nine.
+**Twelve as of 2026-10-23.** ~~"The ten methods"~~ was this heading until
+then. Ten since the Notch Pay adapter (2026-10-20, vaam-apps/vpay#295,
+on `master` since `357c825`, after this page's stamp):
+`accepted_exposure`, below; eleven with `ensure_callback_endpoint`
+(2026-10-22); twelve with `prepare` (2026-10-23, ADR-0032, below).
+Everything else in this section was nine.
 
 ~~The seven methods~~ **Corrected 2026-09-23:** the trait has **nine** `fn`s
 at `b747e5d5`. The code block below always listed eight, and
@@ -183,6 +186,24 @@ fn accepted_exposure(&self) -> Option<AcceptedExposure>; // default: None — si
   Only `notchpay` overrides it. _(This bullet said "RFC-0013 proposes a tenth
   method …; it does not exist" until 2026-10-22.)_
 
+- **`prepare` is the twelfth method (2026-10-23, ADR-0032).** It is
+  `async`, takes `(&ChargeRef, &ProviderConfig, PriorSubmits)`, answers
+  `Result<RefExtra, ProviderError>`, and defaults to `ProviderError::Unsupported`; called only on a rail whose
+  `submit_steps` is `PrepareThenSubmit`, before `submit`. It creates the
+  payment on the rail **without prompting anyone** and returns the key
+  material the rail is addressed by. The core writes a `prepare` row,
+  calls it, commits the answer on the charge (`Charges::record_prepared`),
+  and only then writes the `submit` row and calls `submit`, which on such a
+  rail is the prompt alone. `PriorSubmits` is the core's evidence: `None`
+  when no `submit` row exists for the charge (nothing ever asked the rail to
+  prompt), `Some` when one does. `Measured` forwards and counts it
+  (operation `prepare`). Only `notchpay` overrides it, as initialize. The
+  error table gains a `prepare` column: `Rejected` there also covers a rail
+  holding a payment no submit prompted for (`PriorSubmits::None`), and
+  `NeedsReconciliation` a duplicate a submit may have prompted (`Some`).
+  **Do not move the commit into the adapter**: an adapter that writes to the
+  database is a core concern in a rail crate (ADR-0002).
+
 - **The error-surface table in the trait's own doc comment is the contract.**
   It is a markdown grid, one row per `ProviderError` variant and one column
   per method. An adapter may raise fewer variants than a row allows; it may
@@ -203,7 +224,10 @@ fn accepted_exposure(&self) -> Option<AcceptedExposure>; // default: None — si
   load-bearing as the ticks — there, those variants would not merely be
   unused, they would be untrue.
 - **`submit` must report a duplicate as `Submitted`, never as an error.**
-  That is what makes same-reference retry safe after a crash.
+  That is what makes same-reference retry safe after a crash. On a two-step
+  rail that is `submit`'s own duplicate (Notch Pay's "already processed",
+  read and reported `Submitted`); `prepare`'s duplicate is the `409` above,
+  decided by `PriorSubmits` (2026-10-23).
 - **`query_status` must remain callable indefinitely**, long after any payer
   prompt expired. A rail with no record is `ChargeStatus::NotFound`, which is
   **not** an error and **not** a decline.
@@ -225,7 +249,13 @@ fn accepted_exposure(&self) -> Option<AcceptedExposure>; // default: None — si
 `flow` (`Push` | `Redirect`), `supports_refunds`,
 `supports_partial_refunds`, `delivers_callbacks`, `requires_ip_allowlist`,
 `supports_account_holder_lookup`, `refund_destination: RefundDestination`
-(`Origin` | `Required`, **new on 2026-09-15**), and — **new on 2026-10-22**
+(`Origin` | `Required`, **new on 2026-09-15**), `submit_steps: SubmitSteps`
+(`One` | `PrepareThenSubmit`, **new on 2026-10-23**, ADR-0032: whether a
+charge is one call that prompts, or `prepare` then `submit` with the
+rail-issued key material committed between them; `One` on `mtn_momo` and
+`orange_money`, `PrepareThenSubmit` on `notchpay`, not persisted, no
+coherence rule, and `prepare_is_unsupported_exactly_on_a_one_step_rail` holds
+the method to it), and — **new on 2026-10-22**
 (RFC-0013) — `callback_url_mode: CallbackUrlMode` (`PerRequest` |
 `Registered`): whether the rail is told its callback URL on every submit
 (`mtn_momo`'s `X-Callback-Url`, `orange_money`'s `notif_url`) or holds it
