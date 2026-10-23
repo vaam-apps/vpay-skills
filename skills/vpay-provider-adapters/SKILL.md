@@ -110,8 +110,8 @@ page itself says deriving its capability columns from each adapter's
 
 ## The methods
 
-**Thirteen as of 2026-10-23.** ~~"The ten methods"~~ was this heading until
-then, and "Twelve" until later the same day. Ten since the Notch Pay adapter
+**Fourteen as of 2026-10-23.** ~~"The ten methods"~~ was this heading until
+then, "Twelve" until later the same day, and "Thirteen" until RFC-0014. Ten since the Notch Pay adapter
 (2026-10-20, vaam-apps/vpay#295, on `master` since `357c825`, after this
 page's stamp): `accepted_exposure`, below; eleven with
 `ensure_callback_endpoint` (2026-10-22); twelve with `prepare` (2026-10-23,
