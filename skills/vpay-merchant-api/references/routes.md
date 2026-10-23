@@ -219,9 +219,14 @@ adapters have been sending in `X-Callback-Url` / `notif_url` since Step 3.
 the two crates.
 
 **Nothing authenticates this route.** Neither MTN nor Orange signs a callback
-or sends a shared secret. **There is no signature verification to find, and
-adding a naive one would be inventing a scheme the rails do not implement.**
-The handler is written around that: it never writes charge or intent state.
+or sends a shared secret. **There is no signature verification to find on
+those two, and adding a naive one would be inventing a scheme the rails do
+not implement.** Since 2026-10-23 (RFC-0014) a rail that **does** sign has its
+signature checked by its adapter's `verify_callback`, after the charge is
+found: `notchpay`'s `x-notch-signature`, where its Hash Key is configured. A
+refused callback moves nothing and is answered the same `202`; each verdict is
+counted on `vpay_provider_callbacks_total`. The handler is written around all
+of that: it never writes charge or intent state, verified or not.
 ~~The only thing it can do is bring an already-queued `poll_charge` job
 forward~~ **Corrected 2026-09-23:** it runs two statements in one transaction.
 `enqueue_in_tx` inserts a `poll_charge` job (`ON CONFLICT DO NOTHING` on
@@ -243,9 +248,10 @@ do.
 | `code` names no adapter this process links | `404`, byte-identical to the router's fallback      |
 | body is not a notification this rail sends | `400` (plus a `warn` carrying the adapter's reason) |
 | reference names no charge here             | `202`                                               |
-| reference names a charge                   | `202`                                               |
+| reference names a charge, the check refuses | `202` (plus a `warn`; nothing moved, since 2026-10-23) |
+| reference names a charge, the check admits | `202`                                               |
 
-The last two are identical on purpose: ~~a non-2xx makes the rail retry forever,
+The last three are identical on purpose: ~~a non-2xx makes the rail retry forever,
 and~~ a distinct answer would be an oracle for "does this charge exist".
 **Corrected 2026-10-20 (RFC-0013 § 11, item 1):** this page said a non-2xx makes
 the rail retry forever, which is what vpay's own module docs for

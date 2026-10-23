@@ -39,7 +39,8 @@ Owned by `vpay_core::metrics`, which **describes them and installs no
 recorder**; each binary installs exactly one recorder, beside its rustls
 provider. All thirteen have a live seam; `docs/status.md` names the seam for
 each. **Fourteen since 2026-10-22**: RFC-0013 added
-`vpay_callback_endpoint_checks_total` (last row). The heading keeps
+`vpay_callback_endpoint_checks_total`. **Fifteen since 2026-10-23**: RFC-0014
+added `vpay_provider_callbacks_total` (last row). The heading keeps
 "thirteen", as vpay's `docs/flows/deployment.md` § 6a does, so links to it
 keep working.
 
@@ -54,6 +55,7 @@ keep working.
 | `vpay_webhook_deliveries_total`                                          | emitted at the two points a delivery attempt's outcome becomes durable                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | `vpay_account_holder_lookups_total`                                      | once per `GET /v1/account_holders`, on **every** path including refusals. Its `outcome` label is the only thing that tells `found` from `not_found`, which are both `200` — and **no label on it carries the number looked up or the name returned**                                                                                                                                                                                                                                                                                                                                                                                                         |
 | `vpay_callback_endpoint_checks_total`                                    | once per rail per `ensure_callbacks` pass (worker job or `vpay-server callbacks ensure`), labelled `provider` and `state`: `present`, `created`, `drifted`, `foreign`, `missing`, `locked`, `failed`. **A counter, not a gauge**: the singleton runs on whichever worker claims it, so a per-process gauge would keep each process's last answer. `present` and `created` are healthy, and so is an occasional `locked`. `missing` and `failed` mean callbacks may not be arriving, and the rail's charges settle by polling alone; `drifted` means some event types are not subscribed; `foreign` means they arrive through an endpoint vpay did not create |
+| `vpay_provider_callbacks_total`                                          | once per rail callback that names a charge this deployment holds, by `vpay_api::provider_callback`, labelled `provider` and `verdict`: `verified`, `invalid`, `not_checked`, `no_secret`, `unavailable` (RFC-0014, 2026-10-23). `invalid` and `unavailable` did not pull the poll forward. **`invalid` with no `verified` beside it is this deployment's own signing secret gone stale** (rotated in the provider's dashboard, not in the Secret); `invalid` beside `verified` is someone sending forgeries. A body that does not parse and an unknown reference are not counted. No alert rule reads it yet |
 
 That last constraint generalises: if you add a metric on a path that touches
 personal data, the label set is part of the privacy review

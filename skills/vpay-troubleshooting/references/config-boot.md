@@ -113,6 +113,22 @@ missing.**
   add it to make a boot pass without that person's decision. An unquoted YAML
   `true` works.
 
+**Callback signing refusals (since 2026-10-23, RFC-0014), all exit `78`,
+at boot step 4, naming the rail and the setting and never a value.**
+`CallbackSigningSecretMissing` is the one a real deployment meets: livemode,
+a rail whose adapter checks signatures (`notchpay`), and neither
+`credentials.callback_signing_secret` nor `callbacks: { verify: off }`. The
+fix is the secret (Notch Pay's endpoint Hash Key, as `${NOTCHPAY_HASH_KEY}`
+in the Secret). `verify: off` is the operator's written acceptance that
+webhooks go unverified; do not add it to make a boot pass without that
+person's decision. `CallbackVerifyOffWithSecret` is `off` beside a secret
+(remove one). `CallbackSigningSettingUnread` is a signing secret or
+`verify: off` on `mtn_momo` or `orange_money`, which check nothing (remove
+it). `IncoherentCallbackCheck` is an adapter bug, not the YAML. A
+`${NOTCHPAY_HASH_KEY}` the environment lacks is the ordinary unresolved
+placeholder, also `78`. A sandbox with no secret boots and `WARN`s once,
+from `vpay-server serve`.
+
 `target_environment` is required because MTN answers a wrong one with a **500
 whose body says `NOT_ALLOWED_TARGET_ENVIRONMENT`** — "a failure that reads as
 'the rail is broken' rather than 'our YAML is'."

@@ -5,6 +5,10 @@ description: "The Notch Pay adapter (`vpay-adapter-notchpay`, rail `notchpay`, 2
 
 # Notch Pay — the aggregator push rail
 
+> **The webhook signature check** ("Callbacks" under "How the adapter
+> behaves", "The Hash Key" below, and its entry in "Not built") was verified
+> against vpay `master` at `82a68f4e` plus the RFC-0014 branch
+> `claude/happy-hopper-r3h6rz-webhook-signatures` (2026-10-23).
 > **Verified against vpay `5b4c583` (2026-10-21)**, the merge of
 > vaam-apps/vpay#304, for "Read this before you believe
 > anything else", condition 5 and "How the adapter behaves", and against vpay
@@ -397,9 +401,21 @@ ADR-0031's conditions are the admission. **Weakening any one of them is
 - **Callbacks**: the five `payment.*` events only; the charge is `data.trxref`
   if it is one of our UUIDs, else `data.reference` (since #304, after the
   measured payment shape; no webhook has been received to confirm the
-  event's), and `ref_extra` is empty. The signature
-  (`x-notch-signature`) is **not** checked, because the port passes no
-  headers.
+  event's), and `ref_extra` is empty. **Since 2026-10-23 the signature is
+  checked** (RFC-0014): `notchpay` declares `CallbackCheck::Signature`, and
+  `verify_callback` accepts `x-notch-signature` only when it is the hex
+  HMAC-SHA256 of the **raw body** under `credentials.callback_signing_secret`
+  (or `_previous`, during a rotation), compared in constant time by
+  `vpay_provider::callback::hmac_sha256_hex_matches`. No secret configured is
+  `NoSecret` (today's pull-forward); a missing or wrong signature is
+  `Invalid`, and the route moves nothing and answers the same `202`.
+  **Stub-proven; the real scheme measured on: not yet.** Notch Pay's guide
+  signs the raw body in PHP and Python and `JSON.stringify(req.body)` in
+  Node, and no webhook Notch Pay sent has been checked (RFC-0012 § 10 item
+  7). Do not "fix" the check to re-serialise the body before that
+  measurement says so. No timestamp is signed, so a replayed genuine webhook
+  verifies (`a_replayed_genuine_webhook_still_verifies` pins it as a
+  decision). Even `Verified` moves no money.
 - **The webhook endpoint is registered by vpay** since 2026-10-22
   (RFC-0013, vaam-apps/vpay#340, merged as `8504536f`): `notchpay` declares
   `CallbackUrlMode::Registered`, and `src/callbacks.rs` implements
@@ -473,6 +489,23 @@ exists with no host port. The proof that a Notch Pay config boots is
 which runs the real binary, and for livemode
 `a_livemode_notchpay_rail_boots_only_acknowledged_and_still_warns`.
 
+**The Hash Key** (2026-10-23, RFC-0014). The endpoint's Hash Key is a vpay
+credential now, `credentials.callback_signing_secret: ${NOTCHPAY_HASH_KEY}`,
+with `callback_signing_secret_previous` only during a rotation. The
+maintainer lifted RFC-0012 § 2's "hash key is evidence only, never vpay
+configuration" rule for this purpose on 2026-10-23. Treat it like the two
+keys: never print, log or commit it; real values only through the
+environment; fixtures are obviously fake (`signing-secret-test_0003`, never
+`hsk_…`). Notch Pay's create answer carries no secret, so vpay's
+registration does not supply it: the operator copies it from the dashboard.
+Without it a sandbox `WARN`s and **livemode refuses to boot**
+(`CallbackSigningSecretMissing`) unless the block says
+`callbacks: { verify: off }`, the operator's written acceptance; `off`
+beside a secret is refused (`CallbackVerifyOffWithSecret`). Do not add
+`verify: off` to make a livemode boot pass without that person's decision.
+`config/application-notchpay-sandbox.yml` configures no secret, so runbook
+B's stack answers `NoSecret`.
+
 **`callbacks.register`** (2026-10-22): `ensure` by default, `check`, or `off`.
 `config/application-notchpay-sandbox.yml` sets **`check`**, so the worker
 started by runbook B2 lists the real sandbox account's endpoints and never
@@ -484,9 +517,10 @@ write to a real account, and Notch Pay's API cannot delete what it creates.
 Refunds as a call (RFC-0012 § 10 item 6; the sandbox answered `403` to
 `POST /refunds` on 2026-10-22, so nothing about replay is known). Model B / Sync / `X-Sync` (§ 10
 item 9; not offered). `cm.mtn` / `cm.orange` against the real sandbox (built
-against the stub on 2026-10-23). Webhook signature
-verification (needs a port change; RFC-0014, vaam-apps/vpay#296, a draft,
-designs it, so do not build it inside a Notch Pay change). _(This list ended
+against the stub on 2026-10-23). The signature check against a webhook Notch
+Pay really sent (RFC-0012 § 10 item 7; the check itself was built on
+2026-10-23). _(Until 2026-10-23 this list named "Webhook signature
+verification (needs a port change; RFC-0014 … a draft)". This list ended
 "Retiring or repairing a webhook endpoint (no working `DELETE`, no `PUT` in
 the client)" until 2026-10-23. The maintainer decided that day that retiring
 one is "an operator's task only, not code": vpay logs each superseded or

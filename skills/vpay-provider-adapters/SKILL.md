@@ -734,8 +734,9 @@ change you make there:
   (`Client::with_request_timeout`), which the adapter sets from
   `ProviderConfig::request_timeout`.
 - **What it deliberately omits**: refunds, cancel, webhook update and delete,
-  transfers, and webhook signature verification (the port's `parse_callback`
-  receives no headers, so a verifier would be code nothing can call).
+  transfers, and webhook signature verification, which is the adapter's
+  `verify_callback` over `vpay_provider::callback`'s helper since 2026-10-23
+  (RFC-0014): the client never sees a webhook.
 - **Where Notch Pay's own pages disagree with its specification**, the client
   follows the specification, and RFC-0012 § 10 lists each disagreement for the
   first sandbox session. Treat every one of them as unverified.
@@ -766,22 +767,41 @@ There is no `vpay-fapshi` crate, no `fapshi` adapter code and no RFC. **Do not
 start one** before the page's written questions are answered and the
 maintainer asks for it; the page lists the order such work would follow.
 
-**RFC-0014 — verifying rail callbacks** (added 2026-10-20, merged as vpay
-`0977616` in vaam-apps/vpay#296; Draft, **nothing in it is built**). The
-maintainer answered "Yes, as its own piece of work" on 2026-10-20 to whether
-vpay should verify Notch Pay's webhook signatures: for every rail that signs,
-and outside the Notch Pay adapter's pull request. It proposes a defaulted
-**`ProviderAdapter::verify_callback(request, charge, config)`**, run by the
-callback route **after** the charge is found, and **`Capabilities::callback_check`**
-(`None` | `BodyToken` | `Signature`). `parse_callback` keeps its signature.
-**None of those names exists** under `backends/` as of 2026-10-20, and no
-rail's callback is verified today. **Do not add a verifier inside an adapter
-ahead of the port change**, Notch Pay's included; RFC-0012's Hash Key stays
-out of configuration until the RFC's Notch Pay step. What the RFC keeps:
-**callbacks stay hints** (a verdict only decides whether the poll is pulled
-forward), and every answer stays a byte-identical `202`. Its first consumer
-is proposed to be Orange, comparing the `notif_token` that `submit` already
-stores. Five open questions are the maintainer's.
+**RFC-0014 — verifying rail callbacks: the port and Notch Pay's check are
+built** (2026-10-23, against vpay `master` `82a68f4e` plus the branch
+`claude/happy-hopper-r3h6rz-webhook-signatures`; stub-proven, the real
+scheme measured on: not yet). The maintainer answered "Yes, build RFC-0014"
+on 2026-10-23, lifting RFC-0012's "hash key is evidence only" rule for it.
+
+- **The port** (`vpay_provider::callback`, new): `CallbackRequest { headers,
+  body, received_at }` (a hand-written `Debug` that prints header names and
+  the body's length, registered in `debug_protections`), `CallbackVerdict`
+  (`Verified`, `Invalid(&'static str)`, `NotChecked`, `NoSecret`,
+  `Unavailable(&'static str)`; `#[non_exhaustive]`; only the first three
+  admit the pull-forward), and **`ProviderAdapter::verify_callback(request,
+  charge, config)`**, defaulting to `NotChecked`. `parse_callback` is
+  unchanged. `Measured` forwards it and counts nothing.
+- **`Capabilities::callback_check`** (`None` | `BodyToken` | `Signature`) says
+  what **vpay's adapter** checks, not what the rail sends;
+  `callback_check_is_coherent` (`!delivers_callbacks ⇒ None`) is a boot
+  refusal (`IncoherentCallbackCheck`). A new rail literal must set it.
+- **The secret is a credential under two port-fixed names**,
+  `CALLBACK_SIGNING_SECRET` and `CALLBACK_SIGNING_SECRET_PREVIOUS`, read
+  through `callback_signing_secrets(config)`: not RFC-0014 § 5's illustrative
+  `callbacks.signing_secrets` list. Boot is generic over them (ADR-0002).
+- **One MAC comparison** for the workspace: `hmac_sha256_hex_matches`
+  (`Mac::verify_slice`, constant time). Do not write an `==` on a MAC in an
+  adapter; `the_comparison_is_the_constant_time_one` reads the source.
+- **Who checks:** `notchpay` (`Signature`, `x-notch-signature`). `mtn_momo`
+  and `orange_money` declare `None` and answer `NotChecked`. **Orange's
+  `BodyToken` check is not built** (RFC-0014 open question 2: nobody has
+  observed that the notification's `notif_token` equals the stored one), nor
+  are Stripe's and PayPal's (no adapter).
+- **What it keeps:** callbacks stay hints (a verdict only decides whether
+  the poll is pulled forward), and every answer stays a byte-identical
+  `202`. The conformance census `a_forged_callback_is_refused_by_a_rail_that_checks`
+  branches on the capability, and `documented_callback_signature` is the
+  per-rail data row a new signing rail must add.
 
 ## Method types and the router (built 2026-10-23)
 

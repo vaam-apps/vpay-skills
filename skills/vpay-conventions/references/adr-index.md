@@ -257,13 +257,20 @@ with vpay#244, 0009 on 2026-10-16, 0010 and 0011 on 2026-10-17, and 0012,
   **updated 2026-10-21:** vaam-apps/vpay#319 corrects items 1–3 and leaves 4
   and 5, and **2026-10-22:** vaam-apps/vpay#326 corrects 4 and 5, which
   completes step 0 — see `vpay-troubleshooting`'s known-wrong-docs page. See `vpay-provider-adapters`.
-- `docs/rfc/0014-verifying-rail-callbacks.md` — **Draft**, proposed
-  2026-10-20 and merged as `0977616` (vaam-apps/vpay#296); **nothing in it
-  is built**. A defaulted `ProviderAdapter::verify_callback` and
-  `Capabilities::callback_check`, run after the charge is found; the verdict
-  gates only the pull-forward, so callbacks stay hints. Orange first, with
-  the `notif_token` vpay already stores; Stripe, PayPal and Notch Pay inside
-  their adapters' delivery. See `vpay-provider-adapters`.
+- `docs/rfc/0014-verifying-rail-callbacks.md` — **Draft; the port and
+  Notch Pay's check built on 2026-10-23** (against `master` `82a68f4e` plus
+  the RFC-0014 branch), stub-proven, the real scheme measured on: not yet.
+  `ProviderAdapter::verify_callback` and `Capabilities::callback_check`, run
+  after the charge is found; the verdict gates only the pull-forward, so
+  callbacks stay hints. The secret is a credential under port-fixed names,
+  not § 5's list; four boot refusals, all `ConfigError` exit 78
+  (`IncoherentCallbackCheck`, `CallbackSigningSecretMissing`,
+  `CallbackSigningSettingUnread`, `CallbackVerifyOffWithSecret`). Notch Pay
+  was the first consumer, not Orange: Orange's `BodyToken` (open question 2)
+  is not built, nor are Stripe's and PayPal's. The RFC's § "Built" records
+  every choice it left open. It **lifts RFC-0012 § 2's "hash key is evidence
+  only, never vpay configuration" refusal**, by the maintainer's decision of
+  2026-10-23, for this purpose only. See `vpay-provider-adapters`.
 
 ## Maintainer decisions recorded in place, not as an ADR status
 

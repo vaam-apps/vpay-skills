@@ -34,7 +34,11 @@ already-queued `poll_charge` job forward.~~ **Corrected 2026-09-29:** it has
 also _enqueued_ that job when none was queued since the route was mounted
 (2026-09-04): `enqueue_in_tx` (`ON CONFLICT DO NOTHING` on `poll:<charge>`)
 then `pull_forward_in_tx`, one transaction. vpay's own `provider_callback.rs`
-header said "only … an already-queued job" until 2026-09-23.
+header said "only … an already-queued job" until 2026-09-23. **Since
+2026-10-23 (RFC-0014) a rail that signs gets a say first:** the route asks
+its adapter's `verify_callback`, and `Invalid` or `Unavailable` moves nothing
+(the ladder still runs). Only `notchpay` checks. Even `Verified` moves no
+money.
 
 ## `vpay-worker` cannot reach the database directly
 

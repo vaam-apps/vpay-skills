@@ -116,7 +116,8 @@ no `display_name()` — "a placeholder that is honest about being one".
 `backends/crates/vpay-config/src/config.rs`. The resolved per-rail
 configuration: `host` (`url` + `label`), `currency`, `settings`, `credentials`,
 `enabled`, optional `callback_url`, and — since 2026-10-22 (RFC-0013) —
-optional `callbacks: { register: ensure | check | off }`.
+optional `callbacks: { register: ensure | check | off }`, which since
+2026-10-23 (RFC-0014) also takes `verify: on | off`.
 
 **It hand-writes its own `Debug`, which redacts `credentials` and prints
 `settings` in full.** A derived `Debug` would format a rail secret into any log
@@ -151,6 +152,32 @@ misspelt key inside it is refused (`deny_unknown_fields`), never read as
 `ensure`. `config/application-notchpay-sandbox.yml` sets `check`, so a
 worker started against the real sandbox never creates an endpoint by
 itself.
+
+**Callback signing secrets** (2026-10-23, RFC-0014). A rail whose adapter
+declares `CallbackCheck::Signature` (`notchpay` only) checks every callback
+against `credentials.callback_signing_secret`, plus
+`credentials.callback_signing_secret_previous` while a rotation is in flight.
+Two names the **port** fixes, so boot needs no rail's vocabulary. A rail
+credential like any other: a `${VAR}` in livemode (Notch Pay's is
+`${NOTCHPAY_HASH_KEY}`, the endpoint's Hash Key from its dashboard), redacted
+by `Debug`, never printed. **`callbacks.verify` is an acknowledgement, not a
+switch**: a configured secret is checked whatever it says. Boot step 4
+(`boot_seeds`) refuses, each **78** and naming the setting, never a value:
+
+| condition                                                                    | error                          |
+| ---------------------------------------------------------------------------- | ------------------------------ |
+| an adapter's `callback_check` without `delivers_callbacks`                   | `IncoherentCallbackCheck`      |
+| livemode, a `Signature` rail, no secret, and no `callbacks.verify: off`       | `CallbackSigningSecretMissing` |
+| a signing secret (either name) or `verify: off` on a rail that checks none    | `CallbackSigningSettingUnread` |
+| `verify: off` beside a configured secret                                     | `CallbackVerifyOffWithSecret`  |
+
+Outside livemode, no secret boots and `vpay-server serve` logs a `WARN`; with
+`verify: off` it warns at every boot in either mode. A blank value is no
+secret. **Rotating:** put the new value in `callback_signing_secret` and the
+old one in `_previous`, roll, update the provider's dashboard, then remove
+`_previous`. A stale secret shows as `vpay_provider_callbacks_total{verdict="invalid"}`
+with no `verified`, and costs callback latency, never money: the poll ladder
+still settles every charge.
 
 **`to_provider_config(&Deployment)`** is "the only place a
 `vpay_provider::ProviderConfig` is built from configuration, so the server and
@@ -212,7 +239,9 @@ table. Every boot of a deployment configuring it also logs a `WARN` about the
 public key's exposure (ADR-0031), acknowledged or not. The block ships
 **commented out** in `config/application.yml`, because uncommenting it makes
 `NOTCHPAY_PUBLIC_KEY` and `NOTCHPAY_PRIVATE_KEY` mandatory for every
-deployment. **`cm.mobile` is now only the channel of a charge confirmed by the
+deployment, and, since 2026-10-23, `NOTCHPAY_HASH_KEY` too, which the block
+writes as `credentials.callback_signing_secret` (RFC-0014; the Helm values
+comment says "three keys"). **`cm.mobile` is now only the channel of a charge confirmed by the
 rail code `notchpay`** (2026-10-23): a charge routed from `mtn_wallet` or
 `orange_wallet` is sent `cm.mtn` or `cm.orange` per charge, so the setting
 stays `cm.mobile`.
