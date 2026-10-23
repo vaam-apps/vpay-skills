@@ -1,6 +1,6 @@
 ---
 name: vpay-notchpay
-description: "The Notch Pay adapter (`vpay-adapter-notchpay`, rail `notchpay`, 2026-10-20) — a push rail for MTN MoMo and Orange Money through one aggregator account, admitted under ADR-0031 because its status read takes the key Notch Pay calls PUBLIC. Covers the production risk that admission accepts and the boot warning that states it, the six conditions an agent must not weaken, what Notch Pay's real sandbox answered on 2026-10-21 (step 1, through the probe) and what vpay itself did against it the same day (step 5: three test-mode payments through the adapter, sandbox only, one short `amounts.total` refused as `Malformed`), then the MTN timeout, MTN canceled and Orange success numbers through vpay on 2026-10-22 (runbook B3b, all as mapped), why payments are addressed by Notch Pay's `trx.…` reference kept in `ref_extra` (fixed in vaam-apps/vpay#304, and met by Notch Pay's sandbox in step 5), the fail-closed `409` and its residual crash window, the 404 rule, the amount and `amounts.total` check on every success, the livemode key rule (`test.` or `test_`, corrected 2026-10-20), and why `refund` is a declared `NotImplemented` token. Load before changing `backends/crates/vpay-adapter-notchpay`, `backends/crates/vpay-notchpay`, its WireMock mappings or its config."
+description: "The Notch Pay adapter (`vpay-adapter-notchpay`, rail `notchpay`, 2026-10-20) — a push rail for MTN MoMo and Orange Money through one aggregator account, admitted under ADR-0031 because its status read takes the key Notch Pay calls PUBLIC. Covers the production risk that admission accepts and the boot warning that states it, the six conditions an agent must not weaken, what Notch Pay's real sandbox answered on 2026-10-21 (step 1, through the probe) and what vpay itself did against it the same day (step 5: three test-mode payments through the adapter, sandbox only, one short `amounts.total` refused as `Malformed`, which since 2026-10-23 is `NeedsReconciliation` and escalates the charge to `unresolved` on the first read), then the MTN timeout, MTN canceled and Orange success numbers through vpay on 2026-10-22 (runbook B3b, all as mapped), why payments are addressed by Notch Pay's `trx.…` reference kept in `ref_extra` (fixed in vaam-apps/vpay#304, and met by Notch Pay's sandbox in step 5), the fail-closed `409` and its residual crash window, the 404 rule, the amount and `amounts.total` check on every success, the livemode key rule (`test.` or `test_`, corrected 2026-10-20), and why `refund` is a declared `NotImplemented` token. Load before changing `backends/crates/vpay-adapter-notchpay`, `backends/crates/vpay-notchpay`, its WireMock mappings or its config."
 ---
 
 # Notch Pay — the aggregator push rail
@@ -89,7 +89,8 @@ after create):
   - refunds (the sandbox answered `403` to the probe's `POST /refunds` on
     2026-10-22);
   - Orange's failure path: Notch Pay documents no Orange failure number;
-  - the 24 h `unresolved` escalation below;
+  - a real short collection reaching `unresolved`, which since 2026-10-23
+    happens on its first read and is proven against WireMock only (below);
   - the `amounts.total` value Notch Pay returned for `…000001`, which step
     5 did not capture.
 
@@ -120,11 +121,13 @@ What step 1 showed:
   operator must reconcile it"). At 15 minutes the charge was `pending` and
   the intent `processing`, with no event and no ledger entry: **never
   `succeeded`, and not `requires_payment_method` either.** The run recorded
-  no `amounts.total` (vpay logs no response body). **By the code, not
-  observed:** `Malformed` is a `Warn`-severity rail error, so the worker
-  retries it on the ladder and wakes nobody; only at the 24 h poll horizon
-  (`unresolved_after`) does the charge become `unresolved`, with an alert.
-  Until then "needs an operator" is a repeated WARN line and nothing else.
+  no `amounts.total` (vpay logs no response body). **Since 2026-10-23
+  (vaam-apps/vpay#313) that answer is `ProviderError::NeedsReconciliation`**.
+  The worker escalates the charge to `unresolved`, hourly and alerting, on
+  the **first** read that says so. Proven against WireMock and a real
+  Postgres (`worker_recovery.rs`), never against Notch Pay. _(Until then it
+  was `Malformed`, a `Warn`-severity rail error that the worker retried on
+  the ladder, waking nobody until the 24 h horizon.)_
 - **`provider_requests` records that refused read as answered**:
   `status_code` 0 with its `error_kind`, since vaam-apps/vpay#314
   (`6d9dfbf`, 2026-10-21). A refused _status read_ moves no money and is
@@ -232,8 +235,8 @@ merchant example defaults to 5000 XAF, and step 5 used 210, 220 and 230.
 2026-10-21"**: a dated page under `docs/status/verification/` recorded
 test-mode payments read to a terminal status. **"Sandbox" is the whole claim.**
 It does not cover webhooks (items 7 and 17), production, a live key's prefix,
-refunds, Orange's failure path, the 24 h `unresolved` escalation or the short
-`amounts.total` value, and Notch Pay has one host for sandbox and production,
+refunds, Orange's failure path, a real short collection reaching `unresolved`
+(WireMock only, since 2026-10-23), or the short `amounts.total` value, and Notch Pay has one host for sandbox and production,
 so nothing in the host separates the two. Do not widen the cells, or write
 "proven" without "sandbox", on anything less. Since 2026-10-22 the
 `providers.md` note says the cells' evidence covers an Orange payer too
@@ -280,13 +283,17 @@ ADR-0031's conditions are the admission. **Weakening any one of them is
    warns. An acknowledged livemode boot **still warns**: do not make the
    setting silence the line, and do not make it optional in livemode.
 5. **A success is accepted only for the charge's own amount and currency.**
-   Anything else is `Malformed`, and so is a float amount (`5000.0`).
-   **Since #303 it also needs `amounts.total` to be the charge's amount**,
-   checked after (not instead of) amount and currency: the sandbox read a
-   short collection as `complete`. A short `total` is `Malformed` with its
-   own message (money moved, not this charge's amount; an operator must
-   reconcile it); a missing or non-integer `total` is `Malformed` too. Do not
-   drop the `total` check, and do not fold it into the amount message.
+   Anything else is `NeedsReconciliation`, and so is a float amount
+   (`5000.0`). **Since #303 it also needs `amounts.total` to be the charge's
+   amount**, checked after (not instead of) amount and currency: the sandbox
+   read a short collection as `complete`. A short `total` is
+   `NeedsReconciliation` with its own message (money moved, not this charge's
+   amount; an operator must reconcile it). A missing or non-integer `total`
+   is `NeedsReconciliation` too. Do not drop the `total` check, and do not fold
+   it into the amount message. **Do not turn any of the three back into
+   `Malformed`**: the worker escalates on `NeedsReconciliation` at once and
+   rides a `Malformed` at `Warn` for 24 h (vaam-apps/vpay#313; all three were
+   `Malformed` until 2026-10-23).
 6. **The question to Notch Pay stays open** (RFC-0012 § 10 item 1). A yes
    moves the rail to ADR-0031's first limb and retires the warning.
 
@@ -307,13 +314,17 @@ ADR-0031's conditions are the admission. **Weakening any one of them is
   because the sandbox answered `404` to ours (item 2). Do not "simplify" it
   back to our reference: every Notch Pay call would `404`. Every payment
   answer must name the charge's reference as `trxref`, or it is
-  `Malformed`. A read of a charge with no `notchpay_reference` is `Config`
-  before any request, never `NotFound` (lost key material, as Orange's
-  `pay_token`).
+  `Malformed`. A read of a charge with no `notchpay_reference` is
+  `NeedsReconciliation` before any request, never `NotFound` (lost key
+  material, as Orange's `pay_token`, which moved with it). It was `Config`
+  until 2026-10-23, which dead-lettered the poll job.
 - **`409`** (crash retry): with `notchpay_reference` held, read it, and
-  process only if `pending`. **With none held, `Malformed`**: fate unknown,
-  never `Submitted`, never a decline. The maintainer decided this on
-  2026-10-21, because Notch Pay cannot find a payment by our reference.
+  process only if `pending`. **With none held, `NeedsReconciliation`**
+  (`Malformed` until 2026-10-23): fate unknown, never `Submitted`, never a
+  decline. The maintainer decided this on 2026-10-21, because Notch Pay cannot
+  find a payment by our reference. Since 2026-10-23 the worker's resubmit
+  escalates the charge to `unresolved` on that `409` and never sends it
+  again.
   **This leaves a crash window**: a crash after the prompt and before
   `submit` returns leaves a payment vpay cannot read, and an operator
   reconciles it in Notch Pay's dashboard. Do not claim it closed.

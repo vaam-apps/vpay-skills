@@ -206,9 +206,18 @@ fn accepted_exposure(&self) -> Option<AcceptedExposure>; // default: None — si
 - **`query_status` must remain callable indefinitely**, long after any payer
   prompt expired. A rail with no record is `ChargeStatus::NotFound`, which is
   **not** an error and **not** a decline.
-- Only `ProviderError::Rejected` says the money did not move. `Transport` and
-  `Malformed` leave the charge's fate **unknown**, which is the distinction
-  the whole port is arranged around.
+- Only `ProviderError::Rejected` says the money did not move. `Transport`,
+  `Malformed` and `NeedsReconciliation` leave the charge's fate **unknown**,
+  which is the distinction the whole port is arranged around.
+- **`Malformed` versus `NeedsReconciliation`** (the seventh variant, since
+  2026-10-23, vaam-apps/vpay#313). `Malformed` is an answer the adapter could
+  not read, which a later read may fix; the poll ladder retries it at `Warn`.
+  `NeedsReconciliation { context }` is an answer the adapter understood and
+  refused for good, or lost key material it cannot ask without. Only a person
+  can settle it, and the worker escalates the charge to `unresolved` on the
+  first one. It gets code `charge_needs_reconciliation`, `Error`, and the
+  API's `502`. Pick by "can asking again change it?", never by how bad it
+  looks.
 
 ## Capabilities
 
@@ -592,7 +601,8 @@ section as a decision:
   else**: RFC-0012's step 5 ran on 2026-10-21 (three test-mode payments
   through the adapter, from the maintainer's MacBook: one `succeeded`, one
   `failed`, one short `amounts.total` refused as `Malformed` and never a
-  success), after step 1's probe the same day. No production, no live key,
+  success; since 2026-10-23 that refusal is `NeedsReconciliation`, which
+  escalates the charge to `unresolved` at once), after step 1's probe the same day. No production, no live key,
   no webhook received, no refund. Load the `vpay-notchpay` skill before
   touching it. Write "admitted under ADR-0031",
   **never** "rule 3 passes", and do not weaken any of ADR-0031's conditions:

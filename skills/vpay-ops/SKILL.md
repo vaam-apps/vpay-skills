@@ -43,7 +43,7 @@ not evidence of production operation.
 day `docs/runbooks/notchpay-sandbox-test.md` ran, and vpay's own server,
 worker and Postgres took three test-mode payments through the `notchpay`
 adapter: one `succeeded`, one `failed`, and one whose short `amounts.total`
-the adapter refused as `Malformed` (`docs/status/verification/2026-10-21-notchpay-step5.md`;
+the adapter refused as `Malformed`, `NeedsReconciliation` since 2026-10-23 (`docs/status/verification/2026-10-21-notchpay-step5.md`;
 the `vpay-notchpay` skill). On 2026-10-22 the same runbook's B3b took three
 more through the same stack: Notch Pay's MTN timeout and canceled numbers,
 and an Orange payer (`docs/status/verification/2026-10-22-notchpay-b3b.md`,

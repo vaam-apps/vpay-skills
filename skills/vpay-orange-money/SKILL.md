@@ -1,6 +1,6 @@
 ---
 name: vpay-orange-money
-description: "The Orange Money Cameroun adapter (`vpay-adapter-orange-money`) — the Web Payment redirect rail, and the loudest caveat in the repository: it has never been called. Covers the token endpoint living at the host root while payments carry the environment in the path, why `submit` sends the same value as `return_url` and `cancel_url`, the `payment_url` validation, why a missing `pay_token` is `Config` and never `NotFound`, the fail-closed callback nobody verifies, and why `refund` is a declared `NotImplemented` token since 2026-09-15 rather than the `Unsupported` it answered before. Load before changing anything under `backends/crates/vpay-adapter-orange-money` or its WireMock mappings."
+description: "The Orange Money Cameroun adapter (`vpay-adapter-orange-money`) — the Web Payment redirect rail, and the loudest caveat in the repository: it has never been called. Covers the token endpoint living at the host root while payments carry the environment in the path, why `submit` sends the same value as `return_url` and `cancel_url`, the `payment_url` validation, why a missing `pay_token` is `NeedsReconciliation` (it was `Config` until 2026-10-23) and never `NotFound`, the fail-closed callback nobody verifies, and why `refund` is a declared `NotImplemented` token since 2026-09-15 rather than the `Unsupported` it answered before. Load before changing anything under `backends/crates/vpay-adapter-orange-money` or its WireMock mappings."
 ---
 
 # Orange Money — the redirect rail
@@ -139,7 +139,7 @@ three present, so a missing `pay_token` produces a precise `Malformed`
 **naming the field** rather than a serde error naming a line and column of a
 body we must never log.
 
-## A missing `pay_token` is `Config`, never `NotFound`
+## A missing `pay_token` is `NeedsReconciliation`, never `NotFound`
 
 `query_status` POSTs `{order_id, amount, pay_token}` to
 `/v1/transactionstatus`. All three are required by the rail: **`order_id`
@@ -147,13 +147,22 @@ alone does not authorise the read**, which is why `pay_token` must be
 committed before the payer could act (`docs/flows/crash-safety.md`).
 
 ```text
-no pay_token in ref_extra  ->  ProviderError::Config   (NOT ChargeStatus::NotFound)
+no pay_token in ref_extra  ->  ProviderError::NeedsReconciliation   (NOT ChargeStatus::NotFound)
 ```
 
 The difference decides whether a payer's money is looked for. `NotFound` is
 the rail saying nothing has happened yet; a charge whose `pay_token` we lost
 is the opposite case — the rail may well have settled it — and it is a case
-for a human, not for the poll ladder.
+for a human, not for the poll ladder. Since 2026-10-23 (vaam-apps/vpay#313)
+the worker makes such a charge `unresolved`, hourly and alerting, on the first
+read. It was `ProviderError::Config` until then, which also reached a human
+but dead-lettered the poll job, so the charge never appeared in the
+`unresolved` query the runbook starts from. `notchpay`'s missing `trx.…` moved
+with it. It is refused before any request: the unit test
+`a_read_without_a_pay_token_needs_reconciliation_before_any_request` points at
+a closed port. In practice it is unreachable: a redirect charge still in
+`submitting` is failed as a dead order before the rail is asked, and every
+accepted submit carries a `pay_token`.
 
 The rest of the ladder, the status table and the callback are in
 [references/the-three-calls.md](references/the-three-calls.md).

@@ -12,6 +12,51 @@ publishes no release tags and its workspace version has never moved off
 `v0.5.0` as of 2026-09-23 — and its workspace version is `0.5.0`. The naming
 rule stands, for the reasons VERSIONING.md now gives.)_
 
+## 2026-10-23 — an answer only a person can act on escalates at once (vaam-apps/vpay#313)
+
+Read against vaam-apps/vpay's `master` at `PENDING-MERGE-SHA`, the merge of the
+pull request that closes vaam-apps/vpay#313, whose branch was cut from
+`8504536f` (the merge of vaam-apps/vpay#340). The maintainer, on #313's three
+options: "Go with option 1 on #313, build it". vpay's evidence page is
+`docs/status/verification/2026-10-23-needs-reconciliation.md`.
+
+- `vpay-conventions` (`references/errors.md`): the seventh `ProviderError`
+  variant, `NeedsReconciliation`, and how to choose between it and
+  `Malformed`; the worker's two handlers that re-classify a leaf.
+- `vpay-reconciler` (`SKILL.md`): `unresolved` on the first
+  `NeedsReconciliation`, from the poll and from the resubmit, and what each
+  writes to `provider_requests`.
+- `vpay-notchpay` (`SKILL.md`): the three answers that moved (the short
+  collection and its siblings, the `409` with no `trx.…`, the read with no
+  `trx.…`) and condition 5's wording.
+- `vpay-orange-money` (`SKILL.md`): a missing `pay_token` is
+  `NeedsReconciliation`, not `Config`.
+- `vpay-provider-adapters` (`SKILL.md`): `Malformed` versus
+  `NeedsReconciliation`.
+- `vpay-ops` (`SKILL.md`, `references/observability.md`): the new
+  `error_kind`, and an `unresolved` charge that is not 24 hours old.
+
+### Stopped being true
+
+- "`Malformed` is a `Warn`-severity rail error, so the worker retries it on
+  the ladder and wakes nobody; only at the 24 h poll horizon does the
+  charge become `unresolved`" — about Notch Pay's short collection. It is
+  `NeedsReconciliation`, and the charge is `unresolved` after its first such
+  read.
+- "With none held, `Malformed`" (Notch Pay's `409`). `NeedsReconciliation`,
+  and the resubmit escalates the charge instead of riding the ladder.
+- "A read of a charge with no `notchpay_reference` is `Config`" and "a
+  missing `pay_token` is `Config`". Both are `NeedsReconciliation`, which
+  keeps the poll job instead of dead-lettering it.
+- "Anything else is `Malformed`" (Notch Pay's condition 5, a success for
+  another amount or currency). `NeedsReconciliation`.
+- "The loop does not inspect variants" was true and still is; two handlers
+  do, and the skill now names them.
+
+Still true: `Malformed` is still an answer the adapter could not read, still
+`Warn`, still the ladder. And a real Notch Pay short collection has never been
+seen reaching `unresolved`: the proof is WireMock and a real Postgres.
+
 ## 2026-10-22 — vpay registers Notch Pay's callback endpoint itself (RFC-0013 steps 2–4)
 
 Read against vaam-apps/vpay's `master` at `8504536f`, the merge of

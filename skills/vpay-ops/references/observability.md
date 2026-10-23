@@ -91,7 +91,11 @@ during a rail outage (`provider_unavailable`) at all — and that set includes
 `charge_declined`, **a rail decision rather than a rail failure**. On mobile
 money that is a large, normal share of traffic. Whether to exclude declines is a
 maintainer decision to be made with the threshold itself, against measured
-traffic. See `docs/runbooks/provider-error-rate.md`.
+traffic. See `docs/runbooks/provider-error-rate.md`. Since 2026-10-23 the set
+also includes `charge_needs_reconciliation` (vaam-apps/vpay#313). That one is
+not a rate problem: each escalates one charge to `unresolved`, so
+`VpayUnresolvedChargesRising` and `docs/runbooks/unresolved-charges.md` cover
+it, and an `unresolved` charge is no longer always 24 hours old.
 
 ## Alert rules
 
