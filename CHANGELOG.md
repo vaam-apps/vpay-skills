@@ -14,10 +14,10 @@ rule stands, for the reasons VERSIONING.md now gives.)_
 
 ## 2026-10-23 — Notch Pay: registration off by default, and a wrong-network number is `invalid_payer`
 
-Read against vaam-apps/vpay's `master` at `9499f09d`, the merge of
-vaam-apps/vpay#350, plus the pull request that adds
-`docs/status/verification/2026-10-23-notchpay-defaults-and-wrong-network.md`;
-restamped with that pull request's merge. Two maintainer decisions on #350's
+Read against vaam-apps/vpay's `master` at `71a351df`, the merge of
+vaam-apps/vpay#353, which adds
+`docs/status/verification/2026-10-23-notchpay-defaults-and-wrong-network.md`.
+Two maintainer decisions on #350's
 sandbox evidence: asked whether to change Notch Pay's `register: ensure`
 default, "Default to `off` for Notch Pay"; asked whether to map a
 wrong-network number's `422` on `errors.phone` to `invalid_payer`, "Yes,
