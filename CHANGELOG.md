@@ -14,8 +14,8 @@ rule stands, for the reasons VERSIONING.md now gives.)_
 
 ## 2026-10-23 — an answer only a person can act on escalates at once (vaam-apps/vpay#313)
 
-Read against vaam-apps/vpay's `master` at `PENDING-MERGE-SHA`, the merge of the
-pull request that closes vaam-apps/vpay#313, whose branch was cut from
+Read against vaam-apps/vpay's `master` at `c672fffc`, the merge of
+vaam-apps/vpay#341, which closes vaam-apps/vpay#313 and whose branch was cut from
 `8504536f` (the merge of vaam-apps/vpay#340). The maintainer, on #313's three
 options: "Go with option 1 on #313, build it". vpay's evidence page is
 `docs/status/verification/2026-10-23-needs-reconciliation.md`.
