@@ -26,20 +26,32 @@ workspace and not in a hoisted one.
 
 ## Build
 
-| Recipe                 | Does                                                                                                                                                                                                       | Needs                                          |
-| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
-| `just build`           | `build-rust` + `build-web`                                                                                                                                                                                 |                                                |
-| `just build-rust`      | `cargo build --workspace`                                                                                                                                                                                  |                                                |
-| `just build-web`       | `pnpm -r build`                                                                                                                                                                                            | `node_modules`                                 |
-| `just build-dist`      | `cargo build --profile dist --target x86_64-unknown-linux-musl -p vpay-server`                                                                                                                             | `rustup target add x86_64-unknown-linux-musl`  |
-| `just build-storybook` | builds both apps' Storybooks, then greps the built stylesheet asserting `--color-base-100` is **defined**, not merely referenced                                                                           | `node_modules`                                 |
-| `just release-dry-run` | builds the three release images for the **host arch only** (`vpay-server`, `vpay-dashboard`, `vpay-checkout`) with `--push=false`, packages (does not push or sign) the Helm chart, then `just helm-check` | docker + buildx + helm + kubeconform + network |
+| Recipe                 | Does                                                                                                                                                                                                                                                                   | Needs                                          |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| `just build`           | `build-rust` + `build-web`                                                                                                                                                                                                                                             |                                                |
+| `just build-rust`      | `cargo build --workspace`                                                                                                                                                                                                                                              |                                                |
+| `just build-web`       | `pnpm -r build`                                                                                                                                                                                                                                                        | `node_modules`                                 |
+| `just build-dist`      | `cargo build --profile dist --target x86_64-unknown-linux-musl -p vpay-server`                                                                                                                                                                                         | `rustup target add x86_64-unknown-linux-musl`  |
+| `just build-storybook` | builds both apps' Storybooks, greps the built stylesheet asserting `--color-base-100` is **defined**, not merely referenced, then (since 2026-10-23, vaam-apps/vpay#349) runs each app's `src/a11y-gate.test.ts` against that artefact and **fails if any case skips** | `node_modules`                                 |
+| `just release-dry-run` | builds the three release images for the **host arch only** (`vpay-server`, `vpay-dashboard`, `vpay-checkout`) with `--push=false`, packages (does not push or sign) the Helm chart, then `just helm-check`                                                             | docker + buildx + helm + kubeconform + network |
 
 The `build-storybook` grep is not tidiness. PR #135 produced a build that
 referenced `--color-base-100` 22 times and defined it 0 — the `@vaam-apps/ui`
 theme had been dropped from the bundle, so every story rendered on the
 browser's default white and every colour-contrast verdict was about a ground no
 user ever sees.
+
+**The grep cannot follow a `var()`, which is why the recipe also runs the
+test (2026-10-23, vaam-apps/vpay#349).** Since `@vaam-apps/ui` 0.5.0 the
+token is `--color-base-100:var(--md-sys-color-surface)`. A sheet that keeps
+that mapping and loses the role behind it prints "defined 3x" and passes the
+grep, while `a11y-gate.test.ts`'s built-stylesheet case fails it (measured,
+both apps). The case resolves the chain to the colour the package's own
+`theme.css` resolves to, in `dark` and `light`. The recipe reads Vitest's
+JSON report because Vitest exits 0 on a skipped case. Before this date the
+case ran in CI only inside `pnpm -r test`, before any build, so it always
+skipped there. And from 0.5.0 (2026-10-21) until this date it demanded a hex
+value, so it failed after every correct local build.
 
 `.cargo/config.toml` sets `-C target-feature=+crt-static` for **both** musl
 triples, x86_64 and aarch64, spelled out rather than collapsed into a `cfg()`

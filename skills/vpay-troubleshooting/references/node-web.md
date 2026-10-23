@@ -120,6 +120,46 @@ got `incomplete` out of the real page.
 time — Playwright fetches a ~115 MB Chromium. **Run it before opening a PR that
 touches a checkout screen, a story or the theme.**
 
+## `a11y-gate.test.ts`'s built-stylesheet case fails, or skips
+
+The case is "the BUILT storybook stylesheet actually defines the theme", in
+both apps. It reads `storybook-static/assets/*.css`.
+
+**`1 skipped` per app in `pnpm -r test` or `just ci` is expected.** Neither
+builds Storybook. The case is measured in `just build-storybook`, which runs
+both apps' file against the artefact it has just built (since 2026-10-23,
+vaam-apps/vpay#349).
+
+**"does not resolve to the package's "dark" (or "light") ground"**, after a
+build:
+
+1. The artefact is **stale**. A failed build leaves its output on disk, and
+   the test reads that. Re-run `just build-storybook`: exit 0 means the tree
+   is fine.
+2. `app/globals.css` dropped the theme `@import`, or moved it below
+   `@plugin`. The neighbouring position case fails too.
+3. The sheet maps `--color-base-100` with `var()` but the role it points at
+   is missing. The recipe's grep still prints "defined 3x" here; only this
+   case catches it.
+
+**"the package's own theme.css resolves --color-base-100 …" fails**: the
+expected value is read from the package, so this is a `@vaam-apps/ui` bump.
+Either the package stopped declaring the role its mapping points at, or
+`themeColours` (`src/testing/contrast.ts`) can no longer read it. That helper
+parses hex, space-syntax `rgb()` and `transparent`, and nothing else. An
+`oklch()` theme resolves to nothing. Teach the helper the new syntax; do not
+weaken the case.
+
+**`build-storybook: <app> a11y-gate.test.ts passed 5 of 6 cases … a skipped
+case measured nothing`**: the case skipped although the recipe had just built
+the stylesheet, so the directory it reads and the recipe's no longer agree.
+Vitest itself exits 0 on a skip; this message is the recipe refusing that.
+
+**On a vpay before vaam-apps/vpay#349, and on `@vaam-apps/ui` 0.5.0 or
+later**, the case fails after every correct build with `expected … to match
+/--color-base-100:\s*#/`. That is the case's old hex assertion, not your
+change (measured on `8504536f`: checkout 1 failed / 556 passed).
+
 ## `just verify-ui` refuses something that looks fine
 
 `frontends/packages/ui` (`@vpay/ui`) was **deleted 2026-09-12**; both apps

@@ -12,6 +12,41 @@ publishes no release tags and its workspace version has never moved off
 `v0.5.0` as of 2026-09-23 — and its workspace version is `0.5.0`. The naming
 rule stands, for the reasons VERSIONING.md now gives.)_
 
+## 2026-10-23 — the built-stylesheet a11y case follows the theme's `var()` chain (vaam-apps/vpay#349)
+
+Read against vaam-apps/vpay#349's branch `claude/beautiful-albattani-b73uab`,
+cut from `master` at `8504536f` (the merge of vaam-apps/vpay#340). It has not
+merged yet, so no `SKILL.md` stamp moves; restamp at its merge commit. vpay's
+evidence page is
+`docs/status/verification/2026-10-23-a11y-gate-built-stylesheet.md`.
+
+- `vpay-tooling` (`references/recipes.md`, `references/ci.md`):
+  `just build-storybook` runs both apps' `src/a11y-gate.test.ts` against the
+  artefact it has just built, and fails if a case skips; why its grep alone
+  cannot see a `var()`.
+- `vpay-frontend` (`references/workspace.md`), `vpay-checkout`
+  (`references/testing-and-gates.md`): the built-stylesheet case resolves
+  `--color-base-100` through `themeColours` to the colour the package's own
+  `theme.css` resolves to, in `dark` and `light`, and is measured in the
+  recipe rather than in `pnpm -r test`.
+- `vpay-troubleshooting` (`references/node-web.md`): the case's three
+  failure messages, and its expected skip in `pnpm -r test`.
+
+### Stopped being true
+
+- "The **built** Storybook stylesheet actually defines `--color-base-100`"
+  (case 6), checked as `--color-base-100:\s*#`. Since `@vaam-apps/ui` 0.5.0
+  that assertion failed after every correct build, and it now resolves the
+  `var()` chain instead.
+- "`just build-storybook` … greps the built stylesheet" as the whole of the
+  recipe's check. It also runs the test file.
+- "This lives in the recipe rather than only in the test because CI's `web`
+  job runs `pnpm -r test` **before** `just build-storybook`". It still runs
+  in that order. The test now runs inside the recipe as well.
+
+Still true: `pnpm -r test` and `just ci` build no Storybook, so the case
+reports one skip per app there, by design.
+
 ## 2026-10-22 — vpay registers Notch Pay's callback endpoint itself (RFC-0013 steps 2–4)
 
 Read against vaam-apps/vpay's `master` at `8504536f`, the merge of

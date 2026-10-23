@@ -21,15 +21,15 @@ Root `package.json`: `pnpm -r build|lint|test|typecheck`, `test:e2e` →
 
 ## Which gate runs where
 
-| Gate                                                                       | Command                            | In `just ci`?                                                                |
-| -------------------------------------------------------------------------- | ---------------------------------- | ---------------------------------------------------------------------------- |
-| Prettier, repo-wide, working tree                                          | `just fmt-check-web`               | yes, **first**                                                               |
-| Typecheck + ESLint, 15 packages / 214 files                                | `just lint-web`                    | yes                                                                          |
-| jsdom/node suites (`a11y-gate`, `styling-gate`, `layout.test`, `bff.test`) | `just test-web` (= `pnpm -r test`) | yes                                                                          |
-| Class-string rules                                                         | `just verify-ui`                   | yes, via `just verify`                                                       |
-| Storybook build **and** the theme-defined assertion                        | `just build-storybook`             | **no** — CI `web` job                                                        |
-| Storybook + axe in real Chromium                                           | `just test-storybook`              | **no** — needs a ~115 MB Playwright Chromium and `just ci` must pass offline |
-| Cypress against the compose stack                                          | `just test-e2e` / `just e2e-specs` | no — CI `e2e (compose)`                                                      |
+| Gate                                                                                                                    | Command                            | In `just ci`?                                                                                          |
+| ----------------------------------------------------------------------------------------------------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Prettier, repo-wide, working tree                                                                                       | `just fmt-check-web`               | yes, **first**                                                                                         |
+| Typecheck + ESLint, 15 packages / 214 files                                                                             | `just lint-web`                    | yes                                                                                                    |
+| jsdom/node suites (`a11y-gate`, `styling-gate`, `layout.test`, `bff.test`)                                              | `just test-web` (= `pnpm -r test`) | yes — but `a11y-gate`'s built-stylesheet case **skips** there, because nothing has built Storybook yet |
+| Class-string rules                                                                                                      | `just verify-ui`                   | yes, via `just verify`                                                                                 |
+| Storybook build, the theme-defined grep, **and** both apps' `a11y-gate.test.ts` against the artefact (since 2026-10-23) | `just build-storybook`             | **no** — CI `web` job                                                                                  |
+| Storybook + axe in real Chromium                                                                                        | `just test-storybook`              | **no** — needs a ~115 MB Playwright Chromium and `just ci` must pass offline                           |
+| Cypress against the compose stack                                                                                       | `just test-e2e` / `just e2e-specs` | no — CI `e2e (compose)`                                                                                |
 
 CI's `web` job calls **these recipes**, not copies of their commands, so the
 gate and the local check cannot drift.
@@ -48,6 +48,19 @@ never exists when the test runs there. It matters most for the dashboard, whose
 `.storybook/main.ts` deliberately carries **no** theme-resolve alias — measured
 unnecessary on today's dependency tree, and this is what would catch a
 dependency bump making it necessary again.
+
+**Since 2026-10-23 (vaam-apps/vpay#349) the recipe also runs both apps'
+`src/a11y-gate.test.ts` against the artefact it has just built**, and fails
+unless every case passed, so a skip fails it too. The grep cannot follow a
+`var()`: `@vaam-apps/ui` 0.5.0 made the token
+`--color-base-100:var(--md-sys-color-surface)`, and a sheet that keeps the
+mapping and loses the role still prints "defined 3x". The test's case
+resolves the chain, with each app's `themeColours`, to the colour the
+package's own `theme.css` resolves to, in `dark` and `light`. Do not put a
+hex or a role name back into that assertion. The case asserted
+`--color-base-100:\s*#` until that date, and so failed after every correct
+build from 0.5.0 (2026-10-21) on, unseen, because CI only ran it where it
+skips.
 
 ## Storybook wiring gotchas (both apps)
 
