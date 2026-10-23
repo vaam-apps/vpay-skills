@@ -769,8 +769,7 @@ maintainer asks for it; the page lists the order such work would follow.
 
 **RFC-0014 — verifying rail callbacks: the port and Notch Pay's check are
 built** (2026-10-23, against vpay `master` `82a68f4e` plus the branch
-`claude/happy-hopper-r3h6rz-webhook-signatures`; stub-proven, the real
-scheme measured on: not yet). The maintainer answered "Yes, build RFC-0014"
+`claude/happy-hopper-r3h6rz-webhook-signatures`; stub-proven; never verified against a real Notch Pay delivery). The maintainer answered "Yes, build RFC-0014"
 on 2026-10-23, lifting RFC-0012's "hash key is evidence only" rule for it.
 
 - **The port** (`vpay_provider::callback`, new): `CallbackRequest { headers,

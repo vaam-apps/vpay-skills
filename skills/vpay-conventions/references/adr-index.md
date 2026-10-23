@@ -259,7 +259,7 @@ with vpay#244, 0009 on 2026-10-16, 0010 and 0011 on 2026-10-17, and 0012,
   completes step 0 — see `vpay-troubleshooting`'s known-wrong-docs page. See `vpay-provider-adapters`.
 - `docs/rfc/0014-verifying-rail-callbacks.md` — **Draft; the port and
   Notch Pay's check built on 2026-10-23** (against `master` `82a68f4e` plus
-  the RFC-0014 branch), stub-proven, the real scheme measured on: not yet.
+  the RFC-0014 branch), stub-proven; never verified against a real Notch Pay delivery.
   `ProviderAdapter::verify_callback` and `Capabilities::callback_check`, run
   after the charge is found; the verdict gates only the pull-forward, so
   callbacks stay hints. The secret is a credential under port-fixed names,

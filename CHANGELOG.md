@@ -21,7 +21,10 @@ verification (RFC-0014) needs Notch Pay's hash key held by vpay as a secret.
 Lift the earlier 'hash key is evidence only, never vpay configuration' rule
 for this?" and answered "Yes, build RFC-0014". vpay's evidence page is
 `docs/status/verification/2026-10-23-webhook-signatures.md`. **Stub-proven;
-the real scheme measured on: not yet.**
+never verified against a real Notch Pay delivery.** No webhook has ever been
+delivered: the 2026-10-23 sandbox run found an API-created endpoint stored
+with `"url": null`, so a real check needs the Hash Key and a
+dashboard-registered endpoint.
 
 - `vpay-provider-adapters` (`SKILL.md`, `references/adding-a-rail.md`):
   RFC-0014 rewritten from "nothing in it is built" to what is: `vpay_provider::callback`

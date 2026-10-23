@@ -409,13 +409,20 @@ ADR-0031's conditions are the admission. **Weakening any one of them is
   `vpay_provider::callback::hmac_sha256_hex_matches`. No secret configured is
   `NoSecret` (today's pull-forward); a missing or wrong signature is
   `Invalid`, and the route moves nothing and answers the same `202`.
-  **Stub-proven; the real scheme measured on: not yet.** Notch Pay's guide
+  **Stub-proven; never verified against a real Notch Pay delivery.** Notch Pay's guide
   signs the raw body in PHP and Python and `JSON.stringify(req.body)` in
   Node, and no webhook Notch Pay sent has been checked (RFC-0012 § 10 item
   7). Do not "fix" the check to re-serialise the body before that
   measurement says so. No timestamp is signed, so a replayed genuine webhook
   verifies (`a_replayed_genuine_webhook_still_verifies` pins it as a
-  decision). Even `Verified` moves no money.
+  decision). Even `Verified` moves no money. **No webhook has ever been
+  delivered**, so the signature's format, header, encoding and retries are
+  unmeasured: the 2026-10-23 sandbox run found an endpoint created through
+  `POST /webhooks` stored with `"url": null`, nothing delivered in 21
+  minutes, and `404` for it by id. A real check needs the Hash Key **and** an
+  endpoint registered in Notch Pay's dashboard (the sandbox branch advises
+  that with `register: off`, untested). Until a delivery is seen, expect no
+  Notch Pay callbacks: polling settles every charge.
 - **The webhook endpoint is registered by vpay** since 2026-10-22
   (RFC-0013, vaam-apps/vpay#340, merged as `8504536f`): `notchpay` declares
   `CallbackUrlMode::Registered`, and `src/callbacks.rs` implements
