@@ -217,6 +217,12 @@ rail code `notchpay`** (2026-10-23): a charge routed from `mtn_wallet` or
 `orange_wallet` is sent `cm.mtn` or `cm.orange` per charge, so the setting
 stays `cm.mobile`.
 
+This is a provider-code match outside an adapter crate — which ADR-0002 forbids
+— and it is a deliberate, recorded interim (ADR-0012) carrying a comment saying
+so. It moves behind the port the day `ProviderAdapter` grows a
+`required_settings()` hook. **It is the only sanctioned one; do not add a
+second.**
+
 ## `routing:` — static weights for the router (since 2026-10-23)
 
 Optional. With no block, every rail weighs `100` for each payment-method type
@@ -246,12 +252,6 @@ and at boot step 4 `RoutingWeightOnAnUnservedType` (e.g. `orange_money` with
 Every routed charge's decision, with each rail's score breakdown or exclusion
 reason, is in `routing_decisions` (`SELECT * FROM routing_decisions WHERE
 charge_id = …`); it is on no `/v1` object.
-
-This is a provider-code match outside an adapter crate — which ADR-0002 forbids
-— and it is a deliberate, recorded interim (ADR-0012) carrying a comment saying
-so. It moves behind the port the day `ProviderAdapter` grows a
-`required_settings()` hook. **It is the only sanctioned one; do not add a
-second.**
 
 ## The ten environment variables
 

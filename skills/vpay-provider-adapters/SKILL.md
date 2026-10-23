@@ -560,40 +560,6 @@ section as a decision:
   is `vpay_core::routing::route`. ~~"Today `payment_method_types` holds rail
   codes … no router exists."~~ That was true until 2026-10-23.
 
-## Method types and the router (built 2026-10-23)
-
-A **method type** is what the payer uses; a **rail** is the adapter that
-processes it. Each adapter declares what it serves in
-`Capabilities::method_types` (`vpay_core::routing::MethodTypes`, a set):
-
-| Rail           | `method_types`                |
-| -------------- | ----------------------------- |
-| `mtn_momo`     | `mtn_wallet`                  |
-| `orange_money` | `orange_wallet`               |
-| `notchpay`     | `mtn_wallet`, `orange_wallet` |
-
-- **A new rail declares at least one type**, or boot refuses it when
-  enabled (`ConfigError::RailServesNoMethodType`), and the conformance
-  suite's `every_adapter_declares_the_method_types_it_serves` pins the exact
-  table above, so a rail added or changed fails there until the table names
-  it. `card` and `bank_transfer` are reserved spellings: no adapter may
-  declare them until RFC-0010 / D4 build them.
-- **`ChargeRef::method_type`** carries the payer's choice to `submit`,
-  `query_status` and `refund`. `None` means a charge confirmed by the code of
-  a rail serving several types, or one from before migration `0053`. An
-  adapter serving one type may ignore it; `notchpay` sends `cm.mtn` /
-  `cm.orange` from it and its `settings.channel` (`cm.mobile`) when it is
-  `None`.
-- **The router names no rail.** `vpay_core::routing::route` is one pure
-  function: a hard eligibility filter (serves the type, enabled, settles the
-  currency, the pin), then a score per candidate with a breakdown. Never add
-  a rail-code branch to it; `vpay-server`'s `the_router_names_no_rail` reads
-  its source and fails. **The formula is provisional** (`provisional-1`, a
-  configured weight per rail, `routing.weights`, default 100, ties to the
-  lower rail code) until the maintainer answers RFC-0008's revision R8. A
-  new component is a `Component` variant and its breakdown entry, not a sort
-  key. vpay's evidence:
-  `docs/status/verification/2026-10-23-method-type-routing.md`.
 - **RFC-0009 — provider accounts per merchant** (added 2026-10-16, not
   part of vaam-apps/vpay#244; **revised 2026-10-22** in vaam-apps/vpay#336).
   It has two phases:
@@ -816,6 +782,41 @@ out of configuration until the RFC's Notch Pay step. What the RFC keeps:
 forward), and every answer stays a byte-identical `202`. Its first consumer
 is proposed to be Orange, comparing the `notif_token` that `submit` already
 stores. Five open questions are the maintainer's.
+
+## Method types and the router (built 2026-10-23)
+
+A **method type** is what the payer uses; a **rail** is the adapter that
+processes it. Each adapter declares what it serves in
+`Capabilities::method_types` (`vpay_core::routing::MethodTypes`, a set):
+
+| Rail           | `method_types`                |
+| -------------- | ----------------------------- |
+| `mtn_momo`     | `mtn_wallet`                  |
+| `orange_money` | `orange_wallet`               |
+| `notchpay`     | `mtn_wallet`, `orange_wallet` |
+
+- **A new rail declares at least one type**, or boot refuses it when
+  enabled (`ConfigError::RailServesNoMethodType`), and the conformance
+  suite's `every_adapter_declares_the_method_types_it_serves` pins the exact
+  table above, so a rail added or changed fails there until the table names
+  it. `card` and `bank_transfer` are reserved spellings: no adapter may
+  declare them until RFC-0010 / D4 build them.
+- **`ChargeRef::method_type`** carries the payer's choice to `submit`,
+  `query_status` and `refund`. `None` means a charge confirmed by the code of
+  a rail serving several types, or one from before migration `0053`. An
+  adapter serving one type may ignore it; `notchpay` sends `cm.mtn` /
+  `cm.orange` from it and its `settings.channel` (`cm.mobile`) when it is
+  `None`.
+- **The router names no rail.** `vpay_core::routing::route` is one pure
+  function: a hard eligibility filter (serves the type, enabled, settles the
+  currency, the pin), then a score per candidate with a breakdown. Never add
+  a rail-code branch to it; `vpay-server`'s `the_router_names_no_rail` reads
+  its source and fails. **The formula is provisional** (`provisional-1`, a
+  configured weight per rail, `routing.weights`, default 100, ties to the
+  lower rail code) until the maintainer answers RFC-0008's revision R8. A
+  new component is a `Component` variant and its breakdown entry, not a sort
+  key. vpay's evidence:
+  `docs/status/verification/2026-10-23-method-type-routing.md`.
 
 ## Where to go next
 
