@@ -134,7 +134,9 @@ the decision."
   confirmed, D8 and D9 reopened; ADR-0029's Status says so with the quotes.
   Later that day RFC-0008's R8 was answered, which settles D9 (score, then
   rail code), D8 in substance (the fee is a score component, not the sort
-  key) and D11 for health only (it moves no traffic).
+  key) and RFC-0008's clarification of D11 (no measured quantity moves
+  traffic: health by R8.3, the completion rate by "Go with (a)"; D11's own
+  "one charge per intent" is unchanged).
   `card`'s spelling and D14–D17 are still proposed. The table's "Nothing it
   decides is built" stopped being true that day: D6, D7 and D10 are.)_ RFC-0004 §§ 1–4 and 8–13, RFC-0006 and RFC-0007 stay Draft.
   _(Added 2026-10-20.)_ D1's third rule says _secret_-authenticated rather than
