@@ -12,6 +12,26 @@ publishes no release tags and its workspace version has never moved off
 `v0.5.0` as of 2026-09-23 — and its workspace version is `0.5.0`. The naming
 rule stands, for the reasons VERSIONING.md now gives.)_
 
+## 2026-10-23 — Fapshi, a desk study with no adapter
+
+Read against vaam-apps/vpay's `master` at `PENDING-MERGE-SHA`, the merge of the
+pull request that adds `docs/plans/2026-10-23-fapshi-evaluation.md` and the
+`fapshi` row of `docs/status/providers.md`. The maintainer asked to "study
+fapshi as another payment provider too". The study reads Fapshi's public
+documentation only: no account, no key, no call.
+
+- `vpay-provider-adapters` (`SKILL.md`): `fapshi` joins the matrix's rows
+  with no RFC and no code; a paragraph on what the study found (all four hard
+  rules on paper, rule 3 as ADR-0029 wrote it, and four blockers), and an
+  instruction not to start an adapter before the written questions are
+  answered and the maintainer asks; the page in "Where to go next".
+
+### Stopped being true
+
+- "A row per provider (`mtn_momo`, `orange_money`, `notchpay`, `stripe`,
+  `paypal` and `flutterwave`)" in `docs/status/providers.md`: it has a
+  seventh row, `fapshi`. Nothing a skill said about any other row changed.
+
 ## 2026-10-23 — an answer only a person can act on escalates at once (vaam-apps/vpay#313)
 
 Read against vaam-apps/vpay's `master` at `c672fffc`, the merge of

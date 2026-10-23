@@ -86,7 +86,8 @@ would bury our own bug among merchants' typos.
 **Where a provider's gaps are written down: `docs/status/providers.md`
 (since 2026-10-20).** One matrix, a row per provider (`mtn_momo`,
 `orange_money`, `notchpay`, `stripe`, `paypal` and `flutterwave` as of
-2026-10-20 — the last has no RFC and no code, and its admission is `unknown`)
+2026-10-20 — the last has no RFC and no code, and its admission is `unknown`;
+`fapshi` since 2026-10-23, also with no RFC and no code, from a desk study)
 and a column per thing the port asks of an adapter. It writes a gap
 by the rule above and by no other: a cell reads **unsupported** where the rail
 cannot (`ProviderError::Unsupported`, the capability flag `false` beside it)
@@ -707,6 +708,26 @@ public documentation only) found **no provider shown to accept Visa and
 Mastercard for a Cameroon merchant on a hosted page**. The providers' written
 answers come first.
 
+**Fapshi — a desk study, no adapter (2026-10-23).**
+`docs/plans/2026-10-23-fapshi-evaluation.md` read Fapshi's documentation and
+`openapi.json` only: no account, no key, no call. On paper it is a mobile-money
+aggregator (MTN and Orange in Cameroon, XAF) that passes all four hard rules,
+**rule 3 as ADR-0029 wrote it**: the status read takes `apiuser` and a secret
+`apikey`, so it would need no ADR-0031 exception and no boot warning. The page
+names four blockers before any code:
+
+- a resent Direct Pay may prompt the payer twice (no idempotency key, and
+  `externalId`'s uniqueness is undocumented), and only a lookup by an id of
+  vpay's, `GET /transaction/{userId}`, could guard it, if that lookup is
+  consistent;
+- Direct Pay is off in live mode and approved case by case;
+- there is no refund API;
+- the terms name "Fapshi Inc" and no licence, regulator or partner bank.
+
+There is no `vpay-fapshi` crate, no `fapshi` adapter code and no RFC. **Do not
+start one** before the page's written questions are answered and the
+maintainer asks for it; the page lists the order such work would follow.
+
 **RFC-0014 — verifying rail callbacks** (added 2026-10-20, merged as vpay
 `0977616` in vaam-apps/vpay#296; Draft, **nothing in it is built**). The
 maintainer answered "Yes, as its own piece of work" on 2026-10-20 to whether
@@ -736,6 +757,7 @@ stores. Five open questions are the maintainer's.
 - `vpay-notchpay` skill — the aggregator push rail admitted under ADR-0031,
   and its production risk.
 - `docs/status/providers.md` (the per-provider matrix, 2026-10-20),
+  `docs/plans/2026-10-23-fapshi-evaluation.md` (Fapshi, a desk study),
   `docs/reference/vpay-notchpay.md` (the client crate, 2026-10-20),
   `docs/rfc/0012-notchpay-adapter.md`,
   `docs/rfc/0013-vpay-registers-its-own-callbacks.md`.
