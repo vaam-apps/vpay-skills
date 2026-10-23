@@ -120,7 +120,7 @@ saying "seven" through its `7997536b` stamp.
 against the shape before that does not compile against this port.
 
 ```rust
-fn code(&self) -> &'static str;                   // == the payment_method_types value
+fn code(&self) -> &'static str;                   // == a rail code in payment_method_types
 fn capabilities(&self) -> Capabilities;
 async fn submit(&self, charge, config)      -> Result<Submitted, ProviderError>;
 async fn query_status(&self, charge, config)-> Result<ChargeStatus, ProviderError>;
@@ -523,15 +523,19 @@ section as a decision:
 > adapter, and is not RFC-0007's `bank_transfer`, whose shape below is still
 > an open question.
 
-> **Qualified 2026-10-17.** RFC-0004 § 7 and RFC-0008 are **accepted**
-> through ADR-0029 (vaam-apps/vpay#275). That changes their standing, not
-> the tree: **none of the identifiers below exists**, `payment_method_types`
-> still holds rail codes, and an adapter written against them is written
-> against a design, as RFC-0010 and RFC-0011 are. ADR-0029 D2 says each
-> capability lands with its first consumer; do not add one to the port
-> ahead of the adapter that declares it. D12–D17 of that ADR (the method-type
-> spellings, `collapse`, `routing.requires`, fee schedules on the provider
-> account) are proposed and need the maintainer's confirmation.
+> **Qualified 2026-10-17, and again on 2026-10-23.** RFC-0004 § 7 and
+> RFC-0008 are **accepted** through ADR-0029 (vaam-apps/vpay#275). On
+> 2026-10-23 **one** of their identifiers was built:
+> `Capabilities::method_types` (§ "Method types" below), with D12's two
+> wallet spellings and D13's `collapse`, both confirmed by the maintainer
+> that day. **The rest below still does not exist**, and an adapter written
+> against it is written against a design, as RFC-0010 and RFC-0011 are.
+> ADR-0029 D2 says each capability lands with its first consumer; do not add
+> one to the port ahead of the adapter that declares it. D8 and D9 (fee
+> ascending) are **reopened**: the maintainer asked for "a score of each
+> payment solution for each checkout", and RFC-0008's 2026-10-23 revision
+> proposes one. D14–D17 (`card`'s presentation, `routing.requires`, fee
+> schedules on the provider account) are still proposed.
 
 - **RFC-0004 § 7 — one adapter per provider.** Every card or bank PSP that
   meets four hard rules gets its own adapter. The rules: vpay never holds the
@@ -539,8 +543,8 @@ section as a decision:
   query; a stub-able contract. Refunds, off-session charging and bank
   transfer become capabilities. It would add `supports_off_session`,
   `charge_stored`, `method_types`, `amount_limits` and
-  `ProviderFlow::Instructions`. **None of those identifiers exists.**
-  _Accepted 2026-10-17 (ADR-0029); still none exists._
+  `ProviderFlow::Instructions`. _Accepted 2026-10-17 (ADR-0029)._ **Only
+  `method_types` exists, since 2026-10-23**; the other four do not.
 - **RFC-0006 — card processing without a PSP.** A separately deployed card
   vault (`vpay-vault`), never linked into `vpay-server`, which appears to the
   core as one more rail (`vpay_vault`). It would also add
@@ -548,14 +552,48 @@ section as a decision:
 - **RFC-0007 — bank transfers reconciled from statements.** It leaves open
   whether `bank_transfer` is an adapter whose `query_status` answers
   `Unsupported`, or a new kind of settlement source.
-- **RFC-0008 — routing.** It separates the method type (`card`) from the rail
-  (`flutterwave`), so that `payment_method_types` would accept method types.
-  **Today `payment_method_types` holds rail codes**, and the checkout lists
-  rails in the order the merchant gave (`build_rails` in
-  `backends/crates/vpay-api/src/browser/checkout_sessions.rs`). _Accepted
-  2026-10-17 (ADR-0029, less its § 7 on health); the spellings `card`,
-  `mtn_wallet`, `orange_wallet`, `paypal` are the ADR's D12, proposed; no
-  router exists._
+- **RFC-0008 — routing.** It separates the method type (`mtn_wallet`) from
+  the rail (`notchpay`). _Accepted 2026-10-17 (ADR-0029, less its § 7 on
+  health); **revised 2026-10-23** to a score per checkout, and **partly
+  built** the same day_ (§ "Method types" below): `payment_method_types`
+  accepts `mtn_wallet` and `orange_wallet` beside rail codes, and the router
+  is `vpay_core::routing::route`. ~~"Today `payment_method_types` holds rail
+  codes … no router exists."~~ That was true until 2026-10-23.
+
+## Method types and the router (built 2026-10-23)
+
+A **method type** is what the payer uses; a **rail** is the adapter that
+processes it. Each adapter declares what it serves in
+`Capabilities::method_types` (`vpay_core::routing::MethodTypes`, a set):
+
+| Rail           | `method_types`                |
+| -------------- | ----------------------------- |
+| `mtn_momo`     | `mtn_wallet`                  |
+| `orange_money` | `orange_wallet`               |
+| `notchpay`     | `mtn_wallet`, `orange_wallet` |
+
+- **A new rail declares at least one type**, or boot refuses it when
+  enabled (`ConfigError::RailServesNoMethodType`), and the conformance
+  suite's `every_adapter_declares_the_method_types_it_serves` pins the exact
+  table above, so a rail added or changed fails there until the table names
+  it. `card` and `bank_transfer` are reserved spellings: no adapter may
+  declare them until RFC-0010 / D4 build them.
+- **`ChargeRef::method_type`** carries the payer's choice to `submit`,
+  `query_status` and `refund`. `None` means a charge confirmed by the code of
+  a rail serving several types, or one from before migration `0052`. An
+  adapter serving one type may ignore it; `notchpay` sends `cm.mtn` /
+  `cm.orange` from it and its `settings.channel` (`cm.mobile`) when it is
+  `None`.
+- **The router names no rail.** `vpay_core::routing::route` is one pure
+  function: a hard eligibility filter (serves the type, enabled, settles the
+  currency, the pin), then a score per candidate with a breakdown. Never add
+  a rail-code branch to it; `vpay-server`'s `the_router_names_no_rail` reads
+  its source and fails. **The formula is provisional** (`provisional-1`, a
+  configured weight per rail, `routing.weights`, default 100, ties to the
+  lower rail code) until the maintainer answers RFC-0008's revision R8. A
+  new component is a `Component` variant and its breakdown entry, not a sort
+  key. vpay's evidence:
+  `docs/status/verification/2026-10-23-method-type-routing.md`.
 - **RFC-0009 — provider accounts per merchant** (added 2026-10-16, not
   part of vaam-apps/vpay#244; **revised 2026-10-22** in vaam-apps/vpay#336).
   It has two phases:
@@ -626,7 +664,8 @@ section as a decision:
   "Let's do a full implementation and warn the developer about the risks in
   prod. They never answered to me too". **ADR-0031** then amended rule 3 for
   every provider, on six conditions (way B, taken openly). The adapter,
-  `vpay-adapter-notchpay`, is a `Push` rail on `cm.mobile`, the first
+  `vpay-adapter-notchpay`, is a `Push` rail on `cm.mobile` (and, since
+  2026-10-23, `cm.mtn` / `cm.orange` per charge), the first
   shipping `Origin` rail, with refunds as the declared token
   `notchpay::refund`. **It has called Notch Pay's sandbox, and nothing
   else**: RFC-0012's step 5 ran on 2026-10-21 (three test-mode payments

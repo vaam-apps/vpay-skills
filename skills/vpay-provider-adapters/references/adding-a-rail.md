@@ -287,6 +287,15 @@ Not in `docs/flows/provider-port.md`, but required:
   (`docs/api/`, both SDKs). A push rail also gets a confirm shape in both
   SDKs (`ConfirmPaymentIntentParams::notchpay(msisdn)` in Rust, a
   `NotchPayPaymentMethodData` in Node) and a `docs/sdks/parity.md` row.
+- **`Capabilities::method_types`** (since 2026-10-23): the payment-method
+  types the rail serves, at least one. Add the rail's row to the conformance
+  suite's `every_adapter_declares_the_method_types_it_serves`, which pins
+  every rail's set exactly, and to `docs/plans/2026-10-23-method-type-routing.md`'s
+  vocabulary table. A rail serving a type another rail already serves joins
+  the router's candidates for it at once, at the default weight: say so in
+  the pull request, because payers of that network may start going through
+  it (ties go to the lower rail code). If it serves several types, read
+  `ChargeRef::method_type` the way `notchpay`'s `channel_for` does.
 - `vpay_config::config::REQUIRED_RAIL_KEYS` — a row for the rail. **Since
   2026-10-20 a row has three more columns:** `setting_values` (a setting
   that must be one of a closed list), `currencies` (empty is any), and

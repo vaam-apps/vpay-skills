@@ -121,6 +121,20 @@ This table is a provider-code match outside an adapter crate, which ADR-0002
 forbids; it is a deliberate, recorded interim (ADR-0012) and it carries a
 comment saying so.
 
+**`routing.weights` refusals (since 2026-10-23), all exit `78`.** Four are
+the file's: `UnknownRoutingRail` (the entry names a rail no `providers[]`
+entry configures), `UnknownMethodType` (not `mtn_wallet`/`orange_wallet`; the
+message says "reserved and not built yet" for `card` and `bank_transfer`),
+`RoutingWeightTooLarge` (over `1000`) and `DuplicateRoutingWeight`. Two come
+from boot step 4, after the file loaded clean, because they need the adapter:
+`RoutingWeightOnAnUnservedType` — a weight for a type that rail does not
+serve, e.g. `orange_money` with `mtn_wallet`; delete the entry — and
+`RailServesNoMethodType`, an enabled rail whose adapter declares no type.
+That last one no YAML can cause: it is a binary linking an adapter that
+forgot `Capabilities::method_types`, and the conformance suite should have
+failed first. A `deny_unknown_fields` load error under `routing:` is a typo'd
+key (`weigth`, `method`).
+
 ## A flag that is accepted and does nothing, and one that is refused
 
 `--public-base-url` was removed 2026-09-03. The two halves behave differently:

@@ -12,6 +12,69 @@ publishes no release tags and its workspace version has never moved off
 `v0.5.0` as of 2026-09-23 — and its workspace version is `0.5.0`. The naming
 rule stands, for the reasons VERSIONING.md now gives.)_
 
+## 2026-10-23 — payment-method types and a scored, explained router (ADR-0029 D6/D10, RFC-0008 revised)
+
+Read against vaam-apps/vpay's `master` at `c672fffc` (the merge of
+vaam-apps/vpay#341), restamped with the merge of the pull request that lands
+this when it does. The maintainer: "we need a way to differentiate mtn x
+notchpay and mtn x direct; same with orange and the future integrations", "A
+user should be proposed all methods, and he himself should choose orange or
+mtn or whatever, then we'll show him the correct rail. Simple", then "I think
+routing should be though again. We should have a score of each payment
+solution for each checkout"; they confirmed `mtn_wallet` and `orange_wallet`.
+vpay's evidence page is
+`docs/status/verification/2026-10-23-method-type-routing.md`; the design is
+RFC-0008's 2026-10-23 revision and `docs/plans/2026-10-23-method-type-routing.md`.
+
+- `vpay-provider-adapters` (`SKILL.md`, `references/adding-a-rail.md`): a new
+  § "Method types and the router": `Capabilities::method_types` per rail,
+  `ChargeRef::method_type`, the boot refusal, the conformance table a new
+  rail joins, and that the router names no rail and its formula is
+  provisional.
+- `vpay-merchant-api` (`references/objects.md`): `payment_method_types` takes
+  method types beside rail codes; a confirm by type is routed; the
+  `payment_method_options[<type>][rail]` pin; the decision is on no `/v1`
+  object.
+- `vpay-notchpay` (`SKILL.md`): the channel is per charge, `cm.mtn` /
+  `cm.orange` from the method type, `cm.mobile` for a rail-code charge;
+  stub-proven only; Notch Pay wins `orange_wallet` on the tie-break.
+- `vpay-data-layer` (`SKILL.md`): migration `0052`, `charges.method_type`,
+  `routing_decisions`, and the drift at 209 over 28 with 20 unmappable
+  columns (and the 206 over 27 of `0050`, which it had not recorded).
+- `vpay-ops` (`references/configuration.md`): the `routing:` block, its
+  defaults, the six refusals, and where a decision is read.
+- `vpay-troubleshooting` (`references/config-boot.md`): the six
+  `routing.weights` refusals, which are the file's and which are boot step 4's.
+- `vpay-payments` (`SKILL.md`): the router is built and still one charge per
+  intent.
+- `vpay-conventions` (`references/adr-index.md`): ADR-0029's D6, D7, D10
+  built, D12/D13 confirmed for the wallets, D8/D9 reopened; RFC-0008 revised
+  and partly built.
+- `vpay-sdks` (`SKILL.md`, `references/stripe-compat.md`): both SDKs spell the
+  two types on a create; confirm by type and the pin are a dated parity gap.
+
+### Stopped being true
+
+- "`payment_method_types` holds rail codes" / "still holds rail codes and no
+  router exists" (`vpay-provider-adapters`, `vpay-conventions`,
+  `vpay-merchant-api`'s "rail codes: `mtn_momo`, `orange_money`"). It takes
+  rail codes **and** `mtn_wallet` / `orange_wallet`, and
+  `vpay_core::routing::route` is the router.
+- "None of those identifiers exists" (RFC-0004 § 7's `method_types`).
+  `Capabilities::method_types` exists; `amount_limits`,
+  `supports_off_session`, `charge_stored` and `ProviderFlow::Instructions`
+  still do not.
+- "`cm.mtn` and `cm.orange` wait for ADR-0029 D6 (RFC-0012 step 8)" and
+  "`cm.mtn` / `cm.orange` (step 8)" as a gap (`vpay-notchpay`). They are sent
+  per charge; what is still a gap is a sandbox run on them.
+- "D12–D17 … need the maintainer's confirmation" as a whole. D12's two wallet
+  spellings and D13's `collapse` are confirmed; D8 and D9 are reopened rather
+  than accepted as written.
+- "The router … still Draft and unbuilt" / "accepted … and still unbuilt"
+  (`vpay-payments`). Built, with the provisional formula `provisional-1`.
+- "201 over 26 relations" as the current drift (`vpay-data-layer`). 209 over
+  28, with 20 unmappable columns.
+
 ## 2026-10-23 — a rail-issued reference is committed before the prompt (ADR-0032)
 
 Read against vaam-apps/vpay's `master` at `3633ca0c`, the merge of

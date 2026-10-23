@@ -76,7 +76,7 @@ Also in `ids`: `CLIENT_SECRET_INFIX` (`_secret_`), `client_secret_suffix()`
 | `amount`               | integer                 | **minor units** — see `vpay-payments`                  |
 | `currency`             | string                  | **lowercase on the wire**, uppercase in the database   |
 | `status`               | enum                    | `IntentStatus` — five values, **no `failed`**          |
-| `payment_method_types` | string[]                | rail codes: `mtn_momo`, `orange_money`                 |
+| `payment_method_types` | string[]                | rail codes and/or method types — see below the table   |
 | `next_action`          | object or null          | redirect rails only                                    |
 | `last_payment_error`   | object or null          | `{ code, message }`                                    |
 | `metadata`             | object of string→string |                                                        |
@@ -84,6 +84,25 @@ Also in `ids`: `CLIENT_SECRET_INFIX` (`_secret_`), `client_secret_suffix()`
 | `customer`             | string or null          | `cus_…`; accepted-and-dropped before S4a, stored since |
 | `created`              | integer                 | Unix **seconds**                                       |
 | `livemode`             | boolean                 |                                                        |
+
+**`payment_method_types` takes two kinds of value since 2026-10-23**
+(ADR-0029 D6). A **rail code** (`mtn_momo`, `orange_money`, `notchpay`) means
+that rail, pinned, exactly as before. A **method type** (`mtn_wallet`,
+`orange_wallet`) means the payer's wallet network: a create accepts one only
+when an enabled rail serves it in the intent's currency (else `400` naming
+`payment_method_types`; `card` and `bank_transfer` are refused as reserved),
+and a confirm whose `payment_method_data[type]` is a type is **routed** to the
+highest-scored rail, with the payer's fields under the type
+(`payment_method_data[mtn_wallet][msisdn]`) and an optional pin,
+`payment_method_options[<type>][rail]=<code>` (a `400` naming it when that rail
+cannot take the payment; never a fallback). The object shows what the merchant
+asked for; **the chosen rail and the ranking are on no `/v1` object** (D10),
+only in `charges.method_type` and `routing_decisions`. The ranking's formula
+is provisional (`provisional-1`). `orange_wallet` can route to a redirect rail
+(`return_url`) or a push rail (`msisdn`), so a server confirming it should pin.
+Neither SDK can confirm by type yet (`docs/sdks/parity.md`, dated
+2026-10-23). Before 2026-10-23 this row read "rail codes: `mtn_momo`,
+`orange_money`".
 
 `PaymentIntentWithSecret` is the same object `#[serde(flatten)]`ed plus
 `client_secret` — **thirteen** keys plus one, as the table above lists and
@@ -284,6 +303,7 @@ Enforced in `vpay_api::v1::payment_intents` and shared by the other handlers:
 | request body (`/v1`)         | 64 KiB                                                    |
 
 Request encoding is `application/x-www-form-urlencoded`, Stripe-shaped:
-`metadata[order_id]=1234`, `payment_method_data[mtn_momo][msisdn]=…`, and
+`metadata[order_id]=1234`, `payment_method_data[mtn_momo][msisdn]=…` (or
+`[mtn_wallet]` for a method type), and
 **both** the indexed `payment_method_types[0]=…` form the SDKs send and the
 unindexed `payment_method_types[]=…` form the curl examples use.

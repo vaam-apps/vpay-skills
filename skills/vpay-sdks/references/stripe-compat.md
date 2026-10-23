@@ -108,8 +108,14 @@ prevent.
   `confirm: false` is accepted, because it asks for what the endpoint does.
 - **`payment_method_data.type` is a rail code** — `mtn_momo`, with the
   instrument under a key of the same name
-  (`payment_method_data[mtn_momo][msisdn]`). TypeScript users need a cast:
-  stripe-node's generated types know Stripe's methods, not vpay's rails.
+  (`payment_method_data[mtn_momo][msisdn]`) — **or, since 2026-10-23, a
+  payment-method type** (`mtn_wallet`, `orange_wallet`), which vpay routes to
+  a rail, with the instrument under the type's key and an optional
+  `payment_method_options[<type>][rail]` pin. Stripe's own
+  `payment_method_options` is a per-type options hash, so the shape is
+  Stripe's; the `rail` key is vpay's. TypeScript users need a cast for both:
+  stripe-node's generated types know Stripe's methods, not vpay's rails or
+  types. No Stripe-compat case exercises a method type yet.
 - **The fields that decide _where_ or _when_ money moves are refused, not
   ignored**, with a `400` naming the field in `error.param`: `capture_method`
   with any value but `automatic`, `application_fee_amount`, `transfer_data`,

@@ -1,6 +1,6 @@
 ---
 name: vpay-notchpay
-description: "The Notch Pay adapter (`vpay-adapter-notchpay`, rail `notchpay`, 2026-10-20) — a push rail for MTN MoMo and Orange Money through one aggregator account, admitted under ADR-0031 because its status read takes the key Notch Pay calls PUBLIC. Covers the production risk that admission accepts and the boot warning that states it, the six conditions an agent must not weaken, what Notch Pay's real sandbox answered on 2026-10-21 (step 1, through the probe) and what vpay itself did against it the same day (step 5: three test-mode payments through the adapter, sandbox only, one short `amounts.total` refused as `Malformed`, which since 2026-10-23 is `NeedsReconciliation` and escalates the charge to `unresolved` on the first read), then the MTN timeout, MTN canceled and Orange success numbers through vpay on 2026-10-22 (runbook B3b, all as mapped), why payments are addressed by Notch Pay's `trx.…` reference kept in `ref_extra` (fixed in vaam-apps/vpay#304, and met by Notch Pay's sandbox in step 5), the fail-closed `409` and its residual crash window, the 404 rule, the amount and `amounts.total` check on every success, the livemode key rule (`test.` or `test_`, corrected 2026-10-20), and why `refund` is a declared `NotImplemented` token. Load before changing `backends/crates/vpay-adapter-notchpay`, `backends/crates/vpay-notchpay`, its WireMock mappings or its config."
+description: "The Notch Pay adapter (`vpay-adapter-notchpay`, rail `notchpay`, 2026-10-20) — a push rail for MTN MoMo and Orange Money through one aggregator account, admitted under ADR-0031 because its status read takes the key Notch Pay calls PUBLIC. Covers the production risk that admission accepts and the boot warning that states it, the six conditions an agent must not weaken, what Notch Pay's real sandbox answered on 2026-10-21 (step 1, through the probe) and what vpay itself did against it the same day (step 5: three test-mode payments through the adapter, sandbox only, one short `amounts.total` refused as `Malformed`, which since 2026-10-23 is `NeedsReconciliation` and escalates the charge to `unresolved` on the first read), then the MTN timeout, MTN canceled and Orange success numbers through vpay on 2026-10-22 (runbook B3b, all as mapped), the per-charge channel (`cm.mtn`/`cm.orange` from the payer's method type, 2026-10-23, stub-proven only), why payments are addressed by Notch Pay's `trx.…` reference kept in `ref_extra` (fixed in vaam-apps/vpay#304, and met by Notch Pay's sandbox in step 5), the fail-closed `409` and its residual crash window, the 404 rule, the amount and `amounts.total` check on every success, the livemode key rule (`test.` or `test_`, corrected 2026-10-20), and why `refund` is a declared `NotImplemented` token. Load before changing `backends/crates/vpay-adapter-notchpay`, `backends/crates/vpay-notchpay`, its WireMock mappings or its config."
 ---
 
 # Notch Pay — the aggregator push rail
@@ -304,10 +304,22 @@ ADR-0031's conditions are the admission. **Weakening any one of them is
 
 ## How the adapter behaves, and why
 
-- **`Push`, `cm.mobile`, XAF only.** Boot refuses any other `channel` or
-  currency. `cm.mtn` and `cm.orange` wait for ADR-0029 D6 (RFC-0012 step 8):
-  configured for a whole deployment, either fails every payer on the other
-  network.
+- **`Push`, XAF only; the channel is per charge since 2026-10-23.** The
+  adapter serves two payment-method types (`Capabilities::method_types`:
+  `mtn_wallet`, `orange_wallet`) and sends `cm.mtn` or `cm.orange` from
+  `ChargeRef::method_type` (`method_type_channel`, `channel_for`; RFC-0012
+  step 8). A charge confirmed by the rail code `notchpay` carries no type and
+  keeps `settings.channel`, which boot still holds to exactly `cm.mobile`:
+  `cm.mtn` or `cm.orange` configured for a whole deployment would fail every
+  payer on the other network. ~~"`cm.mtn` and `cm.orange` wait for ADR-0029
+  D6"~~ was true until 2026-10-23. **Stub-proven only**: the stub's `process`
+  mapping admits the three channels, `confirm_rails.rs` reads the channel off
+  its journal, and no sandbox payment has used `cm.mtn` or `cm.orange`. Notch
+  Pay is the first rail the router can choose **for either network**: with
+  equal weights it wins `orange_wallet` over `orange_money` on the tie-break
+  (`notchpay` < `orange_money`), and loses `mtn_wallet` to `mtn_momo`. That
+  is `provisional-1`'s tie-break, not a decision about Notch Pay; an operator
+  changes it with `routing.weights` (`vpay-ops`).
 - **A charge is two port calls, with a commit between them** (since
   2026-10-23, ADR-0032; `submit` was both wire calls until then). The
   adapter declares `SubmitSteps::PrepareThenSubmit`. **`prepare`** is
@@ -317,10 +329,11 @@ ADR-0031's conditions are the admission. **Weakening any one of them is
   `transaction.reference` as `notchpay_reference`. The core commits it on
   the charge (`Charges::record_prepared`) and writes the `submit` row.
   **`submit`** is then `POST /payments/{notchpay_reference}` with `channel`
-  and `data.phone`, which prompts the payer; `Submitted` carries the same
-  key material. `submit` on a charge holding no `notchpay_reference` is
+  (the charge's, above) and `data.phone`, which prompts the payer;
+  `Submitted` carries the same key material. `submit` on a charge holding no `notchpay_reference` is
   `NeedsReconciliation` before any request; the core never sends one. The
-  wire is unchanged: the same two requests, bodies and order step 5 sent.
+  wire is the same two requests, bodies and order step 5 sent, except that
+  the process body's `channel` now follows the charge's method type.
 - **Since vaam-apps/vpay#304, payments are addressed by Notch Pay's
   reference** (`NOTCHPAY_REFERENCE`, `"notchpay_reference"` in `ref_extra`),
   because the sandbox answered `404` to ours (item 2). Do not "simplify" it
@@ -470,7 +483,8 @@ write to a real account, and Notch Pay's API cannot delete what it creates.
 
 Refunds as a call (RFC-0012 § 10 item 6; the sandbox answered `403` to
 `POST /refunds` on 2026-10-22, so nothing about replay is known). Model B / Sync / `X-Sync` (§ 10
-item 9; not offered). `cm.mtn` / `cm.orange` (step 8). Webhook signature
+item 9; not offered). `cm.mtn` / `cm.orange` against the real sandbox (built
+against the stub on 2026-10-23). Webhook signature
 verification (needs a port change; RFC-0014, vaam-apps/vpay#296, a draft,
 designs it, so do not build it inside a Notch Pay change). _(This list ended
 "Retiring or repairing a webhook endpoint (no working `DELETE`, no `PUT` in
