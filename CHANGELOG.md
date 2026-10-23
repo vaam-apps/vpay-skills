@@ -14,10 +14,8 @@ rule stands, for the reasons VERSIONING.md now gives.)_
 
 ## 2026-10-23 — an alert on the callback-endpoint counter, and unit tests for every alert rule
 
-Read against vaam-apps/vpay's `master` at `c672fffc` (the merge of
-vaam-apps/vpay#341), restamped with the merge of vaam-apps/vpay#343 when it
-lands: the pull request that adds `VpayCallbackEndpointUnconfirmed`, rebased
-on `c672fffc`. The maintainer asked whether
+Read against vaam-apps/vpay's `master` at `a008c05a`, the merge of
+vaam-apps/vpay#343, the pull request that adds `VpayCallbackEndpointUnconfirmed`. The maintainer asked whether
 an alert on RFC-0013's counter was possible ("#15: is it even possible at
 first?"), and was answered yes, with a proposal to test every rule. Their reply
 was "Fan out the work via sub-agents". vpay's evidence page is
