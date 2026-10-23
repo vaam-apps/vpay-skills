@@ -248,7 +248,10 @@ is the only kind `query_status` ever sees in production.
   (`PriorSubmits::Some` → `NeedsReconciliation`) and
   `notchpay_a_duplicate_no_submit_prompted_for_is_a_clean_decline`
   (`PriorSubmits::None` → `Rejected { provider_unavailable }`, and exactly
-  one request in the stub's journal). The census
+  one request in the stub's journal). That decline has no row in
+  `documented_declines`, so `the_declines_prove_every_code_each_rail_can_produce`
+  adds `provider_unavailable` for Notch Pay by hand, naming this case, as it
+  adds `provider_account_blocked` on every rail. The census
   `prepare_is_unsupported_exactly_on_a_one_step_rail` holds the method to
   the capability on every rail.
 - **`return_url: Some(..)` on both** — deliberately _not_ selected by flow.

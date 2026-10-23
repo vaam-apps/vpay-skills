@@ -33,7 +33,7 @@ moved.
 - `vpay-notchpay` (`SKILL.md`): `prepare` is initialize and prompts nobody,
   `submit` is process by the committed `trx.…`; the `409` decided by whether
   a `submit` row exists; the residual crash window, struck through and
-  dated.
+  dated; `PRODUCED_FAILURE_CODES` is five codes, with `provider_unavailable`.
 - `vpay-reconciler` (`SKILL.md`): a two-step rail's resubmit prepares first,
   and `recovery_step` still reads `submit` rows only.
 - `vpay-conventions` (`references/errors.md`, `references/adr-index.md`):
@@ -55,6 +55,10 @@ moved.
 - `notchpay_a_duplicate_it_cannot_resolve_fails_closed`, which no longer
   exists; its two successors are named.
 - "its ten methods" (`vpay-provider-adapters`'s description). Twelve.
+- "`PRODUCED_FAILURE_CODES` is four codes" (`vpay-notchpay`). Five: the
+  `409` with no `submit` row is `provider_unavailable`, and the adapter did
+  not declare it until review of vaam-apps/vpay#345 found the gap. No gate
+  had failed, because the decline table was short by the same code.
 
 Still true: a charge the one-call build left with an unanswered `submit` row
 and no `trx.…` is `NeedsReconciliation`, escalated at once; MTN and Orange

@@ -376,8 +376,11 @@ ADR-0031's conditions are the admission. **Weakening any one of them is
   sandbox read it for the canceled-by-user number, the evidence RFC-0012 § 4
   named; the public key can cancel too, so it is evidence, not proof.
   `expired` and `abandoned` are `payer_timeout`. Anything else is
-  `Malformed`. `PRODUCED_FAILURE_CODES` is four codes; nothing maps to
-  `insufficient_funds`, because the read names no reason.
+  `Malformed`. `PRODUCED_FAILURE_CODES` is five codes; nothing maps to
+  `insufficient_funds`, because the read names no reason. The fifth,
+  `provider_unavailable`, comes from no status: it is `prepare`'s `409`
+  with no `submit` row (ADR-0032), so the two-way gate adds it by hand, as
+  it adds `provider_account_blocked`.
 - **Callbacks**: the five `payment.*` events only; the charge is `data.trxref`
   if it is one of our UUIDs, else `data.reference` (since #304, after the
   measured payment shape; no webhook has been received to confirm the
