@@ -164,20 +164,30 @@ by `Debug`, never printed. **`callbacks.verify` is an acknowledgement, not a
 switch**: a configured secret is checked whatever it says. Boot step 4
 (`boot_seeds`) refuses, each **78** and naming the setting, never a value:
 
-| condition                                                                  | error                          |
-| -------------------------------------------------------------------------- | ------------------------------ |
-| an adapter's `callback_check` without `delivers_callbacks`                 | `IncoherentCallbackCheck`      |
-| livemode, a `Signature` rail, no secret, and no `callbacks.verify: off`    | `CallbackSigningSecretMissing` |
-| a signing secret (either name) or `verify: off` on a rail that checks none | `CallbackSigningSettingUnread` |
-| `verify: off` beside a configured secret                                   | `CallbackVerifyOffWithSecret`  |
+| condition                                                                  | error                                   |
+| -------------------------------------------------------------------------- | --------------------------------------- |
+| an adapter's `callback_check` without `delivers_callbacks`                 | `IncoherentCallbackCheck`               |
+| livemode, a `Signature` rail, no secret, and no `callbacks.verify: off`    | `CallbackSigningSecretMissing`          |
+| a signing secret (either name) or `verify: off` on a rail that checks none | `CallbackSigningSettingUnread`          |
+| `verify: off` beside a configured secret                                   | `CallbackVerifyOffWithSecret`           |
+| `callback_signing_secret_previous` without a non-blank current secret      | `CallbackSigningPreviousWithoutCurrent` |
+| a non-blank secret (either name) with surrounding whitespace               | `CallbackSigningSecretWhitespace`       |
 
 Outside livemode, no secret boots and `vpay-server serve` logs a `WARN`; with
 `verify: off` it warns at every boot in either mode. A blank value is no
-secret. **Rotating:** put the new value in `callback_signing_secret` and the
-old one in `_previous`, roll, update the provider's dashboard, then remove
-`_previous`. A stale secret shows as `vpay_provider_callbacks_total{verdict="invalid"}`
-with no `verified`, and costs callback latency, never money: the poll ladder
-still settles every charge.
+secret. The last two rows are the 2026-10-23 security review's, in both
+modes: a value created from a file that ends in a newline is refused rather
+than keying the HMAC on it (write the Secret with `--from-literal` or
+`printf %s`), and a previous secret alone is a rotation whose new key is
+missing. **Rotating:** put the new value in `callback_signing_secret` and the
+old one in `_previous`, roll, update the provider's dashboard; `serve` warns
+at every boot while `_previous` is set. Remove it once
+`vpay_provider_callbacks_total{verdict="verified_previous"}` stops
+increasing: until then whoever holds the old secret can still pull this
+rail's polls forward. A stale secret shows as
+`vpay_provider_callbacks_total{verdict="invalid"}` with no `verified`, and
+costs callback latency, never money: the poll ladder still settles every
+charge.
 
 **`to_provider_config(&Deployment)`** is "the only place a
 `vpay_provider::ProviderConfig` is built from configuration, so the server and

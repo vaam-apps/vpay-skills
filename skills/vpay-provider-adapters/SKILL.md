@@ -775,19 +775,29 @@ on 2026-10-23, lifting RFC-0012's "hash key is evidence only" rule for it.
 - **The port** (`vpay_provider::callback`, new): `CallbackRequest { headers,
 body, received_at }` (a hand-written `Debug` that prints header names and
   the body's length, registered in `debug_protections`), `CallbackVerdict`
-  (`Verified`, `Invalid(&'static str)`, `NotChecked`, `NoSecret`,
-  `Unavailable(&'static str)`; `#[non_exhaustive]`; only the first three
-  admit the pull-forward), and **`ProviderAdapter::verify_callback(request,
-charge, config)`**, defaulting to `NotChecked`. `parse_callback` is
-  unchanged. `Measured` forwards it and counts nothing.
+  (`Verified`, `VerifiedPrevious`, `Invalid(&'static str)`, `NotChecked`,
+  `NoSecret`, `Unavailable(&'static str)`; `#[non_exhaustive]`; `Verified`,
+  `VerifiedPrevious`, `NotChecked` and `NoSecret` admit the pull-forward,
+  `Invalid` and `Unavailable` do not), and
+  **`ProviderAdapter::verify_callback(request, charge, config)`**,
+  defaulting to `NotChecked`. `parse_callback` is unchanged. `Measured`
+  forwards it and counts nothing. **An adapter that declares a check and
+  keeps that default fails closed**: the route answers `Unavailable` and
+  logs `error`. _(2026-10-23 security review: this bullet said "only the
+  first three admit the pull-forward", which named `Invalid` and missed
+  `NoSecret`; `VerifiedPrevious` and the fail-closed rule are the review's.)_
 - **`Capabilities::callback_check`** (`None` | `BodyToken` | `Signature`) says
   what **vpay's adapter** checks, not what the rail sends;
   `callback_check_is_coherent` (`!delivers_callbacks ⇒ None`) is a boot
   refusal (`IncoherentCallbackCheck`). A new rail literal must set it.
 - **The secret is a credential under two port-fixed names**,
   `CALLBACK_SIGNING_SECRET` and `CALLBACK_SIGNING_SECRET_PREVIOUS`, read
-  through `callback_signing_secrets(config)`: not RFC-0014 § 5's illustrative
-  `callbacks.signing_secrets` list. Boot is generic over them (ADR-0002).
+  through `callback_signing_keys(config)` (each tagged
+  `vpay_provider::SigningKey`, so a match under the previous one answers
+  `VerifiedPrevious`): not RFC-0014 § 5's illustrative
+  `callbacks.signing_secrets` list. Boot is generic over them (ADR-0002),
+  and refuses a previous secret without a current one and a secret with
+  surrounding whitespace.
 - **One MAC comparison** for the workspace: `hmac_sha256_hex_matches`
   (`Mac::verify_slice`, constant time). Do not write an `==` on a MAC in an
   adapter; `the_comparison_is_the_constant_time_one` reads the source.

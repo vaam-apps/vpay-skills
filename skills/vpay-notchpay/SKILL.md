@@ -405,7 +405,8 @@ ADR-0031's conditions are the admission. **Weakening any one of them is
   checked** (RFC-0014): `notchpay` declares `CallbackCheck::Signature`, and
   `verify_callback` accepts `x-notch-signature` only when it is the hex
   HMAC-SHA256 of the **raw body** under `credentials.callback_signing_secret`
-  (or `_previous`, during a rotation), compared in constant time by
+  (`Verified`) or, during a rotation, `_previous` (`VerifiedPrevious`, counted
+  as `verified_previous`), compared in constant time by
   `vpay_provider::callback::hmac_sha256_hex_matches`. No secret configured is
   `NoSecret` (today's pull-forward); a missing or wrong signature is
   `Invalid`, and the route moves nothing and answers the same `202`.
@@ -510,6 +511,13 @@ Without it a sandbox `WARN`s and **livemode refuses to boot**
 `callbacks: { verify: off }`, the operator's written acceptance; `off`
 beside a secret is refused (`CallbackVerifyOffWithSecret`). Do not add
 `verify: off` to make a livemode boot pass without that person's decision.
+Since the 2026-10-23 security review, in either mode: a Hash Key with a
+trailing newline or other surrounding whitespace is refused
+(`CallbackSigningSecretWhitespace`; create the Secret with `--from-literal`,
+not `echo` into a file), `_previous` without a current key is refused
+(`CallbackSigningPreviousWithoutCurrent`), and `serve` warns at every boot
+while `_previous` is set; remove it once `verified_previous` stops
+counting.
 `config/application-notchpay-sandbox.yml` configures no secret, so runbook
 B's stack answers `NoSecret`.
 

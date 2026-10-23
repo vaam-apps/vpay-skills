@@ -124,7 +124,14 @@ webhooks go unverified; do not add it to make a boot pass without that
 person's decision. `CallbackVerifyOffWithSecret` is `off` beside a secret
 (remove one). `CallbackSigningSettingUnread` is a signing secret or
 `verify: off` on `mtn_momo` or `orange_money`, which check nothing (remove
-it). `IncoherentCallbackCheck` is an adapter bug, not the YAML. A
+it). `CallbackSigningSecretWhitespace` is a Hash Key with surrounding
+whitespace, almost always a trailing newline from a Secret created from a
+file (recreate it with `--from-literal` or `printf %s`); the message names
+the setting, never the value. `CallbackSigningPreviousWithoutCurrent` is
+`callback_signing_secret_previous` with no current secret, often an empty
+variable behind the current one: set it, or move the value to
+`callback_signing_secret`. Both since the 2026-10-23 security review, in
+either mode. `IncoherentCallbackCheck` is an adapter bug, not the YAML. A
 `${NOTCHPAY_HASH_KEY}` the environment lacks is the ordinary unresolved
 placeholder, also `78`. A sandbox with no secret boots and `WARN`s once,
 from `vpay-server serve`.

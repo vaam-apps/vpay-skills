@@ -263,9 +263,13 @@ with vpay#244, 0009 on 2026-10-16, 0010 and 0011 on 2026-10-17, and 0012,
   `ProviderAdapter::verify_callback` and `Capabilities::callback_check`, run
   after the charge is found; the verdict gates only the pull-forward, so
   callbacks stay hints. The secret is a credential under port-fixed names,
-  not § 5's list; four boot refusals, all `ConfigError` exit 78
+  not § 5's list; six boot refusals, all `ConfigError` exit 78
   (`IncoherentCallbackCheck`, `CallbackSigningSecretMissing`,
-  `CallbackSigningSettingUnread`, `CallbackVerifyOffWithSecret`). Notch Pay
+  `CallbackSigningSettingUnread`, `CallbackVerifyOffWithSecret`, and from the
+  same day's security review `CallbackSigningPreviousWithoutCurrent` and
+  `CallbackSigningSecretWhitespace`); a declared check that is not performed
+  fails closed at the route; a match under the previous secret is
+  `verified_previous`. Notch Pay
   was the first consumer, not Orange: Orange's `BodyToken` (open question 2)
   is not built, nor are Stripe's and PayPal's. The RFC's § "Built" records
   every choice it left open. It **lifts RFC-0012 § 2's "hash key is evidence

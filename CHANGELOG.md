@@ -26,23 +26,37 @@ delivered: the 2026-10-23 sandbox run found an API-created endpoint stored
 with `"url": null`, so a real check needs the Hash Key and a
 dashboard-registered endpoint.
 
+An independent security review of the branch the same day found no security
+defect, and its should-fix findings are built and read here too: a declared
+check that is not performed fails closed at the route; a match under the
+previous secret is `CallbackVerdict::VerifiedPrevious`
+(`verdict="verified_previous"`), with a `WARN` at every `serve` boot while
+it is set; two more refusals, `CallbackSigningPreviousWithoutCurrent` and
+`CallbackSigningSecretWhitespace`; and the route borrows the rail's
+configuration instead of cloning its credentials. vpay's record is the
+verification page's "Security review" section.
+
 - `vpay-provider-adapters` (`SKILL.md`, `references/adding-a-rail.md`):
   RFC-0014 rewritten from "nothing in it is built" to what is: `vpay_provider::callback`
   (`CallbackRequest`, `CallbackVerdict`, the port-named signing-secret
   credentials, the one constant-time HMAC comparison),
   `ProviderAdapter::verify_callback`, `Capabilities::callback_check`, the
-  conformance census and its per-rail signing row, and the four boot
-  refusals; what a new signing rail must do.
+  conformance census and its per-rail signing row, and the six boot
+  refusals; what a new signing rail must do (answer `key.verified()`; a
+  declared check left on the default fails closed). The `CallbackVerdict`
+  bullet's "only the first three admit the pull-forward" was wrong as
+  written (it named `Invalid` and missed `NoSecret`) and is corrected.
 - `vpay-notchpay` (`SKILL.md`): the signature is checked; the Hash Key is a
   credential (`callback_signing_secret`, `${NOTCHPAY_HASH_KEY}`); the livemode
   refusal and `callbacks.verify: off`; raw body versus re-serialisation is
   RFC-0012 § 10 item 7, still open; replay accepted.
 - `vpay-ops` (`references/configuration.md`, `references/observability.md`):
-  the signing secrets, `callbacks.verify`, the four refusals, rotation, and
-  the fifteenth metric, `vpay_provider_callbacks_total{provider,verdict}`.
+  the signing secrets, `callbacks.verify`, the six refusals, rotation and its
+  end signal (`verified_previous`, the boot `WARN`), and the fifteenth metric,
+  `vpay_provider_callbacks_total{provider,verdict}`.
 - `vpay-conventions` (`references/adr-index.md`): RFC-0014 partly built, and
   RFC-0012 § 2's refusal lifted for this purpose.
-- `vpay-troubleshooting` (`references/config-boot.md`): the four
+- `vpay-troubleshooting` (`references/config-boot.md`): the six
   `78`s and which one a real deployment meets.
 - `vpay-merchant-api` (`references/routes.md`) and `vpay-reconciler`
   (`SKILL.md`): the callback route's new step, and that a refused callback is
