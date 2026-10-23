@@ -299,7 +299,15 @@ prepaid balance, the statement matcher and the router are still Draft and
 unbuilt, and out-of-band `bank_transfer` is a label a merchant sends, not
 RFC-0007's matcher. _(Corrected 2026-10-17: the router — RFC-0008 — is
 **accepted** through ADR-0029, less its § 7 on health, and still unbuilt;
-the prepaid balance and the statement matcher remain Draft.)_
+the prepaid balance and the statement matcher remain Draft.)_ **_(Corrected
+2026-10-23: the router is built, with a provisional formula.)_** A confirm
+naming a payment-method type (`mtn_wallet`, `orange_wallet`) is routed by
+`vpay_core::routing::route` before the charge is opened, and the charge's
+transaction also commits its `routing_decisions` row. **Still one charge per
+intent** (D11): a decline returns the intent to `requires_payment_method` on
+the rail that declined, and nothing retries it elsewhere. The score is a
+configured weight only (`provisional-1`); RFC-0008's 2026-10-23 revision
+asks the maintainer which components it should have.
 
 ## Status, as of 2026-09-29; testing evidence corrected 2026-10-20
 

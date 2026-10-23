@@ -91,7 +91,11 @@ during a rail outage (`provider_unavailable`) at all — and that set includes
 `charge_declined`, **a rail decision rather than a rail failure**. On mobile
 money that is a large, normal share of traffic. Whether to exclude declines is a
 maintainer decision to be made with the threshold itself, against measured
-traffic. See `docs/runbooks/provider-error-rate.md`.
+traffic. See `docs/runbooks/provider-error-rate.md`. Since 2026-10-23 the set
+also includes `charge_needs_reconciliation` (vaam-apps/vpay#313). That one is
+not a rate problem: each escalates one charge to `unresolved`, so
+`VpayUnresolvedChargesRising` and `docs/runbooks/unresolved-charges.md` cover
+it, and an `unresolved` charge is no longer always 24 hours old.
 
 ## Alert rules
 
@@ -104,7 +108,39 @@ is off by default.
 
 The `Alert` column in `docs/runbooks/README.md` maps each rule to the runbook
 its `runbook_url` points at: `VpayUnresolvedChargesRising`,
-`VpayProviderErrorRateHigh`, `VpayJobQueueBehind`, `VpayJobsDeadLettered`.
+`VpayProviderErrorRateHigh`, `VpayJobQueueBehind`, `VpayJobsDeadLettered`,
+and since 2026-10-23 `VpayCallbackEndpointUnconfirmed`
+(`docs/runbooks/callback-endpoints.md`).
+
+**`VpayCallbackEndpointUnconfirmed`** reads `vpay_callback_endpoint_checks_total`.
+It fires when a rail's `ensure_callbacks` passes ran across
+`metrics.prometheusRule.callbackEndpointWindow` (default `3h`, three hourly
+passes) and none counted `present`, `created` or `foreign`: every pass said
+`missing`, `drifted`, `failed` or `locked`. Three things to know before you
+change it:
+
+- It is written with `unless`, not `== 0`. A rail never once confirmed has no
+  confirming series at all, and `sum(...) == 0` over a series that does not
+  exist returns nothing. The comparison form cannot fire for a `check`
+  deployment that was never registered, or for a key refused from the first
+  pass.
+- It is a `warning`, in `check` mode too. Callbacks are hints, so a missing
+  endpoint costs latency and never money. The metric has no `registration`
+  label, and in `check` mode `missing` is what the operator asked to be told.
+- It cannot fire before a worker's second pass (a counter's first sample shows
+  no increase), and it cannot fire for a pass that never runs. The job rules
+  cover that case.
+
+**Every rule has unit tests (2026-10-23).** `just test-alert-rules` renders the
+rules with `helm template`, runs `promtool check rules`, and runs
+`promtool test rules` over `deploy/helm/vpay/ci/prometheusrule.test.yaml`. It
+**refuses a rendered rule that lacks a firing case or a silent case**, and a test
+of a rule the chart no longer renders. promtool compares annotations exactly,
+so changing a rule's description, a threshold or a window fails until the test
+file says the same. CI's `deploy (helm chart)` job runs it, with promtool
+3.13.5 pinned by SHA-256. The series are synthetic: this proves the
+expressions, and nothing about vpay's real series, which no Prometheus has
+scraped.
 
 `VpayPageableErrorEvents` has no runbook of its own: it fires on any error
 ADR-0011 classifies `Severity::Page`, and **the classification _is_ the alert —

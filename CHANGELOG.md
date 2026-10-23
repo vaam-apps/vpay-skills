@@ -14,9 +14,10 @@ rule stands, for the reasons VERSIONING.md now gives.)_
 
 ## 2026-10-23 — the built-stylesheet a11y case follows the theme's `var()` chain (vaam-apps/vpay#349)
 
-Read against vaam-apps/vpay#349's branch `claude/beautiful-albattani-b73uab`,
-cut from `master` at `8504536f` (the merge of vaam-apps/vpay#340). It has not
-merged yet, so no `SKILL.md` stamp moves; restamp at its merge commit. vpay's
+Read against vaam-apps/vpay#349's branch `claude/beautiful-albattani-b73uab`
+at `49f7d0a1`, which has vpay's `master` at `82a68f4e` (the merge of
+vaam-apps/vpay#348) merged in. It has not merged yet, so no `SKILL.md` stamp
+moves; restamp at its merge commit. vpay's
 evidence page is
 `docs/status/verification/2026-10-23-a11y-gate-built-stylesheet.md`.
 
@@ -46,6 +47,236 @@ evidence page is
 
 Still true: `pnpm -r test` and `just ci` build no Storybook, so the case
 reports one skip per app there, by design.
+## 2026-10-23 — payment-method types and a scored, explained router (ADR-0029 D6/D10, RFC-0008 revised)
+
+Read against vaam-apps/vpay's `master` at `f0a2f7d7`, the merge of
+vaam-apps/vpay#346, the pull request that adds method types and the router.
+The maintainer: "we need a way to differentiate mtn x notchpay and mtn x
+direct; same with orange and the future integrations", "A
+user should be proposed all methods, and he himself should choose orange or
+mtn or whatever, then we'll show him the correct rail. Simple", then "I think
+routing should be though again. We should have a score of each payment
+solution for each checkout"; they confirmed `mtn_wallet` and `orange_wallet`.
+vpay's evidence page is
+`docs/status/verification/2026-10-23-method-type-routing.md`; the design is
+RFC-0008's 2026-10-23 revision and `docs/plans/2026-10-23-method-type-routing.md`.
+
+- `vpay-provider-adapters` (`SKILL.md`, `references/adding-a-rail.md`): a new
+  § "Method types and the router": `Capabilities::method_types` per rail,
+  `ChargeRef::method_type`, the boot refusal, the conformance table a new
+  rail joins, and that the router names no rail and its formula is
+  provisional.
+- `vpay-merchant-api` (`references/objects.md`): `payment_method_types` takes
+  method types beside rail codes; a confirm by type is routed; the
+  `payment_method_options[<type>][rail]` pin; the decision is on no `/v1`
+  object.
+- `vpay-notchpay` (`SKILL.md`): the channel is per charge, `cm.mtn` /
+  `cm.orange` from the method type, `cm.mobile` for a rail-code charge;
+  stub-proven only; Notch Pay wins `orange_wallet` on the tie-break.
+- `vpay-data-layer` (`SKILL.md`): migration `0053`, `charges.method_type`,
+  `routing_decisions`, and the drift at 209 over 28 with 20 unmappable
+  columns (and the 206 over 27 of `0050`, which it had not recorded).
+- `vpay-ops` (`references/configuration.md`): the `routing:` block, its
+  defaults, the six refusals, and where a decision is read.
+- `vpay-troubleshooting` (`references/config-boot.md`): the six
+  `routing.weights` refusals, which are the file's and which are boot step 4's.
+- `vpay-payments` (`SKILL.md`): the router is built and still one charge per
+  intent.
+- `vpay-conventions` (`references/adr-index.md`): ADR-0029's D6, D7, D10
+  built, D12/D13 confirmed for the wallets, D8/D9 reopened; RFC-0008 revised
+  and partly built.
+- `vpay-sdks` (`SKILL.md`, `references/stripe-compat.md`): both SDKs spell the
+  two types on a create; confirm by type and the pin are a dated parity gap.
+
+### Stopped being true
+
+- "`payment_method_types` holds rail codes" / "still holds rail codes and no
+  router exists" (`vpay-provider-adapters`, `vpay-conventions`,
+  `vpay-merchant-api`'s "rail codes: `mtn_momo`, `orange_money`"). It takes
+  rail codes **and** `mtn_wallet` / `orange_wallet`, and
+  `vpay_core::routing::route` is the router.
+- "None of those identifiers exists" (RFC-0004 § 7's `method_types`).
+  `Capabilities::method_types` exists; `amount_limits`,
+  `supports_off_session`, `charge_stored` and `ProviderFlow::Instructions`
+  still do not.
+- "`cm.mtn` and `cm.orange` wait for ADR-0029 D6 (RFC-0012 step 8)" and
+  "`cm.mtn` / `cm.orange` (step 8)" as a gap (`vpay-notchpay`). They are sent
+  per charge; what is still a gap is a sandbox run on them.
+- "D12–D17 … need the maintainer's confirmation" as a whole. D12's two wallet
+  spellings and D13's `collapse` are confirmed; D8 and D9 are reopened rather
+  than accepted as written.
+- "The router … still Draft and unbuilt" / "accepted … and still unbuilt"
+  (`vpay-payments`). Built, with the provisional formula `provisional-1`.
+- "201 over 26 relations" as the current drift (`vpay-data-layer`). 209 over
+  28, with 20 unmappable columns.
+
+## 2026-10-23 — a rail-issued reference is committed before the prompt (ADR-0032)
+
+Read against vaam-apps/vpay's `master` at `3633ca0c`, the merge of
+vaam-apps/vpay#345, the pull request that adds `prepare`. The maintainer
+asked how to close Notch Pay's crash window ("#13: how do we do then?") and,
+answered with this design, said "Fan out the work via sub-agents". ADR-0032 is **Proposed**: the decisions in it
+are the implementing agent's. vpay's evidence page is
+`docs/status/verification/2026-10-23-two-step-submit.md`. No `SKILL.md` stamp
+moved.
+
+- `vpay-provider-adapters` (`SKILL.md`, `references/conformance.md`,
+  `references/adding-a-rail.md`): `prepare`, the twelfth method;
+  `submit_steps`, the capability that gates it; the error table's `prepare`
+  column; the conformance suite submitting a two-step rail through `prepare`,
+  Notch Pay's duplicate case split by `PriorSubmits`, and the census that
+  holds the method to the capability. "The ten methods" heading is "The
+  methods".
+- `vpay-notchpay` (`SKILL.md`): `prepare` is initialize and prompts nobody,
+  `submit` is process by the committed `trx.…`; the `409` decided by whether
+  a `submit` row exists; the residual crash window, struck through and
+  dated; `PRODUCED_FAILURE_CODES` is five codes, with `provider_unavailable`.
+- `vpay-reconciler` (`SKILL.md`): a two-step rail's resubmit prepares first,
+  and `recovery_step` still reads `submit` rows only.
+- `vpay-conventions` (`references/errors.md`, `references/adr-index.md`):
+  the `409` row of `NeedsReconciliation`, and ADR-0032's row.
+
+### Stopped being true
+
+- "Submit is two calls" (Notch Pay). It is two **port** calls, `prepare`
+  then `submit`, with the `trx.…` committed between them; the wire is the
+  same two requests.
+- "With `notchpay_reference` held, read it, and process only if `pending`"
+  (the `409`). A charge holding the reference is never initialized again.
+- "With none held, `NeedsReconciliation`" (the `409`). Only when a `submit`
+  row exists; with none, `Rejected { provider_unavailable }` and the charge
+  fails cleanly.
+- "This leaves a crash window … Do not claim it closed" and "a residual
+  crash window … State it as a risk; do not claim it is solved". Closed on
+  vpay's side; still never run against Notch Pay.
+- `notchpay_a_duplicate_it_cannot_resolve_fails_closed`, which no longer
+  exists; its two successors are named.
+- "its ten methods" (`vpay-provider-adapters`'s description). Twelve.
+- "`PRODUCED_FAILURE_CODES` is four codes" (`vpay-notchpay`). Five: the
+  `409` with no `submit` row is `provider_unavailable`, and the adapter did
+  not declare it until review of vaam-apps/vpay#345 found the gap. No gate
+  had failed, because the decline table was short by the same code.
+
+Still true: a charge the one-call build left with an unanswered `submit` row
+and no `trx.…` is `NeedsReconciliation`, escalated at once; MTN and Orange
+are `One` and their paths are unchanged; and the proof is WireMock and a
+real Postgres, not Notch Pay.
+
+## 2026-10-23 — an alert on the callback-endpoint counter, and unit tests for every alert rule
+
+Read against vaam-apps/vpay's `master` at `a008c05a`, the merge of
+vaam-apps/vpay#343, the pull request that adds `VpayCallbackEndpointUnconfirmed`. The maintainer asked whether
+an alert on RFC-0013's counter was possible ("#15: is it even possible at
+first?"), and was answered yes, with a proposal to test every rule. Their reply
+was "Fan out the work via sub-agents". vpay's evidence page is
+`docs/status/verification/2026-10-23-callback-endpoint-alert.md`.
+
+- `vpay-ops` (`references/observability.md`): the sixth rule,
+  `VpayCallbackEndpointUnconfirmed`. It fires when no `ensure_callbacks` pass
+  confirmed vpay's endpoint (`present`, `created`, `foreign`) for
+  `callbackEndpointWindow`, 3h. The section covers why it is `unless` and not
+  `== 0`, why it is a `warning` in `check` mode, and `just test-alert-rules`.
+- `vpay-tooling` (`SKILL.md`, `references/recipes.md`, `references/ci.md`):
+  the new recipe, what it needs (`helm` and `promtool`, no network), its
+  refusal of a rule without a firing and a silent case, and CI's
+  `deploy (helm chart)` job running it with promtool 3.13.5 pinned by SHA-256.
+- `vpay-troubleshooting` (`references/deployment.md`): what each of the
+  recipe's three failures means.
+- `vpay-provider-adapters` (`SKILL.md`): the counter is alerted on, and a new
+  `Registered` rail is covered without a rule change.
+
+### Stopped being true
+
+- "The alert rules are `VpayUnresolvedChargesRising`,
+  `VpayProviderErrorRateHigh`, `VpayJobQueueBehind`, `VpayJobsDeadLettered`"
+  plus `VpayPageableErrorEvents`: five. There are six.
+- "No alert rule on `vpay_callback_endpoint_checks_total`", RFC-0013's and its
+  verification page's "Not done". There is one.
+- "No rule has ever been evaluated by anything." Each is now evaluated by
+  `promtool`, against synthetic series, in CI.
+
+Still true: no Prometheus has ever scraped a vpay process, the rule group is
+off by default, and every threshold, the new 3h window included, is proposed
+and not measured.
+
+## 2026-10-23 — Fapshi, a desk study with no adapter
+
+Read against vaam-apps/vpay's `master` at `be31abcd`, the merge of
+vaam-apps/vpay#342, the pull request that adds `docs/plans/2026-10-23-fapshi-evaluation.md` and the
+`fapshi` row of `docs/status/providers.md`. The maintainer asked to "study
+fapshi as another payment provider too". The study reads Fapshi's public
+documentation only: no account, no key, no call.
+
+- `vpay-provider-adapters` (`SKILL.md`): `fapshi` joins the matrix's rows
+  with no RFC and no code; a paragraph on what the study found (all four hard
+  rules on paper, rule 3 as ADR-0029 wrote it, and four blockers), and an
+  instruction not to start an adapter before the written questions are
+  answered and the maintainer asks; the page in "Where to go next".
+
+### Stopped being true
+
+- "A row per provider (`mtn_momo`, `orange_money`, `notchpay`, `stripe`,
+  `paypal` and `flutterwave`)" in `docs/status/providers.md`: it has a
+  seventh row, `fapshi`. Nothing a skill said about any other row changed.
+
+## 2026-10-23 — an answer only a person can act on escalates at once (vaam-apps/vpay#313)
+
+Read against vaam-apps/vpay's `master` at `c672fffc`, the merge of
+vaam-apps/vpay#341, which closes vaam-apps/vpay#313 and whose branch was cut from
+`8504536f` (the merge of vaam-apps/vpay#340). The maintainer, on #313's three
+options: "Go with option 1 on #313, build it". vpay's evidence page is
+`docs/status/verification/2026-10-23-needs-reconciliation.md`.
+
+- `vpay-conventions` (`references/errors.md`): the seventh `ProviderError`
+  variant, `NeedsReconciliation`, and how to choose between it and
+  `Malformed`; the worker's two handlers that re-classify a leaf.
+- `vpay-reconciler` (`SKILL.md`): `unresolved` on the first
+  `NeedsReconciliation`, from the poll and from the resubmit, and what each
+  writes to `provider_requests`.
+- `vpay-notchpay` (`SKILL.md`): the three answers that moved (the short
+  collection and its siblings, the `409` with no `trx.…`, the read with no
+  `trx.…`) and condition 5's wording.
+- `vpay-orange-money` (`SKILL.md`): a missing `pay_token` is
+  `NeedsReconciliation`, not `Config`.
+- `vpay-provider-adapters` (`SKILL.md`): `Malformed` versus
+  `NeedsReconciliation`.
+- `vpay-ops` (`SKILL.md`, `references/observability.md`): the new
+  `error_kind`, and an `unresolved` charge that is not 24 hours old.
+- `vpay-notchpay`, `vpay-provider-adapters`: retiring a superseded or
+  duplicate Notch Pay webhook endpoint is an operator's task, by the
+  maintainer's decision ("#12 is nice but an operator's task only, not
+  code"), and leaves the "Not built" list.
+- `vpay-frontend`, `vpay-dashboard`, `vpay-checkout`: Next `^15.5.28` in the
+  two vpay apps and 16.4.2 in `examples/shop`, the bump in the same pull
+  request that clears GHSA-2464-fhr4-w9xw, GHSA-p3m5-59mp-jv5r and
+  GHSA-673q-mjm6-r5xr (vpay's
+  `docs/status/verification/2026-10-23-npm-advisories.md`).
+
+### Stopped being true
+
+- "`Malformed` is a `Warn`-severity rail error, so the worker retries it on
+  the ladder and wakes nobody; only at the 24 h poll horizon does the
+  charge become `unresolved`" — about Notch Pay's short collection. It is
+  `NeedsReconciliation`, and the charge is `unresolved` after its first such
+  read.
+- "With none held, `Malformed`" (Notch Pay's `409`). `NeedsReconciliation`,
+  and the resubmit escalates the charge instead of riding the ladder.
+- "A read of a charge with no `notchpay_reference` is `Config`" and "a
+  missing `pay_token` is `Config`". Both are `NeedsReconciliation`, which
+  keeps the poll job instead of dead-lettering it.
+- "Anything else is `Malformed`" (Notch Pay's condition 5, a success for
+  another amount or currency). `NeedsReconciliation`.
+- "The loop does not inspect variants" was true and still is; two handlers
+  do, and the skill now names them.
+- "Retiring or repairing a webhook endpoint (no working `DELETE`, no `PUT` in
+  the client)" as a Notch Pay gap. It is an operator's task in Notch Pay's
+  dashboard, not code vpay owes.
+- "Next `^15.5.27`" (the two vpay apps) and "16.3.8" (`examples/shop`).
+  `^15.5.28` and 16.4.2.
+
+Still true: `Malformed` is still an answer the adapter could not read, still
+`Warn`, still the ladder. And a real Notch Pay short collection has never been
+seen reaching `unresolved`: the proof is WireMock and a real Postgres.
 
 ## 2026-10-22 — vpay registers Notch Pay's callback endpoint itself (RFC-0013 steps 2–4)
 

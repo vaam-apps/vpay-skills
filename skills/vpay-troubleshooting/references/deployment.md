@@ -143,6 +143,27 @@ the chart; CI's `deploy` job runs it on every PR either way.
 The guard count "**said 15 until 2026-09-10**" and had been wrong since the
 sixteenth landed. It is 22.
 
+## `just test-alert-rules` fails
+
+Read which of its three refusals you hit.
+
+- **`the chart renders different alerts than … tests`.** You added, renamed or
+  removed a rule in `templates/prometheusrule.yaml` without the same change in
+  `deploy/helm/vpay/ci/prometheusrule.test.yaml`. Both directions fail on
+  purpose.
+- **`<alert> needs a firing case and a silent case`.** Every rule needs at least
+  one `exp_labels` case and one `exp_alerts: []` case.
+- **promtool's own `FAILED` with `exp:` and `got:`.** If the labels match and
+  only `Annotations:` differ, you edited a description, summary or a value it
+  interpolates (`providerErrorRatio`, a window). promtool compares annotations
+  exactly, so update the test's `exp_annotations`. If `got:[]` where an alert
+  was expected, the expression no longer selects the synthetic series. Before
+  "fixing" the test, check that the series still uses the label names the code
+  emits (`vpay_core::metrics`).
+
+It needs `helm` and `promtool` on PATH, and no network. CI's
+`deploy (helm chart)` job pins promtool 3.13.5 by SHA-256.
+
 ## Alerts that fire on a healthy system
 
 `VpayProviderErrorRateHigh`'s numerator is `error_kind!=""` — every failed port

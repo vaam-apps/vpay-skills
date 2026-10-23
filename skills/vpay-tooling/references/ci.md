@@ -84,7 +84,7 @@ comment; first-party `actions/*` use tags.
 | `deny` — _supply chain_          | `changes.deny`           | `EmbarkStudios/cargo-deny-action@v2`, `command: check`                                                                                                                                                                       |
 | `web`                            | `changes.web`            | `just audit-web`, `just fmt-check-web`, `just lint-web`, `pnpm -r test`, `just build-storybook` (which also runs both apps' `a11y-gate.test.ts` against its artefact, since 2026-10-23), `just test-storybook`               |
 | `e2e` — _e2e (compose)_          | `changes.e2e`            | Cypress install + verify, `just build-checkout-browser`, `just gen-demo-keys`, `docker compose up -d --build`, three readiness polls, `just demo-staff`, `just e2e-specs`, then the stripe-compat, Rust and Node live suites |
-| `deploy` — _deploy (helm chart)_ | `changes.deploy`         | `just helm-check`                                                                                                                                                                                                            |
+| `deploy` — _deploy (helm chart)_ | `changes.deploy`         | `just helm-check`, then promtool 3.13.5 (SHA-256-pinned) and `just test-alert-rules` (2026-10-23)                                                                                                                            |
 
 **The `verify` job has no `needs` and no `if`.** Every other job can be skipped
 by the path filter; the self-checks cannot. If you are wondering why a

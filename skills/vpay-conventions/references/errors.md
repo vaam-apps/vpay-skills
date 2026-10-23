@@ -222,6 +222,32 @@ port's own rustdoc, and `#![warn(clippy::missing_errors_doc)]` on
 `ProviderError::Rejected` is the seam between system errors and business
 outcomes. A rail declining a charge is not a system failure.
 
+**`ProviderError::NeedsReconciliation { context }` is the seam between "ask
+again" and "a person must look"** (vaam-apps/vpay#313, ADR-0011's 2026-10-23
+amendment). Its classification:
+
+- category `Rail`, so the API answers it as a `Malformed`: `502`, outcome
+  unknown;
+- code `charge_needs_reconciliation`;
+- severity `Error`;
+- a public message that names no rail text.
+
+Raise it when the adapter **understood** the rail and asking again cannot
+change the answer. Today only `notchpay` and `orange_money` do:
+
+- a `complete` for a sum that is not the charge's;
+- Notch Pay's `409` for a charge that lost its `trx.…` — since ADR-0032
+  (2026-10-23), `prepare`'s `409` and only when a `submit` row exists
+  (`PriorSubmits::Some`); with none, nobody was prompted and it is
+  `Rejected { provider_unavailable }`, a clean decline;
+- a charge with no rail key material to ask by.
+
+Raise `Malformed` when the answer could not be read: a later read may fix it,
+so the poll ladder retries it quietly. The worker escalates the charge to
+`unresolved` on the first `NeedsReconciliation`, at any age. Before
+2026-10-23, `Malformed` stood for both meanings, and the "needs an operator"
+case rode the ladder at `Warn` for 24 hours.
+
 ## Boundaries
 
 **HTTP.** Handlers return `Result<_, ApiError>` and use `?`. They never
@@ -232,7 +258,11 @@ convention. The full `Display` + source chain goes to the log; only
 `public_message()` goes to the merchant.
 
 **Worker.** Jobs return `Result<_, JobError>`; the loop calls `decision()` and
-logs at `severity()`. The loop does not inspect variants.
+logs at `severity()`. The loop does not inspect variants. Two **handlers**
+do, and they are the only composites that re-classify a leaf.
+`rail_did_not_answer` escalates a rail error past the 24-hour horizon. Since
+2026-10-23, it and `resubmit_charge` also escalate a `NeedsReconciliation` at
+any age. Both branch on the _variant_, never on its text or code.
 
 **Binaries.** `main` returns `ExitCode` and wraps an
 `async fn run() -> anyhow::Result<()>` in which every fallible startup step

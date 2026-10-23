@@ -1,6 +1,6 @@
 ---
 name: vpay-provider-adapters
-description: The vpay provider port (`vpay-provider`) and how to add a payment rail — the `ProviderAdapter` trait and its ten methods (payer_fields since 2026-09-16, accepted_exposure since 2026-10-20), the `Unsupported` vs `NotImplemented` rule that decides which error a missing operation returns, the rail-agnostic refund destination (`RefundDestination`, `RefundTarget`, `parse_destination`), the capability flags the core branches on instead of provider codes, the shared HTTP/token modules, the shared conformance suite a new adapter must pass, where per-provider state is written (`docs/status/providers.md`), the Draft designs for Stripe and PayPal adapters and for callback registration (RFC-0010, -0011, -0013), and the Notch Pay rail (RFC-0012), admitted under ADR-0031 and merged, called against Notch Pay's sandbox only (2026-10-21, step 5; load `vpay-notchpay` for it). Load this before writing or changing any `vpay-adapter-*` crate, before touching `backends/crates/vpay-provider`, and before adding a rail.
+description: The vpay provider port (`vpay-provider`) and how to add a payment rail — the `ProviderAdapter` trait and its twelve methods as of 2026-10-23 (payer_fields since 2026-09-16, accepted_exposure since 2026-10-20, prepare since 2026-10-23), the `Unsupported` vs `NotImplemented` rule that decides which error a missing operation returns, the rail-agnostic refund destination (`RefundDestination`, `RefundTarget`, `parse_destination`), the capability flags the core branches on instead of provider codes, the shared HTTP/token modules, the shared conformance suite a new adapter must pass, where per-provider state is written (`docs/status/providers.md`), the Draft designs for Stripe and PayPal adapters and for callback registration (RFC-0010, -0011, -0013), and the Notch Pay rail (RFC-0012), admitted under ADR-0031 and merged, called against Notch Pay's sandbox only (2026-10-21, step 5; load `vpay-notchpay` for it). Load this before writing or changing any `vpay-adapter-*` crate, before touching `backends/crates/vpay-provider`, and before adding a rail.
 ---
 
 # The provider port, and adding a rail
@@ -86,7 +86,8 @@ would bury our own bug among merchants' typos.
 **Where a provider's gaps are written down: `docs/status/providers.md`
 (since 2026-10-20).** One matrix, a row per provider (`mtn_momo`,
 `orange_money`, `notchpay`, `stripe`, `paypal` and `flutterwave` as of
-2026-10-20 — the last has no RFC and no code, and its admission is `unknown`)
+2026-10-20 — the last has no RFC and no code, and its admission is `unknown`;
+`fapshi` since 2026-10-23, also with no RFC and no code, from a desk study)
 and a column per thing the port asks of an adapter. It writes a gap
 by the rule above and by no other: a cell reads **unsupported** where the rail
 cannot (`ProviderError::Unsupported`, the capability flag `false` beside it)
@@ -101,11 +102,14 @@ row in the same change that moves the rail. **No gate reads the matrix**:
 page itself says deriving its capability columns from each adapter's
 `Capabilities` is not built — so a stale cell fails nothing.
 
-## The ten methods
+## The methods
 
-**Ten since the Notch Pay adapter (2026-10-20, vaam-apps/vpay#295,
-on `master` since `357c825`, after this page's stamp):**
-`accepted_exposure`, below. Everything else in this section was nine.
+**Twelve as of 2026-10-23.** ~~"The ten methods"~~ was this heading until
+then. Ten since the Notch Pay adapter (2026-10-20, vaam-apps/vpay#295,
+on `master` since `357c825`, after this page's stamp):
+`accepted_exposure`, below; eleven with `ensure_callback_endpoint`
+(2026-10-22); twelve with `prepare` (2026-10-23, ADR-0032, below).
+Everything else in this section was nine.
 
 ~~The seven methods~~ **Corrected 2026-09-23:** the trait has **nine** `fn`s
 at `b747e5d5`. The code block below always listed eight, and
@@ -116,7 +120,7 @@ saying "seven" through its `7997536b` stamp.
 against the shape before that does not compile against this port.
 
 ```rust
-fn code(&self) -> &'static str;                   // == the payment_method_types value
+fn code(&self) -> &'static str;                   // == a rail code in payment_method_types
 fn capabilities(&self) -> Capabilities;
 async fn submit(&self, charge, config)      -> Result<Submitted, ProviderError>;
 async fn query_status(&self, charge, config)-> Result<ChargeStatus, ProviderError>;
@@ -182,6 +186,24 @@ fn accepted_exposure(&self) -> Option<AcceptedExposure>; // default: None — si
   Only `notchpay` overrides it. _(This bullet said "RFC-0013 proposes a tenth
   method …; it does not exist" until 2026-10-22.)_
 
+- **`prepare` is the twelfth method (2026-10-23, ADR-0032).** It is
+  `async`, takes `(&ChargeRef, &ProviderConfig, PriorSubmits)`, answers
+  `Result<RefExtra, ProviderError>`, and defaults to `ProviderError::Unsupported`; called only on a rail whose
+  `submit_steps` is `PrepareThenSubmit`, before `submit`. It creates the
+  payment on the rail **without prompting anyone** and returns the key
+  material the rail is addressed by. The core writes a `prepare` row,
+  calls it, commits the answer on the charge (`Charges::record_prepared`),
+  and only then writes the `submit` row and calls `submit`, which on such a
+  rail is the prompt alone. `PriorSubmits` is the core's evidence: `None`
+  when no `submit` row exists for the charge (nothing ever asked the rail to
+  prompt), `Some` when one does. `Measured` forwards and counts it
+  (operation `prepare`). Only `notchpay` overrides it, as initialize. The
+  error table gains a `prepare` column: `Rejected` there also covers a rail
+  holding a payment no submit prompted for (`PriorSubmits::None`), and
+  `NeedsReconciliation` a duplicate a submit may have prompted (`Some`).
+  **Do not move the commit into the adapter**: an adapter that writes to the
+  database is a core concern in a rail crate (ADR-0002).
+
 - **The error-surface table in the trait's own doc comment is the contract.**
   It is a markdown grid, one row per `ProviderError` variant and one column
   per method. An adapter may raise fewer variants than a row allows; it may
@@ -202,20 +224,38 @@ fn accepted_exposure(&self) -> Option<AcceptedExposure>; // default: None — si
   load-bearing as the ticks — there, those variants would not merely be
   unused, they would be untrue.
 - **`submit` must report a duplicate as `Submitted`, never as an error.**
-  That is what makes same-reference retry safe after a crash.
+  That is what makes same-reference retry safe after a crash. On a two-step
+  rail that is `submit`'s own duplicate (Notch Pay's "already processed",
+  read and reported `Submitted`); `prepare`'s duplicate is the `409` above,
+  decided by `PriorSubmits` (2026-10-23).
 - **`query_status` must remain callable indefinitely**, long after any payer
   prompt expired. A rail with no record is `ChargeStatus::NotFound`, which is
   **not** an error and **not** a decline.
-- Only `ProviderError::Rejected` says the money did not move. `Transport` and
-  `Malformed` leave the charge's fate **unknown**, which is the distinction
-  the whole port is arranged around.
+- Only `ProviderError::Rejected` says the money did not move. `Transport`,
+  `Malformed` and `NeedsReconciliation` leave the charge's fate **unknown**,
+  which is the distinction the whole port is arranged around.
+- **`Malformed` versus `NeedsReconciliation`** (the seventh variant, since
+  2026-10-23, vaam-apps/vpay#313). `Malformed` is an answer the adapter could
+  not read, which a later read may fix; the poll ladder retries it at `Warn`.
+  `NeedsReconciliation { context }` is an answer the adapter understood and
+  refused for good, or lost key material it cannot ask without. Only a person
+  can settle it, and the worker escalates the charge to `unresolved` on the
+  first one. It gets code `charge_needs_reconciliation`, `Error`, and the
+  API's `502`. Pick by "can asking again change it?", never by how bad it
+  looks.
 
 ## Capabilities
 
 `flow` (`Push` | `Redirect`), `supports_refunds`,
 `supports_partial_refunds`, `delivers_callbacks`, `requires_ip_allowlist`,
 `supports_account_holder_lookup`, `refund_destination: RefundDestination`
-(`Origin` | `Required`, **new on 2026-09-15**), and — **new on 2026-10-22**
+(`Origin` | `Required`, **new on 2026-09-15**), `submit_steps: SubmitSteps`
+(`One` | `PrepareThenSubmit`, **new on 2026-10-23**, ADR-0032: whether a
+charge is one call that prompts, or `prepare` then `submit` with the
+rail-issued key material committed between them; `One` on `mtn_momo` and
+`orange_money`, `PrepareThenSubmit` on `notchpay`, not persisted, no
+coherence rule, and `prepare_is_unsupported_exactly_on_a_one_step_rail` holds
+the method to it), and — **new on 2026-10-22**
 (RFC-0013) — `callback_url_mode: CallbackUrlMode` (`PerRequest` |
 `Registered`): whether the rail is told its callback URL on every submit
 (`mtn_momo`'s `X-Callback-Url`, `orange_money`'s `notif_url`) or holds it
@@ -483,15 +523,19 @@ section as a decision:
 > adapter, and is not RFC-0007's `bank_transfer`, whose shape below is still
 > an open question.
 
-> **Qualified 2026-10-17.** RFC-0004 § 7 and RFC-0008 are **accepted**
-> through ADR-0029 (vaam-apps/vpay#275). That changes their standing, not
-> the tree: **none of the identifiers below exists**, `payment_method_types`
-> still holds rail codes, and an adapter written against them is written
-> against a design, as RFC-0010 and RFC-0011 are. ADR-0029 D2 says each
-> capability lands with its first consumer; do not add one to the port
-> ahead of the adapter that declares it. D12–D17 of that ADR (the method-type
-> spellings, `collapse`, `routing.requires`, fee schedules on the provider
-> account) are proposed and need the maintainer's confirmation.
+> **Qualified 2026-10-17, and again on 2026-10-23.** RFC-0004 § 7 and
+> RFC-0008 are **accepted** through ADR-0029 (vaam-apps/vpay#275). On
+> 2026-10-23 **one** of their identifiers was built:
+> `Capabilities::method_types` (§ "Method types" below), with D12's two
+> wallet spellings and D13's `collapse`, both confirmed by the maintainer
+> that day. **The rest below still does not exist**, and an adapter written
+> against it is written against a design, as RFC-0010 and RFC-0011 are.
+> ADR-0029 D2 says each capability lands with its first consumer; do not add
+> one to the port ahead of the adapter that declares it. D8 and D9 (fee
+> ascending) are **reopened**: the maintainer asked for "a score of each
+> payment solution for each checkout", and RFC-0008's 2026-10-23 revision
+> proposes one. D14–D17 (`card`'s presentation, `routing.requires`, fee
+> schedules on the provider account) are still proposed.
 
 - **RFC-0004 § 7 — one adapter per provider.** Every card or bank PSP that
   meets four hard rules gets its own adapter. The rules: vpay never holds the
@@ -499,8 +543,8 @@ section as a decision:
   query; a stub-able contract. Refunds, off-session charging and bank
   transfer become capabilities. It would add `supports_off_session`,
   `charge_stored`, `method_types`, `amount_limits` and
-  `ProviderFlow::Instructions`. **None of those identifiers exists.**
-  _Accepted 2026-10-17 (ADR-0029); still none exists._
+  `ProviderFlow::Instructions`. _Accepted 2026-10-17 (ADR-0029)._ **Only
+  `method_types` exists, since 2026-10-23**; the other four do not.
 - **RFC-0006 — card processing without a PSP.** A separately deployed card
   vault (`vpay-vault`), never linked into `vpay-server`, which appears to the
   core as one more rail (`vpay_vault`). It would also add
@@ -508,14 +552,14 @@ section as a decision:
 - **RFC-0007 — bank transfers reconciled from statements.** It leaves open
   whether `bank_transfer` is an adapter whose `query_status` answers
   `Unsupported`, or a new kind of settlement source.
-- **RFC-0008 — routing.** It separates the method type (`card`) from the rail
-  (`flutterwave`), so that `payment_method_types` would accept method types.
-  **Today `payment_method_types` holds rail codes**, and the checkout lists
-  rails in the order the merchant gave (`build_rails` in
-  `backends/crates/vpay-api/src/browser/checkout_sessions.rs`). _Accepted
-  2026-10-17 (ADR-0029, less its § 7 on health); the spellings `card`,
-  `mtn_wallet`, `orange_wallet`, `paypal` are the ADR's D12, proposed; no
-  router exists._
+- **RFC-0008 — routing.** It separates the method type (`mtn_wallet`) from
+  the rail (`notchpay`). _Accepted 2026-10-17 (ADR-0029, less its § 7 on
+  health); **revised 2026-10-23** to a score per checkout, and **partly
+  built** the same day_ (§ "Method types" below): `payment_method_types`
+  accepts `mtn_wallet` and `orange_wallet` beside rail codes, and the router
+  is `vpay_core::routing::route`. ~~"Today `payment_method_types` holds rail
+  codes … no router exists."~~ That was true until 2026-10-23.
+
 - **RFC-0009 — provider accounts per merchant** (added 2026-10-16, not
   part of vaam-apps/vpay#244; **revised 2026-10-22** in vaam-apps/vpay#336).
   It has two phases:
@@ -586,13 +630,15 @@ section as a decision:
   "Let's do a full implementation and warn the developer about the risks in
   prod. They never answered to me too". **ADR-0031** then amended rule 3 for
   every provider, on six conditions (way B, taken openly). The adapter,
-  `vpay-adapter-notchpay`, is a `Push` rail on `cm.mobile`, the first
+  `vpay-adapter-notchpay`, is a `Push` rail on `cm.mobile` (and, since
+  2026-10-23, `cm.mtn` / `cm.orange` per charge), the first
   shipping `Origin` rail, with refunds as the declared token
   `notchpay::refund`. **It has called Notch Pay's sandbox, and nothing
   else**: RFC-0012's step 5 ran on 2026-10-21 (three test-mode payments
   through the adapter, from the maintainer's MacBook: one `succeeded`, one
   `failed`, one short `amounts.total` refused as `Malformed` and never a
-  success), after step 1's probe the same day. No production, no live key,
+  success; since 2026-10-23 that refusal is `NeedsReconciliation`, which
+  escalates the charge to `unresolved` at once), after step 1's probe the same day. No production, no live key,
   no webhook received, no refund. Load the `vpay-notchpay` skill before
   touching it. Write "admitted under ADR-0031",
   **never** "rule 3 passes", and do not weaken any of ADR-0031's conditions:
@@ -611,13 +657,18 @@ section as a decision:
   `providers[].callbacks.register` (`ensure` default | `check` | `off`,
   refused on a `PerRequest` rail as `ConfigError::CallbacksOnPerRequestRail`);
   `vpay-server callbacks ensure [--check]`; the counter
-  `vpay_callback_endpoint_checks_total{provider,state}`. The marker is
+  `vpay_callback_endpoint_checks_total{provider,state}`, which the chart's
+  `VpayCallbackEndpointUnconfirmed` alerts on (2026-10-23,
+  `docs/runbooks/callback-endpoints.md`). A new `Registered` rail is covered
+  by it with no rule change, because the rule groups `by (provider)`. The marker is
   `vpay:{deployment.name}:{rail}:default`. **Never run against a real Notch
   Pay account** (delivery step 5); Stripe and PayPal have no adapter. Where
   it differs from the RFC: `Drifted` and `retirable` are new; Notch Pay's
   endpoint is recognised by a URL tag in its description, because Notch Pay
   answers `"url": null`; nothing is ever retired or repaired on Notch Pay
-  (no working `DELETE`, no `PUT`); a counter, not a gauge.
+  (no working `DELETE`, no `PUT`), which since 2026-10-23 is the maintainer's
+  decision rather than a gap ("an operator's task only, not code"); a
+  counter, not a gauge.
   _(The original entry, "added 2026-10-20; Draft, nothing in it is built", is
   kept below as written.)_
 - ~~**RFC-0013 — vpay registers its own callback endpoints** (added 2026-10-20;
@@ -695,6 +746,26 @@ public documentation only) found **no provider shown to accept Visa and
 Mastercard for a Cameroon merchant on a hosted page**. The providers' written
 answers come first.
 
+**Fapshi — a desk study, no adapter (2026-10-23).**
+`docs/plans/2026-10-23-fapshi-evaluation.md` read Fapshi's documentation and
+`openapi.json` only: no account, no key, no call. On paper it is a mobile-money
+aggregator (MTN and Orange in Cameroon, XAF) that passes all four hard rules,
+**rule 3 as ADR-0029 wrote it**: the status read takes `apiuser` and a secret
+`apikey`, so it would need no ADR-0031 exception and no boot warning. The page
+names four blockers before any code:
+
+- a resent Direct Pay may prompt the payer twice (no idempotency key, and
+  `externalId`'s uniqueness is undocumented), and only a lookup by an id of
+  vpay's, `GET /transaction/{userId}`, could guard it, if that lookup is
+  consistent;
+- Direct Pay is off in live mode and approved case by case;
+- there is no refund API;
+- the terms name "Fapshi Inc" and no licence, regulator or partner bank.
+
+There is no `vpay-fapshi` crate, no `fapshi` adapter code and no RFC. **Do not
+start one** before the page's written questions are answered and the
+maintainer asks for it; the page lists the order such work would follow.
+
 **RFC-0014 — verifying rail callbacks** (added 2026-10-20, merged as vpay
 `0977616` in vaam-apps/vpay#296; Draft, **nothing in it is built**). The
 maintainer answered "Yes, as its own piece of work" on 2026-10-20 to whether
@@ -712,6 +783,41 @@ forward), and every answer stays a byte-identical `202`. Its first consumer
 is proposed to be Orange, comparing the `notif_token` that `submit` already
 stores. Five open questions are the maintainer's.
 
+## Method types and the router (built 2026-10-23)
+
+A **method type** is what the payer uses; a **rail** is the adapter that
+processes it. Each adapter declares what it serves in
+`Capabilities::method_types` (`vpay_core::routing::MethodTypes`, a set):
+
+| Rail           | `method_types`                |
+| -------------- | ----------------------------- |
+| `mtn_momo`     | `mtn_wallet`                  |
+| `orange_money` | `orange_wallet`               |
+| `notchpay`     | `mtn_wallet`, `orange_wallet` |
+
+- **A new rail declares at least one type**, or boot refuses it when
+  enabled (`ConfigError::RailServesNoMethodType`), and the conformance
+  suite's `every_adapter_declares_the_method_types_it_serves` pins the exact
+  table above, so a rail added or changed fails there until the table names
+  it. `card` and `bank_transfer` are reserved spellings: no adapter may
+  declare them until RFC-0010 / D4 build them.
+- **`ChargeRef::method_type`** carries the payer's choice to `submit`,
+  `query_status` and `refund`. `None` means a charge confirmed by the code of
+  a rail serving several types, or one from before migration `0053`. An
+  adapter serving one type may ignore it; `notchpay` sends `cm.mtn` /
+  `cm.orange` from it and its `settings.channel` (`cm.mobile`) when it is
+  `None`.
+- **The router names no rail.** `vpay_core::routing::route` is one pure
+  function: a hard eligibility filter (serves the type, enabled, settles the
+  currency, the pin), then a score per candidate with a breakdown. Never add
+  a rail-code branch to it; `vpay-server`'s `the_router_names_no_rail` reads
+  its source and fails. **The formula is provisional** (`provisional-1`, a
+  configured weight per rail, `routing.weights`, default 100, ties to the
+  lower rail code) until the maintainer answers RFC-0008's revision R8. A
+  new component is a `Component` variant and its breakdown entry, not a sort
+  key. vpay's evidence:
+  `docs/status/verification/2026-10-23-method-type-routing.md`.
+
 ## Where to go next
 
 - [references/adding-a-rail.md](references/adding-a-rail.md) — the full
@@ -724,6 +830,7 @@ stores. Five open questions are the maintainer's.
 - `vpay-notchpay` skill — the aggregator push rail admitted under ADR-0031,
   and its production risk.
 - `docs/status/providers.md` (the per-provider matrix, 2026-10-20),
+  `docs/plans/2026-10-23-fapshi-evaluation.md` (Fapshi, a desk study),
   `docs/reference/vpay-notchpay.md` (the client crate, 2026-10-20),
   `docs/rfc/0012-notchpay-adapter.md`,
   `docs/rfc/0013-vpay-registers-its-own-callbacks.md`.

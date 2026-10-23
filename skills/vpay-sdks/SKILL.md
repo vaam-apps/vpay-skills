@@ -138,6 +138,18 @@ Neither rail on `master` at `b8be107` is one — both declare
 in Rust and `NotchPayPaymentMethodData` in Node, with one parity row and a
 test in each SDK.
 
+**`mtn_wallet` and `orange_wallet` join both SDKs' `PaymentMethodType` on
+2026-10-23**, on the **create** side only: a merchant can create an intent the
+server will route, and the hosted checkout can confirm it. Neither SDK's
+`ConfirmPaymentIntentParams` can confirm by type or send the
+`payment_method_options[<type>][rail]` pin — a ⛔ row dated 2026-10-23 in
+`docs/sdks/parity.md`. Do not paper over it with a confirm shape that guesses
+the fields: `orange_wallet`'s depend on the rail the server ranks first
+(`return_url` for `orange_money`, `msisdn` for `notchpay`). The Rust enum is
+`#[non_exhaustive]`, so the variants are additive. A type in a refund's
+`destination` or an account-holder lookup is refused by the server, which
+wants a rail code there.
+
 **And the sentence none of this changes: no rail has ever returned money to
 anyone.** A `201` from `refunds.create` means a row exists and its amount is
 reserved against the intent. It does not mean the payee has been paid: the

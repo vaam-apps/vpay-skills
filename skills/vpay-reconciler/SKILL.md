@@ -103,8 +103,10 @@ it, not derived from the error** (as of 2026-10-21, vaam-apps/vpay#314 and
 vaam-apps/vpay#316). `recovery_step` reads `submit` rows only, and turns any
 recorded status into `Advance` — "the rail accepted it". So for a `submit` the
 worker writes `status_code IS NULL` for every `ProviderError` **except a
-decline**: a `Malformed` submit (Notch Pay's unresolvable `409`, MTN's unfollowed
-`307`) has an _unknown_ fate on purpose. A `Rejected` resubmit **fails the charge
+decline**: a `Malformed` submit (MTN's unfollowed `307`) and a
+`NeedsReconciliation` submit (Notch Pay's unresolvable `409`, `Malformed` until
+2026-10-23; since ADR-0032 the same day it is raised by `prepare`, and only
+for a charge that has a `submit` row) have an _unknown_ fate on purpose. A `Rejected` resubmit **fails the charge
 first** (`settle_failed_with`: charge `failed`, intent back to the payer, one
 `payment_intent.payment_failed`) and only then records its row answered
 (`0` + `charge_declined`) — settlement first, so no worker path leaves a
@@ -123,7 +125,9 @@ nothing failed a declined resubmit: the charge stayed `submitting` and was
 resent after every third poll until the 24-hour horizon. A
 `Rejected` on a status _read_ does not fail the charge (Notch Pay raises it for
 our own refused keys). For a `query_status` the worker writes the `0` sentinel for
-`Malformed` and `Rejected` (the rail answered) and `NULL` for `Transport`,
+`Malformed`, `NeedsReconciliation` and `Rejected` (the rail answered; the one
+over-claim is a charge with no rail key material, refused before any request)
+and `NULL` for `Transport`,
 `Config`, `Unsupported` and `NotImplemented`; nothing reads those rows. **Do not
 make the submit side match the read side** — recording a refused submit as
 answered, without failing the charge, advances a charge the rail never accepted.
@@ -133,6 +137,53 @@ those stay `NULL` on a read and under-claim. See `docs/reference/vpay-worker.md`
 
 `RecoveryPolicy`: `not_found_streak: 3`, `not_found_window: 60 s`,
 `lease: ≥ 4 × DEFAULT_REQUEST_TIMEOUT`, `unresolved_after: 24 h`.
+
+**`unresolved` does not always wait 24 hours** (vaam-apps/vpay#313,
+2026-10-23). A `ProviderError::NeedsReconciliation` means the adapter
+understood the rail and asking again cannot change the answer. When
+`query_status` raises it, `rail_did_not_answer` calls
+`escalate_to_unresolved` at once, through `needs_an_operator`. When `submit`
+raises it, `resubmit_charge` does the same. The result is the horizon's
+escalation:
+
+- `unresolved`;
+- `JobError::Exhausted`, hourly, `alert: true`;
+- never parked and never terminal, the reference unchanged;
+- a later terminal answer settles it the ordinary way.
+
+The resubmit job's hourly re-run finds the charge outside `submitting` and
+finishes without calling the rail, so the poll job carries the alert from
+there.
+
+It is the second arm of the one place a composite replaces a leaf's
+classification, and it matches the **variant**. Do not widen it to
+`Malformed`, which is an answer a later read may fix. Do not match on the
+error's text or code. `worker_recovery.rs` proves it with
+`a_short_collection_is_unresolved_on_the_first_poll_and_an_unreadable_answer_is_not`
+and two neighbours.
+
+**A two-step rail's resubmit prepares first** (2026-10-23, ADR-0032, a
+Proposed ADR built on the maintainer's instruction). On a rail declaring
+`SubmitSteps::PrepareThenSubmit` (`notchpay`), `resubmit_charge` calls
+`prepare_again` before `submit_again` when the charge holds no key material
+(`needs_prepare`): a `prepare` row, the call, `Charges::record_prepared`
+commits the reference, then the row is answered and `submit` follows. A
+charge that already holds key material skips it: a previous run prepared it
+and crashed before the prompt. `next_submit_attempt` returns `PriorSubmits`
+from the same read as the attempt number — no `submit` row is `None`, proof
+that nothing asked the rail to prompt, because every build writes that row
+before every submit call, and on a two-step rail only after the reference is
+committed. On Notch Pay a `409` from `prepare` with `None` is `Rejected
+{ provider_unavailable }` and fails the charge through `settle_failed_with`,
+then the `prepare` row is answered `charge_declined`; with `Some` it is
+`NeedsReconciliation` and escalates as above. **`recovery_step` reads
+`submit` rows only, and a `prepare` row is never one**: do not make it read
+them, or a lost `prepare` would look like a lost prompt. A one-call rail
+never reaches `prepare_again`. Proven against WireMock's Notch Pay and a
+real Postgres by six cases in `worker_recovery.rs`, among them
+`a_prepare_whose_answer_was_lost_fails_the_charge_and_never_prompts` (no
+process call in the stub's journal) and the two `a_one_call_charge_…` cases
+for charges a one-call build left in flight. Never run against Notch Pay.
 
 The `not_found_window` predicate is load-bearing and was added for a measured
 defect — see `references/the-confirm-poll-race.md`.

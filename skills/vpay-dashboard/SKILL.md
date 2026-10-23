@@ -10,7 +10,7 @@ description: The staff operator console at frontends/apps/dashboard — it is th
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
 
-`frontends/apps/dashboard` (`@vpay/dashboard`). Next ~~15.5.25~~ **`^15.5.27`** (since 2026-10-09, vaam-apps/vpay#272) App Router, React
+`frontends/apps/dashboard` (`@vpay/dashboard`). Next ~~15.5.25~~ ~~`^15.5.27`~~ **`^15.5.28`** (since 2026-10-23, vaam-apps/vpay#341; `^15.5.27` from 2026-10-09, vaam-apps/vpay#272) App Router, React
 19, Refine 5, `@vaam-apps/ui` `^0.5.0` (Material 3 Expressive) since
 2026-10-21 (vaam-apps/vpay#318, merged as `73c3a7cf`; it was `^0.4.0`). Its
 own `README.md` is the best in-repo companion, but ~~seven~~ ~~five~~ four of

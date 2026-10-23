@@ -212,13 +212,46 @@ table. Every boot of a deployment configuring it also logs a `WARN` about the
 public key's exposure (ADR-0031), acknowledged or not. The block ships
 **commented out** in `config/application.yml`, because uncommenting it makes
 `NOTCHPAY_PUBLIC_KEY` and `NOTCHPAY_PRIVATE_KEY` mandatory for every
-deployment.
+deployment. **`cm.mobile` is now only the channel of a charge confirmed by the
+rail code `notchpay`** (2026-10-23): a charge routed from `mtn_wallet` or
+`orange_wallet` is sent `cm.mtn` or `cm.orange` per charge, so the setting
+stays `cm.mobile`.
 
 This is a provider-code match outside an adapter crate — which ADR-0002 forbids
 — and it is a deliberate, recorded interim (ADR-0012) carrying a comment saying
 so. It moves behind the port the day `ProviderAdapter` grows a
 `required_settings()` hook. **It is the only sanctioned one; do not add a
 second.**
+
+## `routing:` — static weights for the router (since 2026-10-23)
+
+Optional. With no block, every rail weighs `100` for each payment-method type
+it serves, and ties go to the lower rail code — so out of the box
+`mtn_wallet` routes to `mtn_momo` and `orange_wallet` to `notchpay` when both
+rails are configured. That is a tie-break, not a choice; set weights if it is
+not the one you want:
+
+```yaml
+routing:
+  weights:
+    - rail: notchpay
+      method_type: mtn_wallet # optional; omitted = every type the rail serves
+      weight: 300 # 0 ..= 1000; highest total wins
+```
+
+The most specific entry wins (rail and type, then rail, then `100`). `0`
+ranks a rail last, it does not disable it; `enabled: false` does. **The
+weight is the only score component today, and the formula
+(`provisional-1`) is provisional** until the maintainer answers RFC-0008's
+2026-10-23 revision (fees, health, completion rate and latency are proposed,
+none built). Refusals, all exit `78`: `UnknownRoutingRail`,
+`UnknownMethodType` (reserved `card`/`bank_transfer` say so),
+`RoutingWeightTooLarge`, `DuplicateRoutingWeight` (all in `validate_all`),
+and at boot step 4 `RoutingWeightOnAnUnservedType` (e.g. `orange_money` with
+`mtn_wallet`) and `RailServesNoMethodType` (a linking mistake, not YAML).
+Every routed charge's decision, with each rail's score breakdown or exclusion
+reason, is in `routing_decisions` (`SELECT * FROM routing_decisions WHERE
+charge_id = …`); it is on no `/v1` object.
 
 ## The ten environment variables
 

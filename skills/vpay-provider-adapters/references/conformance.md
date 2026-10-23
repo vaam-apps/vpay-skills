@@ -238,6 +238,22 @@ is the only kind `query_status` ever sees in production.
   rail addressed by its own token, broke. The submit case asserts every
   seeded key comes back from `submit`; the push half of the duplicate case
   asserts the duplicate returns exactly the charge's key material.
+- **A two-step rail is submitted through `prepare`** (2026-10-23, ADR-0032).
+  `Rail::submit_as_the_core` clears the charge's key material, calls
+  `prepare` (`PriorSubmits::None`) and submits with what it returned, as the
+  core does; every submit case calls it, so a `PrepareThenSubmit` adapter is
+  exercised the way it runs. Notch Pay's old duplicate case
+  (`notchpay_a_duplicate_it_cannot_resolve_fails_closed`) became two:
+  `notchpay_a_duplicate_a_submit_may_have_prompted_for_fails_closed`
+  (`PriorSubmits::Some` → `NeedsReconciliation`) and
+  `notchpay_a_duplicate_no_submit_prompted_for_is_a_clean_decline`
+  (`PriorSubmits::None` → `Rejected { provider_unavailable }`, and exactly
+  one request in the stub's journal). That decline has no row in
+  `documented_declines`, so `the_declines_prove_every_code_each_rail_can_produce`
+  adds `provider_unavailable` for Notch Pay by hand, naming this case, as it
+  adds `provider_account_blocked` on every rail. The census
+  `prepare_is_unsupported_exactly_on_a_one_step_rail` holds the method to
+  the capability on every rail.
 - **`return_url: Some(..)` on both** — deliberately _not_ selected by flow.
   The core fills it for any charge whose merchant sent one and leaves it to
   the adapter to decide whether the rail has a use for it. A push rail's case
