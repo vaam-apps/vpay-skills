@@ -43,12 +43,12 @@ of it would report.
 
 ## The suites
 
-| Command                                       | What it is                                                                                                                                                                                                                                   |
-| --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `pnpm --filter @vpay/checkout test`           | The jsdom/node suite. `environment: "node"` by default so tests talking to `src/testing/browser-stub.ts` use the platform `fetch`; rendering tests opt in with a `// @vitest-environment jsdom` docblock. Run by `just test-web` → `just ci` |
-| `pnpm --filter @vpay/checkout test-storybook` | 22 stories in a real headless Chromium with axe over each. **Not** in `just ci` — it needs a ~115 MB Playwright Chromium and `just ci` must pass offline. CI's `web` job runs it                                                             |
-| `just build-storybook`                        | Builds both apps' Storybooks **and asserts the built stylesheet defines `--color-base-100`**                                                                                                                                                 |
-| `just test-e2e`                               | Cypress against the real compose stack                                                                                                                                                                                                       |
+| Command                                       | What it is                                                                                                                                                                                                                                       |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `pnpm --filter @vpay/checkout test`           | The jsdom/node suite. `environment: "node"` by default so tests talking to `src/testing/browser-stub.ts` use the platform `fetch`; rendering tests opt in with a `// @vitest-environment jsdom` docblock. Run by `just test-web` → `just ci`     |
+| `pnpm --filter @vpay/checkout test-storybook` | 22 stories in a real headless Chromium with axe over each. **Not** in `just ci` — it needs a ~115 MB Playwright Chromium and `just ci` must pass offline. CI's `web` job runs it                                                                 |
+| `just build-storybook`                        | Builds both apps' Storybooks **and asserts the built stylesheet defines `--color-base-100`**, then (since 2026-10-23) runs each app's `a11y-gate.test.ts` against that build with `VPAY_STORYBOOK_BUILT=1`, so case 6 runs in CI and cannot skip |
+| `just test-e2e`                               | Cypress against the real compose stack                                                                                                                                                                                                           |
 
 `vitest.config.ts` sets `esbuild.jsx: "automatic"` for the jsdom suite because
 the app's `tsconfig.json` says `"jsx": "preserve"` for Next.
@@ -68,7 +68,10 @@ A plain jsdom test, in the suite `just ci` does run, guarding a browser suite
 5. No story switches the addon off and nothing disables an axe rule. **This app
    pins the set at zero** — the expected arrays are empty, so the first
    suppression added fails `just ci` and has to be argued for in review.
-6. The **built** Storybook stylesheet actually defines `--color-base-100`.
+6. The **built** Storybook stylesheet actually defines `--color-base-100`,
+   and it resolves to a colour: every definition is a colour literal or a
+   `var()` of a property every definition of which is one (one level deep;
+   since 2026-10-23).
 
 ### Case 2 is not cosmetic
 
@@ -122,6 +125,18 @@ artefact on disk on purpose, so it can be inspected — and every later run of
 this test then reads that instead of the source. Re-run
 `just build-storybook`: if it exits 0, the tree was fine and the artefact was
 stale.
+
+**Corrected 2026-10-23 (vpay `9499f09d` plus the change that lands this).**
+Until then case 6 asserted `--color-base-100:\s*#`, a hex literal. The
+`@vaam-apps/ui` 0.5.0 theme (#318) writes `--color-base-100:
+var(--md-sys-color-surface)` and gives that a hex per scheme, so case 6
+**failed on every local build** while CI only ever skipped it. It now
+resolves one `var()` and requires a colour, reporting each reason in one line
+rather than dumping the stylesheet. And `just build-storybook` now **runs**
+it, in both apps, straight after building, with `VPAY_STORYBOOK_BUILT=1`:
+under that variable a missing `storybook-static/` fails the case instead of
+skipping it. CI's `web` job already runs that recipe, so case 6 runs in CI
+for the first time. `pnpm -r test` without a build still skips it, as before.
 
 ## `src/styling-gate.test.ts` — what `just ci` cannot build
 
