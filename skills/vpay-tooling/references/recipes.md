@@ -524,6 +524,18 @@ fired" is also what deleting a guard _and_ its values file looks like.
 **What it proves about a cluster: nothing. Nothing here has ever been applied
 to one.**
 
+`just test-alert-rules` (2026-10-23) needs `helm` and `promtool` on PATH and no
+network. It renders the PrometheusRule with `metrics.prometheusRule.enabled=true`,
+copies its `spec.groups` into a plain rule file, and runs `promtool check rules`.
+It then refuses any rendered alert that lacks a firing case (`exp_labels`) or
+a silent case (`exp_alerts: []`) in `deploy/helm/vpay/ci/prometheusrule.test.yaml`,
+and any test of an alert the chart does not render. Last it runs
+`promtool test rules`. **promtool compares labels and annotations exactly**, so
+any edit to a rule's text, threshold or window fails until the test file
+matches. Neither recipe is in `just ci`. CI's `deploy (helm chart)` job runs
+both, installing promtool 3.13.5 from the Prometheus release tarball, pinned by
+version and SHA-256.
+
 ## SDK
 
 | Recipe                                        | Does                                                                                                                      |

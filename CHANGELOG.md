@@ -12,6 +12,44 @@ publishes no release tags and its workspace version has never moved off
 `v0.5.0` as of 2026-09-23 — and its workspace version is `0.5.0`. The naming
 rule stands, for the reasons VERSIONING.md now gives.)_
 
+## 2026-10-23 — an alert on the callback-endpoint counter, and unit tests for every alert rule
+
+Read against vaam-apps/vpay's `master` at `PENDING-MERGE-SHA`, the merge of the
+pull request that adds `VpayCallbackEndpointUnconfirmed`. Its branch was cut from
+`0fb04ec5`, the head of vaam-apps/vpay#341. The maintainer asked whether
+an alert on RFC-0013's counter was possible ("#15: is it even possible at
+first?"), and was answered yes, with a proposal to test every rule. Their reply
+was "Fan out the work via sub-agents". vpay's evidence page is
+`docs/status/verification/2026-10-23-callback-endpoint-alert.md`.
+
+- `vpay-ops` (`references/observability.md`): the sixth rule,
+  `VpayCallbackEndpointUnconfirmed`. It fires when no `ensure_callbacks` pass
+  confirmed vpay's endpoint (`present`, `created`, `foreign`) for
+  `callbackEndpointWindow`, 3h. The section covers why it is `unless` and not
+  `== 0`, why it is a `warning` in `check` mode, and `just test-alert-rules`.
+- `vpay-tooling` (`SKILL.md`, `references/recipes.md`, `references/ci.md`):
+  the new recipe, what it needs (`helm` and `promtool`, no network), its
+  refusal of a rule without a firing and a silent case, and CI's
+  `deploy (helm chart)` job running it with promtool 3.13.5 pinned by SHA-256.
+- `vpay-troubleshooting` (`references/deployment.md`): what each of the
+  recipe's three failures means.
+- `vpay-provider-adapters` (`SKILL.md`): the counter is alerted on, and a new
+  `Registered` rail is covered without a rule change.
+
+### Stopped being true
+
+- "The alert rules are `VpayUnresolvedChargesRising`,
+  `VpayProviderErrorRateHigh`, `VpayJobQueueBehind`, `VpayJobsDeadLettered`"
+  plus `VpayPageableErrorEvents`: five. There are six.
+- "No alert rule on `vpay_callback_endpoint_checks_total`", RFC-0013's and its
+  verification page's "Not done". There is one.
+- "No rule has ever been evaluated by anything." Each is now evaluated by
+  `promtool`, against synthetic series, in CI.
+
+Still true: no Prometheus has ever scraped a vpay process, the rule group is
+off by default, and every threshold, the new 3h window included, is proposed
+and not measured.
+
 ## 2026-10-23 — Fapshi, a desk study with no adapter
 
 Read against vaam-apps/vpay's `master` at `be31abcd`, the merge of

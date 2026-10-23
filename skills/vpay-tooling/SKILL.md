@@ -138,11 +138,13 @@ Subsets: `cargo nextest run -p <crate>`, `cargo nextest run -E 'test(name)'`,
 | **Network**                    | `just audit-web` (so `just ci`), `docs-check-citations`, `helm-check` (kubeconform fetches schemas), `test-storybook` (≈115 MB Chromium, first run), image builds                                                                                                                         |
 | **`gh`, authenticated**        | `just docs-check-citations` only. It **fails** rather than skipping when `gh` is missing                                                                                                                                                                                                  |
 | **A real Postgres you manage** | nothing. Tests bring their own container; `just up` brings up the dev one on `:5432`                                                                                                                                                                                                      |
-| **Extra binaries on PATH**     | `cratestack` (`check-schema`), `helm` + `kubeconform` (`helm-check`), `jq` (`verify-ignored`), `openssl` (`gen-e2e-signing-key`)                                                                                                                                                          |
+| **Extra binaries on PATH**     | `cratestack` (`check-schema`), `helm` + `kubeconform` (`helm-check`), `helm` + `promtool` (`test-alert-rules`), `jq` (`verify-ignored`), `openssl` (`gen-e2e-signing-key`)                                                                                                                |
 
 Gates outside `just verify` **and** outside `just ci`: `test-storybook`,
 `helm-check`, `docs-check-citations`. CI runs all three on every PR, so a green
-local run does not predict them. `audit-web` is outside `just verify` but
+local run does not predict them. `test-alert-rules` (2026-10-23) is a fourth,
+run by CI's `deploy (helm chart)` job beside `helm-check`, so only on a PR that
+touches the chart, the justfile or the workflow. `audit-web` is outside `just verify` but
 **inside `just ci`** (since 2026-09-11, issue #103) — which is why `just ci`
 needs the network.
 

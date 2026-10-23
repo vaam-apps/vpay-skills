@@ -622,7 +622,10 @@ section as a decision:
   `providers[].callbacks.register` (`ensure` default | `check` | `off`,
   refused on a `PerRequest` rail as `ConfigError::CallbacksOnPerRequestRail`);
   `vpay-server callbacks ensure [--check]`; the counter
-  `vpay_callback_endpoint_checks_total{provider,state}`. The marker is
+  `vpay_callback_endpoint_checks_total{provider,state}`, which the chart's
+  `VpayCallbackEndpointUnconfirmed` alerts on (2026-10-23,
+  `docs/runbooks/callback-endpoints.md`). A new `Registered` rail is covered
+  by it with no rule change, because the rule groups `by (provider)`. The marker is
   `vpay:{deployment.name}:{rail}:default`. **Never run against a real Notch
   Pay account** (delivery step 5); Stripe and PayPal have no adapter. Where
   it differs from the RFC: `Drifted` and `retirable` are new; Notch Pay's
