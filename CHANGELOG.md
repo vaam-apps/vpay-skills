@@ -14,11 +14,11 @@ rule stands, for the reasons VERSIONING.md now gives.)_
 
 ## 2026-10-23 — Notch Pay's sandbox, measured for the two-step split, the per-network channels and a webhook
 
-Read against vaam-apps/vpay's `master` at `82a68f4e`, plus the pull request
-that adds the probe's `two-step`, `channels`, `webhook-receive` and
-`webhook-update` phases and
-`docs/status/verification/2026-10-23-notchpay-sandbox-two-step-and-channels.md`;
-restamped with the merge of that pull request when it lands. The maintainer
+Read against vaam-apps/vpay's `master` at `9499f09d`, the merge of
+vaam-apps/vpay#350, the pull request that adds the probe's `two-step`,
+`channels`, `webhook-receive` and `webhook-update` phases and
+`docs/status/verification/2026-10-23-notchpay-sandbox-two-step-and-channels.md`.
+The maintainer
 asked to "finalise notchpay", approved the sandbox session in its chat ("Yes,
 run it") and chose "A third-party capture service" to receive a webhook. The
 session ran through `sandbox_probe` from a cloud session; **vpay itself made
