@@ -39,6 +39,11 @@ options: "Go with option 1 on #313, build it". vpay's evidence page is
   duplicate Notch Pay webhook endpoint is an operator's task, by the
   maintainer's decision ("#12 is nice but an operator's task only, not
   code"), and leaves the "Not built" list.
+- `vpay-frontend`, `vpay-dashboard`, `vpay-checkout`: Next `^15.5.28` in the
+  two vpay apps and 16.4.2 in `examples/shop`, the bump in the same pull
+  request that clears GHSA-2464-fhr4-w9xw, GHSA-p3m5-59mp-jv5r and
+  GHSA-673q-mjm6-r5xr (vpay's
+  `docs/status/verification/2026-10-23-npm-advisories.md`).
 
 ### Stopped being true
 
@@ -59,6 +64,8 @@ options: "Go with option 1 on #313, build it". vpay's evidence page is
 - "Retiring or repairing a webhook endpoint (no working `DELETE`, no `PUT` in
   the client)" as a Notch Pay gap. It is an operator's task in Notch Pay's
   dashboard, not code vpay owes.
+- "Next `^15.5.27`" (the two vpay apps) and "16.3.8" (`examples/shop`).
+  `^15.5.28` and 16.4.2.
 
 Still true: `Malformed` is still an answer the adapter could not read, still
 `Warn`, still the ladder. And a real Notch Pay short collection has never been

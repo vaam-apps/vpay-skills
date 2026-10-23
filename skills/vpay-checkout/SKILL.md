@@ -10,7 +10,7 @@ description: The payer-facing checkout page at frontends/apps/checkout — the t
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
 
-`frontends/apps/checkout` (`@vpay/checkout`). Next ~~15.5.25~~ **`^15.5.27`** (since 2026-10-09, vaam-apps/vpay#272) App Router, React 19. Process doc: `docs/flows/hosted-checkout.md` plus the four pages under
+`frontends/apps/checkout` (`@vpay/checkout`). Next ~~15.5.25~~ ~~`^15.5.27`~~ **`^15.5.28`** (since 2026-10-23, vaam-apps/vpay#341; `^15.5.27` from 2026-10-09, vaam-apps/vpay#272) App Router, React 19. Process doc: `docs/flows/hosted-checkout.md` plus the four pages under
 `docs/flows/hosted-checkout/`. The surface underneath it is
 `docs/flows/browser-checkout.md`.
 
