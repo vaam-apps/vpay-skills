@@ -63,14 +63,14 @@ Two `None`s that surprise people:
 
 ## `ChargeState` — operator-facing, internal, never on the wire
 
-| Value        | Meaning                                         | Still polled? |
-| ------------ | ----------------------------------------------- | ------------- |
-| `submitting` | the row exists; the rail has not been asked yet | yes           |
-| `submitted`  | submitted, no answer yet                        | yes           |
-| `pending`    | the rail acknowledged and is working on it      | yes           |
-| `unresolved` | past the 24 h horizon with no terminal answer   | **yes**       |
-| `succeeded`  | the rail says the money moved                   | no            |
-| `failed`     | the rail refused                                | no            |
+| Value        | Meaning                                                                                                                                                           | Still polled? |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
+| `submitting` | the row exists; the rail has not been asked yet                                                                                                                   | yes           |
+| `submitted`  | submitted, no answer yet                                                                                                                                          | yes           |
+| `pending`    | the rail acknowledged and is working on it                                                                                                                        | yes           |
+| `unresolved` | past the 24 h horizon with no terminal answer, or at once on a rail answer only a person can act on (`NeedsReconciliation`, since vaam-apps/vpay#313, 2026-10-23) | **yes**       |
+| `succeeded`  | the rail says the money moved                                                                                                                                     | no            |
+| `failed`     | the rail refused                                                                                                                                                  | no            |
 
 `ChargeState::is_live()` is the reconciler's predicate and
 `is_terminal()` its complement.

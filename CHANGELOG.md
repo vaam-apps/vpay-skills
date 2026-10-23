@@ -12,6 +12,27 @@ publishes no release tags and its workspace version has never moved off
 `v0.5.0` as of 2026-09-23 — and its workspace version is `0.5.0`. The naming
 rule stands, for the reasons VERSIONING.md now gives.)_
 
+## 2026-10-23 — `unresolved` has two ways in
+
+Read against vaam-apps/vpay's `master` at `9499f09d` (the merge of
+vaam-apps/vpay#350), restamped with the merge of the pull request that lands
+this when it does. That vpay pull request corrects three stale claims in
+vpay's own docs, which vaam-apps/vpay-docs#19's re-read of v0.11.0 found; one
+of them is repeated here.
+
+- `vpay-payments` (`references/state-machines.md`): `ChargeState::Unresolved`
+  is reached past the 24 h horizon **or** at once, on a rail answer only a
+  person can act on (`ProviderError::NeedsReconciliation`, vaam-apps/vpay#313,
+  built in vaam-apps/vpay#341).
+
+### Stopped being true
+
+- "`unresolved` — past the 24 h horizon with no terminal answer", as the
+  only way in. True until vaam-apps/vpay#341 (2026-10-23).
+
+Still true: an `unresolved` charge is still polled, hourly, and alerts; the
+horizon path is unchanged.
+
 ## 2026-10-23 — Notch Pay's sandbox, measured for the two-step split, the per-network channels and a webhook
 
 Read against vaam-apps/vpay's `master` at `9499f09d`, the merge of
