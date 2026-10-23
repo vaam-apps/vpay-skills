@@ -454,7 +454,9 @@ callback-registration pass in the foreground and prints one line per rail,
 `{rail} {register} {state} {detail}`, exiting non-zero when a rail is
 `missing`, `locked` or `failed`. It needs `--database-url` (the pass takes an
 advisory lock) and writes to the provider unless `--check` or the rail's
-`callbacks.register` says otherwise.
+`callbacks.register` says otherwise. Unset, that setting is the adapter's
+default, which is `off` on `notchpay` since 2026-10-23: there the command
+prints `notchpay off off -`, asks nothing and exits `0`.
 Anything you read describing `vpay-worker-bin` as a separate binary is stale.
 
 `.env.live.example` → `.env.live` (git-ignored) is for the `live` profile test

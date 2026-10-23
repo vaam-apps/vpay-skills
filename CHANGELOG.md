@@ -12,6 +12,57 @@ publishes no release tags and its workspace version has never moved off
 `v0.5.0` as of 2026-09-23 — and its workspace version is `0.5.0`. The naming
 rule stands, for the reasons VERSIONING.md now gives.)_
 
+## 2026-10-23 — Notch Pay: registration off by default, and a wrong-network number is `invalid_payer`
+
+Read against vaam-apps/vpay's `master` at `9499f09d`, the merge of
+vaam-apps/vpay#350, plus the pull request that adds
+`docs/status/verification/2026-10-23-notchpay-defaults-and-wrong-network.md`;
+restamped with that pull request's merge. Two maintainer decisions on #350's
+sandbox evidence: asked whether to change Notch Pay's `register: ensure`
+default, "Default to `off` for Notch Pay"; asked whether to map a
+wrong-network number's `422` on `errors.phone` to `invalid_payer`, "Yes,
+`invalid_payer`". Both are proven in vpay against WireMock and a real
+Postgres; neither was sent to Notch Pay.
+
+- `vpay-notchpay` (`SKILL.md`): a new first bullet under the webhook
+  registration (an unset `register` asks a Notch Pay account nothing; the
+  adapter declares `Off`; do not delete the override to "fix" a missing
+  endpoint); the wrong-network bullet, the channel paragraph and the codes
+  (`PRODUCED_FAILURE_CODES` six, `invalid_payer` from process's `422` on
+  `phone` alone, with vpay's own message); `callbacks.register`'s default;
+  the description and stamp.
+- `vpay-provider-adapters` (`SKILL.md`, `references/conformance.md`): the
+  thirteenth method, `default_callback_registration`
+  (`CallbackRegistrationDefault::{Ensure, Off}`, `Ensure` by default,
+  forwarded by `Measured`, read only by the binary's plan); the RFC-0013
+  entry's default; the one Notch Pay stub mapping that steers by channel and
+  number rather than by reference, and the case that drives it.
+- `vpay-ops` (`references/configuration.md`, `references/observability.md`):
+  `callbacks.register` unset means the adapter's default, `off` on
+  `notchpay`; `VpayCallbackEndpointUnconfirmed` never fires for an `off`
+  rail, so on a default deployment it says nothing about Notch Pay.
+- `vpay-tooling` (`references/recipes.md`): `vpay-server callbacks ensure`
+  prints `notchpay off off -` and exits `0` when `register` is unset.
+
+### Stopped being true
+
+- "`providers[].callbacks.register`: `ensure` by default" / "`ensure` (absent
+  block, or `{}`)" / "`ensure` default" (`vpay-notchpay`, `vpay-ops`,
+  `vpay-provider-adapters`). Unset, it is the rail's declared default:
+  `ensure`, but `off` for `notchpay`.
+- "The webhook endpoint is registered by vpay" (`vpay-notchpay`). Only when
+  `register: ensure` is written.
+- "The adapter maps it to `Rejected { provider_error }` … **It was not
+  changed**: remapping it is the maintainer's decision" (`vpay-notchpay`),
+  and "which the adapter maps to `provider_error`" for the wrong-network
+  `422`. It is `invalid_payer`.
+- "`PRODUCED_FAILURE_CODES` is five codes" (`vpay-notchpay`). Six.
+- "The `ProviderAdapter` trait and its twelve methods" / "**Twelve as of
+  2026-10-23.**" (`vpay-provider-adapters`). Thirteen.
+- "an operator who wants callbacks should register vpay's URL in the
+  dashboard and set `register: off`" (`vpay-notchpay`, `vpay-ops`). Setting
+  `off` is no longer needed on Notch Pay: an unset `register` is `off`.
+
 ## 2026-10-23 — Notch Pay's sandbox, measured for the two-step split, the per-network channels and a webhook
 
 Read against vaam-apps/vpay's `master` at `9499f09d`, the merge of

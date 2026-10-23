@@ -70,7 +70,16 @@ rendered), and Notch Pay (2026-10-20, vaam-apps/vpay#295,
 `357c825`) matches the initialize body's `reference` and the read's path. So
 every rail stubs the **same UUIDs**, and adding a rail means adding one
 mappings directory and a row per table function rather than editing a
-case.
+case. **One Notch Pay mapping steers by the request instead** (2026-10-23):
+`payments-process.json`'s first entry, priority 5, answers the sandbox's
+`422` "Invalid CM Mobile Money" (`errors.phone` alone) to any process whose
+`channel` is `cm.mtn` and whose `data.phone` is an Orange `+23769…` number,
+because the refusal depends on that pair and not on the charge.
+`notchpay_a_number_on_the_other_network_is_an_invalid_payer` drives it with
+`REF_ACCEPTED`, a method type of `mtn_wallet` and an Orange number, and
+expects `Rejected { invalid_payer }`; the two-way gate adds `invalid_payer`
+for Notch Pay by hand, naming that case, as it adds `provider_unavailable`.
+_(Read against vpay's `master` at `9499f09d` plus the pull request that adds `docs/status/verification/2026-10-23-notchpay-defaults-and-wrong-network.md`, restamped with its merge.)_
 
 | constant          | UUID (low bits) | what your mappings must do                                                                                                                                                                                                                                                                                             |
 | ----------------- | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
