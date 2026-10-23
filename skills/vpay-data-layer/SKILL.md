@@ -133,7 +133,8 @@ paid_out_of_band)` at `invoices_payment_record_key`, a six-column `UNIQUE`
   change is `0050`. _(2026-10-22: `0050` is `staff_sso_attempts` and `0051`
   is `jobs-ensure-callbacks`, which reopens `jobs.kind_is_known` for
   RFC-0013's `ensure_callbacks`; the next is `0052`.)_ _(2026-10-23: `0052`
-  belongs to the two-step submit change that lands first, and `0053` is
+  is `provider-requests-prepare` (ADR-0032), which reopens
+  `provider_requests.operation_is_known` for `prepare`, and `0053` is
   `method-types-and-routing-decisions` (ADR-0029 D6/D10): `charges.method_type`
   with CHECK `method_type_is_known`, and `routing_decisions`, one row per
   routed charge written by `TxRepositories::insert_routing_decision` in the
