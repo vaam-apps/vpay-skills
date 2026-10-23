@@ -47,6 +47,7 @@ evidence page is
 
 Still true: `pnpm -r test` and `just ci` build no Storybook, so the case
 reports one skip per app there, by design.
+
 ## 2026-10-23 — payment-method types and a scored, explained router (ADR-0029 D6/D10, RFC-0008 revised)
 
 Read against vaam-apps/vpay's `master` at `f0a2f7d7`, the merge of
