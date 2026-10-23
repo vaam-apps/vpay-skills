@@ -1,6 +1,6 @@
 # The state machines
 
-_Verified against vpay `a33aac61` (2026-09-29) for § `InvoiceStatus`; the rest of this page was last read at `b747e5d5` (2026-09-23). Version-sensitive claims
+_Verified against vpay `9499f09d` (2026-10-23) for § `ChargeState`, and `a33aac61` (2026-09-29) for § `InvoiceStatus`; the rest of this page was last read at `b747e5d5` (2026-09-23). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 Every enum below is in `backends/crates/vpay-core/src/state.rs` except
