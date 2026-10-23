@@ -14,9 +14,8 @@ rule stands, for the reasons VERSIONING.md now gives.)_
 
 ## 2026-10-23 — ADR-0032 accepted; RFC-0008's routing questions answered
 
-Read against vaam-apps/vpay's `master` at `9499f09d` (the merge of
-vaam-apps/vpay#350), restamped with the merge of the pull request that lands
-this when it does. The maintainer was asked whether to mark ADR-0032
+Read against vaam-apps/vpay's `master` at `d01dd2a4`, the merge of
+vaam-apps/vpay#351, which records these answers. The maintainer was asked whether to mark ADR-0032
 Accepted and answered "Yes". Asked RFC-0008's R8.1–R8.5 with the agent's
 defaults, they answered "go with your defaults" and, on the score, "first go
 with your defaults. Just document everything". Asked then whether the
