@@ -94,6 +94,29 @@ verification page's "Security review" section.
   with `NOTCHPAY_HASH_KEY`, and livemode refuses to boot without it unless
   `callbacks: { verify: off }`.
 
+## 2026-10-23 — the a11y gate's built-theme case resolves `var()`, and `just build-storybook` runs it
+
+Read against vaam-apps/vpay's `master` at `37fd72df`, the merge of
+vaam-apps/vpay#355, which changes both apps' `src/a11y-gate.test.ts` and the
+`build-storybook` recipe. The
+maintainer said "Fix it" about the finding on vpay's
+`docs/status/verification/2026-10-23-npm-advisories.md`. vpay's evidence page
+is `docs/status/verification/2026-10-23-a11y-gate-built-theme.md`.
+
+- `vpay-checkout` (`references/testing-and-gates.md`): case 6 resolves
+  `--color-base-100` one `var()` deep to a colour; `just build-storybook` runs
+  the case after building, with `VPAY_STORYBOOK_BUILT=1`, so it runs in CI
+  and a missing build fails it.
+
+### Stopped being true
+
+- "The **built** Storybook stylesheet actually defines `--color-base-100`"
+  as the whole of case 6: it also has to resolve to a colour.
+- That case 6 never runs in CI: `just build-storybook` runs it now.
+- Implicitly, that case 6 passes on a local build: on `master` before this it
+  failed on every one, because it demanded a hex literal the 0.5.0 theme no
+  longer writes.
+
 ## 2026-10-23 — `unresolved` has two ways in
 
 Read against vaam-apps/vpay's `master` at `14fc6241`, the merge of
