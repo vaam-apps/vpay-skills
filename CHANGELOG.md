@@ -14,11 +14,10 @@ rule stands, for the reasons VERSIONING.md now gives.)_
 
 ## 2026-10-23 — a rail-issued reference is committed before the prompt (ADR-0032)
 
-Read against vaam-apps/vpay's `master` at `c672fffc` (the merge of
-vaam-apps/vpay#341), restamped with the merge of the pull request that lands
-this when it does. The maintainer asked how to close Notch Pay's crash
-window ("#13: how do we do then?") and, answered with this design, said "Fan
-out the work via sub-agents". ADR-0032 is **Proposed**: the decisions in it
+Read against vaam-apps/vpay's `master` at `3633ca0c`, the merge of
+vaam-apps/vpay#345, the pull request that adds `prepare`. The maintainer
+asked how to close Notch Pay's crash window ("#13: how do we do then?") and,
+answered with this design, said "Fan out the work via sub-agents". ADR-0032 is **Proposed**: the decisions in it
 are the implementing agent's. vpay's evidence page is
 `docs/status/verification/2026-10-23-two-step-submit.md`. No `SKILL.md` stamp
 moved.
