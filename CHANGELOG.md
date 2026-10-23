@@ -14,11 +14,10 @@ rule stands, for the reasons VERSIONING.md now gives.)_
 
 ## 2026-10-23 — payment-method types and a scored, explained router (ADR-0029 D6/D10, RFC-0008 revised)
 
-Read against vaam-apps/vpay's `master` at `3633ca0c` (the merge of
-vaam-apps/vpay#345, the two-step submit this change is rebased onto),
-restamped with the merge of the pull request that lands this when it does.
-The maintainer: "we need a way to differentiate mtn x
-notchpay and mtn x direct; same with orange and the future integrations", "A
+Read against vaam-apps/vpay's `master` at `f0a2f7d7`, the merge of
+vaam-apps/vpay#346, the pull request that adds method types and the router.
+The maintainer: "we need a way to differentiate mtn x notchpay and mtn x
+direct; same with orange and the future integrations", "A
 user should be proposed all methods, and he himself should choose orange or
 mtn or whatever, then we'll show him the correct rail. Simple", then "I think
 routing should be though again. We should have a score of each payment
