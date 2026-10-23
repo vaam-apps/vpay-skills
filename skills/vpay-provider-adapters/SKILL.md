@@ -580,7 +580,7 @@ processes it. Each adapter declares what it serves in
   declare them until RFC-0010 / D4 build them.
 - **`ChargeRef::method_type`** carries the payer's choice to `submit`,
   `query_status` and `refund`. `None` means a charge confirmed by the code of
-  a rail serving several types, or one from before migration `0052`. An
+  a rail serving several types, or one from before migration `0053`. An
   adapter serving one type may ignore it; `notchpay` sends `cm.mtn` /
   `cm.orange` from it and its `settings.channel` (`cm.mobile`) when it is
   `None`.

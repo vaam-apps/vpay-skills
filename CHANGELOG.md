@@ -38,7 +38,7 @@ RFC-0008's 2026-10-23 revision and `docs/plans/2026-10-23-method-type-routing.md
 - `vpay-notchpay` (`SKILL.md`): the channel is per charge, `cm.mtn` /
   `cm.orange` from the method type, `cm.mobile` for a rail-code charge;
   stub-proven only; Notch Pay wins `orange_wallet` on the tie-break.
-- `vpay-data-layer` (`SKILL.md`): migration `0052`, `charges.method_type`,
+- `vpay-data-layer` (`SKILL.md`): migration `0053`, `charges.method_type`,
   `routing_decisions`, and the drift at 209 over 28 with 20 unmappable
   columns (and the 206 over 27 of `0050`, which it had not recorded).
 - `vpay-ops` (`references/configuration.md`): the `routing:` block, its

@@ -81,9 +81,9 @@ relations since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged in vaam-apps/
 `master` at `b747e5d5`~~ **re-measured at cratestack 0.15.0 on 2026-09-29 and
 unmoved** (vaam-apps/vpay#259: the CLI reports 201 changes across 26 tables,
 the constant the test already asserted). **209 over 28, with 20 unmappable
-columns, since migration `0052` (2026-10-23)**, measured at 0.15.0; it went
+columns, since migration `0053` (2026-10-23)**, measured at 0.15.0; it went
 through 206 over 27 with `0050` (`staff_sso_attempts`, 2026-10-20), which this
-page did not record. `0052`'s three lines are `charges.method_type`
+page did not record. `0053`'s three lines are `charges.method_type`
 undeclared, its CHECK `method_type_is_known`, and the undeclared table
 `routing_decisions`, whose `considered` is the 20th unmappable column (`jsonb`).
 See [references/cratestack.md](references/cratestack.md) — in particular for which
@@ -132,14 +132,15 @@ paid_out_of_band)` at `invoices_payment_record_key`, a six-column `UNIQUE`
   (#251): `0049` is shipped, and not a byte of it may change.** The next
   change is `0050`. _(2026-10-22: `0050` is `staff_sso_attempts` and `0051`
   is `jobs-ensure-callbacks`, which reopens `jobs.kind_is_known` for
-  RFC-0013's `ensure_callbacks`; the next is `0052`.)_ _(2026-10-23: `0052` is
+  RFC-0013's `ensure_callbacks`; the next is `0052`.)_ _(2026-10-23: `0052`
+  belongs to the two-step submit change that lands first, and `0053` is
   `method-types-and-routing-decisions` (ADR-0029 D6/D10): `charges.method_type`
   with CHECK `method_type_is_known`, and `routing_decisions`, one row per
   routed charge written by `TxRepositories::insert_routing_decision` in the
   transaction that opens the charge, read by `Charges::routing_decision_for`.
   Its `method_type_is_known` list moves in lockstep with
   `vpay_core::routing::MethodType`, as `jobs.kind_is_known` does with
-  `JobKind`. The next is `0053`.)_
+  `JobKind`. The next is `0054`.)_
 - **The ADD COLUMN backfills with a DEFAULT and drops it in the next
   statement** (`0042`'s device), which is why `model Invoice.paid_out_of_band`
   carries no `@default` and costs the drift nothing.
