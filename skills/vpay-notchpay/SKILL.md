@@ -132,8 +132,8 @@ What step 1 showed:
   fix (carry the `trx.…` in `ref_extra`) kept a **residual crash window**:
   a crash after the USSD prompt and before `ref_extra` was durable left a
   payment vpay could not read. ~~State it as a risk; do not claim it is
-  solved.~~ **Corrected 2026-10-23 (ADR-0032, Proposed, built on the
-  maintainer's instruction):** closed on vpay's side by committing the
+  solved.~~ **Corrected 2026-10-23 (ADR-0032, built on the maintainer's
+  instruction and Accepted the same day):** closed on vpay's side by committing the
   `trx.…` before the prompt (§ "How the adapter behaves"). ~~Notch Pay's
   sandbox has not run the split~~; since 2026-10-23 the probe has run its
   Notch Pay side (below), and vpay itself has not. Say "closed in vpay,
@@ -407,8 +407,9 @@ ADR-0031's conditions are the admission. **Weakening any one of them is
   Pay is the first rail the router can choose **for either network**: with
   equal weights it wins `orange_wallet` over `orange_money` on the tie-break
   (`notchpay` < `orange_money`), and loses `mtn_wallet` to `mtn_momo`. That
-  is `provisional-1`'s tie-break, not a decision about Notch Pay; an operator
-  changes it with `routing.weights` (`vpay-ops`).
+  is `provisional-1`'s tie-break, not a decision about Notch Pay, and the
+  maintainer kept it on 2026-10-23 (RFC-0008 § R8); an operator changes it
+  with `routing.weights` (`vpay-ops`).
 - **A charge is two port calls, with a commit between them** (since
   2026-10-23, ADR-0032; `submit` was both wire calls until then). The
   adapter declares `SubmitSteps::PrepareThenSubmit`. **`prepare`** is
