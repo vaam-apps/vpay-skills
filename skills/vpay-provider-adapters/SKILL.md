@@ -627,7 +627,9 @@ section as a decision:
   it differs from the RFC: `Drifted` and `retirable` are new; Notch Pay's
   endpoint is recognised by a URL tag in its description, because Notch Pay
   answers `"url": null`; nothing is ever retired or repaired on Notch Pay
-  (no working `DELETE`, no `PUT`); a counter, not a gauge.
+  (no working `DELETE`, no `PUT`), which since 2026-10-23 is the maintainer's
+  decision rather than a gap ("an operator's task only, not code"); a
+  counter, not a gauge.
   _(The original entry, "added 2026-10-20; Draft, nothing in it is built", is
   kept below as written.)_
 - ~~**RFC-0013 — vpay registers its own callback endpoints** (added 2026-10-20;

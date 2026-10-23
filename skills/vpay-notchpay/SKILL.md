@@ -367,7 +367,9 @@ url:{16 hex of SHA-256(callback URL)}`, because Notch Pay answers
   is current and the setting is `ensure`. **It never modifies or deletes
   anything**: no `PUT` in the client, and `DELETE /webhooks/{id}` answered
   `404`. A superseded or duplicate endpoint is logged by id for an operator
-  to delete in the dashboard. A hand-registered endpoint at vpay's URL is
+  to delete in the dashboard. That is the design, not a gap: the maintainer
+  decided on 2026-10-23 that retiring an endpoint is "an operator's task
+  only, not code". A hand-registered endpoint at vpay's URL is
   **invisible** to it (no URL echoed), so a deployment that registered one by
   hand gets a second; each callback then arrives twice, which costs a second
   pull-forward. Proven against `mappings/webhooks.json` and a real Postgres
@@ -438,9 +440,14 @@ Refunds as a call (RFC-0012 § 10 item 6; the sandbox answered `403` to
 `POST /refunds` on 2026-10-22, so nothing about replay is known). Model B / Sync / `X-Sync` (§ 10
 item 9; not offered). `cm.mtn` / `cm.orange` (step 8). Webhook signature
 verification (needs a port change; RFC-0014, vaam-apps/vpay#296, a draft,
-designs it, so do not build it inside a Notch Pay change). Retiring or
-repairing a webhook endpoint (no working `DELETE`, no `PUT` in the client).
-_(The last item was "Registering the webhook (RFC-0013)" until 2026-10-22.)_
+designs it, so do not build it inside a Notch Pay change). _(This list ended
+"Retiring or repairing a webhook endpoint (no working `DELETE`, no `PUT` in
+the client)" until 2026-10-23. The maintainer decided that day that retiring
+one is "an operator's task only, not code": vpay logs each superseded or
+duplicate endpoint by id at `warn`, and an operator deletes it in Notch Pay's
+dashboard. It is no longer a gap, so do not build a `DELETE` path for it.
+Before that the item was "Registering the webhook (RFC-0013)", until
+2026-10-22.)_
 Cards and Notch Pay's hosted Collect page (out of scope). The epic,
 vaam-apps/vpay#291, stays open.
 

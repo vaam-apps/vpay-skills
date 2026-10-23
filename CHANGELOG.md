@@ -35,6 +35,10 @@ options: "Go with option 1 on #313, build it". vpay's evidence page is
   `NeedsReconciliation`.
 - `vpay-ops` (`SKILL.md`, `references/observability.md`): the new
   `error_kind`, and an `unresolved` charge that is not 24 hours old.
+- `vpay-notchpay`, `vpay-provider-adapters`: retiring a superseded or
+  duplicate Notch Pay webhook endpoint is an operator's task, by the
+  maintainer's decision ("#12 is nice but an operator's task only, not
+  code"), and leaves the "Not built" list.
 
 ### Stopped being true
 
@@ -52,6 +56,9 @@ options: "Go with option 1 on #313, build it". vpay's evidence page is
   another amount or currency). `NeedsReconciliation`.
 - "The loop does not inspect variants" was true and still is; two handlers
   do, and the skill now names them.
+- "Retiring or repairing a webhook endpoint (no working `DELETE`, no `PUT` in
+  the client)" as a Notch Pay gap. It is an operator's task in Notch Pay's
+  dashboard, not code vpay owes.
 
 Still true: `Malformed` is still an answer the adapter could not read, still
 `Warn`, still the ladder. And a real Notch Pay short collection has never been
