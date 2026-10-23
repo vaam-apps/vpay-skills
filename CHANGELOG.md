@@ -14,9 +14,9 @@ rule stands, for the reasons VERSIONING.md now gives.)_
 
 ## 2026-10-23 — the a11y gate's built-theme case resolves `var()`, and `just build-storybook` runs it
 
-Read against vaam-apps/vpay's `master` at `9499f09d`, plus the pull request
-that changes both apps' `src/a11y-gate.test.ts` and the `build-storybook`
-recipe; restamped with that pull request's merge when it lands. The
+Read against vaam-apps/vpay's `master` at `37fd72df`, the merge of
+vaam-apps/vpay#355, which changes both apps' `src/a11y-gate.test.ts` and the
+`build-storybook` recipe. The
 maintainer said "Fix it" about the finding on vpay's
 `docs/status/verification/2026-10-23-npm-advisories.md`. vpay's evidence page
 is `docs/status/verification/2026-10-23-a11y-gate-built-theme.md`.
@@ -34,6 +34,122 @@ is `docs/status/verification/2026-10-23-a11y-gate-built-theme.md`.
 - Implicitly, that case 6 passes on a local build: on `master` before this it
   failed on every one, because it demanded a hex literal the 0.5.0 theme no
   longer writes.
+
+## 2026-10-23 — `unresolved` has two ways in
+
+Read against vaam-apps/vpay's `master` at `14fc6241`, the merge of
+vaam-apps/vpay#354. That vpay pull request corrects three stale claims in
+vpay's own docs, which vaam-apps/vpay-docs#19's re-read of v0.11.0 found; one
+of them is repeated here.
+
+- `vpay-payments` (`references/state-machines.md`): `ChargeState::Unresolved`
+  is reached past the 24 h horizon **or** at once, on a rail answer only a
+  person can act on (`ProviderError::NeedsReconciliation`, vaam-apps/vpay#313,
+  built in vaam-apps/vpay#341).
+
+### Stopped being true
+
+- "`unresolved` — past the 24 h horizon with no terminal answer", as the
+  only way in. True until vaam-apps/vpay#341 (2026-10-23).
+
+Still true: an `unresolved` charge is still polled, hourly, and alerts; the
+horizon path is unchanged.
+
+## 2026-10-23 — Notch Pay: registration off by default, and a wrong-network number is `invalid_payer`
+
+Read against vaam-apps/vpay's `master` at `71a351df`, the merge of
+vaam-apps/vpay#353, which adds
+`docs/status/verification/2026-10-23-notchpay-defaults-and-wrong-network.md`.
+Two maintainer decisions on #350's
+sandbox evidence: asked whether to change Notch Pay's `register: ensure`
+default, "Default to `off` for Notch Pay"; asked whether to map a
+wrong-network number's `422` on `errors.phone` to `invalid_payer`, "Yes,
+`invalid_payer`". Both are proven in vpay against WireMock and a real
+Postgres; neither was sent to Notch Pay.
+
+- `vpay-notchpay` (`SKILL.md`): a new first bullet under the webhook
+  registration (an unset `register` asks a Notch Pay account nothing; the
+  adapter declares `Off`; do not delete the override to "fix" a missing
+  endpoint); the wrong-network bullet, the channel paragraph and the codes
+  (`PRODUCED_FAILURE_CODES` six, `invalid_payer` from process's `422` on
+  `phone` alone, with vpay's own message); `callbacks.register`'s default;
+  the description and stamp.
+- `vpay-provider-adapters` (`SKILL.md`, `references/conformance.md`): the
+  thirteenth method, `default_callback_registration`
+  (`CallbackRegistrationDefault::{Ensure, Off}`, `Ensure` by default,
+  forwarded by `Measured`, read only by the binary's plan); the RFC-0013
+  entry's default; the one Notch Pay stub mapping that steers by channel and
+  number rather than by reference, and the case that drives it.
+- `vpay-ops` (`references/configuration.md`, `references/observability.md`):
+  `callbacks.register` unset means the adapter's default, `off` on
+  `notchpay`; `VpayCallbackEndpointUnconfirmed` never fires for an `off`
+  rail, so on a default deployment it says nothing about Notch Pay.
+- `vpay-tooling` (`references/recipes.md`): `vpay-server callbacks ensure`
+  prints `notchpay off off -` and exits `0` when `register` is unset.
+
+### Stopped being true
+
+- "`providers[].callbacks.register`: `ensure` by default" / "`ensure` (absent
+  block, or `{}`)" / "`ensure` default" (`vpay-notchpay`, `vpay-ops`,
+  `vpay-provider-adapters`). Unset, it is the rail's declared default:
+  `ensure`, but `off` for `notchpay`.
+- "The webhook endpoint is registered by vpay" (`vpay-notchpay`). Only when
+  `register: ensure` is written.
+- "The adapter maps it to `Rejected { provider_error }` … **It was not
+  changed**: remapping it is the maintainer's decision" (`vpay-notchpay`),
+  and "which the adapter maps to `provider_error`" for the wrong-network
+  `422`. It is `invalid_payer`.
+- "`PRODUCED_FAILURE_CODES` is five codes" (`vpay-notchpay`). Six.
+- "The `ProviderAdapter` trait and its twelve methods" / "**Twelve as of
+  2026-10-23.**" (`vpay-provider-adapters`). Thirteen.
+- "an operator who wants callbacks should register vpay's URL in the
+  dashboard and set `register: off`" (`vpay-notchpay`, `vpay-ops`). Setting
+  `off` is no longer needed on Notch Pay: an unset `register` is `off`.
+
+## 2026-10-23 — ADR-0032 accepted; RFC-0008's routing questions answered
+
+Read against vaam-apps/vpay's `master` at `d01dd2a4`, the merge of
+vaam-apps/vpay#351, which records these answers. The maintainer was asked whether to mark ADR-0032
+Accepted and answered "Yes". Asked RFC-0008's R8.1–R8.5 with the agent's
+defaults, they answered "go with your defaults" and, on the score, "first go
+with your defaults. Just document everything". Asked then whether the
+completion rate may move traffic, as "(a) a configured weight the operator
+adjusts by hand from the dashboard numbers" or "(b) an automatic score
+component", they answered "Go with (a)". vpay's record is RFC-0008 §§ R7–R9
+and ADR-0032's Status. No code changed.
+
+- `vpay-conventions` (`references/adr-index.md`): 0032's row, Accepted; the
+  0029 note, what the R8 answers settle in D8, D9 and D11; RFC-0008's bullet,
+  each answer and what is built.
+- `vpay-provider-adapters` (`SKILL.md`): the fee is the next score
+  component, the completion rate is reported and never scored, health never
+  enters the score, no exploration.
+- `vpay-ops` (`references/configuration.md`) and `vpay-payments`
+  (`SKILL.md`): the fee as a component and the completion rate as a reported
+  measure the operator weighs by hand, neither built; weights stay the
+  operator's until RFC-0009.
+- `vpay-merchant-api` (`references/objects.md`): the confirm following the
+  checkout page's rail is decided and not built.
+- `vpay-notchpay` (`SKILL.md`): ADR-0032 accepted; the tie-break kept.
+
+### Stopped being true
+
+- "ADR-0032 is **Proposed** — needs maintainer acceptance". Accepted
+  2026-10-23.
+- "The formula is provisional … until the maintainer answers RFC-0008's
+  revision R8" and "RFC-0008's 2026-10-23 revision asks the maintainer which
+  components it should have". R8 is answered: the estimated fee is the next
+  score component; the completion rate is reported, not scored.
+- "Its R8 questions (which components, who sets the weights, may health move
+  traffic) are the maintainer's". Answered: the fee (the completion rate only
+  as an operator's input); the operator; no.
+- "fees, health, completion rate and latency are proposed" (`vpay-ops`).
+  Health and latency are not chosen.
+
+Still true: the score is the configured weight alone (`provisional-1`); the
+confirm re-ranks on its own, so a server confirming `orange_wallet` should
+pin; one charge per intent; no measured quantity (health, completion rate)
+moves traffic without an operator.
 
 ## 2026-10-23 — Notch Pay's sandbox, measured for the two-step split, the per-network channels and a webhook
 

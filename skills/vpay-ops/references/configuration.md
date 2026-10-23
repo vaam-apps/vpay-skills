@@ -1,6 +1,6 @@
 # Configuration: the CLI layer, the YAML, and what refuses to boot
 
-_Verified against vpay `87166eaf` (2026-10-09) for step 7 of "The boot sequence", and against `a33aac61` (2026-09-29) for "The ten environment variables"; the Notch Pay sentences under `callbacks.register` were read against `82a68f4e` (2026-10-23) plus the pull request that adds the 2026-10-23 Notch Pay sandbox verification page, restamped with its merge; the rest of this page was last read at `d3a8810b` (2026-09-16). Version-sensitive claims
+_Verified against vpay `87166eaf` (2026-10-09) for step 7 of "The boot sequence", and against `a33aac61` (2026-09-29) for "The ten environment variables"; the Notch Pay sentences under `callbacks.register` were read against `82a68f4e` (2026-10-23) plus the pull request that adds the 2026-10-23 Notch Pay sandbox verification page, restamped with its merge, and its default per rail against `9499f09d` plus the pull request that adds `docs/status/verification/2026-10-23-notchpay-defaults-and-wrong-network.md`, restamped with its merge; the rest of this page was last read at `d3a8810b` (2026-09-16). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 ADR-0003. Flow doc `docs/flows/configuration.md`; crate reference
@@ -116,7 +116,8 @@ no `display_name()` — "a placeholder that is honest about being one".
 `backends/crates/vpay-config/src/config.rs`. The resolved per-rail
 configuration: `host` (`url` + `label`), `currency`, `settings`, `credentials`,
 `enabled`, optional `callback_url`, and — since 2026-10-22 (RFC-0013) —
-optional `callbacks: { register: ensure | check | off }`.
+optional `callbacks: { register: ensure | check | off }`, whose `register`
+is itself optional since 2026-10-23.
 
 **It hand-writes its own `Debug`, which redacts `credentials` and prints
 `settings` in full.** A derived `Debug` would format a rail secret into any log
@@ -141,23 +142,31 @@ cannot hand a live rail a plaintext or stub callback host.
 
 **`callbacks.register`** says what the worker's `ensure_callbacks` job and
 `vpay-server callbacks ensure` may do about the rail's callback endpoint at
-the provider: `ensure` (absent block, or `{}`) lists and creates vpay's when
-it is missing, `check` lists and never creates, `off` never asks. It applies
+the provider: `ensure` lists and creates vpay's when it is missing, `check`
+lists and never creates, `off` never asks. **Unset — absent block, or `{}` —
+it is the rail's own default, which its adapter declares**
+(`ProviderAdapter::default_callback_registration`): `ensure`, except
+**`notchpay`, which is `off` since 2026-10-23** (the maintainer's "Default to
+`off` for Notch Pay"); the worker at start, and `vpay-server callbacks
+ensure`, log one `info` line for a rail an unset `register` leaves `off`. _(Until then an absent block meant `ensure` on every
+rail.)_ It applies
 only to an **enabled** rail whose adapter declares
 `CallbackUrlMode::Registered` — `notchpay` today. On a `PerRequest` rail
 (`mtn_momo`, `orange_money`) the block is refused at boot,
 `ConfigError::CallbacksOnPerRequestRail` → **78**, whatever it says. A
-misspelt key inside it is refused (`deny_unknown_fields`), never read as
-`ensure`. `config/application-notchpay-sandbox.yml` sets `check`, so a
+misspelt key inside it is refused (`deny_unknown_fields`), never silently
+ignored. `config/application-notchpay-sandbox.yml` sets `check`, so a
 worker started against the real sandbox never creates an endpoint by
 itself. **On Notch Pay, `ensure` may buy nothing (2026-10-23):** the
 sandbox stored `"url": null` for an endpoint created through the same
 `POST /webhooks` call, with a public URL, and delivered nothing to it in 21
 minutes; `GET`, `PUT` and `DELETE` by id answered `404`, so it can be
-removed only in Notch Pay's dashboard. vpay's `adapter-notchpay.md` advises
-an operator who wants Notch Pay's callbacks to register vpay's URL in the
-dashboard and set `register: off` (unmeasured too). Charges settle by
-polling either way.
+removed only in Notch Pay's dashboard. That is why the default became
+`off`. An operator who wants Notch Pay's callbacks registers vpay's URL in
+the dashboard and leaves `register` unset (unmeasured too); set `check`
+instead to have `VpayCallbackEndpointUnconfirmed` watch it, and then the
+endpoint must carry vpay's description (`docs/runbooks/callback-endpoints.md`).
+Charges settle by polling either way.
 
 **`to_provider_config(&Deployment)`** is "the only place a
 `vpay_provider::ProviderConfig` is built from configuration, so the server and
@@ -249,9 +258,11 @@ routing:
 The most specific entry wins (rail and type, then rail, then `100`). `0`
 ranks a rail last, it does not disable it; `enabled: false` does. **The
 weight is the only score component today, and the formula
-(`provisional-1`) is provisional** until the maintainer answers RFC-0008's
-2026-10-23 revision (fees, health, completion rate and latency are proposed,
-none built). Refusals, all exit `78`: `UnknownRoutingRail`,
+(`provisional-1`) is provisional**. The maintainer chose on 2026-10-23
+(RFC-0008 § R8.1): the estimated fee as the next score component; the
+completion rate reported per rail and type, for you to read and set this
+block by hand, never scored ("Go with (a)"). Neither is built. Health is not a component (R8.3: it reports only), and the
+block stays the operator's until RFC-0009 (R8.2). Refusals, all exit `78`: `UnknownRoutingRail`,
 `UnknownMethodType` (reserved `card`/`bank_transfer` say so),
 `RoutingWeightTooLarge`, `DuplicateRoutingWeight` (all in `validate_all`),
 and at boot step 4 `RoutingWeightOnAnUnservedType` (e.g. `orange_money` with

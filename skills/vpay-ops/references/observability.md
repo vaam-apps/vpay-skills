@@ -1,6 +1,6 @@
 # Observability: two ports, thirteen names, and no scraper
 
-_Verified against vpay `a33aac61` (2026-09-29) for the queue-age gauge note, and against `82a68f4e` (2026-10-23) plus the pull request that adds the 2026-10-23 Notch Pay sandbox verification page for the `notchpay` sentence in the `vpay_callback_endpoint_checks_total` row, restamped with its merge; the rest of this page was last read at `d3a8810b` (2026-09-16). Version-sensitive claims
+_Verified against vpay `a33aac61` (2026-09-29) for the queue-age gauge note, and against `82a68f4e` (2026-10-23) plus the pull request that adds the 2026-10-23 Notch Pay sandbox verification page for the `notchpay` sentence in the `vpay_callback_endpoint_checks_total` row, restamped with its merge, and against `9499f09d` plus the pull request that adds `docs/status/verification/2026-10-23-notchpay-defaults-and-wrong-network.md` for the `off` bullet under `VpayCallbackEndpointUnconfirmed`, restamped with its merge; the rest of this page was last read at `d3a8810b` (2026-09-16). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 **Nothing has ever scraped any of this.** The series exist; the alerts on them
@@ -127,6 +127,10 @@ change it:
 - It is a `warning`, in `check` mode too. Callbacks are hints, so a missing
   endpoint costs latency and never money. The metric has no `registration`
   label, and in `check` mode `missing` is what the operator asked to be told.
+- It never fires for an `off` rail, which counts no sample, and **`off` is
+  `notchpay`'s default since 2026-10-23**: on a deployment that leaves
+  `callbacks.register` unset, the alert says nothing about Notch Pay at all
+  (`configuration.md` § `callbacks.register`).
 - It cannot fire before a worker's second pass (a counter's first sample shows
   no increase), and it cannot fire for a pass that never runs. The job rules
   cover that case.

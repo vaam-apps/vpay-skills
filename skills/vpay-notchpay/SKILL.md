@@ -1,6 +1,6 @@
 ---
 name: vpay-notchpay
-description: "The Notch Pay adapter (`vpay-adapter-notchpay`, rail `notchpay`, 2026-10-20) — a push rail for MTN MoMo and Orange Money through one aggregator account, admitted under ADR-0031 because its status read takes the key Notch Pay calls PUBLIC. Covers the production risk that admission accepts and the boot warning that states it, the six conditions an agent must not weaken, what Notch Pay's real sandbox answered on 2026-10-21 (step 1, through the probe) and what vpay itself did against it the same day (step 5: three test-mode payments through the adapter, sandbox only, one short `amounts.total` refused as `Malformed`, which since 2026-10-23 is `NeedsReconciliation` and escalates the charge to `unresolved` on the first read), then the MTN timeout, MTN canceled and Orange success numbers through vpay on 2026-10-22 (runbook B3b, all as mapped), the per-charge channel (`cm.mtn`/`cm.orange` from the payer's method type, 2026-10-23, stub-proven in vpay), what the probe measured on Notch Pay's side on 2026-10-23 (every MTN and Orange outcome number on `cm.mtn`/`cm.orange` as on `cm.mobile`, a wrong-network number refused with a `422` on `errors.phone`, a never-processed payment still `pending` after an hour, and an API-created webhook endpoint that stored `url: null` and delivered nothing, so the signature format is still unmeasured), why payments are addressed by Notch Pay's `trx.…` reference kept in `ref_extra` (fixed in vaam-apps/vpay#304, and met by Notch Pay's sandbox in step 5), the fail-closed `409` and its residual crash window, the 404 rule, the amount and `amounts.total` check on every success, the livemode key rule (`test.` or `test_`, corrected 2026-10-20), and why `refund` is a declared `NotImplemented` token. Load before changing `backends/crates/vpay-adapter-notchpay`, `backends/crates/vpay-notchpay`, its WireMock mappings or its config."
+description: "The Notch Pay adapter (`vpay-adapter-notchpay`, rail `notchpay`, 2026-10-20) — a push rail for MTN MoMo and Orange Money through one aggregator account, admitted under ADR-0031 because its status read takes the key Notch Pay calls PUBLIC. Covers the production risk that admission accepts and the boot warning that states it, the six conditions an agent must not weaken, what Notch Pay's real sandbox answered on 2026-10-21 (step 1, through the probe) and what vpay itself did against it the same day (step 5: three test-mode payments through the adapter, sandbox only, one short `amounts.total` refused as `Malformed`, which since 2026-10-23 is `NeedsReconciliation` and escalates the charge to `unresolved` on the first read), then the MTN timeout, MTN canceled and Orange success numbers through vpay on 2026-10-22 (runbook B3b, all as mapped), the per-charge channel (`cm.mtn`/`cm.orange` from the payer's method type, 2026-10-23, stub-proven in vpay), what the probe measured on Notch Pay's side on 2026-10-23 (every MTN and Orange outcome number on `cm.mtn`/`cm.orange` as on `cm.mobile`, a wrong-network number refused with a `422` on `errors.phone`, which the adapter maps to `invalid_payer` since that day, a never-processed payment still `pending` after an hour, and an API-created webhook endpoint that stored `url: null` and delivered nothing, so the signature format is still unmeasured, and why vpay therefore registers nothing on a Notch Pay account unless `callbacks.register` says so, since 2026-10-23), why payments are addressed by Notch Pay's `trx.…` reference kept in `ref_extra` (fixed in vaam-apps/vpay#304, and met by Notch Pay's sandbox in step 5), the fail-closed `409` and its residual crash window, the 404 rule, the amount and `amounts.total` check on every success, the livemode key rule (`test.` or `test_`, corrected 2026-10-20), and why `refund` is a declared `NotImplemented` token. Load before changing `backends/crates/vpay-adapter-notchpay`, `backends/crates/vpay-notchpay`, its WireMock mappings or its config."
 ---
 
 # Notch Pay — the aggregator push rail
@@ -31,7 +31,10 @@ description: "The Notch Pay adapter (`vpay-adapter-notchpay`, rail `notchpay`, 2
 > the pull request that adds the probe's `two-step`, `channels` and
 > `webhook-*` phases and
 > `docs/status/verification/2026-10-23-notchpay-sandbox-two-step-and-channels.md`,
-> and is restamped with that pull request's merge. On an older tree,
+> and is restamped with that pull request's merge. The two decisions the
+> maintainer took on that evidence the same day (the wrong-network bullet,
+> the codes in "How the adapter behaves", the webhook-registration bullet
+> and `callbacks.register`) were read against vpay's `master` at `9499f09d` plus the pull request that adds `docs/status/verification/2026-10-23-notchpay-defaults-and-wrong-network.md`, restamped with its merge. On an older tree,
 > `backends/crates/vpay-adapter-notchpay` does not exist. See
 > [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
 
@@ -129,8 +132,8 @@ What step 1 showed:
   fix (carry the `trx.…` in `ref_extra`) kept a **residual crash window**:
   a crash after the USSD prompt and before `ref_extra` was durable left a
   payment vpay could not read. ~~State it as a risk; do not claim it is
-  solved.~~ **Corrected 2026-10-23 (ADR-0032, Proposed, built on the
-  maintainer's instruction):** closed on vpay's side by committing the
+  solved.~~ **Corrected 2026-10-23 (ADR-0032, built on the maintainer's
+  instruction and Accepted the same day):** closed on vpay's side by committing the
   `trx.…` before the prompt (§ "How the adapter behaves"). ~~Notch Pay's
   sandbox has not run the split~~; since 2026-10-23 the probe has run its
   Notch Pay side (below), and vpay itself has not. Say "closed in vpay,
@@ -199,18 +202,27 @@ Notch Pay from a cloud session.
 - **A number from the other network is refused at process**: `422` with
   `errors.phone`, "Invalid CM Orange Money" for MTN's number on `cm.orange`
   and "Invalid CM Mobile Money" for Orange's on `cm.mtn`. The initialized
-  payment stays `pending`. The adapter maps it to
-  `Rejected { provider_error }` (`process_refusal`), not `invalid_payer`,
-  because `mapping.rs` says the errors page names fields only by example;
-  this is the first measured example. **It was not changed**: remapping it
-  is the maintainer's decision, not a doc fix.
+  payment stays `pending`. **The adapter maps it to
+  `Rejected { invalid_payer }` since 2026-10-23**, on the maintainer's "Yes,
+  `invalid_payer`": `process_refusal`'s arm for a `422` whose `errors` name
+  `phone` and nothing else, with a message of vpay's own, so Notch Pay's
+  words (which may quote the number) are never carried. A `422` naming any
+  other field, or `phone` beside another, and the same refusal on
+  initialize (never measured), stay `provider_error`. Stub mapping:
+  `payments-process.json`'s first entry; conformance case
+  `notchpay_a_number_on_the_other_network_is_an_invalid_payer`. vpay itself
+  has not sent such a number to Notch Pay. _(This bullet said "maps it to
+  `Rejected { provider_error }` … **It was not changed**: remapping it is the
+  maintainer's decision" until that decision.)_
 - **Webhooks (items 7, 17, 20, 24).** `POST /webhooks` with a public
   webhook.site URL answered `201` with **`"url": null`**, and **nothing was
   delivered in 21 minutes**, not even `payment.created`. `GET`, `PUT` and
   `DELETE /webhooks/{id}` all answered `404` "Resource Not Found". So no
   signature, header or retry was seen, and the hash key was never used:
   **`x-notch-signature`'s format is still only what the documentation
-  says.** `ensure_callbacks` registers vpay's endpoint with the same call.
+  says.** `ensure_callbacks` registers vpay's endpoint with the same call,
+  which is why, since the same day, it does so only when `register: ensure`
+  is written (below).
 - **The stall (item 25).** All four payments processed after that endpoint
   was created were still `processing` 3 to 55 minutes later; all eleven
   processed before it were final within about 5 s. That is a correlation,
@@ -389,13 +401,15 @@ ADR-0031's conditions are the admission. **Weakening any one of them is
   off its journal. ~~No sandbox payment has used `cm.mtn` or `cm.orange`.~~
   Since 2026-10-23 the probe has: every MTN and Orange outcome number read on
   them what it reads on `cm.mobile`, and a number from the other network is a
-  `422` on `errors.phone`, which the adapter maps to `provider_error` (above).
+  `422` on `errors.phone`, which the adapter maps to `invalid_payer` since
+  2026-10-23 (above; it was `provider_error`).
   vpay itself has sent neither. Notch
   Pay is the first rail the router can choose **for either network**: with
   equal weights it wins `orange_wallet` over `orange_money` on the tie-break
   (`notchpay` < `orange_money`), and loses `mtn_wallet` to `mtn_momo`. That
-  is `provisional-1`'s tie-break, not a decision about Notch Pay; an operator
-  changes it with `routing.weights` (`vpay-ops`).
+  is `provisional-1`'s tie-break, not a decision about Notch Pay, and the
+  maintainer kept it on 2026-10-23 (RFC-0008 § R8); an operator changes it
+  with `routing.weights` (`vpay-ops`).
 - **A charge is two port calls, with a commit between them** (since
   2026-10-23, ADR-0032; `submit` was both wire calls until then). The
   adapter declares `SubmitSteps::PrepareThenSubmit`. **`prepare`** is
@@ -467,19 +481,39 @@ ADR-0031's conditions are the admission. **Weakening any one of them is
   sandbox read it for the canceled-by-user number, the evidence RFC-0012 § 4
   named; the public key can cancel too, so it is evidence, not proof.
   `expired` and `abandoned` are `payer_timeout`. Anything else is
-  `Malformed`. `PRODUCED_FAILURE_CODES` is five codes; nothing maps to
-  `insufficient_funds`, because the read names no reason. The fifth,
-  `provider_unavailable`, comes from no status: it is `prepare`'s `409`
-  with no `submit` row (ADR-0032), so the two-way gate adds it by hand, as
-  it adds `provider_account_blocked`.
+  `Malformed`. `PRODUCED_FAILURE_CODES` is six codes (five until
+  2026-10-23); nothing maps to `insufficient_funds`, because the read names
+  no reason. The fifth, `provider_unavailable`, comes from no status: it is
+  `prepare`'s `409` with no `submit` row (ADR-0032), so the two-way gate
+  adds it by hand, as it adds `provider_account_blocked`. The sixth,
+  `invalid_payer`, comes from no status either: it is process's `422` on the
+  payer's phone alone (above), added by hand the same way.
 - **Callbacks**: the five `payment.*` events only; the charge is `data.trxref`
   if it is one of our UUIDs, else `data.reference` (since #304, after the
   measured payment shape; no webhook has been received to confirm the
   event's), and `ref_extra` is empty. The signature
   (`x-notch-signature`) is **not** checked, because the port passes no
   headers.
-- **The webhook endpoint is registered by vpay** since 2026-10-22
-  (RFC-0013, vaam-apps/vpay#340, merged as `8504536f`): `notchpay` declares
+- **Since 2026-10-23 vpay registers nothing on a Notch Pay account unless
+  told to.** The adapter overrides `default_callback_registration` with
+  `Off` (the maintainer's "Default to `off` for Notch Pay"), so with
+  `providers[].callbacks.register` unset, or `callbacks: {}`, the pass never
+  lists or creates, counts no sample (so `VpayCallbackEndpointUnconfirmed`
+  cannot fire for the rail), and `vpay-server callbacks ensure` prints
+  `notchpay off off -` and exits `0`; the worker logs one `info` line
+  saying why at start, and so does the command.
+  An explicit `ensure` or `check` is honoured, and runs what follows. Proven
+  by `the_callback_registration_default_is_off`, the binary's
+  `the_plan_reads_each_rails_setting_else_its_adapters_default` and
+  `callback_registration.rs`'s
+  `an_unset_register_leaves_a_notch_pay_account_alone` (no request reaches
+  the stub's `/webhooks`; an explicit `ensure` then creates). **Do not
+  "fix" a deployment's missing Notch Pay endpoint by deleting this
+  override**; register vpay's URL in Notch Pay's dashboard instead, or
+  write `register: ensure` knowing the sandbox evidence below.
+- **The webhook endpoint can be registered by vpay** since 2026-10-22
+  (RFC-0013, vaam-apps/vpay#340, merged as `8504536f`), with
+  `register: ensure` since 2026-10-23: `notchpay` declares
   `CallbackUrlMode::Registered`, and `src/callbacks.rs` implements
   `ensure_callback_endpoint`, called by the worker's `ensure_callbacks` job
   (every worker start, hourly) and `vpay-server callbacks ensure [--check]`.
@@ -503,7 +537,8 @@ url:{16 hex of SHA-256(callback URL)}`, because Notch Pay answers
   with a public URL, stored `url: null`, got nothing in 21 minutes, and
   answered `404` to `GET`, `PUT` and `DELETE` by id. vpay's
   `adapter-notchpay.md` now tells an operator who wants callbacks to
-  register vpay's URL in the dashboard and set `register: off`; that
+  register vpay's URL in the dashboard, which is what an unset `register`
+  now leaves them to do; that
   hand-made endpoint is unmeasured too. Callbacks are hints, and the poll
   ladder settles every charge without one. _(This bullet said "The URL is
   registered with the account by hand. RFC-0013 is not built." until
@@ -559,7 +594,9 @@ exists with no host port. The proof that a Notch Pay config boots is
 which runs the real binary, and for livemode
 `a_livemode_notchpay_rail_boots_only_acknowledged_and_still_warns`.
 
-**`callbacks.register`** (2026-10-22): `ensure` by default, `check`, or `off`.
+**`callbacks.register`** (2026-10-22): `ensure`, `check`, or `off`; **unset
+is `off` on this rail since 2026-10-23** (the adapter's declared default; it
+was `ensure`).
 `config/application-notchpay-sandbox.yml` sets **`check`**, so the worker
 started by runbook B2 lists the real sandbox account's endpoints and never
 creates one. Do not change it to `ensure` outside runbook B4: that is a
