@@ -100,6 +100,8 @@ asked for; **the chosen rail and the ranking are on no `/v1` object** (D10),
 only in `charges.method_type` and `routing_decisions`. The ranking's formula
 is provisional (`provisional-1`). `orange_wallet` can route to a redirect rail
 (`return_url`) or a push rail (`msisdn`), so a server confirming it should pin.
+The confirm ranks on its own: following the rail the checkout page showed is
+decided (RFC-0008 § R8.4, 2026-10-23) and **not built**.
 Neither SDK can confirm by type yet (`docs/sdks/parity.md`, dated
 2026-10-23). Before 2026-10-23 this row read "rail codes: `mtn_momo`,
 `orange_money`".
