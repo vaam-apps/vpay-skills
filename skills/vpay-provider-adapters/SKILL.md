@@ -823,9 +823,11 @@ processes it. Each adapter declares what it serves in
   a rail-code branch to it; `vpay-server`'s `the_router_names_no_rail` reads
   its source and fails. **The formula is provisional** (`provisional-1`, a
   configured weight per rail, `routing.weights`, default 100, ties to the
-  lower rail code) until the maintainer answers RFC-0008's revision R8. A
-  new component is a `Component` variant and its breakdown entry, not a sort
-  key. vpay's evidence:
+  lower rail code). RFC-0008's R8 was answered on 2026-10-23: the next
+  components are the estimated fee, then the completion rate, and neither is
+  built; health never enters the score (R8.3); there is no exploration
+  (R8.5); the tie-break is kept. A new component is a `Component` variant
+  and its breakdown entry, not a sort key. vpay's evidence:
   `docs/status/verification/2026-10-23-method-type-routing.md`.
 
 ## Where to go next
