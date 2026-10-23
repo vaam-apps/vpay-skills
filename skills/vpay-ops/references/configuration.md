@@ -164,12 +164,12 @@ by `Debug`, never printed. **`callbacks.verify` is an acknowledgement, not a
 switch**: a configured secret is checked whatever it says. Boot step 4
 (`boot_seeds`) refuses, each **78** and naming the setting, never a value:
 
-| condition                                                                    | error                          |
-| ---------------------------------------------------------------------------- | ------------------------------ |
-| an adapter's `callback_check` without `delivers_callbacks`                   | `IncoherentCallbackCheck`      |
-| livemode, a `Signature` rail, no secret, and no `callbacks.verify: off`       | `CallbackSigningSecretMissing` |
-| a signing secret (either name) or `verify: off` on a rail that checks none    | `CallbackSigningSettingUnread` |
-| `verify: off` beside a configured secret                                     | `CallbackVerifyOffWithSecret`  |
+| condition                                                                  | error                          |
+| -------------------------------------------------------------------------- | ------------------------------ |
+| an adapter's `callback_check` without `delivers_callbacks`                 | `IncoherentCallbackCheck`      |
+| livemode, a `Signature` rail, no secret, and no `callbacks.verify: off`    | `CallbackSigningSecretMissing` |
+| a signing secret (either name) or `verify: off` on a rail that checks none | `CallbackSigningSettingUnread` |
+| `verify: off` beside a configured secret                                   | `CallbackVerifyOffWithSecret`  |
 
 Outside livemode, no secret boots and `vpay-server serve` logs a `WARN`; with
 `verify: off` it warns at every boot in either mode. A blank value is no

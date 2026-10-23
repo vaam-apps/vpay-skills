@@ -243,13 +243,13 @@ the accurate one. `CallbackRef::ref_extra` — Orange's
 material from an unauthenticated request is the one thing this route must not
 do.
 
-| Case                                       | Answer                                              |
-| ------------------------------------------ | --------------------------------------------------- |
-| `code` names no adapter this process links | `404`, byte-identical to the router's fallback      |
-| body is not a notification this rail sends | `400` (plus a `warn` carrying the adapter's reason) |
-| reference names no charge here             | `202`                                               |
+| Case                                        | Answer                                                 |
+| ------------------------------------------- | ------------------------------------------------------ |
+| `code` names no adapter this process links  | `404`, byte-identical to the router's fallback         |
+| body is not a notification this rail sends  | `400` (plus a `warn` carrying the adapter's reason)    |
+| reference names no charge here              | `202`                                                  |
 | reference names a charge, the check refuses | `202` (plus a `warn`; nothing moved, since 2026-10-23) |
-| reference names a charge, the check admits | `202`                                               |
+| reference names a charge, the check admits  | `202`                                                  |
 
 The last three are identical on purpose: ~~a non-2xx makes the rail retry forever,
 and~~ a distinct answer would be an oracle for "does this charge exist".

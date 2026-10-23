@@ -774,12 +774,12 @@ scheme measured on: not yet). The maintainer answered "Yes, build RFC-0014"
 on 2026-10-23, lifting RFC-0012's "hash key is evidence only" rule for it.
 
 - **The port** (`vpay_provider::callback`, new): `CallbackRequest { headers,
-  body, received_at }` (a hand-written `Debug` that prints header names and
+body, received_at }` (a hand-written `Debug` that prints header names and
   the body's length, registered in `debug_protections`), `CallbackVerdict`
   (`Verified`, `Invalid(&'static str)`, `NotChecked`, `NoSecret`,
   `Unavailable(&'static str)`; `#[non_exhaustive]`; only the first three
   admit the pull-forward), and **`ProviderAdapter::verify_callback(request,
-  charge, config)`**, defaulting to `NotChecked`. `parse_callback` is
+charge, config)`**, defaulting to `NotChecked`. `parse_callback` is
   unchanged. `Measured` forwards it and counts nothing.
 - **`Capabilities::callback_check`** (`None` | `BodyToken` | `Signature`) says
   what **vpay's adapter** checks, not what the rail sends;
