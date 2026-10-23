@@ -12,6 +12,61 @@ publishes no release tags and its workspace version has never moved off
 `v0.5.0` as of 2026-09-23 — and its workspace version is `0.5.0`. The naming
 rule stands, for the reasons VERSIONING.md now gives.)_
 
+## 2026-10-23 — Notch Pay's sandbox, measured for the two-step split, the per-network channels and a webhook
+
+Read against vaam-apps/vpay's `master` at `82a68f4e`, plus the pull request
+that adds the probe's `two-step`, `channels`, `webhook-receive` and
+`webhook-update` phases and
+`docs/status/verification/2026-10-23-notchpay-sandbox-two-step-and-channels.md`;
+restamped with the merge of that pull request when it lands. The maintainer
+asked to "finalise notchpay", approved the sandbox session in its chat ("Yes,
+run it") and chose "A third-party capture service" to receive a webhook. The
+session ran through `sandbox_probe` from a cloud session; **vpay itself made
+no call**, and no adapter code changed.
+
+- `vpay-notchpay` (`SKILL.md`): a new § "What the 2026-10-23 probe showed":
+  an initialized, never-processed payment still `pending` after an hour; a
+  process 300 s late completes; the `409` body with `errors.reference`; every
+  MTN and Orange outcome number on `cm.mtn` / `cm.orange` reading as on
+  `cm.mobile`; the wrong-network `422` on `errors.phone`, which the adapter
+  maps to `provider_error`; `POST /webhooks` storing `url: null`, nothing
+  delivered in 21 minutes, `GET`/`PUT`/`DELETE` by id all `404`; the
+  `processing` stall after that endpoint existed; the endpoint left for the
+  maintainer to delete in the dashboard. The "Still open" list, the channel,
+  `409` and webhook-registration bullets, `callbacks.register` and "Not
+  built" follow it.
+- `vpay-provider-adapters` (`SKILL.md`): the RFC-0013 entry says an endpoint
+  `ensure_callbacks` creates on Notch Pay received nothing in the sandbox, so
+  `present`/`created` means "listed", not "delivering".
+- `vpay-ops` (`references/configuration.md`, `references/observability.md`):
+  the same, where an operator reads `callbacks.register` and
+  `vpay_callback_endpoint_checks_total`; `register: off` with a
+  dashboard-registered URL is what vpay's rail page now advises.
+
+### Stopped being true
+
+- "Notch Pay documents no Orange failure number" / "Orange's failure path:
+  Notch Pay documents no Orange failure number" (`vpay-notchpay`; vpay's
+  runbook, `adapter-notchpay.md` and `providers.md` said the same). The
+  testing page gives the five suffixes `…000000` to `…000004` "for each
+  operator", Orange's `+23769` included, and the probe ran Orange's four on
+  `cm.orange`. What stays open is Orange's failure path **through vpay**.
+- "no sandbox payment has used `cm.mtn` or `cm.orange`" and "**Stub-proven
+  only**" (`vpay-notchpay`). The probe has used both, with every outcome
+  number; vpay itself has sent neither, so the adapter is stub-proven and
+  Notch Pay's side is measured.
+- "Notch Pay's sandbox has not run the split" (`vpay-notchpay`). The probe ran
+  its Notch Pay side; "closed in vpay, proven against WireMock and Postgres"
+  still stands, because vpay did not.
+- "Not measured: item 7 (signature) and 17's delivery, **for want of a
+  public URL**" (`vpay-notchpay`). A public URL was used on 2026-10-23 and
+  still nothing arrived; the reason is now the null URL, and the signature
+  format is still unmeasured.
+- That an endpoint `ensure_callbacks` creates on Notch Pay would receive
+  Notch Pay's callbacks, which `vpay-provider-adapters` and `vpay-ops`
+  implied by calling `present` and `created` healthy. On the sandbox's
+  evidence it receives nothing.
+
 ## 2026-10-23 — payment-method types and a scored, explained router (ADR-0029 D6/D10, RFC-0008 revised)
 
 Read against vaam-apps/vpay's `master` at `f0a2f7d7`, the merge of

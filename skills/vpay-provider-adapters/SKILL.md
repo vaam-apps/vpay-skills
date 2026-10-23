@@ -8,7 +8,11 @@ description: The vpay provider port (`vpay-provider`) and how to add a payment r
 > **Verified against vpay `a33aac61` (2026-09-29).** The two Notch Pay passages
 > that say what step 5 did ("RFC-0012" in the RFC list, and "`backends/crates/vpay-notchpay`
 > is the Notch Pay client") were also read against vpay `e28292d`
-> (2026-10-21), the merge of vaam-apps/vpay#310. Version-sensitive claims below
+> (2026-10-21), the merge of vaam-apps/vpay#310. The RFC-0013 entry's
+> sentence on what Notch Pay's sandbox stored for an API-created endpoint was
+> read against vpay `82a68f4e` plus the pull request that adds
+> `docs/status/verification/2026-10-23-notchpay-sandbox-two-step-and-channels.md`,
+> restamped with its merge. Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -662,7 +666,13 @@ section as a decision:
   `docs/runbooks/callback-endpoints.md`). A new `Registered` rail is covered
   by it with no rule change, because the rule groups `by (provider)`. The marker is
   `vpay:{deployment.name}:{rail}:default`. **Never run against a real Notch
-  Pay account** (delivery step 5); Stripe and PayPal have no adapter. Where
+  Pay account** (delivery step 5); Stripe and PayPal have no adapter. On
+  2026-10-23 the Notch Pay probe made the same `POST /webhooks` call with a
+  public URL: the sandbox stored `"url": null`, delivered nothing in 21
+  minutes, and answered `404` to `GET`, `PUT` and `DELETE` by id. So on that
+  evidence an endpoint `ensure_callbacks` creates on Notch Pay receives
+  nothing, and `present` or `created` means "listed", not "delivering"
+  (the `vpay-notchpay` skill). Where
   it differs from the RFC: `Drifted` and `retirable` are new; Notch Pay's
   endpoint is recognised by a URL tag in its description, because Notch Pay
   answers `"url": null`; nothing is ever retired or repaired on Notch Pay
