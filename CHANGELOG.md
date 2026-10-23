@@ -44,6 +44,9 @@ the real scheme measured on: not yet.**
 - `vpay-merchant-api` (`references/routes.md`) and `vpay-reconciler`
   (`SKILL.md`): the callback route's new step, and that a refused callback is
   the same `202`.
+- `vpay` and `vpay-conventions` (`SKILL.md`): "Callbacks are hints" gains
+  AGENTS.md's new sentence, that a verified signature decides only the
+  pull-forward.
 
 ### Stopped being true
 

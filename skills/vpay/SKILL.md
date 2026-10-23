@@ -145,7 +145,9 @@ Then state explicitly, in your summary, what you did _not_ do.
 - **One charge per intent, forever.** A unique index enforces it. Retry means a
   new PaymentIntent.
 - **Callbacks are hints.** `parse_callback` returns identifiers only, never a
-  status. Only the authenticated status query moves money.
+  status. Only the authenticated status query moves money. A verified
+  signature changes nothing about that: `verify_callback` (RFC-0014,
+  2026-10-23) decides only whether the poll is pulled forward.
 
 ## Which skill to load
 
