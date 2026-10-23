@@ -249,9 +249,10 @@ routing:
 The most specific entry wins (rail and type, then rail, then `100`). `0`
 ranks a rail last, it does not disable it; `enabled: false` does. **The
 weight is the only score component today, and the formula
-(`provisional-1`) is provisional**. The maintainer chose the next components
-on 2026-10-23 (RFC-0008 § R8.1): the estimated fee, then the completion rate,
-neither built. Health is not a component (R8.3: it reports only), and the
+(`provisional-1`) is provisional**. The maintainer chose on 2026-10-23
+(RFC-0008 § R8.1): the estimated fee as the next score component; the
+completion rate reported per rail and type, for you to read and set this
+block by hand, never scored ("Go with (a)"). Neither is built. Health is not a component (R8.3: it reports only), and the
 block stays the operator's until RFC-0009 (R8.2). Refusals, all exit `78`: `UnknownRoutingRail`,
 `UnknownMethodType` (reserved `card`/`bank_transfer` say so),
 `RoutingWeightTooLarge`, `DuplicateRoutingWeight` (all in `validate_all`),

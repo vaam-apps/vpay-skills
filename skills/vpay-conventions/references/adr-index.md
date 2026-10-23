@@ -211,12 +211,14 @@ with vpay#244, 0009 on 2026-10-16, 0010 and 0011 on 2026-10-17, and 0012,
   superseded, and **slice 1 built** the same day: method types beside rail
   codes, the scored router with formula `provisional-1`, and
   `routing_decisions`. **Its R8 questions were answered on 2026-10-23**
-  ("go with your defaults"): the estimated fee is the next component, then
-  the completion rate (neither built); the operator alone sets weights until
-  RFC-0009; health reports and never moves traffic; the confirm follows the
-  rail the page showed while it is eligible (**not built**: the confirm
+  ("go with your defaults"): the estimated fee is the next score component;
+  the completion rate is **reported** per rail and type for the operator to
+  set `routing.weights` by hand, never scored ("Go with (a)", § R8.1; neither
+  is built); the operator alone sets weights until RFC-0009; health reports
+  and never moves traffic, and no measured quantity does; the confirm follows
+  the rail the page showed while it is eligible (**not built**: the confirm
   re-ranks today); no exploration; the tie-break to the lower rail code is
-  kept. Whether the completion rate may move traffic is still open (§ R8.1). _(This bullet
+  kept. _(This bullet
   listed 0008 among the Drafts until 2026-10-17, and said "not built …
   no router exists" until 2026-10-23.)_
 - `docs/rfc/0009-provider-accounts-per-merchant.md` — **Draft**, proposed

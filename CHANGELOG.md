@@ -19,16 +19,21 @@ vaam-apps/vpay#350), restamped with the merge of the pull request that lands
 this when it does. The maintainer was asked whether to mark ADR-0032
 Accepted and answered "Yes". Asked RFC-0008's R8.1–R8.5 with the agent's
 defaults, they answered "go with your defaults" and, on the score, "first go
-with your defaults. Just document everything". vpay's record is RFC-0008
-§§ R7–R9 and ADR-0032's Status. No code changed.
+with your defaults. Just document everything". Asked then whether the
+completion rate may move traffic, as "(a) a configured weight the operator
+adjusts by hand from the dashboard numbers" or "(b) an automatic score
+component", they answered "Go with (a)". vpay's record is RFC-0008 §§ R7–R9
+and ADR-0032's Status. No code changed.
 
 - `vpay-conventions` (`references/adr-index.md`): 0032's row, Accepted; the
   0029 note, what the R8 answers settle in D8, D9 and D11; RFC-0008's bullet,
   each answer and what is built.
-- `vpay-provider-adapters` (`SKILL.md`): the router's next components are
-  chosen, health never enters the score, no exploration.
+- `vpay-provider-adapters` (`SKILL.md`): the fee is the next score
+  component, the completion rate is reported and never scored, health never
+  enters the score, no exploration.
 - `vpay-ops` (`references/configuration.md`) and `vpay-payments`
-  (`SKILL.md`): the chosen components, neither built; weights stay the
+  (`SKILL.md`): the fee as a component and the completion rate as a reported
+  measure the operator weighs by hand, neither built; weights stay the
   operator's until RFC-0009.
 - `vpay-merchant-api` (`references/objects.md`): the confirm following the
   checkout page's rail is decided and not built.
@@ -40,18 +45,18 @@ with your defaults. Just document everything". vpay's record is RFC-0008
   2026-10-23.
 - "The formula is provisional … until the maintainer answers RFC-0008's
   revision R8" and "RFC-0008's 2026-10-23 revision asks the maintainer which
-  components it should have". R8 is answered: the estimated fee, then the
-  completion rate.
+  components it should have". R8 is answered: the estimated fee is the next
+  score component; the completion rate is reported, not scored.
 - "Its R8 questions (which components, who sets the weights, may health move
-  traffic) are the maintainer's". Answered: fee then completion rate; the
-  operator; no.
+  traffic) are the maintainer's". Answered: the fee (the completion rate only
+  as an operator's input); the operator; no.
 - "fees, health, completion rate and latency are proposed" (`vpay-ops`).
   Health and latency are not chosen.
 
 Still true: the score is the configured weight alone (`provisional-1`); the
 confirm re-ranks on its own, so a server confirming `orange_wallet` should
-pin; one charge per intent; whether the completion rate may move traffic is
-not decided.
+pin; one charge per intent; no measured quantity (health, completion rate)
+moves traffic without an operator.
 
 ## 2026-10-23 — Notch Pay's sandbox, measured for the two-step split, the per-network channels and a webhook
 

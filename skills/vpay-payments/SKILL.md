@@ -306,9 +306,10 @@ naming a payment-method type (`mtn_wallet`, `orange_wallet`) is routed by
 transaction also commits its `routing_decisions` row. **Still one charge per
 intent** (D11): a decline returns the intent to `requires_payment_method` on
 the rail that declined, and nothing retries it elsewhere. The score is a
-configured weight only (`provisional-1`). The maintainer chose the next
-components on 2026-10-23 (RFC-0008 § R8): the estimated fee, then the
-completion rate. Neither is built.
+configured weight only (`provisional-1`). The maintainer chose on 2026-10-23
+(RFC-0008 § R8): the estimated fee as the next score component; the
+completion rate is reported for the operator to weigh by hand, never scored.
+Neither is built.
 
 ## Status, as of 2026-09-29; testing evidence corrected 2026-10-20
 
