@@ -12,6 +12,69 @@ publishes no release tags and its workspace version has never moved off
 `v0.5.0` as of 2026-09-23 — and its workspace version is `0.5.0`. The naming
 rule stands, for the reasons VERSIONING.md now gives.)_
 
+## 2026-10-24 — Notch Pay's first delivered webhooks: the signature is over the raw body, and the adapter reads `event` (vaam-apps/vpay#364)
+
+Read against vaam-apps/vpay#364 at its head `2c974b53` (`master` `630c8a34`
+plus the change), and restamped with its merge. On 2026-10-24 Notch Pay's
+sandbox delivered its first webhooks: four, for two test payments, to a
+capture endpoint the maintainer registered by hand in the dashboard, recorded
+by the probe's new `dashboard-deliveries` phase (runbook A8). Each carried
+`x-notch-signature`, the HMAC-SHA256 of the **raw body** under the Hash Key; a
+`JSON.stringify` re-serialisation matched none, because Notch Pay escapes `/`
+as `\/`. The adapter's `verify_callback`, run offline over the recorded bodies
+and headers, answered `Verified` for all four. The deliveries name the event
+under `event`, not the documented `type`, and `parse_callback` refused all
+four until vaam-apps/vpay#364 made `vpay_notchpay::wire::Event::name()` read
+`event` first, then `type`. **No webhook has reached a running vpay.** The
+dashboard's `verification.test` ping is unsigned and refused (`400`); whether
+Notch Pay needs a `2xx` there is not known.
+
+- `vpay-notchpay` (`SKILL.md`): a new section, "What the 2026-10-24 dashboard
+  deliveries showed"; the Callbacks bullet (the event name, the raw-body
+  signature verified offline, where deliveries come from); the 2026-10-23
+  webhook, stall and endpoint bullets; the "Still open" list; the probe's
+  `dashboard-deliveries` phase; the Hash Key as the signing secret (RFC-0012 §
+  10 item 21); the webhook-registration bullet, `callbacks.register` and the
+  "Not built" list.
+- `vpay-provider-adapters` (`SKILL.md`): the `default_callback_registration`
+  bullet, the RFC-0012 and RFC-0013 entries and the RFC-0014 heading.
+- `vpay-ops` (`references/configuration.md`): `callbacks.register` on Notch
+  Pay; the dashboard route delivers.
+- `vpay-conventions` (`references/adr-index.md`): the RFC-0014 row.
+- `vpay` (`SKILL.md`): step 5's "no webhook received" is "received by vpay".
+
+### Stopped being true
+
+- "an API-created webhook endpoint that stored `url: null`", "the sandbox
+  stored `"url": null`" (`vpay-notchpay`, `vpay-provider-adapters`,
+  `vpay-ops`). The listing shows `"url": null` for every endpoint, the
+  dashboard one that delivers included. What stands is that the endpoint
+  `POST /webhooks` created on 2026-10-23 delivered nothing in 21 minutes, for
+  a reason still unknown.
+- "Stub-proven; never verified against a real Notch Pay delivery"
+  (`vpay-notchpay`, `vpay-provider-adapters`, `vpay-conventions`). Verified
+  offline against four real deliveries; never through a running vpay.
+- "the signature format is still unmeasured", "`x-notch-signature`'s format
+  is still only what the documentation says" and "No webhook has ever been
+  delivered" (`vpay-notchpay`). Four were delivered, each signed over the raw
+  body as 64 lower-case hex characters.
+- "Do not "fix" the check to re-serialise the body before that measurement
+  says so" (`vpay-notchpay`). The measurement says never: a `JSON.stringify`
+  of the parsed body matched none of the four.
+- "no webhook has been received to confirm the event's" shape
+  (`vpay-notchpay`). A delivery names its event under `event`, and the
+  adapter read `type` alone. **On a vpay without vaam-apps/vpay#364, every
+  real Notch Pay payment webhook is `Malformed` and the route answers `400`.**
+- "such an endpoint is untested", "that hand-made endpoint is unmeasured
+  too" and "(unmeasured too)" (`vpay-notchpay`, `vpay-ops`). A
+  dashboard-registered endpoint delivers; none has reached a running vpay.
+- "The endpoint `ep_test.unEBL3JnHZF0fF5B` is still on the sandbox account"
+  (`vpay-notchpay`). The maintainer deleted it in the dashboard on
+  2026-10-24, and the next two payments were final within about 5 s
+  (consistent with it having caused the stall, n=2, still a correlation).
+- "no webhook received", unqualified (`vpay`, `vpay-provider-adapters`,
+  `vpay-notchpay`). Received by a capture endpoint, never by vpay.
+
 ## 2026-10-24 — a refund destination is keyed by the rail's code, and a routed charge's rail is not on `/v1`
 
 Read against vaam-apps/vpay's `master` at `1c8bd7b0`, the merge of vaam-apps/vpay#359, which fixes vpay's own

@@ -7,7 +7,9 @@ description: "Orientation for working in the vpay repository — a Rust + TypeSc
 
 > **Verified against vpay `a33aac61` (2026-09-29).** The 2026-10-21 correction
 > in "The one thing to get right" was read against vpay `e28292d`
-> (2026-10-21), the merge of vaam-apps/vpay#310. Version-sensitive claims below
+> (2026-10-21), the merge of vaam-apps/vpay#310, and its "no webhook received"
+> against vpay `2c974b53` (2026-10-24), the head of vaam-apps/vpay#364,
+> restamped with its merge. Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -44,7 +46,10 @@ server, worker and Postgres took three test-mode payments through the
 `notchpay` adapter against Notch Pay's real sandbox: one `succeeded`, one
 `failed`, and one whose short `amounts.total` the adapter refused as
 `Malformed`, never a success. It is sandbox only, with no production, no live
-key, no webhook received and no refund; see the `vpay-notchpay` skill.
+key, no webhook received by vpay and no refund; see the `vpay-notchpay` skill.
+_(This said "no webhook received" until 2026-10-24, when Notch Pay's sandbox
+delivered four to a capture endpoint registered in its dashboard, verified
+offline by the adapter; none has reached a running vpay.)_
 ~~Everything else in this repository's history settled against a WireMock host
 that answered the way the documents say a rail answers.~~ Everything other
 than MTN's and Notch Pay's sandboxes did, Orange Money's rail included, and

@@ -9,7 +9,10 @@ rows still hold, and for RFC-0014, merged the same day as `0977616`
 (vaam-apps/vpay#296); no stamp moved for either.** The RFC-0012 row's
 sentence on what the adapter has called was re-read on 2026-10-21 against vpay
 `e28292d`, the merge of vaam-apps/vpay#310 (RFC-0012's
-step 5); the rest of that row is unchanged. Version-sensitive claims carry the date they became true — see
+step 5); the rest of that row is unchanged. The RFC-0014 row's clause on
+what Notch Pay's check has been verified against was re-read on 2026-10-24
+against vpay `2c974b53`, the head of vaam-apps/vpay#364, and is restamped
+with its merge. Version-sensitive claims carry the date they became true — see
 [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 `docs/adr/`. An ADR is **immutable once accepted**: to change a decision you
@@ -271,7 +274,10 @@ with vpay#244, 0009 on 2026-10-16, 0010 and 0011 on 2026-10-17, and 0012,
   completes step 0 — see `vpay-troubleshooting`'s known-wrong-docs page. See `vpay-provider-adapters`.
 - `docs/rfc/0014-verifying-rail-callbacks.md` — **Draft; the port and
   Notch Pay's check built on 2026-10-23** (against `master` `82a68f4e` plus
-  the RFC-0014 branch), stub-proven; never verified against a real Notch Pay delivery.
+  the RFC-0014 branch), stub-proven, and since 2026-10-24 checked offline
+  against four real Notch Pay webhooks, all `Verified`; none has reached a
+  running vpay. _(This said "stub-proven; never verified against a real
+  Notch Pay delivery" until 2026-10-24.)_
   `ProviderAdapter::verify_callback` and `Capabilities::callback_check`, run
   after the charge is found; the verdict gates only the pull-forward, so
   callbacks stay hints. The secret is a credential under port-fixed names,

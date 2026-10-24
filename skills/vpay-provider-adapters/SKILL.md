@@ -18,6 +18,10 @@ description: The vpay provider port (`vpay-provider`) and how to add a payment r
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
+> What they say about Notch Pay's 2026-10-24 webhooks (the
+> `default_callback_registration` bullet, the RFC-0012 and RFC-0013 entries
+> and the RFC-0014 heading) was read against vpay `2c974b53` (2026-10-24), the
+> head of vaam-apps/vpay#364, and is restamped with its merge.
 
 One trait, `vpay_provider::ProviderAdapter`, in
 `backends/crates/vpay-provider/src/lib.rs`. The core owns the payment
@@ -221,8 +225,10 @@ fn accepted_exposure(&self) -> Option<AcceptedExposure>; // default: None — si
   `From<CallbackRegistrationDefault> for vpay_worker::callbacks::Registration`),
   and it logs one `info` line for a rail it leaves `off`. **Only `notchpay`
   overrides it, with `Off`**: the maintainer's "Default to `off` for Notch
-  Pay", after the sandbox stored an API-created endpoint with `url: null`
-  and delivered nothing to it. It is a method and not a `Capabilities` field
+  Pay", after the sandbox delivered nothing to an API-created endpoint
+  (2026-10-23). _(This said the sandbox "stored an API-created endpoint with
+  `url: null`" until 2026-10-24: the listing shows `null` for a
+  dashboard-registered endpoint that delivers too.)_ It is a method and not a `Capabilities` field
   for `accepted_exposure`'s reasons: nothing persists it and the core never
   branches on it. It exists so the binary does not match on `"notchpay"`,
   which ADR-0002 forbids outside an adapter crate. There is no `Check`
@@ -665,7 +671,10 @@ section as a decision:
   `failed`, one short `amounts.total` refused as `Malformed` and never a
   success; since 2026-10-23 that refusal is `NeedsReconciliation`, which
   escalates the charge to `unresolved` at once), after step 1's probe the same day. No production, no live key,
-  no webhook received, no refund. Load the `vpay-notchpay` skill before
+  no webhook received by vpay, no refund. _(This said "no webhook received"
+  until 2026-10-24, when the sandbox delivered four to a capture endpoint
+  registered in its dashboard, and the adapter's `verify_callback` verified
+  them offline; none has reached a running vpay.)_ Load the `vpay-notchpay` skill before
   touching it. Write "admitted under ADR-0031",
   **never** "rule 3 passes", and do not weaken any of ADR-0031's conditions:
   `X-Grant` on every call, boot refusing a missing private key, the
@@ -692,11 +701,15 @@ section as a decision:
   `vpay:{deployment.name}:{rail}:default`. **Never run against a real Notch
   Pay account** (delivery step 5); Stripe and PayPal have no adapter. On
   2026-10-23 the Notch Pay probe made the same `POST /webhooks` call with a
-  public URL: the sandbox stored `"url": null`, delivered nothing in 21
-  minutes, and answered `404` to `GET`, `PUT` and `DELETE` by id. So on that
-  evidence an endpoint `ensure_callbacks` creates on Notch Pay receives
-  nothing, and `present` or `created` means "listed", not "delivering"
-  (the `vpay-notchpay` skill). **So since 2026-10-23 an unset `register`
+  public URL: the sandbox listed it with `"url": null`, delivered nothing in
+  21 minutes, and answered `404` to `GET`, `PUT` and `DELETE` by id. So on
+  that evidence an endpoint `ensure_callbacks` creates on Notch Pay receives
+  nothing, for a reason still unknown, and `present` or `created` means
+  "listed", not "delivering" (the `vpay-notchpay` skill). One registered by
+  hand in the dashboard does deliver: four signed webhooks to a capture
+  endpoint on 2026-10-24, none yet to a running vpay. _(This said the
+  sandbox "stored `"url": null`" until 2026-10-24: the listing shows `null`
+  for the dashboard endpoint too.)_ **So since 2026-10-23 an unset `register`
   asks a Notch Pay account nothing** (above); `ensure` must be written. Where
   it differs from the RFC: `Drifted` and `retirable` are new; Notch Pay's
   endpoint is recognised by a URL tag in its description, because Notch Pay
@@ -804,7 +817,11 @@ maintainer asks for it; the page lists the order such work would follow.
 
 **RFC-0014 — verifying rail callbacks: the port and Notch Pay's check are
 built** (2026-10-23, against vpay `master` `82a68f4e` plus the branch
-`claude/happy-hopper-r3h6rz-webhook-signatures`; stub-proven; never verified against a real Notch Pay delivery). The maintainer answered "Yes, build RFC-0014"
+`claude/happy-hopper-r3h6rz-webhook-signatures`; stub-proven, and since
+2026-10-24 verified offline against four real Notch Pay deliveries, signed
+over the raw body; none has reached a running vpay, vaam-apps/vpay#364).
+_(This said "stub-proven; never verified against a real Notch Pay delivery"
+until 2026-10-24.)_ The maintainer answered "Yes, build RFC-0014"
 on 2026-10-23, lifting RFC-0012's "hash key is evidence only" rule for it.
 
 - **The port** (`vpay_provider::callback`, new): `CallbackRequest { headers,
