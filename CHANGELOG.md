@@ -14,7 +14,7 @@ rule stands, for the reasons VERSIONING.md now gives.)_
 
 ## 2026-10-24 — a refund destination is keyed by the rail's code, and a routed charge's rail is not on `/v1`
 
-Read against vaam-apps/vpay#359's head, `2dd465bd`, which fixes vpay's own
+Read against vaam-apps/vpay's `master` at `1c8bd7b0`, the merge of vaam-apps/vpay#359, which fixes vpay's own
 wording and records the gap. vpay-docs' re-read for v0.12.0 found that the API
 reference, three of `POST /v1/refunds`' error messages, two flow pages and both
 SDKs' doc comments still called the refund key `<payment_method_type>`. The
