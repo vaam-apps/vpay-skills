@@ -12,6 +12,23 @@ publishes no release tags and its workspace version has never moved off
 `v0.5.0` as of 2026-09-23 — and its workspace version is `0.5.0`. The naming
 rule stands, for the reasons VERSIONING.md now gives.)_
 
+## 2026-10-24 — case 6 of the a11y gate follows the whole `var()` chain (vaam-apps/vpay#349)
+
+Read against vaam-apps/vpay#349's head, `fcdf70ee`: `master` merged into the
+branch on the maintainer's "Rebase and merge #349". #355 had fixed the same
+case first with a one-`var()` regex; #349 replaces it.
+
+- `vpay-checkout` (`references/testing-and-gates.md`): case 6 resolves the
+  whole chain per theme against the package's own `theme.css`; the recipe runs
+  it once per app with `VPAY_STORYBOOK_BUILT=1` and a JSON-report check that
+  fails on any skip.
+
+### Stopped being true
+
+- "It now resolves one `var()` and requires a colour"
+  (`vpay-checkout/references/testing-and-gates.md`, 2026-10-23). It resolves
+  the whole chain and requires the package theme's colour.
+
 ## 2026-10-24 — a refund destination is keyed by the rail's code, and a routed charge's rail is not on `/v1`
 
 Read against vaam-apps/vpay's `master` at `1c8bd7b0`, the merge of vaam-apps/vpay#359, which fixes vpay's own
