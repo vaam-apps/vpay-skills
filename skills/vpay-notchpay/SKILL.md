@@ -1,10 +1,19 @@
 ---
 name: vpay-notchpay
-description: "The Notch Pay adapter (`vpay-adapter-notchpay`, rail `notchpay`, 2026-10-20) — a push rail for MTN MoMo and Orange Money through one aggregator account, admitted under ADR-0031 because its status read takes the key Notch Pay calls PUBLIC. Covers the production risk that admission accepts and the boot warning that states it, the six conditions an agent must not weaken, what Notch Pay's real sandbox answered on 2026-10-21 (step 1, through the probe) and what vpay itself did against it the same day (step 5: three test-mode payments through the adapter, sandbox only, one short `amounts.total` refused as `Malformed`, which since 2026-10-23 is `NeedsReconciliation` and escalates the charge to `unresolved` on the first read), then the MTN timeout, MTN canceled and Orange success numbers through vpay on 2026-10-22 (runbook B3b, all as mapped), the per-charge channel (`cm.mtn`/`cm.orange` from the payer's method type, 2026-10-23, stub-proven in vpay), what the probe measured on Notch Pay's side on 2026-10-23 (every MTN and Orange outcome number on `cm.mtn`/`cm.orange` as on `cm.mobile`, a wrong-network number refused with a `422` on `errors.phone`, which the adapter maps to `invalid_payer` since that day, a never-processed payment still `pending` after an hour, and an API-created webhook endpoint that stored `url: null` and delivered nothing, so the signature format is still unmeasured, and why vpay therefore registers nothing on a Notch Pay account unless `callbacks.register` says so, since 2026-10-23), why payments are addressed by Notch Pay's `trx.…` reference kept in `ref_extra` (fixed in vaam-apps/vpay#304, and met by Notch Pay's sandbox in step 5), the fail-closed `409` and its residual crash window, the 404 rule, the amount and `amounts.total` check on every success, the livemode key rule (`test.` or `test_`, corrected 2026-10-20), and why `refund` is a declared `NotImplemented` token. Load before changing `backends/crates/vpay-adapter-notchpay`, `backends/crates/vpay-notchpay`, its WireMock mappings or its config."
+description: "The Notch Pay adapter (`vpay-adapter-notchpay`, rail `notchpay`, 2026-10-20) — a push rail for MTN MoMo and Orange Money through one aggregator account, admitted under ADR-0031 because its status read takes the key Notch Pay calls PUBLIC. Covers the production risk that admission accepts and the boot warning that states it, the six conditions an agent must not weaken, what Notch Pay's real sandbox answered on 2026-10-21 (step 1, through the probe) and what vpay itself did against it the same day (step 5: three test-mode payments through the adapter, sandbox only, one short `amounts.total` refused as `Malformed`, which since 2026-10-23 is `NeedsReconciliation` and escalates the charge to `unresolved` on the first read), then the MTN timeout, MTN canceled and Orange success numbers through vpay on 2026-10-22 (runbook B3b, all as mapped), the per-charge channel (`cm.mtn`/`cm.orange` from the payer's method type, 2026-10-23, stub-proven in vpay), what the probe measured on Notch Pay's side on 2026-10-23 (every MTN and Orange outcome number on `cm.mtn`/`cm.orange` as on `cm.mobile`, a wrong-network number refused with a `422` on `errors.phone`, which the adapter maps to `invalid_payer` since that day, a never-processed payment still `pending` after an hour, and an API-created webhook endpoint that delivered nothing, and why vpay therefore registers nothing on a Notch Pay account unless `callbacks.register` says so, since 2026-10-23), the first webhooks Notch Pay delivered (2026-10-24: four, to a capture endpoint registered in its dashboard, signed over the raw body and verified offline by `verify_callback`, none yet to a running vpay; the adapter reads the event name from `event`, then `type`, since the fix those deliveries forced), why payments are addressed by Notch Pay's `trx.…` reference kept in `ref_extra` (fixed in vaam-apps/vpay#304, and met by Notch Pay's sandbox in step 5), the fail-closed `409` and its residual crash window, the 404 rule, the amount and `amounts.total` check on every success, the livemode key rule (`test.` or `test_`, corrected 2026-10-20), and why `refund` is a declared `NotImplemented` token. Load before changing `backends/crates/vpay-adapter-notchpay`, `backends/crates/vpay-notchpay`, its WireMock mappings or its config."
 ---
 
 # Notch Pay — the aggregator push rail
 
+> **Everything that names the 2026-10-24 dashboard deliveries** (the
+> description, step 5's "no webhook received" in "Read this before you
+> believe anything else", the "Still open" list, step 1's "Not measured"
+> line, the webhook, stall and endpoint bullets under "What the 2026-10-23
+> probe showed", the section "What the 2026-10-24 dashboard deliveries
+> showed", "How it runs", "Callbacks" under "How the adapter behaves", the
+> webhook-registration bullet, "The Hash Key", `callbacks.register` and the
+> "Not built" list) was read against vpay `4df5e0d2` (2026-10-24), the merge
+> of vaam-apps/vpay#364.
 > **The webhook signature check** ("Callbacks" under "How the adapter
 > behaves", "The Hash Key" below, and its entry in "Not built") was verified
 > against vpay `master` at `82a68f4e` plus the RFC-0014 branch
@@ -54,8 +63,10 @@ took three test-mode payments through the `notchpay` adapter against Notch
 Pay's real sandbox. It ran on the maintainer's MacBook, in a Claude Code
 desktop session and not a cloud one, and only after the maintainer approved
 the calls in that session's own chat. It is **sandbox only**: no production,
-no live key, no webhook received, no refund (`notchpay::refund` is still a
-token). Its record is `docs/status/verification/2026-10-21-notchpay-step5.md`
+no live key, no webhook received by vpay, no refund (`notchpay::refund` is
+still a token). _(This said "no webhook received" until 2026-10-24, when
+Notch Pay's sandbox delivered four to a capture endpoint registered in its
+dashboard; none has reached a running vpay. Below.)_ Its record is `docs/status/verification/2026-10-21-notchpay-step5.md`
 (vaam-apps/vpay#310). **Step 1 ran the same day, before it**
 (vaam-apps/vpay#303,
 `docs/status/verification/2026-10-21-notchpay-sandbox-run.md`): Notch Pay's
@@ -101,9 +112,15 @@ after create):
   What a real unanswered prompt reads, and when, a test number cannot show.
 
 - **Still open after step 5 and B3b:**
-  - webhooks (RFC-0012 § 10 items 7 and 17: none was received, and on
-    2026-10-23 an endpoint created through the API with a public URL stored
-    `url: null` and got nothing);
+  - webhooks **through vpay**: none has reached a running vpay. Notch Pay's
+    side is measured since 2026-10-24: an endpoint registered in its
+    dashboard received four signed webhooks, signed over the raw body
+    (RFC-0012 § 10 item 7, answered), where one created through the API on
+    2026-10-23 got nothing. Still unmeasured: `payment.processing` (item 17),
+    retries, and whether the unsigned `verification.test` ping needs a `2xx`.
+    _(This said "items 7 and 17: none was received, and on 2026-10-23 an
+    endpoint created through the API with a public URL stored `url: null`
+    and got nothing" until 2026-10-24.)_;
   - production, and a live key's prefix (item 8);
   - refunds (the sandbox answered `403` to the probe's `POST /refunds` on
     2026-10-22; not re-measured on 2026-10-23, below);
@@ -178,7 +195,9 @@ What step 1 showed:
   (the maintainer deleted the probe's endpoints by hand).
 - Not measured: item 7 (signature) and 17's delivery, for want of a public
   URL; item 11. _(On 2026-10-23 a public URL was used, and still nothing
-  arrived; below.)_
+  arrived; below. On 2026-10-24 an endpoint registered in the dashboard
+  received four, which answered item 7 and not item 17; "What the 2026-10-24
+  dashboard deliveries showed", below.)_
 
 **What the 2026-10-23 probe showed**
 (`docs/status/verification/2026-10-23-notchpay-sandbox-two-step-and-channels.md`;
@@ -219,23 +238,84 @@ Notch Pay from a cloud session.
   `Rejected { provider_error }` … **It was not changed**: remapping it is the
   maintainer's decision" until that decision.)_
 - **Webhooks (items 7, 17, 20, 24).** `POST /webhooks` with a public
-  webhook.site URL answered `201` with **`"url": null`**, and **nothing was
+  webhook.site URL answered `201` with `"url": null`, and **nothing was
   delivered in 21 minutes**, not even `payment.created`. `GET`, `PUT` and
   `DELETE /webhooks/{id}` all answered `404` "Resource Not Found". So no
-  signature, header or retry was seen, and the hash key was never used:
-  **`x-notch-signature`'s format is still only what the documentation
-  says.** `ensure_callbacks` registers vpay's endpoint with the same call,
-  which is why, since the same day, it does so only when `register: ensure`
-  is written (below).
+  signature, header or retry was seen that day, and the hash key was never
+  used. Why that endpoint delivered nothing is still not known.
+  `ensure_callbacks` registers vpay's endpoint with the same call, which is
+  why, since the same day, it does so only when `register: ensure` is
+  written (below). _(Corrected 2026-10-24: this bolded the `"url": null`, as
+  if the endpoint had been stored without a URL, and ended
+  "`x-notch-signature`'s format is still only what the documentation says".
+  The listing shows `"url": null` for a dashboard endpoint that delivers too,
+  so the null is how the API lists every endpoint, and the format is now
+  measured: "What the 2026-10-24 dashboard deliveries showed", below.)_
 - **The stall (item 25).** All four payments processed after that endpoint
   was created were still `processing` 3 to 55 minutes later; all eleven
   processed before it were final within about 5 s. That is a correlation,
   not a cause, and it is why item 6 (refunds) was not re-measured: the
-  payment to refund never completed.
-- **The endpoint `ep_test.unEBL3JnHZF0fF5B` is still on the sandbox
-  account** (`DELETE` answered `404`); the maintainer deletes it in the
-  dashboard. Runbook A7 says to delete it, and to run `read`, before the
-  next `payments`, `channels` or `refunds` run.
+  payment to refund never completed. _(On 2026-10-24, with that endpoint
+  deleted in the dashboard and only a dashboard-registered one on the
+  account, both payments were final within about 5 s: consistent with the
+  endpoint being the cause, on two payments, and still a correlation.)_
+- **The endpoint `ep_test.unEBL3JnHZF0fF5B` was deleted by the maintainer
+  in the dashboard on 2026-10-24** (`DELETE` had answered `404`). Runbook A7
+  still says to run `read` before the next `payments`, `channels` or
+  `refunds` run, and to delete in the dashboard any endpoint a run leaves
+  behind. _(This said the endpoint "is still on the sandbox account" until
+  2026-10-24.)_
+
+**What the 2026-10-24 dashboard deliveries showed**
+(`docs/status/verification/2026-10-24-notchpay-dashboard-webhooks.md`;
+RFC-0012 § 10 items 7, 21, 24 and 25; runbook A8; vaam-apps/vpay#364). The
+maintainer registered an endpoint by hand in the dashboard, in test mode, for
+the five payment events, at a third-party capture inbox, and approved one
+successful and one failed payment in the running session's chat. The probe's
+`dashboard-deliveries` phase, which creates and deletes no endpoint, ran from
+08:26:53 to 08:29:04 UTC: MTN's success number for 151 XAF and its
+other-failure number for 157 XAF, on `cm.mobile`, one `complete` and one
+`failed`. **No webhook reached vpay**: the adapter was run offline, over the
+bodies and headers the capture endpoint recorded.
+
+- **Four deliveries, all signed.** `payment.created` and `payment.complete`
+  for the first payment, `payment.created` and `payment.failed` for the
+  second, each a few seconds after its step, `POST`ed by a PHP client
+  (`GuzzleHttp/7`), each with `x-notch-signature` as 64 lower-case hex
+  characters.
+- **The signature is the HMAC-SHA256 of the raw body under the Hash Key**
+  (item 7, answered). It matched 4 of 4 over the bytes as received and 0 of
+  4 over `JSON.stringify(JSON.parse(body))`, because Notch Pay escapes `/`
+  as `\/` and the re-serialisation writes a bare `/`. One changed byte, or
+  another delivery's signature, fails. So Notch Pay's own Node example would
+  refuse genuine webhooks. vpay's `verify_callback` answered `Verified` for
+  all four under the real Hash Key and `Invalid` under the fixture secret.
+  The Hash Key the dashboard shows is the signing secret (item 21, for the
+  sandbox; a live endpoint is unmeasured).
+- **A delivery names its event under `event`, not `type`**:
+  `{ "id": "whc_test.…", "event": "payment.complete", "data": {…} }`, no
+  top-level `created_at`, ours in `data.trxref` and
+  `data.merchant_reference`, Notch Pay's `trx.…` in `data.reference`.
+  **`parse_callback` refused all four**, because it read `type` alone, so
+  vpay's route would have answered each `400`. vaam-apps/vpay#364 fixes it
+  ("Callbacks", under "How the adapter behaves").
+- **The dashboard sent an unsigned `verification.test` ping** when the
+  endpoint was saved (`User-Agent: Notch-Webhook-Verification/1.0`, named
+  under `type`). vpay refuses it as `Malformed` and its route answers `400`;
+  whether Notch Pay needs a `2xx` there to keep an endpoint is not known.
+- **The listing shows `"url": null` for the dashboard endpoint too**
+  (`ep_test.lBuAjask69aD7YBm`, which delivers). So the null is how the API
+  lists every endpoint, not proof that the 2026-10-23 endpoint was stored
+  without a URL (item 24, corrected). Why that one delivered nothing is
+  still not known.
+- **The stall (item 25)**: with the 2026-10-23 endpoint deleted, both
+  payments were final within about 5 s. Consistent with that endpoint being
+  the cause, n=2; still a correlation.
+- **Not measured**: a delivery to a running vpay (its route, its counter,
+  its poll pull-forward); a `2xx` on the ping; retries (the capture endpoint
+  answered `200` to everything); `payment.processing` (item 17: not
+  subscribed, none seen); replay (no timestamp is signed; not tried);
+  production and a live key.
 
 Before step 1, on 2026-10-20, no test-mode key was available when the adapter
 was written, and a later session the same day had the keys and **still made
@@ -265,7 +345,10 @@ runbook's egress check showed `api.notchpay.co` under Let's Encrypt `YR1`,
 `--profile notchpay-sandbox` (`config/application-notchpay-sandbox.yml`) for
 step 5. The probe also has a read-only `search` phase (item 19) since #303, and
 `two-step`, `channels`, `webhook-receive` and `webhook-update` (runbook A7)
-since 2026-10-23.
+since 2026-10-23, and `dashboard-deliveries` (runbook A8) since 2026-10-24:
+it lists the account's endpoints, makes MTN's success and other-failure
+payments, waits `NOTCHPAY_PROBE_DELIVERY_WAIT` seconds (default 120) and
+lists them again, creating and deleting no endpoint.
 **Both ran on 2026-10-21: the probe (step 1), then vpay itself (step 5).**
 Runbook B3b ran vpay itself again on 2026-10-22, on a new approval that named
 its three numbers, amounts and calls.
@@ -285,7 +368,10 @@ verification page and a mapping fix. Do not register a capture service for the p
 webhooks without asking the maintainer; the tunnel is the runner's call. On
 2026-10-23 the maintainer chose one ("A third-party capture service": a
 webhook.site inbox, deleted afterwards, its token kept out of the
-repository); a new run asks again.
+repository); a new run asks again. On 2026-10-24 the maintainer registered
+the dashboard endpoint at a third-party capture inbox under that approval;
+the inbox is kept until it expires, and its address is in no committed
+file.
 The probe's own unit tests have been a test binary since #302 (its
 `[[example]]` says `test = true`), and they are one of `verify-ignored`'s 53.
 Every status, error and reference rule below was
@@ -492,11 +578,26 @@ ADR-0031's conditions are the admission. **Weakening any one of them is
   adds it by hand, as it adds `provider_account_blocked`. The sixth,
   `invalid_payer`, comes from no status either: it is process's `422` on the
   payer's phone alone (above), added by hand the same way.
-- **Callbacks**: the five `payment.*` events only; the charge is `data.trxref`
-  if it is one of our UUIDs, else `data.reference` (since #304, after the
-  measured payment shape; no webhook has been received to confirm the
-  event's), and `ref_extra` is empty. **Since 2026-10-23 the signature is
-  checked** (RFC-0014): `notchpay` declares `CallbackCheck::Signature`, and
+- **Callbacks**: the five `payment.*` events only, the name read from
+  `event`, else `type` (`vpay_notchpay::wire::Event::name()`, since
+  2026-10-24). Every payment webhook the sandbox delivered names itself
+  under `event`; only the dashboard's unsigned `verification.test` ping uses
+  `type`, and it is refused as `Malformed`, so the route answers it `400`
+  (whether Notch Pay needs a `2xx` there is not known). The charge is
+  `data.trxref` if it is one of our UUIDs, else `data.reference` (since
+  #304, after the measured payment shape; the four delivered webhooks carry
+  ours in `trxref` and Notch Pay's `trx.…` in `reference`), and `ref_extra`
+  is empty. _(Corrected 2026-10-24, vaam-apps/vpay#364: `parse_callback`
+  read `type` alone, so it refused all four real deliveries and the route
+  would have answered each `400`; this bullet said "no webhook has been
+  received to confirm the event's" shape. Proven by the client crate's
+  `a_delivered_payment_webhook_is_named_under_event`,
+  `the_registration_ping_is_named_under_type` and
+  `event_wins_when_a_body_names_itself_both_ways`, and the adapter's
+  `a_webhook_the_sandbox_delivered_names_our_charge` and
+  `the_registration_ping_is_not_a_payment_event`, built from the delivered
+  bodies; with `name()` reading `type` only, the adapter's test fails.)_
+  **Since 2026-10-23 the signature is checked** (RFC-0014): `notchpay` declares `CallbackCheck::Signature`, and
   `verify_callback` accepts `x-notch-signature` only when it is the hex
   HMAC-SHA256 of the **raw body** under `credentials.callback_signing_secret`
   (`Verified`) or, during a rotation, `_previous` (`VerifiedPrevious`, counted
@@ -504,21 +605,35 @@ ADR-0031's conditions are the admission. **Weakening any one of them is
   `vpay_provider::callback::hmac_sha256_hex_matches`. No secret configured is
   `NoSecret` (today's pull-forward); a missing or wrong signature is
   `Invalid`, and the route moves nothing and answers the same `202`.
-  **Stub-proven; never verified against a real Notch Pay delivery.** Notch Pay's guide
-  signs the raw body in PHP and Python and `JSON.stringify(req.body)` in
-  Node, and no webhook Notch Pay sent has been checked (RFC-0012 § 10 item
-  7). Do not "fix" the check to re-serialise the body before that
-  measurement says so. No timestamp is signed, so a replayed genuine webhook
-  verifies (`a_replayed_genuine_webhook_still_verifies` pins it as a
-  decision). Even `Verified` moves no money. **No webhook has ever been
-  delivered**, so the signature's format, header, encoding and retries are
-  unmeasured: the 2026-10-23 sandbox run found an endpoint created through
-  `POST /webhooks` stored with `"url": null`, nothing delivered in 21
-  minutes, and `404` for it by id. A real check needs the Hash Key **and** an
-  endpoint registered in Notch Pay's dashboard, which an unset `register`
-  (`off` on this rail since 2026-10-23) leaves to the operator; such an
-  endpoint is untested. Until a delivery is seen, expect no
-  Notch Pay callbacks: polling settles every charge.
+  **Verified offline against four real Notch Pay deliveries (2026-10-24);
+  never through a running vpay.** The capture endpoint's recorded bodies and
+  headers, handed to `verify_callback`, were all `Verified` under the real
+  Hash Key and `Invalid` under the fixture secret. _(This said "Stub-proven;
+  never verified against a real Notch Pay delivery" until 2026-10-24.)_
+  **The signed bytes are the raw body** (RFC-0012 § 10 item 7, answered
+  2026-10-24). Notch Pay's guide signs the raw body in PHP and Python and
+  `JSON.stringify(req.body)` in Node; on all four deliveries the raw body's
+  HMAC matched and a `JSON.stringify` of the parsed body did not, because
+  Notch Pay escapes `/` as `\/` and that re-serialisation writes a bare
+  `/`. **Do not "fix" the check to
+  re-serialise the body**: that is the Node example's mistake, and it would
+  refuse genuine webhooks. No timestamp is signed, so a replayed genuine
+  webhook verifies (`a_replayed_genuine_webhook_still_verifies` pins it as a
+  decision). Even `Verified` moves no money. **Where deliveries come from**:
+  an endpoint registered by hand in Notch Pay's dashboard delivers
+  (2026-10-24: a `payment.created` and a final event per payment, a few
+  seconds after each step, from a PHP client, `x-notch-signature` as 64
+  lower-case hex characters). One created through `POST /webhooks` on
+  2026-10-23 delivered nothing in 21 minutes and answered `404` by id, for a
+  reason still unknown; the listing showed it with `"url": null`, but it
+  shows the dashboard endpoint that way too. A check through vpay needs the
+  Hash Key **and** a dashboard endpoint at vpay's URL, which an unset
+  `register` (`off` on this rail since 2026-10-23) leaves to the operator.
+  **No webhook has reached a running vpay**, and retries are unmeasured;
+  polling settles every charge without one. _(This said "No webhook has ever
+  been delivered, so the signature's format, header, encoding and retries
+  are unmeasured", that the endpoint was "stored with `"url": null`", and
+  that a dashboard endpoint "is untested", until 2026-10-24.)_
 - **Since 2026-10-23 vpay registers nothing on a Notch Pay account unless
   told to.** The adapter overrides `default_callback_registration` with
   `Off` (the maintainer's "Default to `off` for Notch Pay"), so with
@@ -545,7 +660,8 @@ ADR-0031's conditions are the admission. **Weakening any one of them is
   It lists **every page** of `GET /webhooks`, recognises vpay's endpoint **by
   its description**, `vpay:{deployment.name}:notchpay:default
 url:{16 hex of SHA-256(callback URL)}`, because Notch Pay answers
-  `"url": null`, and creates one with the five `payment.*` events when none
+  `"url": null` for every endpoint, a dashboard one that delivers included
+  (2026-10-24), and creates one with the five `payment.*` events when none
   is current and the setting is `ensure`. **It never modifies or deletes
   anything**: no `PUT` in the client, and `DELETE /webhooks/{id}` answered
   `404`. A superseded or duplicate endpoint is logged by id for an operator
@@ -559,13 +675,17 @@ url:{16 hex of SHA-256(callback URL)}`, because Notch Pay answers
   (RFC-0013 step 5, runbook B4, needs the maintainer's approval to call
   Notch Pay). **On the sandbox's evidence, an endpoint registered this way
   delivers nothing (2026-10-23):** the probe's, created by the same call
-  with a public URL, stored `url: null`, got nothing in 21 minutes, and
-  answered `404` to `GET`, `PUT` and `DELETE` by id. vpay's
-  `adapter-notchpay.md` now tells an operator who wants callbacks to
-  register vpay's URL in the dashboard, which is what an unset `register`
-  now leaves them to do; that
-  hand-made endpoint is unmeasured too. Callbacks are hints, and the poll
-  ladder settles every charge without one. _(This bullet said "The URL is
+  with a public URL, got nothing in 21 minutes, and answered `404` to `GET`,
+  `PUT` and `DELETE` by id, for a reason still unknown. vpay's
+  `adapter-notchpay.md` tells an operator who wants callbacks to register
+  vpay's URL in the dashboard, which is what an unset `register` now leaves
+  them to do, and that route delivers: four signed webhooks reached a
+  capture endpoint registered there on 2026-10-24, though none has reached a
+  running vpay. _(Corrected 2026-10-24: this said the probe's endpoint
+  "stored `url: null`", and that the hand-made endpoint "is unmeasured too".
+  The listing shows `"url": null` for the dashboard endpoint that delivers
+  as well.)_ Callbacks are hints, and the poll ladder settles every charge
+  without one. _(This bullet said "The URL is
   registered with the account by hand. RFC-0013 is not built." until
   2026-10-22.)_
 - **`refund` is `NotImplemented("notchpay::refund")`**, declared in
@@ -628,6 +748,9 @@ keys: never print, log or commit it; real values only through the
 environment; fixtures are obviously fake (`signing-secret-test_0003`, never
 `hsk_…`). Notch Pay's create answer carries no secret, so vpay's
 registration does not supply it: the operator copies it from the dashboard.
+That key is the signing secret: all four sandbox deliveries of 2026-10-24
+verified under it (RFC-0012 § 10 item 21, answered for the sandbox; a live
+endpoint is unmeasured).
 Without it a sandbox `WARN`s and **livemode refuses to boot**
 (`CallbackSigningSecretMissing`) unless the block says
 `callbacks: { verify: off }`, the operator's written acceptance; `off`
@@ -650,10 +773,12 @@ was `ensure`).
 started by runbook B2 lists the real sandbox account's endpoints and never
 creates one. Do not change it to `ensure` outside runbook B4: that is a
 write to a real account, and Notch Pay's API cannot delete what it creates.
-Since 2026-10-23 there is a second reason: the sandbox stored `url: null`
-for an endpoint created that way, and delivered nothing to it. `off`, with
-vpay's URL registered by hand in the dashboard, is what
-`adapter-notchpay.md` advises an operator who wants callbacks.
+Since 2026-10-23 there is a second reason: the sandbox delivered nothing to
+an endpoint created that way. `off`, with vpay's URL registered by hand in
+the dashboard, is what `adapter-notchpay.md` advises an operator who wants
+callbacks, and since 2026-10-24 that route is measured to deliver (to a
+capture endpoint; not yet to vpay). _(This said the sandbox "stored
+`url: null`" for the API-created endpoint until 2026-10-24.)_
 
 ## Not built, and staying that way until its condition holds
 
@@ -661,9 +786,10 @@ Refunds as a call (RFC-0012 § 10 item 6; the sandbox answered `403` to
 `POST /refunds` on 2026-10-22, so nothing about replay is known). Model B / Sync / `X-Sync` (§ 10
 item 9; not offered). `cm.mtn` / `cm.orange` sent by vpay to the real sandbox (built
 against the stub on 2026-10-23; the probe measured Notch Pay's side the same
-day). The signature check against a webhook Notch
-Pay really sent (RFC-0012 § 10 item 7; the check itself was built on
-2026-10-23). _(Until 2026-10-23 this list named "Webhook signature
+day). A webhook Notch Pay sent, checked through a running vpay's route (the
+check was built on 2026-10-23, and on 2026-10-24 it verified four real
+deliveries offline, which answered RFC-0012 § 10 item 7; this item said "The
+signature check against a webhook Notch Pay really sent" until then). _(Until 2026-10-23 this list named "Webhook signature
 verification (needs a port change; RFC-0014 … a draft)". This list ended
 "Retiring or repairing a webhook endpoint (no working `DELETE`, no `PUT` in
 the client)" until 2026-10-23. The maintainer decided that day that retiring

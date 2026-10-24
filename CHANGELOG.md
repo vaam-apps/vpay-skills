@@ -12,23 +12,25 @@ publishes no release tags and its workspace version has never moved off
 `v0.5.0` as of 2026-09-23 — and its workspace version is `0.5.0`. The naming
 rule stands, for the reasons VERSIONING.md now gives.)_
 
-## 2026-10-24 — the built-stylesheet a11y case resolves per theme against the package (vaam-apps/vpay#349)
+## 2026-10-24 — the rest of vaam-apps/vpay#349: the recipe, CI and troubleshooting pages
 
-Read against vaam-apps/vpay's `master` at `3bdbbeac`, the merge of
-vaam-apps/vpay#349 (2026-10-24), which came after vaam-apps/vpay#355 fixed
-the same case first (this repository's #78). #349's last commit before the
-merge only changed `deny.toml`. vpay's evidence page is
-`docs/status/verification/2026-10-23-a11y-gate-built-stylesheet.md`.
+Read against vaam-apps/vpay's `master` at `bcbbf6fe`. #81 (below) brought
+`vpay-checkout`'s case 6 up to vaam-apps/vpay#349, merged as `3bdbbeac`, and
+touched no other skill. This entry, from #73, brings the other four pages up to
+the same change and adds the measurement behind it to `vpay-checkout`. The
+`build-storybook` recipe, both apps' `a11y-gate.test.ts` and `contrast.ts`, and
+`ci.yml` are unchanged between `3bdbbeac` and `bcbbf6fe`.
 
-- `vpay-checkout` (`references/testing-and-gates.md`): case 6 resolves
-  `--color-base-100` with `themeColours`, per theme, to the colour the
-  package's own `theme.css` resolves to. #355's text-only, one-`var()` check
-  passed a built sheet missing only the light theme's role (measured
-  2026-10-24). #78's account of #355 is kept.
-- `vpay-tooling` (`references/recipes.md`, `references/ci.md`),
-  `vpay-frontend` (`references/workspace.md`): `just build-storybook` runs
-  the file once per app, inside its loop, with `VPAY_STORYBOOK_BUILT=1` (#355)
-  and a read of Vitest's JSON report that fails on any skip (#349); why the
+- `vpay-checkout` (`references/testing-and-gates.md`): why one `var()` was not
+  enough. With only the light theme's role deleted from a built checkout
+  sheet, #355's case passed and #349's failed on `"light"` (measured
+  2026-10-24). Also the grounds the package resolves to on `@vaam-apps/ui`
+  0.5.0, and case 6's line in the list of six cases, which #81 left at #355's
+  wording.
+- `vpay-tooling` (`references/recipes.md`, `references/ci.md`) and
+  `vpay-frontend` (`references/workspace.md`): `just build-storybook` runs the
+  file once per app, inside its loop, with `VPAY_STORYBOOK_BUILT=1` (#355) and
+  a read of Vitest's JSON report that fails on any skip (#349). Also why the
   recipe's grep alone cannot see a `var()`.
 - `vpay-troubleshooting` (`references/node-web.md`): the case's failure
   messages, `VPAY_STORYBOOK_BUILT`'s included, its expected skip in
@@ -37,17 +39,172 @@ merge only changed `deny.toml`. vpay's evidence page is
 ### Stopped being true
 
 - "every definition is a colour literal or a `var()` of a property every
-  definition of which is one (one level deep)" as case 6's whole check (#78,
-  from #355). It resolves per theme, to any depth, and must equal the
-  package's own value.
-- "`just build-storybook` … runs each app's `a11y-gate.test.ts`" after its
-  loop, twice in total. Once per app, inside the loop, with the JSON-report
-  skip check as well.
-- "`just build-storybook` … greps the built stylesheet" as the whole of the
-  recipe's check (`vpay-tooling`, `vpay-frontend`), true before #355.
+  definition of which is one (one level deep; since 2026-10-23)" as case 6's
+  summary (`vpay-checkout/references/testing-and-gates.md`, the list of six
+  cases). It resolves per theme, to any depth, against the package.
+- "greps the built stylesheet asserting `--color-base-100` is **defined**" as
+  the whole of `just build-storybook`'s check (`vpay-tooling/references/recipes.md`),
+  and "Storybook build **and** the theme-defined assertion" as its whole row
+  (`vpay-frontend/references/workspace.md`). Both were true before #355; the
+  recipe now also runs both apps' `a11y-gate.test.ts` against its artefact.
+- The `web` job's `just build-storybook` listed with nothing said of that test
+  (`vpay-tooling/references/ci.md`).
 
 Still true: `pnpm -r test` and `just ci` build no Storybook, so the case
 reports one skip per app there, by design.
+
+## 2026-10-24 — an intent names the rail its charge was made on: `payment_method_details` (vaam-apps/vpay#365)
+
+Read against vpay `08fb2566`, vaam-apps/vpay#365's squash-merge commit, after a
+first read at its head `bdee8ce3`. They differ by two test fixes and the drift
+count's measurement (212, as predicted), and by v0.13.0's version bumps, none
+of which changes a claim here. The second half of the maintainer's "Both", in
+the shape they chose ("Go with A"). Every `payment_intent` carries
+`payment_method_details`, `null` until it has a charge and then `{ type, rail
+}`. `type` is the method type the charge records, or `null` (a rail-code
+`notchpay` confirm, a charge before `0053`), and is never inferred from the
+rail. Its source is migration `0054`'s `payment_intents.charge_rail` and
+`charge_method_type`, copied by `charges::insert_for_intent` in the charge's
+own transaction. ADR-0029 D10 is amended: the outcome is on `/v1`, the
+`routing_decisions` record is not.
+
+- `vpay-merchant-api` (`references/objects.md`): the table row, a paragraph,
+  the routing and routed-refund sentences, and the wrapper's key count.
+- `vpay-sdks` (`SKILL.md`): both SDKs decode it; Flutter does not.
+- `vpay-data-layer` (`SKILL.md`): migration `0054`, and drift 212 over 28,
+  predicted and then measured in vaam-apps/vpay#365's CI.
+- `vpay-payments`, `vpay-ops` (`references/configuration.md`) and
+  `vpay-conventions` (`references/adr-index.md`): the same fact where routing
+  is described.
+
+### Stopped being true
+
+- "the chosen rail and the ranking are on no `/v1` object"
+  (`vpay-merchant-api`). The rail and the type are, as
+  `payment_method_details`; the ranking is still on none.
+- "the rail is still on no `/v1` object" and "`/v1` naming the rail is the
+  other half, and not built" (`vpay-merchant-api`, written earlier the same
+  day for vaam-apps/vpay#363). Both halves are built.
+- "**thirteen** keys plus one" and
+  `the_browser_wrapper_is_the_thirteen_keys_plus_the_client_secret`
+  (`vpay-merchant-api`). The object has fourteen keys, and the test was
+  renamed to `…_fourteen_keys_…`.
+- "`model.rs`'s own doc comments … still say 'twelve'" (`vpay-merchant-api`).
+  They had said "thirteen" since 2026-09-23 and say "fourteen" now.
+- "It is returned by `create`, `confirm` and the browser reads"
+  (`vpay-merchant-api`). `confirm` renders the plain object; the wrapper is
+  `create`, `retrieve` and the two `/v1/browser` reads.
+- "209 over 28 … since migration `0053`" as the current drift
+  (`vpay-data-layer`). It is 212 over 28 since `0054`, measured.
+- "The next is `0054`" (`vpay-data-layer`). The next is `0055`.
+
+## 2026-10-24 — a refund's destination may name the charge's payment-method type (vaam-apps/vpay#363)
+
+Read against `98f4d32b`, vaam-apps/vpay#363's squash-merge commit on `master`,
+after a first read at its head `874c255b`; nothing this entry cites changed
+between the two. The maintainer answered "Both" to the routed-refund gap: this
+is the half that is built. `POST /v1/refunds` accepts `destination[<the
+charge's recorded method type>][…]` beside `destination[<rail code>][…]`;
+naming both, another type, or a type on a charge that records none is a `400`.
+`/v1` naming the rail is not built.
+
+- `vpay-merchant-api` (`references/objects.md`): the routed-refund paragraph.
+- `vpay-sdks` (`SKILL.md`, `references/stripe-compat.md`): a type in
+  `RefundDestination` is accepted when it is the charge's own.
+
+### Stopped being true
+
+- "`destination[mtn_wallet][msisdn]` is a `400` naming `destination`" and "a
+  merchant … has to know the rail another way" (`vpay-merchant-api`), "A type
+  in a refund's `destination` … is refused by the server"
+  (`vpay-sdks/SKILL.md`), and "The key is never a payment-method type"
+  (`vpay-sdks/references/stripe-compat.md`), all written earlier on
+  2026-10-24 for vaam-apps/vpay#359. A type is accepted when the charge records
+  it.
+
+## 2026-10-24 — Notch Pay's first delivered webhooks: the signature is over the raw body, and the adapter reads `event` (vaam-apps/vpay#364)
+
+Read against `4df5e0d2`, vaam-apps/vpay#364's squash-merge commit on `master`,
+after a first read at its head `2c974b53` (`master` `630c8a34` plus the
+change). On 2026-10-24 Notch Pay's sandbox delivered its first webhooks: four,
+for two test payments, to a capture endpoint the maintainer registered by hand
+in the dashboard, recorded by the probe's new `dashboard-deliveries` phase
+(runbook A8). Each carried `x-notch-signature`, the HMAC-SHA256 of the **raw
+body** under the Hash Key; a `JSON.stringify` re-serialisation matched none,
+because Notch Pay escapes `/` as `\/`. The adapter's `verify_callback`, run
+offline over the recorded bodies and headers, answered `Verified` for all four.
+The deliveries name the event under `event`, not the documented `type`, and
+`parse_callback` refused all four until vaam-apps/vpay#364 made
+`vpay_notchpay::wire::Event::name()` read `event` first, then `type`. **No
+webhook has reached a running vpay.** The dashboard's `verification.test` ping
+is unsigned and refused (`400`); whether Notch Pay needs a `2xx` there is not
+known.
+
+- `vpay-notchpay` (`SKILL.md`): a new section, "What the 2026-10-24 dashboard
+  deliveries showed"; the Callbacks bullet (the event name, the raw-body
+  signature verified offline, where deliveries come from); the 2026-10-23
+  webhook, stall and endpoint bullets; the "Still open" list; the probe's
+  `dashboard-deliveries` phase; the Hash Key as the signing secret (RFC-0012 §
+  10 item 21); the webhook-registration bullet, `callbacks.register` and the
+  "Not built" list.
+- `vpay-provider-adapters` (`SKILL.md`): the `default_callback_registration`
+  bullet, the RFC-0012 and RFC-0013 entries and the RFC-0014 heading.
+- `vpay-ops` (`references/configuration.md`): `callbacks.register` on Notch
+  Pay; the dashboard route delivers.
+- `vpay-conventions` (`references/adr-index.md`): the RFC-0014 row.
+- `vpay` (`SKILL.md`): step 5's "no webhook received" is "received by vpay".
+
+### Stopped being true
+
+- "an API-created webhook endpoint that stored `url: null`", "the sandbox
+  stored `"url": null`" (`vpay-notchpay`, `vpay-provider-adapters`,
+  `vpay-ops`). The listing shows `"url": null` for every endpoint, the
+  dashboard one that delivers included. What stands is that the endpoint
+  `POST /webhooks` created on 2026-10-23 delivered nothing in 21 minutes, for
+  a reason still unknown.
+- "Stub-proven; never verified against a real Notch Pay delivery"
+  (`vpay-notchpay`, `vpay-provider-adapters`, `vpay-conventions`). Verified
+  offline against four real deliveries; never through a running vpay.
+- "the signature format is still unmeasured", "`x-notch-signature`'s format
+  is still only what the documentation says" and "No webhook has ever been
+  delivered" (`vpay-notchpay`). Four were delivered, each signed over the raw
+  body as 64 lower-case hex characters.
+- "Do not "fix" the check to re-serialise the body before that measurement
+  says so" (`vpay-notchpay`). The measurement says never: a `JSON.stringify`
+  of the parsed body matched none of the four.
+- "no webhook has been received to confirm the event's" shape
+  (`vpay-notchpay`). A delivery names its event under `event`, and the
+  adapter read `type` alone. **On a vpay without vaam-apps/vpay#364, every
+  real Notch Pay payment webhook is `Malformed` and the route answers `400`.**
+- "such an endpoint is untested", "that hand-made endpoint is unmeasured
+  too" and "(unmeasured too)" (`vpay-notchpay`, `vpay-ops`). A
+  dashboard-registered endpoint delivers; none has reached a running vpay.
+- "The endpoint `ep_test.unEBL3JnHZF0fF5B` is still on the sandbox account"
+  (`vpay-notchpay`). The maintainer deleted it in the dashboard on
+  2026-10-24, and the next two payments were final within about 5 s
+  (consistent with it having caused the stall, n=2, still a correlation).
+- "no webhook received", unqualified (`vpay`, `vpay-provider-adapters`,
+  `vpay-notchpay`). Received by a capture endpoint, never by vpay.
+
+## 2026-10-24 — case 6 of the a11y gate follows the whole `var()` chain (vaam-apps/vpay#349)
+
+Read against `3bdbbeac`, vaam-apps/vpay#349's squash-merge commit on `master`.
+It was first read against the PR's head `fcdf70ee`, after `master` was merged
+into the branch on the maintainer's "Rebase and merge #349". The two differ
+only by #361's `deny.toml` ignore and its verification section, which no skill
+here cites. #355 had fixed the same case first with a one-`var()` regex; #349
+replaces it.
+
+- `vpay-checkout` (`references/testing-and-gates.md`): case 6 resolves the
+  whole chain per theme against the package's own `theme.css`; the recipe runs
+  it once per app with `VPAY_STORYBOOK_BUILT=1` and a JSON-report check that
+  fails on any skip.
+
+### Stopped being true
+
+- "It now resolves one `var()` and requires a colour"
+  (`vpay-checkout/references/testing-and-gates.md`, 2026-10-23). It resolves
+  the whole chain and requires the package theme's colour.
 
 ## 2026-10-24 — a refund destination is keyed by the rail's code, and a routed charge's rail is not on `/v1`
 

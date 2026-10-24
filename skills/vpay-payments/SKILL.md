@@ -303,7 +303,10 @@ the prepaid balance and the statement matcher remain Draft.)_ **_(Corrected
 2026-10-23: the router is built, with a provisional formula.)_** A confirm
 naming a payment-method type (`mtn_wallet`, `orange_wallet`) is routed by
 `vpay_core::routing::route` before the charge is opened, and the charge's
-transaction also commits its `routing_decisions` row. **Still one charge per
+transaction also commits its `routing_decisions` row. _(2026-10-24: the
+same transaction copies the charge's rail and type onto the intent, which
+renders them as `payment_method_details`; a declined charge keeps them,
+because it is still the intent's one charge.)_ **Still one charge per
 intent** (D11): a decline returns the intent to `requires_payment_method` on
 the rail that declined, and nothing retries it elsewhere. The score is a
 configured weight only (`provisional-1`). The maintainer chose on 2026-10-23

@@ -1,6 +1,6 @@
 # Wire objects
 
-_Verified against vpay `b747e5d5` (2026-09-23); the refund `destination` paragraphs at `1c8bd7b0` (2026-10-24, vaam-apps/vpay#359). Version-sensitive claims
+_Verified against vpay `b747e5d5` (2026-09-23); the refund `destination` paragraphs at `98f4d32b` (2026-10-24, vaam-apps/vpay#363); the `payment_method_details` row and paragraph, the key count and the routing sentences at `08fb2566` (2026-10-24, vaam-apps/vpay#365). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 Every wire DTO lives in one module: `vpay_api::model`
@@ -69,21 +69,22 @@ Also in `ids`: `CLIENT_SECRET_INFIX` (`_secret_`), `client_secret_suffix()`
 
 ## PaymentIntent — `PaymentIntentObject`
 
-| Field                  | Type                    | Notes                                                  |
-| ---------------------- | ----------------------- | ------------------------------------------------------ |
-| `id`                   | string                  | `pi_…`                                                 |
-| `object`               | `"payment_intent"`      |                                                        |
-| `amount`               | integer                 | **minor units** — see `vpay-payments`                  |
-| `currency`             | string                  | **lowercase on the wire**, uppercase in the database   |
-| `status`               | enum                    | `IntentStatus` — five values, **no `failed`**          |
-| `payment_method_types` | string[]                | rail codes and/or method types — see below the table   |
-| `next_action`          | object or null          | redirect rails only                                    |
-| `last_payment_error`   | object or null          | `{ code, message }`                                    |
-| `metadata`             | object of string→string |                                                        |
-| `description`          | string or null          |                                                        |
-| `customer`             | string or null          | `cus_…`; accepted-and-dropped before S4a, stored since |
-| `created`              | integer                 | Unix **seconds**                                       |
-| `livemode`             | boolean                 |                                                        |
+| Field                    | Type                    | Notes                                                             |
+| ------------------------ | ----------------------- | ----------------------------------------------------------------- |
+| `id`                     | string                  | `pi_…`                                                            |
+| `object`                 | `"payment_intent"`      |                                                                   |
+| `amount`                 | integer                 | **minor units** — see `vpay-payments`                             |
+| `currency`               | string                  | **lowercase on the wire**, uppercase in the database              |
+| `status`                 | enum                    | `IntentStatus` — five values, **no `failed`**                     |
+| `payment_method_types`   | string[]                | rail codes and/or method types — see below the table              |
+| `payment_method_details` | object or null          | `{ type, rail }` of the one charge; `null` before one — see below |
+| `next_action`            | object or null          | redirect rails only                                               |
+| `last_payment_error`     | object or null          | `{ code, message }`                                               |
+| `metadata`               | object of string→string |                                                                   |
+| `description`            | string or null          |                                                                   |
+| `customer`               | string or null          | `cus_…`; accepted-and-dropped before S4a, stored since            |
+| `created`                | integer                 | Unix **seconds**                                                  |
+| `livemode`               | boolean                 |                                                                   |
 
 **`payment_method_types` takes two kinds of value since 2026-10-23**
 (ADR-0029 D6). A **rail code** (`mtn_momo`, `orange_money`, `notchpay`) means
@@ -95,9 +96,11 @@ and a confirm whose `payment_method_data[type]` is a type is **routed** to the
 highest-scored rail, with the payer's fields under the type
 (`payment_method_data[mtn_wallet][msisdn]`) and an optional pin,
 `payment_method_options[<type>][rail]=<code>` (a `400` naming it when that rail
-cannot take the payment; never a fallback). The object shows what the merchant
-asked for; **the chosen rail and the ranking are on no `/v1` object** (D10),
-only in `charges.method_type` and `routing_decisions`. The ranking's formula
+cannot take the payment; never a fallback). `payment_method_types` shows what
+the merchant asked for; **the chosen rail and the type are on the object since
+2026-10-24, as `payment_method_details`**, and **the ranking is on none** (D10
+as amended that day): it is only in `routing_decisions`. _(Until 2026-10-24
+this said "the chosen rail and the ranking are on no `/v1` object".)_ The ranking's formula
 is provisional (`provisional-1`). `orange_wallet` can route to a redirect rail
 (`return_url`) or a push rail (`msisdn`), so a server confirming it should pin.
 The confirm ranks on its own: following the rail the checkout page showed is
@@ -106,13 +109,36 @@ Neither SDK can confirm by type yet (`docs/sdks/parity.md`, dated
 2026-10-23). Before 2026-10-23 this row read "rail codes: `mtn_momo`,
 `orange_money`".
 
+**`payment_method_details` since 2026-10-24** (migration `0054`, the
+maintainer's "Both" and then "Go with A"). It is `null` until the intent has a
+charge, then `{ "type": "mtn_wallet", "rail": "mtn_momo" }`:
+
+- `rail` is the rail the one charge was made on, never `null` inside the
+  object.
+- `type` is the method type the charge records, the same value a refund's
+  `destination[<method type>]` must name, or `null` where it records none: a
+  rail-code confirm on `notchpay`, or a charge from before `0053`. It is never
+  inferred from the rail, so an old `mtn_momo` charge says `null`.
+- Its source is two columns on `payment_intents` that
+  `vpay_db::charges::insert_for_intent` copies from the charge in the
+  transaction that opens it.
+- It reaches every rendering: `/v1`, `/v1/browser` (the payer sees it), and
+  every `payment_intent.*` event written since. Events written before it have
+  thirteen keys and are never rewritten.
+- The **outcome**, not the decision: the candidates, scores and configuration
+  version stay in `routing_decisions`.
+
 `PaymentIntentWithSecret` is the same object `#[serde(flatten)]`ed plus
-`client_secret` — **thirteen** keys plus one, as the table above lists and
-`the_browser_wrapper_is_the_thirteen_keys_plus_the_client_secret` pins.
-_(This said "twelve keys plus one" until 2026-09-23. `customer` became the
-thirteenth on 2026-09-06 (S4a). `model.rs`'s own doc comments on
-`PaymentIntentWithSecret` and `ExpandableIntent` still say "twelve".)_ It is returned by `create`, `confirm`
-and the browser reads; the plain object is what a list renders.
+`client_secret`: **fourteen** keys plus one, as the table above lists and
+`the_browser_wrapper_is_the_fourteen_keys_plus_the_client_secret` pins.
+_(This said "twelve keys plus one" until 2026-09-23 (`customer` became the
+thirteenth on 2026-09-06, S4a), and "thirteen" until 2026-10-24, when
+`payment_method_details` made fourteen. It also said that `model.rs`'s own
+doc comments still said "twelve", which stopped being true on 2026-09-23. And
+it said the wrapper is returned by `confirm`, which it is not.)_ It is
+returned by `create`, `retrieve` and the two `/v1/browser` reads. `confirm`,
+`cancel`, a list and `events.data` render the plain object
+(`SecretRendering::Omit`).
 
 `NextAction` is `#[serde(tag = "type")]` with exactly one variant today:
 `redirect_to_url` → `RedirectToUrl { url, return_url }`. A rail given no
@@ -163,18 +189,23 @@ one that returns money to the instrument that paid (`notchpay`, since
 whose refund is still a `NotImplemented` token). The **adapter** parses the inner
 map; the core's whole business with it is presence.
 
-**A routed charge is refunded under its rail's code, and `/v1` does not say
-which rail that is.** The outer key is the code of the rail the charge was made
-on (`map.get(code)` in `refunds.rs`), never the method type the payer chose:
-`destination[mtn_wallet][msisdn]` is a `400` naming `destination`. Since
-2026-10-23 an intent created with `mtn_wallet` or `orange_wallet` is routed,
-and the rail that won is on no `/v1` object (D10, above), so a merchant
-refunding one that landed on `mtn_momo` or `orange_money` has to know the rail
-another way — with equal weights, the tie-break. vpay recorded this as a gap on
-2026-10-24 (vaam-apps/vpay#359, `docs/status/verification/2026-10-23-method-type-routing.md`)
-and left the fix — the route also accepting the charge's method type, or `/v1`
-naming the rail — to the maintainer. Do not paper over it by guessing a rail
-on the merchant's behalf.
+**The outer key is the charge's rail code or, since 2026-10-24
+(vaam-apps/vpay#363), the payment-method type the charge records.**
+`charges.method_type` (migration `0053`) is set on every routed charge and on a
+rail-code charge whose rail serves one type, so `destination[mtn_wallet][msisdn]`
+refunds a routed `mtn_wallet` charge without the merchant knowing which rail
+won. The rail is on the intent since the same day, as
+`payment_method_details.rail` (above). Only the type the
+charge records is accepted: another type, a type on a charge that records none
+(a multi-type rail confirmed by its code, or a charge from before `0053`), or
+the rail and the type **both** in one map is a `400` naming `destination` (one
+payee, one key). Whichever key is used, the adapter gets the same inner map.
+The maintainer chose "Both", and both halves are built: this one, and the
+intent naming its rail (`payment_method_details`, 2026-10-24). Do not guess a
+rail on the merchant's behalf. Send the type the intent's
+`payment_method_details.type` names, or, when that is `null`, the rail's
+code. _(Until the second half landed this said "`/v1` naming the rail is the
+other half, and not built".)_
 
 **It is persisted nowhere**: there is no `destination` column on `refunds`,
 because its retention is RFC-0003 open question 3 and is **undecided** — the
