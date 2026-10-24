@@ -12,6 +12,32 @@ publishes no release tags and its workspace version has never moved off
 `v0.5.0` as of 2026-09-23 — and its workspace version is `0.5.0`. The naming
 rule stands, for the reasons VERSIONING.md now gives.)_
 
+## 2026-10-24 — a refund destination is keyed by the rail's code, and a routed charge's rail is not on `/v1`
+
+Read against vaam-apps/vpay#359's head, `2dd465bd`, which fixes vpay's own
+wording and records the gap. vpay-docs' re-read for v0.12.0 found that the API
+reference, three of `POST /v1/refunds`' error messages, two flow pages and both
+SDKs' doc comments still called the refund key `<payment_method_type>`. The
+route has always keyed it on the charge's **rail** code, and since
+vaam-apps/vpay#346 a payment-method type is something else. Nothing in the code
+changed but the three messages. The gap behind it is recorded in vpay and not
+fixed: the rail a routed charge went to is on no `/v1` object, so a merchant
+refunding one on `mtn_momo` or `orange_money` must know the rail another way.
+Whether the route should also accept the charge's method type, or `/v1` should
+name the rail, is the maintainer's decision.
+
+- `vpay-merchant-api` (`references/objects.md`): a routed charge is refunded
+  under its rail's code, and `/v1` does not say which rail.
+- `vpay-sdks` (`SKILL.md`, `references/stripe-compat.md`): the type-checker does
+  not stop `MtnWallet`/`mtn_wallet` in `RefundDestination`; the destination is
+  required on `mtn_momo` and `orange_money` and refused on `notchpay`.
+
+### Stopped being true
+
+- "`destination[<payment_method_type>][msisdn]` is required on every rail vpay
+  carries" (`vpay-sdks/references/stripe-compat.md`). The key is the rail's
+  code, never a type, and `notchpay` (since 2026-10-20) refuses a destination.
+
 ## 2026-10-23 — rail callbacks are checked where the rail signs (RFC-0014)
 
 Read against vaam-apps/vpay's `master` at `820c52b3`, the merge of
