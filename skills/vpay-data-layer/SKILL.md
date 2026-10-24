@@ -86,12 +86,14 @@ through 206 over 27 with `0050` (`staff_sso_attempts`, 2026-10-20), which this
 page did not record. `0053`'s three lines are `charges.method_type`
 undeclared, its CHECK `method_type_is_known`, and the undeclared table
 `routing_decisions`, whose `considered` is the 20th unmappable column (`jsonb`).
-**212 over 28 since migration `0054` (2026-10-24), predicted and not yet
-measured.** The change was written without Docker; CI's `postgres_smoke` run
-is the first measurement. The three predicted lines are
+**212 over 28 since migration `0054` (2026-10-24), measured.** The change was
+written without Docker, so the number was predicted first; CI's
+`postgres_smoke` run then reported exactly 212. The three new lines are
 `payment_intents.charge_rail` and `charge_method_type` undeclared, and the
 single-column CHECK `charge_method_type_is_known`. The two-column
-`charge_method_type_needs_a_rail` and the foreign key are not introspected.
+`charge_method_type_needs_a_rail` and the foreign key are not introspected,
+so the two-column CHECK goes in the test's multi-column list instead. Leaving
+it out of that list is what failed CI's first measurement, not the count.
 Read the constant on `master` before quoting the number.
 See [references/cratestack.md](references/cratestack.md) — in particular for which
 0.12.0 claims about _why_ the totals look like that are **unverified at 0.15.0**.

@@ -29,7 +29,7 @@ amended: the outcome is on `/v1`, the `routing_decisions` record is not.
   the routing and routed-refund sentences, and the wrapper's key count.
 - `vpay-sdks` (`SKILL.md`): both SDKs decode it; Flutter does not.
 - `vpay-data-layer` (`SKILL.md`): migration `0054`, and drift 212 over 28,
-  predicted.
+  predicted and then measured in vaam-apps/vpay#365's CI.
 - `vpay-payments`, `vpay-ops` (`references/configuration.md`) and
   `vpay-conventions` (`references/adr-index.md`): the same fact where routing
   is described.
@@ -52,8 +52,7 @@ amended: the outcome is on `/v1`, the `routing_decisions` record is not.
   (`vpay-merchant-api`). `confirm` renders the plain object; the wrapper is
   `create`, `retrieve` and the two `/v1/browser` reads.
 - "209 over 28 … since migration `0053`" as the current drift
-  (`vpay-data-layer`). It is 212 over 28 since `0054`, predicted until CI
-  measures it.
+  (`vpay-data-layer`). It is 212 over 28 since `0054`, measured.
 - "The next is `0054`" (`vpay-data-layer`). The next is `0055`.
 
 ## 2026-10-24 — a refund's destination may name the charge's payment-method type (vaam-apps/vpay#363)
