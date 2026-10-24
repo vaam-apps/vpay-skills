@@ -26,14 +26,14 @@ workspace and not in a hoisted one.
 
 ## Build
 
-| Recipe                 | Does                                                                                                                                                                                                                                                                   | Needs                                          |
-| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
-| `just build`           | `build-rust` + `build-web`                                                                                                                                                                                                                                             |                                                |
-| `just build-rust`      | `cargo build --workspace`                                                                                                                                                                                                                                              |                                                |
-| `just build-web`       | `pnpm -r build`                                                                                                                                                                                                                                                        | `node_modules`                                 |
-| `just build-dist`      | `cargo build --profile dist --target x86_64-unknown-linux-musl -p vpay-server`                                                                                                                                                                                         | `rustup target add x86_64-unknown-linux-musl`  |
-| `just build-storybook` | builds both apps' Storybooks, greps the built stylesheet asserting `--color-base-100` is **defined**, not merely referenced, then (since 2026-10-23, vaam-apps/vpay#349) runs each app's `src/a11y-gate.test.ts` against that artefact and **fails if any case skips** | `node_modules`                                 |
-| `just release-dry-run` | builds the three release images for the **host arch only** (`vpay-server`, `vpay-dashboard`, `vpay-checkout`) with `--push=false`, packages (does not push or sign) the Helm chart, then `just helm-check`                                                             | docker + buildx + helm + kubeconform + network |
+| Recipe                 | Does                                                                                                                                                                                                                                                                                                                                                       | Needs                                          |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| `just build`           | `build-rust` + `build-web`                                                                                                                                                                                                                                                                                                                                 |                                                |
+| `just build-rust`      | `cargo build --workspace`                                                                                                                                                                                                                                                                                                                                  |                                                |
+| `just build-web`       | `pnpm -r build`                                                                                                                                                                                                                                                                                                                                            | `node_modules`                                 |
+| `just build-dist`      | `cargo build --profile dist --target x86_64-unknown-linux-musl -p vpay-server`                                                                                                                                                                                                                                                                             | `rustup target add x86_64-unknown-linux-musl`  |
+| `just build-storybook` | builds both apps' Storybooks, greps the built stylesheet asserting `--color-base-100` is **defined**, not merely referenced, then (since 2026-10-23, vaam-apps/vpay#355) runs each app's `src/a11y-gate.test.ts` against that artefact with `VPAY_STORYBOOK_BUILT=1`, and (since vaam-apps/vpay#349) reads its JSON report and **fails if any case skips** | `node_modules`                                 |
+| `just release-dry-run` | builds the three release images for the **host arch only** (`vpay-server`, `vpay-dashboard`, `vpay-checkout`) with `--push=false`, packages (does not push or sign) the Helm chart, then `just helm-check`                                                                                                                                                 | docker + buildx + helm + kubeconform + network |
 
 The `build-storybook` grep is not tidiness. PR #135 produced a build that
 referenced `--color-base-100` 22 times and defined it 0 — the `@vaam-apps/ui`
@@ -42,15 +42,19 @@ browser's default white and every colour-contrast verdict was about a ground no
 user ever sees.
 
 **The grep cannot follow a `var()`, which is why the recipe also runs the
-test (2026-10-23, vaam-apps/vpay#349).** Since `@vaam-apps/ui` 0.5.0 the
+test (2026-10-23, vaam-apps/vpay#355; strengthened by vaam-apps/vpay#349).**
+Since `@vaam-apps/ui` 0.5.0 the
 token is `--color-base-100:var(--md-sys-color-surface)`. A sheet that keeps
 that mapping and loses the role behind it prints "defined 3x" and passes the
 grep, while `a11y-gate.test.ts`'s built-stylesheet case fails it (measured,
 both apps). The case resolves the chain to the colour the package's own
-`theme.css` resolves to, in `dark` and `light`. The recipe reads Vitest's
-JSON report because Vitest exits 0 on a skipped case. Before this date the
+`theme.css` resolves to, in `dark` and `light` (#349; #355's first version
+followed one `var()` as text and could not tell the themes apart).
+`VPAY_STORYBOOK_BUILT=1` (#355) makes a missing build fail the case, and the
+recipe reads Vitest's JSON report (#349) because Vitest exits 0 on any other
+skip. One run per app, inside the loop. Before 2026-10-23 the
 case ran in CI only inside `pnpm -r test`, before any build, so it always
-skipped there. And from 0.5.0 (2026-10-21) until this date it demanded a hex
+skipped there. And from 0.5.0 (2026-10-21) until then it demanded a hex
 value, so it failed after every correct local build.
 
 `.cargo/config.toml` sets `-C target-feature=+crt-static` for **both** musl
@@ -466,7 +470,9 @@ callback-registration pass in the foreground and prints one line per rail,
 `{rail} {register} {state} {detail}`, exiting non-zero when a rail is
 `missing`, `locked` or `failed`. It needs `--database-url` (the pass takes an
 advisory lock) and writes to the provider unless `--check` or the rail's
-`callbacks.register` says otherwise.
+`callbacks.register` says otherwise. Unset, that setting is the adapter's
+default, which is `off` on `notchpay` since 2026-10-23: there the command
+prints `notchpay off off -`, asks nothing and exits `0`.
 Anything you read describing `vpay-worker-bin` as a separate binary is stale.
 
 `.env.live.example` → `.env.live` (git-ignored) is for the `live` profile test

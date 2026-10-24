@@ -12,41 +12,344 @@ publishes no release tags and its workspace version has never moved off
 `v0.5.0` as of 2026-09-23 — and its workspace version is `0.5.0`. The naming
 rule stands, for the reasons VERSIONING.md now gives.)_
 
-## 2026-10-23 — the built-stylesheet a11y case follows the theme's `var()` chain (vaam-apps/vpay#349)
+## 2026-10-24 — the built-stylesheet a11y case resolves per theme against the package (vaam-apps/vpay#349)
 
 Read against vaam-apps/vpay#349's branch `claude/beautiful-albattani-b73uab`
-at `49f7d0a1`, which has vpay's `master` at `82a68f4e` (the merge of
-vaam-apps/vpay#348) merged in. It has not merged yet, so no `SKILL.md` stamp
-moves; restamp at its merge commit. vpay's
-evidence page is
+at `fcdf70ee`, which has vpay's `master` at `630c8a34` merged in, and with it
+vaam-apps/vpay#355, which fixed the same case first (this repository's #78).
+#349 has not merged yet, so no `SKILL.md` stamp moves; restamp at its merge
+commit. vpay's evidence page is
 `docs/status/verification/2026-10-23-a11y-gate-built-stylesheet.md`.
 
-- `vpay-tooling` (`references/recipes.md`, `references/ci.md`):
-  `just build-storybook` runs both apps' `src/a11y-gate.test.ts` against the
-  artefact it has just built, and fails if a case skips; why its grep alone
-  cannot see a `var()`.
-- `vpay-frontend` (`references/workspace.md`), `vpay-checkout`
-  (`references/testing-and-gates.md`): the built-stylesheet case resolves
-  `--color-base-100` through `themeColours` to the colour the package's own
-  `theme.css` resolves to, in `dark` and `light`, and is measured in the
-  recipe rather than in `pnpm -r test`.
-- `vpay-troubleshooting` (`references/node-web.md`): the case's three
-  failure messages, and its expected skip in `pnpm -r test`.
+- `vpay-checkout` (`references/testing-and-gates.md`): case 6 resolves
+  `--color-base-100` with `themeColours`, per theme, to the colour the
+  package's own `theme.css` resolves to. #355's text-only, one-`var()` check
+  passed a built sheet missing only the light theme's role (measured
+  2026-10-24). #78's account of #355 is kept.
+- `vpay-tooling` (`references/recipes.md`, `references/ci.md`),
+  `vpay-frontend` (`references/workspace.md`): `just build-storybook` runs
+  the file once per app, inside its loop, with `VPAY_STORYBOOK_BUILT=1` (#355)
+  and a read of Vitest's JSON report that fails on any skip (#349); why the
+  recipe's grep alone cannot see a `var()`.
+- `vpay-troubleshooting` (`references/node-web.md`): the case's failure
+  messages, `VPAY_STORYBOOK_BUILT`'s included, its expected skip in
+  `pnpm -r test`, and what each vpay version in this sequence fails on.
+
+### Stopped being true
+
+- "every definition is a colour literal or a `var()` of a property every
+  definition of which is one (one level deep)" as case 6's whole check (#78,
+  from #355). It resolves per theme, to any depth, and must equal the
+  package's own value.
+- "`just build-storybook` … runs each app's `a11y-gate.test.ts`" after its
+  loop, twice in total. Once per app, inside the loop, with the JSON-report
+  skip check as well.
+- "`just build-storybook` … greps the built stylesheet" as the whole of the
+  recipe's check (`vpay-tooling`, `vpay-frontend`), true before #355.
+
+Still true: `pnpm -r test` and `just ci` build no Storybook, so the case
+reports one skip per app there, by design.
+
+## 2026-10-24 — a refund destination is keyed by the rail's code, and a routed charge's rail is not on `/v1`
+
+Read against vaam-apps/vpay's `master` at `1c8bd7b0`, the merge of vaam-apps/vpay#359, which fixes vpay's own
+wording and records the gap. vpay-docs' re-read for v0.12.0 found that the API
+reference, three of `POST /v1/refunds`' error messages, two flow pages and both
+SDKs' doc comments still called the refund key `<payment_method_type>`. The
+route has always keyed it on the charge's **rail** code, and since
+vaam-apps/vpay#346 a payment-method type is something else. Nothing in the code
+changed but the three messages. The gap behind it is recorded in vpay and not
+fixed: the rail a routed charge went to is on no `/v1` object, so a merchant
+refunding one on `mtn_momo` or `orange_money` must know the rail another way.
+Whether the route should also accept the charge's method type, or `/v1` should
+name the rail, is the maintainer's decision.
+
+- `vpay-merchant-api` (`references/objects.md`): a routed charge is refunded
+  under its rail's code, and `/v1` does not say which rail.
+- `vpay-sdks` (`SKILL.md`, `references/stripe-compat.md`): the type-checker does
+  not stop `MtnWallet`/`mtn_wallet` in `RefundDestination`; the destination is
+  required on `mtn_momo` and `orange_money` and refused on `notchpay`.
+
+### Stopped being true
+
+- "`destination[<payment_method_type>][msisdn]` is required on every rail vpay
+  carries" (`vpay-sdks/references/stripe-compat.md`). The key is the rail's
+  code, never a type, and `notchpay` (since 2026-10-20) refuses a destination.
+
+## 2026-10-23 — rail callbacks are checked where the rail signs (RFC-0014)
+
+Read against vaam-apps/vpay's `master` at `820c52b3`, the merge of
+vaam-apps/vpay#357, which builds RFC-0014's port and Notch Pay's signature
+check.
+Since #353 an unset `register` is `off` on Notch Pay, so the endpoint whose
+Hash Key this checks is registered by hand in Notch Pay's dashboard. The maintainer was asked "Webhook signature
+verification (RFC-0014) needs Notch Pay's hash key held by vpay as a secret.
+Lift the earlier 'hash key is evidence only, never vpay configuration' rule
+for this?" and answered "Yes, build RFC-0014". vpay's evidence page is
+`docs/status/verification/2026-10-23-webhook-signatures.md`. **Stub-proven;
+never verified against a real Notch Pay delivery.** No webhook has ever been
+delivered: the 2026-10-23 sandbox run found an API-created endpoint stored
+with `"url": null`, so a real check needs the Hash Key and a
+dashboard-registered endpoint.
+
+An independent security review of the branch the same day found no security
+defect, and its should-fix findings are built and read here too: a declared
+check that is not performed fails closed at the route; a match under the
+previous secret is `CallbackVerdict::VerifiedPrevious`
+(`verdict="verified_previous"`), with a `WARN` at every `serve` boot while
+it is set; two more refusals, `CallbackSigningPreviousWithoutCurrent` and
+`CallbackSigningSecretWhitespace`; and the route borrows the rail's
+configuration instead of cloning its credentials. vpay's record is the
+verification page's "Security review" section.
+
+- `vpay-provider-adapters` (`SKILL.md`, `references/adding-a-rail.md`):
+  RFC-0014 rewritten from "nothing in it is built" to what is: `vpay_provider::callback`
+  (`CallbackRequest`, `CallbackVerdict`, the port-named signing-secret
+  credentials, the one constant-time HMAC comparison),
+  `ProviderAdapter::verify_callback`, `Capabilities::callback_check`, the
+  conformance census and its per-rail signing row, and the six boot
+  refusals; what a new signing rail must do (answer `key.verified()`; a
+  declared check left on the default fails closed). The `CallbackVerdict`
+  bullet's "only the first three admit the pull-forward" was wrong as
+  written (it named `Invalid` and missed `NoSecret`) and is corrected.
+- `vpay-notchpay` (`SKILL.md`): the signature is checked; the Hash Key is a
+  credential (`callback_signing_secret`, `${NOTCHPAY_HASH_KEY}`); the livemode
+  refusal and `callbacks.verify: off`; raw body versus re-serialisation is
+  RFC-0012 § 10 item 7, still open; replay accepted.
+- `vpay-ops` (`references/configuration.md`, `references/observability.md`):
+  the signing secrets, `callbacks.verify`, the six refusals, rotation and its
+  end signal (`verified_previous`, the boot `WARN`), and the fifteenth metric,
+  `vpay_provider_callbacks_total{provider,verdict}`.
+- `vpay-conventions` (`references/adr-index.md`): RFC-0014 partly built, and
+  RFC-0012 § 2's refusal lifted for this purpose.
+- `vpay-troubleshooting` (`references/config-boot.md`): the six
+  `78`s and which one a real deployment meets.
+- `vpay-merchant-api` (`references/routes.md`) and `vpay-reconciler`
+  (`SKILL.md`): the callback route's new step, and that a refused callback is
+  the same `202`.
+- `vpay` and `vpay-conventions` (`SKILL.md`): "Callbacks are hints" gains
+  AGENTS.md's new sentence, that a verified signature decides only the
+  pull-forward.
+
+### Stopped being true
+
+- "RFC-0014 … Draft, **nothing in it is built**" and "**None of those names
+  exists** under `backends/`" (`vpay-provider-adapters`,
+  `vpay-conventions`). `verify_callback`, `CallbackRequest`,
+  `CallbackVerdict` and `callback_check` exist.
+- "The signature (`x-notch-signature`) is **not** checked, because the port
+  passes no headers" (`vpay-notchpay`). It is, where the Hash Key is
+  configured.
+- "RFC-0012's Hash Key stays out of configuration" and "**Do not add a
+  verifier inside an adapter ahead of the port change**"
+  (`vpay-provider-adapters`). The port change landed, and the Hash Key is
+  `credentials.callback_signing_secret`.
+- "Webhook signature verification (needs a port change; RFC-0014 … a
+  draft)" in `vpay-notchpay`'s "Not built". What is not done is checking a
+  webhook Notch Pay really sent.
+- "webhook signature verification (the port's `parse_callback` receives no
+  headers, so a verifier would be code nothing can call)" (the Notch Pay
+  client's omissions, `vpay-provider-adapters`). The check is the adapter's.
+- "**There is no signature verification to find**" on `/provider/{code}/callback`
+  (`vpay-merchant-api`). True of MTN and Orange only.
+- "Fourteen" metrics (`vpay-ops`): fifteen.
+- An uncommented `notchpay` block needs two secrets (`vpay-ops`): three,
+  with `NOTCHPAY_HASH_KEY`, and livemode refuses to boot without it unless
+  `callbacks: { verify: off }`.
+
+## 2026-10-23 — the a11y gate's built-theme case resolves `var()`, and `just build-storybook` runs it
+
+Read against vaam-apps/vpay's `master` at `37fd72df`, the merge of
+vaam-apps/vpay#355, which changes both apps' `src/a11y-gate.test.ts` and the
+`build-storybook` recipe. The
+maintainer said "Fix it" about the finding on vpay's
+`docs/status/verification/2026-10-23-npm-advisories.md`. vpay's evidence page
+is `docs/status/verification/2026-10-23-a11y-gate-built-theme.md`.
+
+- `vpay-checkout` (`references/testing-and-gates.md`): case 6 resolves
+  `--color-base-100` one `var()` deep to a colour; `just build-storybook` runs
+  the case after building, with `VPAY_STORYBOOK_BUILT=1`, so it runs in CI
+  and a missing build fails it.
 
 ### Stopped being true
 
 - "The **built** Storybook stylesheet actually defines `--color-base-100`"
-  (case 6), checked as `--color-base-100:\s*#`. Since `@vaam-apps/ui` 0.5.0
-  that assertion failed after every correct build, and it now resolves the
-  `var()` chain instead.
-- "`just build-storybook` … greps the built stylesheet" as the whole of the
-  recipe's check. It also runs the test file.
-- "This lives in the recipe rather than only in the test because CI's `web`
-  job runs `pnpm -r test` **before** `just build-storybook`". It still runs
-  in that order. The test now runs inside the recipe as well.
+  as the whole of case 6: it also has to resolve to a colour.
+- That case 6 never runs in CI: `just build-storybook` runs it now.
+- Implicitly, that case 6 passes on a local build: on `master` before this it
+  failed on every one, because it demanded a hex literal the 0.5.0 theme no
+  longer writes.
 
-Still true: `pnpm -r test` and `just ci` build no Storybook, so the case
-reports one skip per app there, by design.
+## 2026-10-23 — `unresolved` has two ways in
+
+Read against vaam-apps/vpay's `master` at `14fc6241`, the merge of
+vaam-apps/vpay#354. That vpay pull request corrects three stale claims in
+vpay's own docs, which vaam-apps/vpay-docs#19's re-read of v0.11.0 found; one
+of them is repeated here.
+
+- `vpay-payments` (`references/state-machines.md`): `ChargeState::Unresolved`
+  is reached past the 24 h horizon **or** at once, on a rail answer only a
+  person can act on (`ProviderError::NeedsReconciliation`, vaam-apps/vpay#313,
+  built in vaam-apps/vpay#341).
+
+### Stopped being true
+
+- "`unresolved` — past the 24 h horizon with no terminal answer", as the
+  only way in. True until vaam-apps/vpay#341 (2026-10-23).
+
+Still true: an `unresolved` charge is still polled, hourly, and alerts; the
+horizon path is unchanged.
+
+## 2026-10-23 — Notch Pay: registration off by default, and a wrong-network number is `invalid_payer`
+
+Read against vaam-apps/vpay's `master` at `71a351df`, the merge of
+vaam-apps/vpay#353, which adds
+`docs/status/verification/2026-10-23-notchpay-defaults-and-wrong-network.md`.
+Two maintainer decisions on #350's
+sandbox evidence: asked whether to change Notch Pay's `register: ensure`
+default, "Default to `off` for Notch Pay"; asked whether to map a
+wrong-network number's `422` on `errors.phone` to `invalid_payer`, "Yes,
+`invalid_payer`". Both are proven in vpay against WireMock and a real
+Postgres; neither was sent to Notch Pay.
+
+- `vpay-notchpay` (`SKILL.md`): a new first bullet under the webhook
+  registration (an unset `register` asks a Notch Pay account nothing; the
+  adapter declares `Off`; do not delete the override to "fix" a missing
+  endpoint); the wrong-network bullet, the channel paragraph and the codes
+  (`PRODUCED_FAILURE_CODES` six, `invalid_payer` from process's `422` on
+  `phone` alone, with vpay's own message); `callbacks.register`'s default;
+  the description and stamp.
+- `vpay-provider-adapters` (`SKILL.md`, `references/conformance.md`): the
+  thirteenth method, `default_callback_registration`
+  (`CallbackRegistrationDefault::{Ensure, Off}`, `Ensure` by default,
+  forwarded by `Measured`, read only by the binary's plan); the RFC-0013
+  entry's default; the one Notch Pay stub mapping that steers by channel and
+  number rather than by reference, and the case that drives it.
+- `vpay-ops` (`references/configuration.md`, `references/observability.md`):
+  `callbacks.register` unset means the adapter's default, `off` on
+  `notchpay`; `VpayCallbackEndpointUnconfirmed` never fires for an `off`
+  rail, so on a default deployment it says nothing about Notch Pay.
+- `vpay-tooling` (`references/recipes.md`): `vpay-server callbacks ensure`
+  prints `notchpay off off -` and exits `0` when `register` is unset.
+
+### Stopped being true
+
+- "`providers[].callbacks.register`: `ensure` by default" / "`ensure` (absent
+  block, or `{}`)" / "`ensure` default" (`vpay-notchpay`, `vpay-ops`,
+  `vpay-provider-adapters`). Unset, it is the rail's declared default:
+  `ensure`, but `off` for `notchpay`.
+- "The webhook endpoint is registered by vpay" (`vpay-notchpay`). Only when
+  `register: ensure` is written.
+- "The adapter maps it to `Rejected { provider_error }` … **It was not
+  changed**: remapping it is the maintainer's decision" (`vpay-notchpay`),
+  and "which the adapter maps to `provider_error`" for the wrong-network
+  `422`. It is `invalid_payer`.
+- "`PRODUCED_FAILURE_CODES` is five codes" (`vpay-notchpay`). Six.
+- "The `ProviderAdapter` trait and its twelve methods" / "**Twelve as of
+  2026-10-23.**" (`vpay-provider-adapters`). Thirteen.
+- "an operator who wants callbacks should register vpay's URL in the
+  dashboard and set `register: off`" (`vpay-notchpay`, `vpay-ops`). Setting
+  `off` is no longer needed on Notch Pay: an unset `register` is `off`.
+
+## 2026-10-23 — ADR-0032 accepted; RFC-0008's routing questions answered
+
+Read against vaam-apps/vpay's `master` at `d01dd2a4`, the merge of
+vaam-apps/vpay#351, which records these answers. The maintainer was asked whether to mark ADR-0032
+Accepted and answered "Yes". Asked RFC-0008's R8.1–R8.5 with the agent's
+defaults, they answered "go with your defaults" and, on the score, "first go
+with your defaults. Just document everything". Asked then whether the
+completion rate may move traffic, as "(a) a configured weight the operator
+adjusts by hand from the dashboard numbers" or "(b) an automatic score
+component", they answered "Go with (a)". vpay's record is RFC-0008 §§ R7–R9
+and ADR-0032's Status. No code changed.
+
+- `vpay-conventions` (`references/adr-index.md`): 0032's row, Accepted; the
+  0029 note, what the R8 answers settle in D8, D9 and D11; RFC-0008's bullet,
+  each answer and what is built.
+- `vpay-provider-adapters` (`SKILL.md`): the fee is the next score
+  component, the completion rate is reported and never scored, health never
+  enters the score, no exploration.
+- `vpay-ops` (`references/configuration.md`) and `vpay-payments`
+  (`SKILL.md`): the fee as a component and the completion rate as a reported
+  measure the operator weighs by hand, neither built; weights stay the
+  operator's until RFC-0009.
+- `vpay-merchant-api` (`references/objects.md`): the confirm following the
+  checkout page's rail is decided and not built.
+- `vpay-notchpay` (`SKILL.md`): ADR-0032 accepted; the tie-break kept.
+
+### Stopped being true
+
+- "ADR-0032 is **Proposed** — needs maintainer acceptance". Accepted
+  2026-10-23.
+- "The formula is provisional … until the maintainer answers RFC-0008's
+  revision R8" and "RFC-0008's 2026-10-23 revision asks the maintainer which
+  components it should have". R8 is answered: the estimated fee is the next
+  score component; the completion rate is reported, not scored.
+- "Its R8 questions (which components, who sets the weights, may health move
+  traffic) are the maintainer's". Answered: the fee (the completion rate only
+  as an operator's input); the operator; no.
+- "fees, health, completion rate and latency are proposed" (`vpay-ops`).
+  Health and latency are not chosen.
+
+Still true: the score is the configured weight alone (`provisional-1`); the
+confirm re-ranks on its own, so a server confirming `orange_wallet` should
+pin; one charge per intent; no measured quantity (health, completion rate)
+moves traffic without an operator.
+
+## 2026-10-23 — Notch Pay's sandbox, measured for the two-step split, the per-network channels and a webhook
+
+Read against vaam-apps/vpay's `master` at `9499f09d`, the merge of
+vaam-apps/vpay#350, the pull request that adds the probe's `two-step`,
+`channels`, `webhook-receive` and `webhook-update` phases and
+`docs/status/verification/2026-10-23-notchpay-sandbox-two-step-and-channels.md`.
+The maintainer
+asked to "finalise notchpay", approved the sandbox session in its chat ("Yes,
+run it") and chose "A third-party capture service" to receive a webhook. The
+session ran through `sandbox_probe` from a cloud session; **vpay itself made
+no call**, and no adapter code changed.
+
+- `vpay-notchpay` (`SKILL.md`): a new § "What the 2026-10-23 probe showed":
+  an initialized, never-processed payment still `pending` after an hour; a
+  process 300 s late completes; the `409` body with `errors.reference`; every
+  MTN and Orange outcome number on `cm.mtn` / `cm.orange` reading as on
+  `cm.mobile`; the wrong-network `422` on `errors.phone`, which the adapter
+  maps to `provider_error`; `POST /webhooks` storing `url: null`, nothing
+  delivered in 21 minutes, `GET`/`PUT`/`DELETE` by id all `404`; the
+  `processing` stall after that endpoint existed; the endpoint left for the
+  maintainer to delete in the dashboard. The "Still open" list, the channel,
+  `409` and webhook-registration bullets, `callbacks.register` and "Not
+  built" follow it.
+- `vpay-provider-adapters` (`SKILL.md`): the RFC-0013 entry says an endpoint
+  `ensure_callbacks` creates on Notch Pay received nothing in the sandbox, so
+  `present`/`created` means "listed", not "delivering".
+- `vpay-ops` (`references/configuration.md`, `references/observability.md`):
+  the same, where an operator reads `callbacks.register` and
+  `vpay_callback_endpoint_checks_total`; `register: off` with a
+  dashboard-registered URL is what vpay's rail page now advises.
+
+### Stopped being true
+
+- "Notch Pay documents no Orange failure number" / "Orange's failure path:
+  Notch Pay documents no Orange failure number" (`vpay-notchpay`; vpay's
+  runbook, `adapter-notchpay.md` and `providers.md` said the same). The
+  testing page gives the five suffixes `…000000` to `…000004` "for each
+  operator", Orange's `+23769` included, and the probe ran Orange's four on
+  `cm.orange`. What stays open is Orange's failure path **through vpay**.
+- "no sandbox payment has used `cm.mtn` or `cm.orange`" and "**Stub-proven
+  only**" (`vpay-notchpay`). The probe has used both, with every outcome
+  number; vpay itself has sent neither, so the adapter is stub-proven and
+  Notch Pay's side is measured.
+- "Notch Pay's sandbox has not run the split" (`vpay-notchpay`). The probe ran
+  its Notch Pay side; "closed in vpay, proven against WireMock and Postgres"
+  still stands, because vpay did not.
+- "Not measured: item 7 (signature) and 17's delivery, **for want of a
+  public URL**" (`vpay-notchpay`). A public URL was used on 2026-10-23 and
+  still nothing arrived; the reason is now the null URL, and the signature
+  format is still unmeasured.
+- That an endpoint `ensure_callbacks` creates on Notch Pay would receive
+  Notch Pay's callbacks, which `vpay-provider-adapters` and `vpay-ops`
+  implied by calling `present` and `created` healthy. On the sandbox's
+  evidence it receives nothing.
 
 ## 2026-10-23 — payment-method types and a scored, explained router (ADR-0029 D6/D10, RFC-0008 revised)
 

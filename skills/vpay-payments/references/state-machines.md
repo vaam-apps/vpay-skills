@@ -1,6 +1,6 @@
 # The state machines
 
-_Verified against vpay `a33aac61` (2026-09-29) for § `InvoiceStatus`; the rest of this page was last read at `b747e5d5` (2026-09-23). Version-sensitive claims
+_Verified against vpay `9499f09d` (2026-10-23) for § `ChargeState`, and `a33aac61` (2026-09-29) for § `InvoiceStatus`; the rest of this page was last read at `b747e5d5` (2026-09-23). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 Every enum below is in `backends/crates/vpay-core/src/state.rs` except
@@ -63,14 +63,14 @@ Two `None`s that surprise people:
 
 ## `ChargeState` — operator-facing, internal, never on the wire
 
-| Value        | Meaning                                         | Still polled? |
-| ------------ | ----------------------------------------------- | ------------- |
-| `submitting` | the row exists; the rail has not been asked yet | yes           |
-| `submitted`  | submitted, no answer yet                        | yes           |
-| `pending`    | the rail acknowledged and is working on it      | yes           |
-| `unresolved` | past the 24 h horizon with no terminal answer   | **yes**       |
-| `succeeded`  | the rail says the money moved                   | no            |
-| `failed`     | the rail refused                                | no            |
+| Value        | Meaning                                                                                                                                                           | Still polled? |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
+| `submitting` | the row exists; the rail has not been asked yet                                                                                                                   | yes           |
+| `submitted`  | submitted, no answer yet                                                                                                                                          | yes           |
+| `pending`    | the rail acknowledged and is working on it                                                                                                                        | yes           |
+| `unresolved` | past the 24 h horizon with no terminal answer, or at once on a rail answer only a person can act on (`NeedsReconciliation`, since vaam-apps/vpay#313, 2026-10-23) | **yes**       |
+| `succeeded`  | the rail says the money moved                                                                                                                                     | no            |
+| `failed`     | the rail refused                                                                                                                                                  | no            |
 
 `ChargeState::is_live()` is the reconciler's predicate and
 `is_terminal()` its complement.

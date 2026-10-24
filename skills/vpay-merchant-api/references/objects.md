@@ -1,6 +1,6 @@
 # Wire objects
 
-_Verified against vpay `b747e5d5` (2026-09-23). Version-sensitive claims
+_Verified against vpay `b747e5d5` (2026-09-23); the refund `destination` paragraphs at `1c8bd7b0` (2026-10-24, vaam-apps/vpay#359). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 Every wire DTO lives in one module: `vpay_api::model`
@@ -100,6 +100,8 @@ asked for; **the chosen rail and the ranking are on no `/v1` object** (D10),
 only in `charges.method_type` and `routing_decisions`. The ranking's formula
 is provisional (`provisional-1`). `orange_wallet` can route to a redirect rail
 (`return_url`) or a push rail (`msisdn`), so a server confirming it should pin.
+The confirm ranks on its own: following the rail the checkout page showed is
+decided (RFC-0008 § R8.4, 2026-10-23) and **not built**.
 Neither SDK can confirm by type yet (`docs/sdks/parity.md`, dated
 2026-10-23). Before 2026-10-23 this row read "rail codes: `mtn_momo`,
 `orange_money`".
@@ -160,6 +162,19 @@ one that returns money to the instrument that paid (`notchpay`, since
 2026-10-20, vaam-apps/vpay#295, `357c825`, the first shipping one,
 whose refund is still a `NotImplemented` token). The **adapter** parses the inner
 map; the core's whole business with it is presence.
+
+**A routed charge is refunded under its rail's code, and `/v1` does not say
+which rail that is.** The outer key is the code of the rail the charge was made
+on (`map.get(code)` in `refunds.rs`), never the method type the payer chose:
+`destination[mtn_wallet][msisdn]` is a `400` naming `destination`. Since
+2026-10-23 an intent created with `mtn_wallet` or `orange_wallet` is routed,
+and the rail that won is on no `/v1` object (D10, above), so a merchant
+refunding one that landed on `mtn_momo` or `orange_money` has to know the rail
+another way — with equal weights, the tie-break. vpay recorded this as a gap on
+2026-10-24 (vaam-apps/vpay#359, `docs/status/verification/2026-10-23-method-type-routing.md`)
+and left the fix — the route also accepting the charge's method type, or `/v1`
+naming the rail — to the maintainer. Do not paper over it by guessing a rail
+on the merchant's behalf.
 
 **It is persisted nowhere**: there is no `destination` column on `refunds`,
 because its retention is RFC-0003 open question 3 and is **undecided** — the

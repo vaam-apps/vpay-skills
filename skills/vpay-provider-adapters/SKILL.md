@@ -1,6 +1,6 @@
 ---
 name: vpay-provider-adapters
-description: The vpay provider port (`vpay-provider`) and how to add a payment rail — the `ProviderAdapter` trait and its twelve methods as of 2026-10-23 (payer_fields since 2026-09-16, accepted_exposure since 2026-10-20, prepare since 2026-10-23), the `Unsupported` vs `NotImplemented` rule that decides which error a missing operation returns, the rail-agnostic refund destination (`RefundDestination`, `RefundTarget`, `parse_destination`), the capability flags the core branches on instead of provider codes, the shared HTTP/token modules, the shared conformance suite a new adapter must pass, where per-provider state is written (`docs/status/providers.md`), the Draft designs for Stripe and PayPal adapters and for callback registration (RFC-0010, -0011, -0013), and the Notch Pay rail (RFC-0012), admitted under ADR-0031 and merged, called against Notch Pay's sandbox only (2026-10-21, step 5; load `vpay-notchpay` for it). Load this before writing or changing any `vpay-adapter-*` crate, before touching `backends/crates/vpay-provider`, and before adding a rail.
+description: The vpay provider port (`vpay-provider`) and how to add a payment rail — the `ProviderAdapter` trait and its fourteen methods as of 2026-10-23 (payer_fields since 2026-09-16, accepted_exposure since 2026-10-20, prepare, default_callback_registration and verify_callback since 2026-10-23), the `Unsupported` vs `NotImplemented` rule that decides which error a missing operation returns, the rail-agnostic refund destination (`RefundDestination`, `RefundTarget`, `parse_destination`), the capability flags the core branches on instead of provider codes, the shared HTTP/token modules, the shared conformance suite a new adapter must pass, where per-provider state is written (`docs/status/providers.md`), the Draft designs for Stripe and PayPal adapters and for callback registration (RFC-0010, -0011, -0013), and the Notch Pay rail (RFC-0012), admitted under ADR-0031 and merged, called against Notch Pay's sandbox only (2026-10-21, step 5; load `vpay-notchpay` for it). Load this before writing or changing any `vpay-adapter-*` crate, before touching `backends/crates/vpay-provider`, and before adding a rail.
 ---
 
 # The provider port, and adding a rail
@@ -8,7 +8,13 @@ description: The vpay provider port (`vpay-provider`) and how to add a payment r
 > **Verified against vpay `a33aac61` (2026-09-29).** The two Notch Pay passages
 > that say what step 5 did ("RFC-0012" in the RFC list, and "`backends/crates/vpay-notchpay`
 > is the Notch Pay client") were also read against vpay `e28292d`
-> (2026-10-21), the merge of vaam-apps/vpay#310. Version-sensitive claims below
+> (2026-10-21), the merge of vaam-apps/vpay#310. The RFC-0013 entry's
+> sentence on what Notch Pay's sandbox stored for an API-created endpoint was
+> read against vpay `82a68f4e` plus the pull request that adds
+> `docs/status/verification/2026-10-23-notchpay-sandbox-two-step-and-channels.md`,
+> restamped with its merge. The method count, the
+> `default_callback_registration` bullet and the RFC-0013 entry's
+> `callbacks.register` default were read against vpay's `master` at `9499f09d` plus the pull request that adds `docs/status/verification/2026-10-23-notchpay-defaults-and-wrong-network.md`, restamped with its merge. Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -104,12 +110,14 @@ page itself says deriving its capability columns from each adapter's
 
 ## The methods
 
-**Twelve as of 2026-10-23.** ~~"The ten methods"~~ was this heading until
-then. Ten since the Notch Pay adapter (2026-10-20, vaam-apps/vpay#295,
-on `master` since `357c825`, after this page's stamp):
-`accepted_exposure`, below; eleven with `ensure_callback_endpoint`
-(2026-10-22); twelve with `prepare` (2026-10-23, ADR-0032, below).
-Everything else in this section was nine.
+**Fourteen as of 2026-10-23.** ~~"The ten methods"~~ was this heading until
+then, "Twelve" until later the same day, and "Thirteen" until RFC-0014. Ten since the Notch Pay adapter
+(2026-10-20, vaam-apps/vpay#295, on `master` since `357c825`, after this
+page's stamp): `accepted_exposure`, below; eleven with
+`ensure_callback_endpoint` (2026-10-22); twelve with `prepare` (2026-10-23,
+ADR-0032, below); thirteen with `default_callback_registration` (2026-10-23,
+RFC-0013's amendment, below); fourteen with `verify_callback` (2026-10-23,
+RFC-0014, below). Everything else in this section was nine.
 
 ~~The seven methods~~ **Corrected 2026-09-23:** the trait has **nine** `fn`s
 at `b747e5d5`. The code block below always listed eight, and
@@ -203,6 +211,24 @@ fn accepted_exposure(&self) -> Option<AcceptedExposure>; // default: None — si
   `NeedsReconciliation` a duplicate a submit may have prompted (`Some`).
   **Do not move the commit into the adapter**: an adapter that writes to the
   database is a core concern in a rail crate (ADR-0002).
+
+- **`default_callback_registration` is the thirteenth method (2026-10-23,
+  RFC-0013's amendment).** Synchronous, `-> CallbackRegistrationDefault`
+  (`Ensure` | `Off`), defaulting to `Ensure`. It is what the registration
+  pass does on a `Registered` rail when the deployment leaves
+  `providers[].callbacks.register` unset; an explicit setting always wins.
+  Only the binary's plan reads it (`vpay-server`'s `callback_plan`, through
+  `From<CallbackRegistrationDefault> for vpay_worker::callbacks::Registration`),
+  and it logs one `info` line for a rail it leaves `off`. **Only `notchpay`
+  overrides it, with `Off`**: the maintainer's "Default to `off` for Notch
+  Pay", after the sandbox stored an API-created endpoint with `url: null`
+  and delivered nothing to it. It is a method and not a `Capabilities` field
+  for `accepted_exposure`'s reasons: nothing persists it and the core never
+  branches on it. It exists so the binary does not match on `"notchpay"`,
+  which ADR-0002 forbids outside an adapter crate. There is no `Check`
+  default. `Measured` must forward it, like every defaulted method
+  (`the_default_callback_registration_is_forwarded_not_defaulted`): a wrapper
+  that took the default would put Notch Pay back on `ensure`.
 
 - **The error-surface table in the trait's own doc comment is the contract.**
   It is a markdown grid, one row per `ProviderError` variant and one column
@@ -654,15 +680,24 @@ section as a decision:
   five minutes after a `Transport` or database failure, **never `Err`**; the
   lock `vpay_db::lock_keys::CALLBACK_REGISTRATION` (`vpaycbk`,
   `pg_try_advisory_xact_lock`, one transaction per rail);
-  `providers[].callbacks.register` (`ensure` default | `check` | `off`,
-  refused on a `PerRequest` rail as `ConfigError::CallbacksOnPerRequestRail`);
+  `providers[].callbacks.register` (`ensure` | `check` | `off`, refused on a
+  `PerRequest` rail as `ConfigError::CallbacksOnPerRequestRail`; unset, the
+  adapter's `default_callback_registration`, which is `ensure` everywhere but
+  `notchpay`, `off` since 2026-10-23 — it said "`ensure` default" until then);
   `vpay-server callbacks ensure [--check]`; the counter
   `vpay_callback_endpoint_checks_total{provider,state}`, which the chart's
   `VpayCallbackEndpointUnconfirmed` alerts on (2026-10-23,
   `docs/runbooks/callback-endpoints.md`). A new `Registered` rail is covered
   by it with no rule change, because the rule groups `by (provider)`. The marker is
   `vpay:{deployment.name}:{rail}:default`. **Never run against a real Notch
-  Pay account** (delivery step 5); Stripe and PayPal have no adapter. Where
+  Pay account** (delivery step 5); Stripe and PayPal have no adapter. On
+  2026-10-23 the Notch Pay probe made the same `POST /webhooks` call with a
+  public URL: the sandbox stored `"url": null`, delivered nothing in 21
+  minutes, and answered `404` to `GET`, `PUT` and `DELETE` by id. So on that
+  evidence an endpoint `ensure_callbacks` creates on Notch Pay receives
+  nothing, and `present` or `created` means "listed", not "delivering"
+  (the `vpay-notchpay` skill). **So since 2026-10-23 an unset `register`
+  asks a Notch Pay account nothing** (above); `ensure` must be written. Where
   it differs from the RFC: `Drifted` and `retirable` are new; Notch Pay's
   endpoint is recognised by a URL tag in its description, because Notch Pay
   answers `"url": null`; nothing is ever retired or repaired on Notch Pay
@@ -734,8 +769,9 @@ change you make there:
   (`Client::with_request_timeout`), which the adapter sets from
   `ProviderConfig::request_timeout`.
 - **What it deliberately omits**: refunds, cancel, webhook update and delete,
-  transfers, and webhook signature verification (the port's `parse_callback`
-  receives no headers, so a verifier would be code nothing can call).
+  transfers, and webhook signature verification, which is the adapter's
+  `verify_callback` over `vpay_provider::callback`'s helper since 2026-10-23
+  (RFC-0014): the client never sees a webhook.
 - **Where Notch Pay's own pages disagree with its specification**, the client
   follows the specification, and RFC-0012 § 10 lists each disagreement for the
   first sandbox session. Treat every one of them as unverified.
@@ -766,22 +802,50 @@ There is no `vpay-fapshi` crate, no `fapshi` adapter code and no RFC. **Do not
 start one** before the page's written questions are answered and the
 maintainer asks for it; the page lists the order such work would follow.
 
-**RFC-0014 — verifying rail callbacks** (added 2026-10-20, merged as vpay
-`0977616` in vaam-apps/vpay#296; Draft, **nothing in it is built**). The
-maintainer answered "Yes, as its own piece of work" on 2026-10-20 to whether
-vpay should verify Notch Pay's webhook signatures: for every rail that signs,
-and outside the Notch Pay adapter's pull request. It proposes a defaulted
-**`ProviderAdapter::verify_callback(request, charge, config)`**, run by the
-callback route **after** the charge is found, and **`Capabilities::callback_check`**
-(`None` | `BodyToken` | `Signature`). `parse_callback` keeps its signature.
-**None of those names exists** under `backends/` as of 2026-10-20, and no
-rail's callback is verified today. **Do not add a verifier inside an adapter
-ahead of the port change**, Notch Pay's included; RFC-0012's Hash Key stays
-out of configuration until the RFC's Notch Pay step. What the RFC keeps:
-**callbacks stay hints** (a verdict only decides whether the poll is pulled
-forward), and every answer stays a byte-identical `202`. Its first consumer
-is proposed to be Orange, comparing the `notif_token` that `submit` already
-stores. Five open questions are the maintainer's.
+**RFC-0014 — verifying rail callbacks: the port and Notch Pay's check are
+built** (2026-10-23, against vpay `master` `82a68f4e` plus the branch
+`claude/happy-hopper-r3h6rz-webhook-signatures`; stub-proven; never verified against a real Notch Pay delivery). The maintainer answered "Yes, build RFC-0014"
+on 2026-10-23, lifting RFC-0012's "hash key is evidence only" rule for it.
+
+- **The port** (`vpay_provider::callback`, new): `CallbackRequest { headers,
+body, received_at }` (a hand-written `Debug` that prints header names and
+  the body's length, registered in `debug_protections`), `CallbackVerdict`
+  (`Verified`, `VerifiedPrevious`, `Invalid(&'static str)`, `NotChecked`,
+  `NoSecret`, `Unavailable(&'static str)`; `#[non_exhaustive]`; `Verified`,
+  `VerifiedPrevious`, `NotChecked` and `NoSecret` admit the pull-forward,
+  `Invalid` and `Unavailable` do not), and
+  **`ProviderAdapter::verify_callback(request, charge, config)`**, the
+  fourteenth method, defaulting to `NotChecked`. `parse_callback` is unchanged. `Measured`
+  forwards it and counts nothing. **An adapter that declares a check and
+  keeps that default fails closed**: the route answers `Unavailable` and
+  logs `error`. _(2026-10-23 security review: this bullet said "only the
+  first three admit the pull-forward", which named `Invalid` and missed
+  `NoSecret`; `VerifiedPrevious` and the fail-closed rule are the review's.)_
+- **`Capabilities::callback_check`** (`None` | `BodyToken` | `Signature`) says
+  what **vpay's adapter** checks, not what the rail sends;
+  `callback_check_is_coherent` (`!delivers_callbacks ⇒ None`) is a boot
+  refusal (`IncoherentCallbackCheck`). A new rail literal must set it.
+- **The secret is a credential under two port-fixed names**,
+  `CALLBACK_SIGNING_SECRET` and `CALLBACK_SIGNING_SECRET_PREVIOUS`, read
+  through `callback_signing_keys(config)` (each tagged
+  `vpay_provider::SigningKey`, so a match under the previous one answers
+  `VerifiedPrevious`): not RFC-0014 § 5's illustrative
+  `callbacks.signing_secrets` list. Boot is generic over them (ADR-0002),
+  and refuses a previous secret without a current one and a secret with
+  surrounding whitespace.
+- **One MAC comparison** for the workspace: `hmac_sha256_hex_matches`
+  (`Mac::verify_slice`, constant time). Do not write an `==` on a MAC in an
+  adapter; `the_comparison_is_the_constant_time_one` reads the source.
+- **Who checks:** `notchpay` (`Signature`, `x-notch-signature`). `mtn_momo`
+  and `orange_money` declare `None` and answer `NotChecked`. **Orange's
+  `BodyToken` check is not built** (RFC-0014 open question 2: nobody has
+  observed that the notification's `notif_token` equals the stored one), nor
+  are Stripe's and PayPal's (no adapter).
+- **What it keeps:** callbacks stay hints (a verdict only decides whether
+  the poll is pulled forward), and every answer stays a byte-identical
+  `202`. The conformance census `a_forged_callback_is_refused_by_a_rail_that_checks`
+  branches on the capability, and `documented_callback_signature` is the
+  per-rail data row a new signing rail must add.
 
 ## Method types and the router (built 2026-10-23)
 
@@ -813,9 +877,12 @@ processes it. Each adapter declares what it serves in
   a rail-code branch to it; `vpay-server`'s `the_router_names_no_rail` reads
   its source and fails. **The formula is provisional** (`provisional-1`, a
   configured weight per rail, `routing.weights`, default 100, ties to the
-  lower rail code) until the maintainer answers RFC-0008's revision R8. A
-  new component is a `Component` variant and its breakdown entry, not a sort
-  key. vpay's evidence:
+  lower rail code). RFC-0008's R8 was answered on 2026-10-23: the next score
+  component is the estimated fee; the completion rate is reported for the
+  operator to turn into a weight by hand, never scored (§ R8.1, "Go with
+  (a)"); neither is built; health never enters the score (R8.3); there is no exploration
+  (R8.5); the tie-break is kept. A new component is a `Component` variant
+  and its breakdown entry, not a sort key. vpay's evidence:
   `docs/status/verification/2026-10-23-method-type-routing.md`.
 
 ## Where to go next

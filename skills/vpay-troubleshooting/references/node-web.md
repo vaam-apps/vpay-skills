@@ -128,7 +128,12 @@ both apps. It reads `storybook-static/assets/*.css`.
 **`1 skipped` per app in `pnpm -r test` or `just ci` is expected.** Neither
 builds Storybook. The case is measured in `just build-storybook`, which runs
 both apps' file against the artefact it has just built (since 2026-10-23,
-vaam-apps/vpay#349).
+vaam-apps/vpay#355), with `VPAY_STORYBOOK_BUILT=1`.
+
+**"`…/storybook-static/assets` does not exist, yet `just build-storybook`
+says it just built it"**: the case ran with `VPAY_STORYBOOK_BUILT=1` and
+found no artefact. Inside the recipe that means the build wrote somewhere
+else; outside it, unset the variable or build first.
 
 **"does not resolve to the package's "dark" (or "light") ground"**, after a
 build:
@@ -155,10 +160,13 @@ case measured nothing`**: the case skipped although the recipe had just built
 the stylesheet, so the directory it reads and the recipe's no longer agree.
 Vitest itself exits 0 on a skip; this message is the recipe refusing that.
 
-**On a vpay before vaam-apps/vpay#349, and on `@vaam-apps/ui` 0.5.0 or
+**On a vpay before vaam-apps/vpay#355, and on `@vaam-apps/ui` 0.5.0 or
 later**, the case fails after every correct build with `expected … to match
 /--color-base-100:\s*#/`. That is the case's old hex assertion, not your
-change (measured on `8504536f`: checkout 1 failed / 556 passed).
+change (measured on `8504536f`: checkout 1 failed / 556 passed). **Between
+#355 and vaam-apps/vpay#349** the case follows one `var()` as text and does
+not separate the themes: a sheet missing only the light theme's role passes
+it (measured 2026-10-24).
 
 ## `just verify-ui` refuses something that looks fine
 

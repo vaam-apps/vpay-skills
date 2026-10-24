@@ -49,14 +49,17 @@ never exists when the test runs there. It matters most for the dashboard, whose
 unnecessary on today's dependency tree, and this is what would catch a
 dependency bump making it necessary again.
 
-**Since 2026-10-23 (vaam-apps/vpay#349) the recipe also runs both apps'
-`src/a11y-gate.test.ts` against the artefact it has just built**, and fails
-unless every case passed, so a skip fails it too. The grep cannot follow a
+**Since 2026-10-23 (vaam-apps/vpay#355) the recipe also runs both apps'
+`src/a11y-gate.test.ts` against the artefact it has just built**, once per
+app, with `VPAY_STORYBOOK_BUILT=1` so a missing build fails the case; since
+vaam-apps/vpay#349 it also reads Vitest's JSON report and fails unless every
+case passed, so any skip fails it too. The grep cannot follow a
 `var()`: `@vaam-apps/ui` 0.5.0 made the token
 `--color-base-100:var(--md-sys-color-surface)`, and a sheet that keeps the
 mapping and loses the role still prints "defined 3x". The test's case
 resolves the chain, with each app's `themeColours`, to the colour the
-package's own `theme.css` resolves to, in `dark` and `light`. Do not put a
+package's own `theme.css` resolves to, in `dark` and `light` (#349; #355's
+first version followed one `var()` as text, theme-blind). Do not put a
 hex or a role name back into that assertion. The case asserted
 `--color-base-100:\s*#` until that date, and so failed after every correct
 build from 0.5.0 (2026-10-21) on, unseen, because CI only ran it where it

@@ -287,6 +287,18 @@ Not in `docs/flows/provider-port.md`, but required:
   (`docs/api/`, both SDKs). A push rail also gets a confirm shape in both
   SDKs (`ConfirmPaymentIntentParams::notchpay(msisdn)` in Rust, a
   `NotchPayPaymentMethodData` in Node) and a `docs/sdks/parity.md` row.
+- **`Capabilities::callback_check`** (since 2026-10-23, RFC-0014): `None`
+  unless your adapter overrides `verify_callback`. A rail that signs its
+  callbacks declares `Signature` only once the check is written, reads its
+  secrets through `vpay_provider::callback::callback_signing_keys` (never a
+  key name of its own; each tagged `SigningKey::Current` or `Previous`),
+  compares with `hmac_sha256_hex_matches`, answers `key.verified()`
+  (`Verified`, or `VerifiedPrevious` for the previous secret, so a rotation's
+  end is visible), and adds a `documented_callback_signature` row to the
+  conformance suite. **Declaring a check and keeping the default
+  `verify_callback` fails closed**: the route answers `Unavailable` and logs
+  `error` (RFC-0014 security review, 2026-10-23), so a forgotten override
+  refuses every callback rather than admitting every forgery.
 - **`Capabilities::method_types`** (since 2026-10-23): the payment-method
   types the rail serves, at least one. Add the rail's row to the conformance
   suite's `every_adapter_declares_the_method_types_it_serves`, which pins
@@ -314,12 +326,18 @@ Not in `docs/flows/provider-port.md`, but required:
 `vpay_api::v1::boot::boot_seeds` runs **before the database is touched**, so
 these fail in milliseconds rather than after a connection and a migration run:
 
-| condition                                                                                      | error                                    | exit   |
-| ---------------------------------------------------------------------------------------------- | ---------------------------------------- | ------ |
-| a configured `providers[]` code the binary links no adapter for                                | `ConfigError::ProviderWithoutAdapter`    | **78** |
-| an adapter declaring `supports_partial_refunds` without `supports_refunds`                     | `ConfigError::IncoherentCapabilities`    | **78** |
-| an adapter declaring `callback_url_mode: Registered` without `delivers_callbacks` (2026-10-22) | `ConfigError::IncoherentCallbackMode`    | **78** |
-| a `providers[].callbacks` block on a rail whose adapter declares `PerRequest` (2026-10-22)     | `ConfigError::CallbacksOnPerRequestRail` | **78** |
+| condition                                                                                                            | error                                                | exit   |
+| -------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- | ------ |
+| a configured `providers[]` code the binary links no adapter for                                                      | `ConfigError::ProviderWithoutAdapter`                | **78** |
+| an adapter declaring `supports_partial_refunds` without `supports_refunds`                                           | `ConfigError::IncoherentCapabilities`                | **78** |
+| an adapter declaring `callback_url_mode: Registered` without `delivers_callbacks` (2026-10-22)                       | `ConfigError::IncoherentCallbackMode`                | **78** |
+| a `providers[].callbacks` block on a rail whose adapter declares `PerRequest` (2026-10-22)                           | `ConfigError::CallbacksOnPerRequestRail`             | **78** |
+| an adapter declaring a `callback_check` without `delivers_callbacks` (2026-10-23)                                    | `ConfigError::IncoherentCallbackCheck`               | **78** |
+| livemode, a `Signature` rail, no `credentials.callback_signing_secret`, no `callbacks.verify: off` (2026-10-23)      | `ConfigError::CallbackSigningSecretMissing`          | **78** |
+| a signing secret or `verify: off` on a rail whose adapter checks no signature (2026-10-23)                           | `ConfigError::CallbackSigningSettingUnread`          | **78** |
+| `verify: off` beside a configured signing secret (2026-10-23)                                                        | `ConfigError::CallbackVerifyOffWithSecret`           | **78** |
+| `callback_signing_secret_previous` without a non-blank `callback_signing_secret`, on a `Signature` rail (2026-10-23) | `ConfigError::CallbackSigningPreviousWithoutCurrent` | **78** |
+| a non-blank signing secret with surrounding whitespace, on a `Signature` rail (2026-10-23)                           | `ConfigError::CallbackSigningSecretWhitespace`       | **78** |
 
 Since 2026-10-20 `Config::validate_all` adds four per-row refusals
 (`ProviderSettingNotAllowed`, `ProviderCurrencyNotAllowed`,
