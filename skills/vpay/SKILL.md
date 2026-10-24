@@ -8,8 +8,8 @@ description: "Orientation for working in the vpay repository — a Rust + TypeSc
 > **Verified against vpay `a33aac61` (2026-09-29).** The 2026-10-21 correction
 > in "The one thing to get right" was read against vpay `e28292d`
 > (2026-10-21), the merge of vaam-apps/vpay#310, and its "no webhook received"
-> against vpay `2c974b53` (2026-10-24), the head of vaam-apps/vpay#364,
-> restamped with its merge. Version-sensitive claims below
+> against vpay `4df5e0d2` (2026-10-24), the merge of vaam-apps/vpay#364.
+> Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).

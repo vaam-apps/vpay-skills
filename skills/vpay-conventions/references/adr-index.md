@@ -11,8 +11,8 @@ sentence on what the adapter has called was re-read on 2026-10-21 against vpay
 `e28292d`, the merge of vaam-apps/vpay#310 (RFC-0012's
 step 5); the rest of that row is unchanged. The RFC-0014 row's clause on
 what Notch Pay's check has been verified against was re-read on 2026-10-24
-against vpay `2c974b53`, the head of vaam-apps/vpay#364, and is restamped
-with its merge. Version-sensitive claims carry the date they became true — see
+against vpay `4df5e0d2`, the merge of vaam-apps/vpay#364. Version-sensitive
+claims carry the date they became true — see
 [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 `docs/adr/`. An ADR is **immutable once accepted**: to change a decision you

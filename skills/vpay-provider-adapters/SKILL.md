@@ -20,8 +20,8 @@ description: The vpay provider port (`vpay-provider`) and how to add a payment r
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
 > What they say about Notch Pay's 2026-10-24 webhooks (the
 > `default_callback_registration` bullet, the RFC-0012 and RFC-0013 entries
-> and the RFC-0014 heading) was read against vpay `2c974b53` (2026-10-24), the
-> head of vaam-apps/vpay#364, and is restamped with its merge.
+> and the RFC-0014 heading) was read against vpay `4df5e0d2` (2026-10-24), the
+> merge of vaam-apps/vpay#364.
 
 One trait, `vpay_provider::ProviderAdapter`, in
 `backends/crates/vpay-provider/src/lib.rs`. The core owns the payment

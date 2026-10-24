@@ -12,8 +12,8 @@ description: "The Notch Pay adapter (`vpay-adapter-notchpay`, rail `notchpay`, 2
 > probe showed", the section "What the 2026-10-24 dashboard deliveries
 > showed", "How it runs", "Callbacks" under "How the adapter behaves", the
 > webhook-registration bullet, "The Hash Key", `callbacks.register` and the
-> "Not built" list) was read against vpay `2c974b53` (2026-10-24), the head
-> of vaam-apps/vpay#364, and is restamped with that pull request's merge.
+> "Not built" list) was read against vpay `4df5e0d2` (2026-10-24), the merge
+> of vaam-apps/vpay#364.
 > **The webhook signature check** ("Callbacks" under "How the adapter
 > behaves", "The Hash Key" below, and its entry in "Not built") was verified
 > against vpay `master` at `82a68f4e` plus the RFC-0014 branch

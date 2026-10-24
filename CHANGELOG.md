@@ -14,20 +14,21 @@ rule stands, for the reasons VERSIONING.md now gives.)_
 
 ## 2026-10-24 — Notch Pay's first delivered webhooks: the signature is over the raw body, and the adapter reads `event` (vaam-apps/vpay#364)
 
-Read against vaam-apps/vpay#364 at its head `2c974b53` (`master` `630c8a34`
-plus the change), and restamped with its merge. On 2026-10-24 Notch Pay's
-sandbox delivered its first webhooks: four, for two test payments, to a
-capture endpoint the maintainer registered by hand in the dashboard, recorded
-by the probe's new `dashboard-deliveries` phase (runbook A8). Each carried
-`x-notch-signature`, the HMAC-SHA256 of the **raw body** under the Hash Key; a
-`JSON.stringify` re-serialisation matched none, because Notch Pay escapes `/`
-as `\/`. The adapter's `verify_callback`, run offline over the recorded bodies
-and headers, answered `Verified` for all four. The deliveries name the event
-under `event`, not the documented `type`, and `parse_callback` refused all
-four until vaam-apps/vpay#364 made `vpay_notchpay::wire::Event::name()` read
-`event` first, then `type`. **No webhook has reached a running vpay.** The
-dashboard's `verification.test` ping is unsigned and refused (`400`); whether
-Notch Pay needs a `2xx` there is not known.
+Read against `4df5e0d2`, vaam-apps/vpay#364's squash-merge commit on `master`,
+after a first read at its head `2c974b53` (`master` `630c8a34` plus the
+change). On 2026-10-24 Notch Pay's sandbox delivered its first webhooks: four,
+for two test payments, to a capture endpoint the maintainer registered by hand
+in the dashboard, recorded by the probe's new `dashboard-deliveries` phase
+(runbook A8). Each carried `x-notch-signature`, the HMAC-SHA256 of the **raw
+body** under the Hash Key; a `JSON.stringify` re-serialisation matched none,
+because Notch Pay escapes `/` as `\/`. The adapter's `verify_callback`, run
+offline over the recorded bodies and headers, answered `Verified` for all four.
+The deliveries name the event under `event`, not the documented `type`, and
+`parse_callback` refused all four until vaam-apps/vpay#364 made
+`vpay_notchpay::wire::Event::name()` read `event` first, then `type`. **No
+webhook has reached a running vpay.** The dashboard's `verification.test` ping
+is unsigned and refused (`400`); whether Notch Pay needs a `2xx` there is not
+known.
 
 - `vpay-notchpay` (`SKILL.md`): a new section, "What the 2026-10-24 dashboard
   deliveries showed"; the Callbacks bullet (the event name, the raw-body
@@ -74,6 +75,26 @@ Notch Pay needs a `2xx` there is not known.
   (consistent with it having caused the stall, n=2, still a correlation).
 - "no webhook received", unqualified (`vpay`, `vpay-provider-adapters`,
   `vpay-notchpay`). Received by a capture endpoint, never by vpay.
+
+## 2026-10-24 — case 6 of the a11y gate follows the whole `var()` chain (vaam-apps/vpay#349)
+
+Read against `3bdbbeac`, vaam-apps/vpay#349's squash-merge commit on `master`.
+It was first read against the PR's head `fcdf70ee`, after `master` was merged
+into the branch on the maintainer's "Rebase and merge #349". The two differ
+only by #361's `deny.toml` ignore and its verification section, which no skill
+here cites. #355 had fixed the same case first with a one-`var()` regex; #349
+replaces it.
+
+- `vpay-checkout` (`references/testing-and-gates.md`): case 6 resolves the
+  whole chain per theme against the package's own `theme.css`; the recipe runs
+  it once per app with `VPAY_STORYBOOK_BUILT=1` and a JSON-report check that
+  fails on any skip.
+
+### Stopped being true
+
+- "It now resolves one `var()` and requires a colour"
+  (`vpay-checkout/references/testing-and-gates.md`, 2026-10-23). It resolves
+  the whole chain and requires the package theme's colour.
 
 ## 2026-10-24 — a refund destination is keyed by the rail's code, and a routed charge's rail is not on `/v1`
 
