@@ -12,6 +12,43 @@ publishes no release tags and its workspace version has never moved off
 `v0.5.0` as of 2026-09-23 — and its workspace version is `0.5.0`. The naming
 rule stands, for the reasons VERSIONING.md now gives.)_
 
+## 2026-10-24 — the built-stylesheet a11y case resolves per theme against the package (vaam-apps/vpay#349)
+
+Read against vaam-apps/vpay's `master` at `3bdbbeac`, the merge of
+vaam-apps/vpay#349 (2026-10-24), which came after vaam-apps/vpay#355 fixed
+the same case first (this repository's #78). #349's last commit before the
+merge only changed `deny.toml`. vpay's evidence page is
+`docs/status/verification/2026-10-23-a11y-gate-built-stylesheet.md`.
+
+- `vpay-checkout` (`references/testing-and-gates.md`): case 6 resolves
+  `--color-base-100` with `themeColours`, per theme, to the colour the
+  package's own `theme.css` resolves to. #355's text-only, one-`var()` check
+  passed a built sheet missing only the light theme's role (measured
+  2026-10-24). #78's account of #355 is kept.
+- `vpay-tooling` (`references/recipes.md`, `references/ci.md`),
+  `vpay-frontend` (`references/workspace.md`): `just build-storybook` runs
+  the file once per app, inside its loop, with `VPAY_STORYBOOK_BUILT=1` (#355)
+  and a read of Vitest's JSON report that fails on any skip (#349); why the
+  recipe's grep alone cannot see a `var()`.
+- `vpay-troubleshooting` (`references/node-web.md`): the case's failure
+  messages, `VPAY_STORYBOOK_BUILT`'s included, its expected skip in
+  `pnpm -r test`, and what each vpay version in this sequence fails on.
+
+### Stopped being true
+
+- "every definition is a colour literal or a `var()` of a property every
+  definition of which is one (one level deep)" as case 6's whole check (#78,
+  from #355). It resolves per theme, to any depth, and must equal the
+  package's own value.
+- "`just build-storybook` … runs each app's `a11y-gate.test.ts`" after its
+  loop, twice in total. Once per app, inside the loop, with the JSON-report
+  skip check as well.
+- "`just build-storybook` … greps the built stylesheet" as the whole of the
+  recipe's check (`vpay-tooling`, `vpay-frontend`), true before #355.
+
+Still true: `pnpm -r test` and `just ci` build no Storybook, so the case
+reports one skip per app there, by design.
+
 ## 2026-10-24 — a refund destination is keyed by the rail's code, and a routed charge's rail is not on `/v1`
 
 Read against vaam-apps/vpay's `master` at `1c8bd7b0`, the merge of vaam-apps/vpay#359, which fixes vpay's own
