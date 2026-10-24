@@ -12,18 +12,20 @@ publishes no release tags and its workspace version has never moved off
 `v0.5.0` as of 2026-09-23 — and its workspace version is `0.5.0`. The naming
 rule stands, for the reasons VERSIONING.md now gives.)_
 
-## 2026-10-24 — an intent names the rail its charge was made on: `payment_method_details`
+## 2026-10-24 — an intent names the rail its charge was made on: `payment_method_details` (vaam-apps/vpay#365)
 
-Read against vpay `bdee8ce3`, the head of the rail-on-v1 change on `master`
-`98f4d32b`; restamped with its merge. The second half of the maintainer's
-"Both", in the shape they chose ("Go with A"). Every `payment_intent` carries
-`payment_method_details`, `null` until it has a charge and then
-`{ type, rail }`. `type` is the method type the charge records, or `null`
-(a rail-code `notchpay` confirm, a charge before `0053`), and is never
-inferred from the rail. Its source is migration `0054`'s
-`payment_intents.charge_rail` and `charge_method_type`, copied by
-`charges::insert_for_intent` in the charge's own transaction. ADR-0029 D10 is
-amended: the outcome is on `/v1`, the `routing_decisions` record is not.
+Read against vpay `08fb2566`, vaam-apps/vpay#365's squash-merge commit, after a
+first read at its head `bdee8ce3`. They differ by two test fixes and the drift
+count's measurement (212, as predicted), and by v0.13.0's version bumps, none
+of which changes a claim here. The second half of the maintainer's "Both", in
+the shape they chose ("Go with A"). Every `payment_intent` carries
+`payment_method_details`, `null` until it has a charge and then `{ type, rail
+}`. `type` is the method type the charge records, or `null` (a rail-code
+`notchpay` confirm, a charge before `0053`), and is never inferred from the
+rail. Its source is migration `0054`'s `payment_intents.charge_rail` and
+`charge_method_type`, copied by `charges::insert_for_intent` in the charge's
+own transaction. ADR-0029 D10 is amended: the outcome is on `/v1`, the
+`routing_decisions` record is not.
 
 - `vpay-merchant-api` (`references/objects.md`): the table row, a paragraph,
   the routing and routed-refund sentences, and the wrapper's key count.

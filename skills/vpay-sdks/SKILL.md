@@ -7,8 +7,8 @@ description: "The six packages under sdks/ and the parity rule that binds the tw
 
 > **Verified against vpay `a33aac61` (2026-09-29); the method-type paragraph under
 > "Refunds" at `98f4d32b` (2026-10-24, vaam-apps/vpay#363); the
-> `payment_method_details` paragraph at `bdee8ce3` (2026-10-24, the rail-on-v1
-> change), restamped with its merge.** Version-sensitive claims below
+> `payment_method_details` paragraph at `08fb2566` (2026-10-24,
+> vaam-apps/vpay#365).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
