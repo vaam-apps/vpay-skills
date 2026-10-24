@@ -14,11 +14,10 @@ rule stands, for the reasons VERSIONING.md now gives.)_
 
 ## 2026-10-24 — the built-stylesheet a11y case resolves per theme against the package (vaam-apps/vpay#349)
 
-Read against vaam-apps/vpay#349's branch `claude/beautiful-albattani-b73uab`
-at `fcdf70ee`, which has vpay's `master` at `630c8a34` merged in, and with it
-vaam-apps/vpay#355, which fixed the same case first (this repository's #78).
-#349 has not merged yet, so no `SKILL.md` stamp moves; restamp at its merge
-commit. vpay's evidence page is
+Read against vaam-apps/vpay's `master` at `3bdbbeac`, the merge of
+vaam-apps/vpay#349 (2026-10-24), which came after vaam-apps/vpay#355 fixed
+the same case first (this repository's #78). #349's last commit before the
+merge only changed `deny.toml`. vpay's evidence page is
 `docs/status/verification/2026-10-23-a11y-gate-built-stylesheet.md`.
 
 - `vpay-checkout` (`references/testing-and-gates.md`): case 6 resolves
