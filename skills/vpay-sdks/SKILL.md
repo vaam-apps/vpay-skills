@@ -6,7 +6,7 @@ description: "The six packages under sdks/ and the parity rule that binds the tw
 # vpay SDKs
 
 > **Verified against vpay `a33aac61` (2026-09-29); the method-type paragraph under
-> "Refunds" at `1c8bd7b0` (2026-10-24, vaam-apps/vpay#359).** Version-sensitive claims below
+> "Refunds" at `874c255b` (2026-10-24, vaam-apps/vpay#363).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -147,13 +147,15 @@ server will route, and the hosted checkout can confirm it. Neither SDK's
 `docs/sdks/parity.md`. Do not paper over it with a confirm shape that guesses
 the fields: `orange_wallet`'s depend on the rail the server ranks first
 (`return_url` for `orange_money`, `msisdn` for `notchpay`). The Rust enum is
-`#[non_exhaustive]`, so the variants are additive. A type in a refund's
-`destination` or an account-holder lookup is refused by the server, which
-wants a rail code there — and the type-checker will not stop it, because
-`RefundDestination`'s `payment_method_type` is this same enum. For a refund of
-a charge the server routed, no `/v1` object says which rail it went to; vpay
-records that as a gap (2026-10-24, vaam-apps/vpay#359), and both SDKs' doc
-comments on the field now say so.
+`#[non_exhaustive]`, so the variants are additive. A type in an
+account-holder lookup is refused by the server, which wants a rail code there.
+In a refund's `destination` (`RefundDestination`'s `payment_method_type`, this
+same enum) a type is **accepted since 2026-10-24** (vaam-apps/vpay#363), but
+only the type the charge records: pass `MtnWallet`/`mtn_wallet` to refund a
+charge the server routed as `mtn_wallet`, without knowing which rail won. Any
+other type, or a type on a charge that records none, is a `400` naming
+`destination`, and the type-checker cannot tell the two apart. Both SDKs' doc
+comments on the field say so.
 
 **And the sentence none of this changes: no rail has ever returned money to
 anyone.** A `201` from `refunds.create` means a row exists and its amount is

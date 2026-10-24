@@ -12,6 +12,28 @@ publishes no release tags and its workspace version has never moved off
 `v0.5.0` as of 2026-09-23 — and its workspace version is `0.5.0`. The naming
 rule stands, for the reasons VERSIONING.md now gives.)_
 
+## 2026-10-24 — a refund's destination may name the charge's payment-method type (vaam-apps/vpay#363)
+
+Read against vaam-apps/vpay#363's head, `874c255b`. The maintainer answered
+"Both" to the routed-refund gap: this is the half that is built. `POST
+/v1/refunds` accepts `destination[<the charge's recorded method type>][…]`
+beside `destination[<rail code>][…]`; naming both, another type, or a type on a
+charge that records none is a `400`. `/v1` naming the rail is not built.
+
+- `vpay-merchant-api` (`references/objects.md`): the routed-refund paragraph.
+- `vpay-sdks` (`SKILL.md`, `references/stripe-compat.md`): a type in
+  `RefundDestination` is accepted when it is the charge's own.
+
+### Stopped being true
+
+- "`destination[mtn_wallet][msisdn]` is a `400` naming `destination`" and "a
+  merchant … has to know the rail another way" (`vpay-merchant-api`), "A type
+  in a refund's `destination` … is refused by the server"
+  (`vpay-sdks/SKILL.md`), and "The key is never a payment-method type"
+  (`vpay-sdks/references/stripe-compat.md`), all written earlier on
+  2026-10-24 for vaam-apps/vpay#359. A type is accepted when the charge records
+  it.
+
 ## 2026-10-24 — a refund destination is keyed by the rail's code, and a routed charge's rail is not on `/v1`
 
 Read against vaam-apps/vpay's `master` at `1c8bd7b0`, the merge of vaam-apps/vpay#359, which fixes vpay's own

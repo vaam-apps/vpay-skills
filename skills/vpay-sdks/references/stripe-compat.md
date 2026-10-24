@@ -1,6 +1,6 @@
 # Using the official Stripe SDKs against vpay
 
-_Verified against vpay `a33aac61` (2026-09-29) for the `customer` bullet and `1c8bd7b0` (2026-10-24, vaam-apps/vpay#359) for the refunds section's first bullet; the rest of this page was last read at `b747e5d5` (2026-09-23). Version-sensitive claims
+_Verified against vpay `a33aac61` (2026-09-29) for the `customer` bullet and `874c255b` (2026-10-24, vaam-apps/vpay#363) for the refunds section's first bullet; the rest of this page was last read at `b747e5d5` (2026-09-23). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 Source of record: `docs/flows/stripe-sdk-compat.md`. Evidence:
@@ -192,8 +192,9 @@ Neither divergence is Stripe's and both are deliberate.
 - **`destination[<rail_code>][msisdn]` is required on `mtn_momo` and
   `orange_money`**, because a refund there is an outbound transfer and needs
   a payee (RFC-0003 § 1); `notchpay` refunds to the instrument that paid and
-  refuses one. The key is never a payment-method type: `destination[mtn_wallet]`
-  is a `400`. Stripe has no such parameter, so a copied
+  refuses one. The key is the charge's rail code or, since 2026-10-24, the
+  payment-method type the charge records (`destination[mtn_wallet]` for a
+  routed `mtn_wallet` charge); another type is a `400`. Stripe has no such parameter, so a copied
   `stripe.refunds.create({ payment_intent })` is a `400` naming `destination`.
   The rail code is the **outer key** and must be the one the charge was
   confirmed on — the server reads that off the charge and refuses any other.

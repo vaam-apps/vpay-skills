@@ -1,6 +1,6 @@
 # Wire objects
 
-_Verified against vpay `b747e5d5` (2026-09-23); the refund `destination` paragraphs at `1c8bd7b0` (2026-10-24, vaam-apps/vpay#359). Version-sensitive claims
+_Verified against vpay `b747e5d5` (2026-09-23); the refund `destination` paragraphs at `874c255b` (2026-10-24, vaam-apps/vpay#363). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 Every wire DTO lives in one module: `vpay_api::model`
@@ -163,18 +163,19 @@ one that returns money to the instrument that paid (`notchpay`, since
 whose refund is still a `NotImplemented` token). The **adapter** parses the inner
 map; the core's whole business with it is presence.
 
-**A routed charge is refunded under its rail's code, and `/v1` does not say
-which rail that is.** The outer key is the code of the rail the charge was made
-on (`map.get(code)` in `refunds.rs`), never the method type the payer chose:
-`destination[mtn_wallet][msisdn]` is a `400` naming `destination`. Since
-2026-10-23 an intent created with `mtn_wallet` or `orange_wallet` is routed,
-and the rail that won is on no `/v1` object (D10, above), so a merchant
-refunding one that landed on `mtn_momo` or `orange_money` has to know the rail
-another way — with equal weights, the tie-break. vpay recorded this as a gap on
-2026-10-24 (vaam-apps/vpay#359, `docs/status/verification/2026-10-23-method-type-routing.md`)
-and left the fix — the route also accepting the charge's method type, or `/v1`
-naming the rail — to the maintainer. Do not paper over it by guessing a rail
-on the merchant's behalf.
+**The outer key is the charge's rail code or, since 2026-10-24
+(vaam-apps/vpay#363), the payment-method type the charge records.**
+`charges.method_type` (migration `0053`) is set on every routed charge and on a
+rail-code charge whose rail serves one type, so `destination[mtn_wallet][msisdn]`
+refunds a routed `mtn_wallet` charge without the merchant knowing which rail
+won — the rail is still on no `/v1` object (D10, above). Only the type the
+charge records is accepted: another type, a type on a charge that records none
+(a multi-type rail confirmed by its code, or a charge from before `0053`), or
+the rail and the type **both** in one map is a `400` naming `destination` (one
+payee, one key). Whichever key is used, the adapter gets the same inner map.
+The maintainer chose "Both": this half is built; `/v1` naming the rail is the
+other half, and not built. Do not guess a rail on the merchant's behalf; send
+the type the intent recorded.
 
 **It is persisted nowhere**: there is no `destination` column on `refunds`,
 because its retention is RFC-0003 open question 3 and is **undecided** — the
