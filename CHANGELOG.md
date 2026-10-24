@@ -14,10 +14,9 @@ rule stands, for the reasons VERSIONING.md now gives.)_
 
 ## 2026-10-23 — rail callbacks are checked where the rail signs (RFC-0014)
 
-Read against vaam-apps/vpay's `master` at `71a351df` (the merge of
-vaam-apps/vpay#353) plus the pull request that lands RFC-0014, branch
-`claude/happy-hopper-r3h6rz-webhook-signatures`, which builds RFC-0014's port
-and Notch Pay's signature check; restamped with that pull request's merge.
+Read against vaam-apps/vpay's `master` at `820c52b3`, the merge of
+vaam-apps/vpay#357, which builds RFC-0014's port and Notch Pay's signature
+check.
 Since #353 an unset `register` is `off` on Notch Pay, so the endpoint whose
 Hash Key this checks is registered by hand in Notch Pay's dashboard. The maintainer was asked "Webhook signature
 verification (RFC-0014) needs Notch Pay's hash key held by vpay as a secret.
