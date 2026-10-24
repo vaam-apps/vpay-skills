@@ -1,6 +1,6 @@
 # Using the official Stripe SDKs against vpay
 
-_Verified against vpay `a33aac61` (2026-09-29) for the `customer` bullet and `874c255b` (2026-10-24, vaam-apps/vpay#363) for the refunds section's first bullet; the rest of this page was last read at `b747e5d5` (2026-09-23). Version-sensitive claims
+_Verified against vpay `a33aac61` (2026-09-29) for the `customer` bullet and `98f4d32b` (2026-10-24, vaam-apps/vpay#363) for the refunds section's first bullet; the rest of this page was last read at `b747e5d5` (2026-09-23). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 Source of record: `docs/flows/stripe-sdk-compat.md`. Evidence:

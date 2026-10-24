@@ -1,6 +1,6 @@
 # Wire objects
 
-_Verified against vpay `b747e5d5` (2026-09-23); the refund `destination` paragraphs at `874c255b` (2026-10-24, vaam-apps/vpay#363). Version-sensitive claims
+_Verified against vpay `b747e5d5` (2026-09-23); the refund `destination` paragraphs at `98f4d32b` (2026-10-24, vaam-apps/vpay#363). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 Every wire DTO lives in one module: `vpay_api::model`

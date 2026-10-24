@@ -1,7 +1,8 @@
 # Testing the checkout, and the gates that guard the gates
 
 _Verified against vpay `a33aac61` (2026-09-29); the `@vaam-apps/ui` 0.5.0
-notes re-read against `73c3a7cf` (2026-10-21). Version-sensitive claims
+notes re-read against `73c3a7cf` (2026-10-21); case 6 and `just build-storybook`
+re-read against `3bdbbeac` (2026-10-24, vaam-apps/vpay#349). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 > **Added 2026-09-29, and it is a limit on every number below.** The checkout
@@ -43,12 +44,12 @@ of it would report.
 
 ## The suites
 
-| Command                                       | What it is                                                                                                                                                                                                                                       |
-| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `pnpm --filter @vpay/checkout test`           | The jsdom/node suite. `environment: "node"` by default so tests talking to `src/testing/browser-stub.ts` use the platform `fetch`; rendering tests opt in with a `// @vitest-environment jsdom` docblock. Run by `just test-web` → `just ci`     |
-| `pnpm --filter @vpay/checkout test-storybook` | 22 stories in a real headless Chromium with axe over each. **Not** in `just ci` — it needs a ~115 MB Playwright Chromium and `just ci` must pass offline. CI's `web` job runs it                                                                 |
-| `just build-storybook`                        | Builds both apps' Storybooks **and asserts the built stylesheet defines `--color-base-100`**, then (since 2026-10-23) runs each app's `a11y-gate.test.ts` against that build with `VPAY_STORYBOOK_BUILT=1`, so case 6 runs in CI and cannot skip |
-| `just test-e2e`                               | Cypress against the real compose stack                                                                                                                                                                                                           |
+| Command                                       | What it is                                                                                                                                                                                                                                                                                                                                                         |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `pnpm --filter @vpay/checkout test`           | The jsdom/node suite. `environment: "node"` by default so tests talking to `src/testing/browser-stub.ts` use the platform `fetch`; rendering tests opt in with a `// @vitest-environment jsdom` docblock. Run by `just test-web` → `just ci`                                                                                                                       |
+| `pnpm --filter @vpay/checkout test-storybook` | 22 stories in a real headless Chromium with axe over each. **Not** in `just ci` — it needs a ~115 MB Playwright Chromium and `just ci` must pass offline. CI's `web` job runs it                                                                                                                                                                                   |
+| `just build-storybook`                        | Builds both apps' Storybooks **and asserts the built stylesheet defines `--color-base-100`**, then (since 2026-10-23) runs each app's `a11y-gate.test.ts` against that build, once per app inside its loop, with `VPAY_STORYBOOK_BUILT=1` and a JSON-report check that fails the recipe if any case skips (since 2026-10-24), so case 6 runs in CI and cannot skip |
+| `just test-e2e`                               | Cypress against the real compose stack                                                                                                                                                                                                                                                                                                                             |
 
 `vitest.config.ts` sets `esbuild.jsx: "automatic"` for the jsdom suite because
 the app's `tsconfig.json` says `"jsx": "preserve"` for Next.
@@ -137,6 +138,19 @@ it, in both apps, straight after building, with `VPAY_STORYBOOK_BUILT=1`:
 under that variable a missing `storybook-static/` fails the case instead of
 skipping it. CI's `web` job already runs that recipe, so case 6 runs in CI
 for the first time. `pnpm -r test` without a build still skips it, as before.
+
+**Changed 2026-10-24 (vaam-apps/vpay#349).** Case 6 no longer stops one
+`var()` deep at "any colour". It parses the built sheet with `postcss`, follows
+the whole `var()` chain per theme (`dark` and `light`) through the app's
+`themeColours` (`src/testing/contrast.ts`), and requires the result to equal
+what the package's own `@vaam-apps/ui/styles/theme.css` resolves to. That makes
+a sheet that keeps the `var()` mapping but loses the Material roles behind it a
+failure, where the recipe's grep and the one-hop check passed it. In
+`just build-storybook` the case runs **once** per app, inside the loop, with
+`VPAY_STORYBOOK_BUILT=1`. Vitest exits 0 on a skipped case, so the recipe reads
+the JSON report and fails unless every case passed; #355's second run after
+the loop is gone. Do not re-add a hex or role-name literal to the assertion:
+compare against the package's theme, as it does now.
 
 ## `src/styling-gate.test.ts` — what `just ci` cannot build
 
