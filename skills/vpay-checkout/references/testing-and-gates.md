@@ -2,7 +2,7 @@
 
 _Verified against vpay `a33aac61` (2026-09-29); the `@vaam-apps/ui` 0.5.0
 notes re-read against `73c3a7cf` (2026-10-21); case 6 and `just build-storybook`
-re-read against `fcdf70ee` (2026-10-24, vaam-apps/vpay#349). Version-sensitive claims
+re-read against `3bdbbeac` (2026-10-24, vaam-apps/vpay#349). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 > **Added 2026-09-29, and it is a limit on every number below.** The checkout

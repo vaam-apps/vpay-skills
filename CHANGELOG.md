@@ -14,9 +14,12 @@ rule stands, for the reasons VERSIONING.md now gives.)_
 
 ## 2026-10-24 — case 6 of the a11y gate follows the whole `var()` chain (vaam-apps/vpay#349)
 
-Read against vaam-apps/vpay#349's head, `fcdf70ee`: `master` merged into the
-branch on the maintainer's "Rebase and merge #349". #355 had fixed the same
-case first with a one-`var()` regex; #349 replaces it.
+Read against `3bdbbeac`, vaam-apps/vpay#349's squash-merge commit on `master`.
+It was first read against the PR's head `fcdf70ee`, after `master` was merged
+into the branch on the maintainer's "Rebase and merge #349". The two differ
+only by #361's `deny.toml` ignore and its verification section, which no skill
+here cites. #355 had fixed the same case first with a one-`var()` regex; #349
+replaces it.
 
 - `vpay-checkout` (`references/testing-and-gates.md`): case 6 resolves the
   whole chain per theme against the package's own `theme.css`; the recipe runs
