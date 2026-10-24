@@ -1,6 +1,6 @@
 # Configuration: the CLI layer, the YAML, and what refuses to boot
 
-_Verified against vpay `87166eaf` (2026-10-09) for step 7 of "The boot sequence", and against `a33aac61` (2026-09-29) for "The ten environment variables"; the Notch Pay sentences under `callbacks.register` were read against `82a68f4e` (2026-10-23) plus the pull request that adds the 2026-10-23 Notch Pay sandbox verification page, restamped with its merge, and its default per rail against `9499f09d` plus the pull request that adds `docs/status/verification/2026-10-23-notchpay-defaults-and-wrong-network.md`, restamped with its merge; those sentences were re-read against `4df5e0d2` (2026-10-24), the merge of vaam-apps/vpay#364, for what Notch Pay's first delivered webhooks changed; the rest of this page was last read at `d3a8810b` (2026-09-16). Version-sensitive claims
+_Verified against vpay `87166eaf` (2026-10-09) for step 7 of "The boot sequence", and against `a33aac61` (2026-09-29) for "The ten environment variables"; the Notch Pay sentences under `callbacks.register` were read against `82a68f4e` (2026-10-23) plus the pull request that adds the 2026-10-23 Notch Pay sandbox verification page, restamped with its merge, and its default per rail against `9499f09d` plus the pull request that adds `docs/status/verification/2026-10-23-notchpay-defaults-and-wrong-network.md`, restamped with its merge; those sentences were re-read against `4df5e0d2` (2026-10-24), the merge of vaam-apps/vpay#364, for what Notch Pay's first delivered webhooks changed; the routing block's last sentence was re-read against `bdee8ce3` (2026-10-24, the rail-on-v1 change), restamped with its merge; the rest of this page was last read at `d3a8810b` (2026-09-16). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 ADR-0003. Flow doc `docs/flows/configuration.md`; crate reference
@@ -313,7 +313,8 @@ and at boot step 4 `RoutingWeightOnAnUnservedType` (e.g. `orange_money` with
 `mtn_wallet`) and `RailServesNoMethodType` (a linking mistake, not YAML).
 Every routed charge's decision, with each rail's score breakdown or exclusion
 reason, is in `routing_decisions` (`SELECT * FROM routing_decisions WHERE
-charge_id = …`); it is on no `/v1` object.
+charge_id = …`); it is on no `/v1` object. Its outcome is, since 2026-10-24:
+the intent's `payment_method_details` names the charge's type and rail.
 
 ## The ten environment variables
 

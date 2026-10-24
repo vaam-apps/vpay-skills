@@ -86,6 +86,13 @@ through 206 over 27 with `0050` (`staff_sso_attempts`, 2026-10-20), which this
 page did not record. `0053`'s three lines are `charges.method_type`
 undeclared, its CHECK `method_type_is_known`, and the undeclared table
 `routing_decisions`, whose `considered` is the 20th unmappable column (`jsonb`).
+**212 over 28 since migration `0054` (2026-10-24), predicted and not yet
+measured.** The change was written without Docker; CI's `postgres_smoke` run
+is the first measurement. The three predicted lines are
+`payment_intents.charge_rail` and `charge_method_type` undeclared, and the
+single-column CHECK `charge_method_type_is_known`. The two-column
+`charge_method_type_needs_a_rail` and the foreign key are not introspected.
+Read the constant on `master` before quoting the number.
 See [references/cratestack.md](references/cratestack.md) — in particular for which
 0.12.0 claims about _why_ the totals look like that are **unverified at 0.15.0**.
 
@@ -141,7 +148,14 @@ paid_out_of_band)` at `invoices_payment_record_key`, a six-column `UNIQUE`
   transaction that opens the charge, read by `Charges::routing_decision_for`.
   Its `method_type_is_known` list moves in lockstep with
   `vpay_core::routing::MethodType`, as `jobs.kind_is_known` does with
-  `JobKind`. The next is `0054`.)_
+  `JobKind`. The next is `0054`.)_ _(2026-10-24: `0054` is
+  `payment-intents-charge-rail`. It adds `payment_intents.charge_rail` (a
+  foreign key onto `providers`) and `charge_method_type` (CHECK
+  `charge_method_type_is_known`, the same list, so it too moves with
+  `MethodType`), plus `charge_method_type_needs_a_rail`, and a backfill that
+  copies each charge's pair. `charges::insert_for_intent` writes the pair in
+  the transaction that opens the charge, a compare-and-swap guarded on
+  `charge_rail IS NULL`. The next is `0055`.)_
 - **The ADD COLUMN backfills with a DEFAULT and drops it in the next
   statement** (`0042`'s device), which is why `model Invoice.paid_out_of_band`
   carries no `@default` and costs the drift nothing.

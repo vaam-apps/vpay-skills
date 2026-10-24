@@ -6,7 +6,9 @@ description: "The six packages under sdks/ and the parity rule that binds the tw
 # vpay SDKs
 
 > **Verified against vpay `a33aac61` (2026-09-29); the method-type paragraph under
-> "Refunds" at `98f4d32b` (2026-10-24, vaam-apps/vpay#363).** Version-sensitive claims below
+> "Refunds" at `98f4d32b` (2026-10-24, vaam-apps/vpay#363); the
+> `payment_method_details` paragraph at `bdee8ce3` (2026-10-24, the rail-on-v1
+> change), restamped with its merge.** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -156,6 +158,20 @@ charge the server routed as `mtn_wallet`, without knowing which rail won. Any
 other type, or a type on a charge that records none, is a `400` naming
 `destination`, and the type-checker cannot tell the two apart. Both SDKs' doc
 comments on the field say so.
+
+**An intent says which rail its charge went to since 2026-10-24.** Both SDKs
+decode `payment_method_details`:
+
+- Rust: `vpay_sdk::PaymentMethodDetails { method_type: Option<String>, rail:
+String }` (`type` on the wire) on `PaymentIntent::payment_method_details`.
+- Node: `PaymentMethodDetails`, `payment_method_details?: … | null`.
+- `null` until the intent has a charge. `method_type` is `None` where the
+  charge records no type (a rail-code `notchpay` confirm, an old charge).
+- Optional with `#[serde(default)]` / `?`, because an older vpay omits the
+  key. Proven by a parity row in `docs/sdks/parity.md`.
+- `@vaam-apps/vpay-stripe-js` types it too, and the Tauri fixture carries it.
+- **The Flutter checkout plugin does not model it.** Its `fromJson` ignores
+  the key. A Dart change belongs with a test that runs.
 
 **And the sentence none of this changes: no rail has ever returned money to
 anyone.** A `201` from `refunds.create` means a row exists and its amount is

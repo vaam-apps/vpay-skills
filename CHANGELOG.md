@@ -12,6 +12,50 @@ publishes no release tags and its workspace version has never moved off
 `v0.5.0` as of 2026-09-23 — and its workspace version is `0.5.0`. The naming
 rule stands, for the reasons VERSIONING.md now gives.)_
 
+## 2026-10-24 — an intent names the rail its charge was made on: `payment_method_details`
+
+Read against vpay `bdee8ce3`, the head of the rail-on-v1 change on `master`
+`98f4d32b`; restamped with its merge. The second half of the maintainer's
+"Both", in the shape they chose ("Go with A"). Every `payment_intent` carries
+`payment_method_details`, `null` until it has a charge and then
+`{ type, rail }`. `type` is the method type the charge records, or `null`
+(a rail-code `notchpay` confirm, a charge before `0053`), and is never
+inferred from the rail. Its source is migration `0054`'s
+`payment_intents.charge_rail` and `charge_method_type`, copied by
+`charges::insert_for_intent` in the charge's own transaction. ADR-0029 D10 is
+amended: the outcome is on `/v1`, the `routing_decisions` record is not.
+
+- `vpay-merchant-api` (`references/objects.md`): the table row, a paragraph,
+  the routing and routed-refund sentences, and the wrapper's key count.
+- `vpay-sdks` (`SKILL.md`): both SDKs decode it; Flutter does not.
+- `vpay-data-layer` (`SKILL.md`): migration `0054`, and drift 212 over 28,
+  predicted.
+- `vpay-payments`, `vpay-ops` (`references/configuration.md`) and
+  `vpay-conventions` (`references/adr-index.md`): the same fact where routing
+  is described.
+
+### Stopped being true
+
+- "the chosen rail and the ranking are on no `/v1` object"
+  (`vpay-merchant-api`). The rail and the type are, as
+  `payment_method_details`; the ranking is still on none.
+- "the rail is still on no `/v1` object" and "`/v1` naming the rail is the
+  other half, and not built" (`vpay-merchant-api`, written earlier the same
+  day for vaam-apps/vpay#363). Both halves are built.
+- "**thirteen** keys plus one" and
+  `the_browser_wrapper_is_the_thirteen_keys_plus_the_client_secret`
+  (`vpay-merchant-api`). The object has fourteen keys, and the test was
+  renamed to `…_fourteen_keys_…`.
+- "`model.rs`'s own doc comments … still say 'twelve'" (`vpay-merchant-api`).
+  They had said "thirteen" since 2026-09-23 and say "fourteen" now.
+- "It is returned by `create`, `confirm` and the browser reads"
+  (`vpay-merchant-api`). `confirm` renders the plain object; the wrapper is
+  `create`, `retrieve` and the two `/v1/browser` reads.
+- "209 over 28 … since migration `0053`" as the current drift
+  (`vpay-data-layer`). It is 212 over 28 since `0054`, predicted until CI
+  measures it.
+- "The next is `0054`" (`vpay-data-layer`). The next is `0055`.
+
 ## 2026-10-24 — a refund's destination may name the charge's payment-method type (vaam-apps/vpay#363)
 
 Read against `98f4d32b`, vaam-apps/vpay#363's squash-merge commit on `master`,

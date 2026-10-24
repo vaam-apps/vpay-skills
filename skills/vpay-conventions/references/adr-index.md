@@ -141,7 +141,11 @@ the decision."
   traffic: health by R8.3, the completion rate by "Go with (a)"; D11's own
   "one charge per intent" is unchanged).
   `card`'s spelling and D14–D17 are still proposed. The table's "Nothing it
-  decides is built" stopped being true that day: D6, D7 and D10 are.)_ RFC-0004 §§ 1–4 and 8–13, RFC-0006 and RFC-0007 stay Draft.
+  decides is built" stopped being true that day: D6, D7 and D10 are.)_
+  _(2026-10-24: **D10 amended by the maintainer**, "Both" and then "Go with
+  A": the decision's outcome, the charge's type and rail, is on the `/v1`
+  intent as `payment_method_details`; the `routing_decisions` record is still
+  on no `/v1` object. ADR-0029's Status and D10 carry it.)_ RFC-0004 §§ 1–4 and 8–13, RFC-0006 and RFC-0007 stay Draft.
   _(Added 2026-10-20.)_ D1's third rule says _secret_-authenticated rather than
   _authenticated_ because of Notch Pay, whose status read takes a public key;
   RFC-0012 was gated by it, waiting on Notch Pay's written answer (the
