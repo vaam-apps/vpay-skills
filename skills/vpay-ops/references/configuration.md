@@ -264,18 +264,19 @@ present-but-empty value counts as missing.** MTN:
 `deployment.livemode` _(corrected 2026-10-20: this said "`test_` marker"
 alone, which the maintainer's real test keys do not carry)_ (`RailKeyLivemodeMismatch`, which names
 the key and never prints it). **In livemode it also refuses the rail unless
-`settings.accept_public_key_exposure`is`true`**
+`settings.accept_public_key_exposure` is `true`**
 (`PublicKeyExposureNotAcknowledged`, ADR-0031 condition 4); a sandbox may
 omit it. Those are four new **columns** of the same table, not a second
-table. Every boot of a deployment configuring it also logs a `WARN`about the
+table. Every boot of a deployment configuring it also logs a `WARN` about the
 public key's exposure (ADR-0031), acknowledged or not. The block ships
-**commented out** in`config/application.yml`, because uncommenting it makes
-`NOTCHPAY_PUBLIC_KEY`and`NOTCHPAY_PRIVATE_KEY`mandatory for every
-deployment, and, since 2026-10-23,`NOTCHPAY_HASH_KEY`too, which the block
-writes as`credentials.callback_signing_secret` (RFC-0014; the Helm values
-comment says "three keys"). **`cm.mobile`is now only the channel of a charge confirmed by the
-rail code`notchpay`** (2026-10-23): a charge routed from `mtn_wallet`or`orange_wallet`is sent`cm.mtn`or`cm.orange`per charge, so the setting
-stays`cm.mobile`.
+**commented out** in `config/application.yml`, because uncommenting it makes
+`NOTCHPAY_PUBLIC_KEY` and `NOTCHPAY_PRIVATE_KEY` mandatory for every
+deployment, and, since 2026-10-23, `NOTCHPAY_HASH_KEY` too, which the block
+writes as `credentials.callback_signing_secret` (RFC-0014; the Helm values
+comment says "three keys"). **`cm.mobile` is now only the channel of a charge confirmed by the
+rail code `notchpay`** (2026-10-23): a charge routed from `mtn_wallet` or
+`orange_wallet` is sent `cm.mtn` or `cm.orange` per charge, so the setting
+stays `cm.mobile`.
 
 This is a provider-code match outside an adapter crate — which ADR-0002 forbids
 — and it is a deliberate, recorded interim (ADR-0012) carrying a comment saying
