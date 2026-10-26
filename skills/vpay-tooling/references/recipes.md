@@ -111,28 +111,29 @@ Subsets: `cargo nextest run -p <crate>`, `cargo nextest run -E 'test(name)'`,
 
 ## Verify, lint and format
 
-| Recipe                | Does                                                                                                                                     |
-| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `just verify`         | the fifteen gates (2026-09-20; fourteen until 2026-09-18, twelve until 2026-09-17) + the `verify-docs` report — see [gates.md](gates.md) |
-| `just lint`           | `fmt-check` `clippy` `lint-web`                                                                                                          |
-| `just fmt`            | `cargo fmt --all`; `pnpm exec prettier --write .`                                                                                        |
-| `just fmt-check`      | `fmt-check-rust` + `fmt-check-web`                                                                                                       |
-| `just fmt-check-rust` | `cargo fmt --all -- --check`                                                                                                             |
-| `just fmt-check-web`  | `pnpm exec prettier --check .`                                                                                                           |
-| `just clippy`         | `cargo clippy --workspace --all-targets -- -D warnings`                                                                                  |
-| `just lint-web`       | depends on `build-sdk-node`; `pnpm -r typecheck` then `pnpm -r lint`                                                                     |
-| `just deny`           | `cargo deny check`                                                                                                                       |
-| `just audit-web`      | two `pnpm audit` runs, `--prod` first then the whole workspace                                                                           |
+| Recipe                | Does                                                                                                                                                               |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `just verify`         | the sixteen gates (2026-10-26; fifteen until 2026-10-26, fourteen until 2026-09-18, twelve until 2026-09-17) + the `verify-docs` report — see [gates.md](gates.md) |
+| `just lint`           | `fmt-check` `clippy` `lint-web`                                                                                                                                    |
+| `just fmt`            | `cargo fmt --all`; `pnpm exec prettier --write .`                                                                                                                  |
+| `just fmt-check`      | `fmt-check-rust` + `fmt-check-web`                                                                                                                                 |
+| `just fmt-check-rust` | `cargo fmt --all -- --check`                                                                                                                                       |
+| `just fmt-check-web`  | `pnpm exec prettier --check .`                                                                                                                                     |
+| `just clippy`         | `cargo clippy --workspace --all-targets -- -D warnings`                                                                                                            |
+| `just lint-web`       | depends on `build-sdk-node`; `pnpm -r typecheck` then `pnpm -r lint`                                                                                               |
+| `just deny`           | `cargo deny check`                                                                                                                                                 |
+| `just audit-web`      | two `pnpm audit` runs, `--prod` first then the whole workspace                                                                                                     |
 
 Two recipes joined that list in 2026-09-17/18 and each is runnable on its own,
 offline, in seconds — reach for them directly rather than the whole of
 `just verify`:
 
-| Recipe                          | Does                                                                                                                                                                                                         |
-| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `just verify-versions`          | `cargo xtask verify-versions` — the 13th gate (2026-09-17, #201)                                                                                                                                             |
-| `just verify-privacy-inventory` | `cargo xtask verify-privacy-inventory` — the 14th gate (2026-09-18, #187), needs no Postgres; since 2026-10-09 (#273) also enforces the `debug_protections` hand-written-`Debug` boundary in both directions |
-| `just verify-doc-counts`        | `cargo xtask verify-doc-counts` — the 15th gate (2026-09-20, #233); checks every `<!-- count:KIND ARG… -->`-marked number against what the tree measures, including its own gate tally                       |
+| Recipe                           | Does                                                                                                                                                                                                                                                   |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `just verify-versions`           | `cargo xtask verify-versions` — the 13th gate (2026-09-17, #201)                                                                                                                                                                                       |
+| `just verify-privacy-inventory`  | `cargo xtask verify-privacy-inventory` — the 14th gate (2026-09-18, #187), needs no Postgres; since 2026-10-09 (#273) also enforces the `debug_protections` hand-written-`Debug` boundary in both directions                                           |
+| `just verify-security-inventory` | `cargo xtask verify-security-inventory` — the 16th gate (2026-10-26, issue #150, ADR-0034), needs no Postgres or network; checks the security inventory's paths, both directions of the table set, closed config-key set, cited tests and gap trackers |
+| `just verify-doc-counts`         | `cargo xtask verify-doc-counts` — the 15th gate (2026-09-20, #233); checks every `<!-- count:KIND ARG… -->`-marked number against what the tree measures, including its own gate tally                                                                 |
 
 **`fmt-check-web` walks the working tree, not the index.** An untracked scratch
 `.ts`, `.md` or `.json` left lying about fails it. `.gitignore` it or delete it
@@ -255,7 +256,7 @@ and `check-tauri-mobile` needs an Android and an Apple target the image has
 no toolchain for. Adding either is a runner-image change — the maintainer's
 call, not a recipe's. So **every Rust count this repository quotes for this
 crate is a human running a recipe by hand**, exactly as with Flutter above.
-The justfile's gate tally is unchanged at fifteen: none of these is a gate.
+The justfile's gate tally is unchanged at sixteen: none of these is a gate.
 
 `rustup target add aarch64-linux-android aarch64-apple-ios` before
 `check-tauri-mobile`. It sets no `IPHONEOS_DEPLOYMENT_TARGET` on purpose —

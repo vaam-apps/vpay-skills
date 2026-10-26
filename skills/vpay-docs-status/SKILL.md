@@ -56,13 +56,15 @@ Everything else is an archive page under `docs/status/`.
 | Your `just ci` evidence                     | a dated page under `docs/status/verification/`, newest first                                   |
 
 **A number you write down — the gate tally above all — may be machine-checked.**
-Since 2026-09-20 (`verify-doc-counts`, the fifteenth gate) a count on the same
+Since 2026-09-20 (`verify-doc-counts`, the fifteenth gate; the sixteenth,
+`verify-security-inventory`, landed 2026-10-26) a count on the same
 line as an HTML comment of the form `<!-- count:KIND ARG… -->` is re-measured
 by `just verify`, and a cited figure that no longer matches fails the build.
 `docs/status.md`'s gate-tally sentence is the marker this gate was built to
 protect — do not just write the new number there, keep the marker on the same
 line and immediately after the digits. The six `KIND`s and how to add a new
-marker are in **vpay-tooling**'s gate reference, § 15 `verify-doc-counts`.
+marker are in **vpay-tooling**'s gate reference, § 15 `verify-doc-counts`; § 16
+covers `verify-security-inventory`.
 
 Six flow pages are an overview **plus a directory** since 2026-09-11. The
 **Status** section stayed on the overview in all six. In `webhooks.md` and

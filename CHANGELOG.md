@@ -1,5 +1,30 @@
 # Changelog
 
+## 2026-10-26 — `verify-security-inventory`, the sixteenth vpay gate
+
+Read against vaam-apps/vpay#356 (issue #150, ADR-0034). It adds a sixteenth
+`just verify` gate, `verify-security-inventory`, which checks
+`schemas/security-inventory.yaml` against the tree: both directions of the
+table set, every cited path and test name, a closed set of secret config keys,
+and every gap's tracker.
+
+- `vpay`: the before/after `just verify` count moved from fifteen to sixteen.
+- `vpay-tooling`: the gate table and `references/gates.md` gained section 16;
+  `references/recipes.md` gained `just verify-security-inventory`;
+  `references/ci.md` and the `just verify` section moved to sixteen.
+- `vpay-docs-status`: the gate-count history and the section pointer moved.
+- `vpay-troubleshooting` (`references/known-wrong-docs.md`): the gate-count row
+  now records sixteen.
+
+### Stopped being true
+
+- "the fifteen verify gates" and every "fifteen gates" sentence in `vpay`,
+  `vpay-tooling`, `vpay-docs-status` and `vpay-troubleshooting`. The recipe now
+  lists sixteen gates plus `verify-docs`.
+- "the recipe at `a33aac61` lists sixteen targets: fifteen gates plus
+  `verify-docs`" (`vpay/SKILL.md`). The target count is unchanged at seventeen
+  — sixteen gates plus the report — but the gate half moved.
+
 Each release records the vpay range it was verified against, which skills
 changed, and — the section worth reading — **any claim that stopped being true**,
 so someone upgrading can find the thing that will break them.

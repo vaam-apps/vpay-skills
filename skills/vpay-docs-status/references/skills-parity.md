@@ -18,7 +18,7 @@ skill briefs an agent that is already doing it. So a skill is judged not on
 the right thing on its first attempt**".
 
 That difference is why they live in a separate repository. A briefing that has
-to clear fifteen gates (2026-09-20; ~~fourteen (2026-09-18)~~) to be corrected
+to clear sixteen gates (2026-10-26; ~~fifteen (2026-09-20)~~; ~~fourteen (2026-09-18)~~) to be corrected
 is a briefing nobody corrects. The cost
 of the separation is drift, which is what the gate below exists to refuse.
 
