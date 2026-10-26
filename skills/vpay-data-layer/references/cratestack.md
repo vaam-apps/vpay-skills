@@ -5,10 +5,15 @@ carry the date they became true — see [VERSIONING.md](https://github.com/vaam-
 
 `vpay-db` compiles `schemas/vpay.cstack` with CrateStack's
 `include_server_schema!` macro
-(`cratestack = { package = "cratestack-pg", version = "=0.15.0" }`;
-~~`=0.12.0`~~ until 2026-09-29, when vaam-apps/vpay#259 moved it — a version
-bump, not a feature: no COSE, no signed transport, no auth change, and
-`schemas/vpay.cstack` needed no edit).
+(`cratestack = { package = "cratestack-pg", version = "=0.16.0", features = ["postgres", "envelope", "cose"] }`
+since 2026-10-26, vaam-apps/vpay#376; ~~`=0.15.0`~~ from 2026-09-29,
+vaam-apps/vpay#259; ~~`=0.12.0`~~ before that. Each was a version bump, not a
+feature: `schemas/vpay.cstack` needed no edit either time. 0.16.0 turns on
+`envelope` and `cose` and links `cratestack-cose`'s Ed25519 stack into
+`vpay-server`, **and nothing calls it**: there is no `EnvelopeLayer`, no
+`CoseSigner` and no signed transport. In v0.15.0 only `vpay-config`, which parses and
+thumbprints registered keys, and `vpay_api::merchant_keys`, the resolver, use
+`cratestack-cose`. No request path reaches either. See `vpay-merchant-api`.)
 
 **Claims on this page that name `0.12.0` are measurements of 0.12.0.** vpay
 re-measured only some of them at 0.15.0 (below), and every one it did not is
@@ -265,18 +270,23 @@ validator to a CHECK. A cross-column constraint — such as
 
 Three pins that must move together, because they are one release:
 
-| where                | what                                                                                         |
-| -------------------- | -------------------------------------------------------------------------------------------- |
-| `justfile`           | `cratestack_version := "0.15.0"` — what CI installs and `just check-schema` compares against |
-| root `Cargo.toml`    | `cratestack = { package = "cratestack-pg", version = "=0.15.0" }`                            |
-| `vpay-db/Cargo.toml` | `cratestack-codec-json = { version = "=0.15.0" }`                                            |
+| where                | what                                                                                                                                                      |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `justfile`           | `cratestack_version := "0.16.0"` — what CI installs and `just check-schema` compares against                                                              |
+| root `Cargo.toml`    | `cratestack = { package = "cratestack-pg", version = "=0.16.0", … }`, and since 2026-10-26 `cratestack-cose` and `cratestack-core` at `=0.16.0` beside it |
+| `vpay-db/Cargo.toml` | `cratestack-codec-json = { version = "=0.16.0" }`                                                                                                         |
 
 _(All three read `0.12.0` until 2026-09-29, vaam-apps/vpay#259. The same bump
 repointed both `install-cratestack-cli` steps in `.github/workflows/ci.yml` at
 the commit the `v0.15.0` tag points to, `da143158…`, replacing a post-v0.12.0
 commit chosen for the CLI-download retry fix; the 0.15.0 action still carries
 that retry. `Cargo.lock` moved the twelve `cratestack-*` entries and nothing
-else.)_
+else.)_ _(All three moved to `0.16.0` on 2026-10-26, vaam-apps/vpay#376. Both
+`install-cratestack-cli` steps now point at `f90ddbfc…`, the commit the
+lightweight `v0.16.0` tag names. `Cargo.lock` went from 523 packages to 543,
+mostly `cratestack-cose`'s RustCrypto stack: `ed25519-dalek` and `p256` now
+appear twice each, once at the older major that `authkestra` and
+`jsonwebtoken` bring in.)_
 
 The CLI and the library being the same version is why the two checks cannot
 answer about different grammars. The twelve `cratestack-*` packages all
@@ -338,7 +348,13 @@ has the derivation.
 `migrate baseline --strict` reports **201 changes across 26 tables**, "the
 constant it already asserted: the bump moved the count not at all", and
 `EXPECTED_UNMAPPABLE_COLUMNS` is still `19` in the test. So the constants above
-are the 0.15.0 ones too. That is a measurement of the _totals_. It does not
+are the 0.15.0 ones too. **At 0.16.0 (2026-10-26, vaam-apps/vpay#376) the test
+pins 212 changes across 28 tables/views and 20 unmappable columns**
+(`EXPECTED_DRIFT_CHANGES`, `EXPECTED_DRIFTED_RELATIONS`,
+`EXPECTED_UNMAPPABLE_COLUMNS` in `postgres_smoke.rs`). The bump itself moved
+nothing: the 0.16.0 CLI reported those same pinned totals. The growth since
+2026-09-29 came from schema and migration changes made in between, not from
+either bump. That is a measurement of the _totals_. It does not
 re-prove the 0.12.0 statements about _why_ those totals have the shape they have
 (foreign keys not introspected; `jsonb`/`bytea`/`int2`/`int4` not read back).
 A total that did not move is consistent with those statements and does not

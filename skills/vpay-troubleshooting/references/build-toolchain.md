@@ -70,10 +70,11 @@ The recipe follows that with: "this is a failure, not a skip: nothing checked
 **Fix:**
 
 ```bash
-cargo install cratestack-cli --locked --version 0.15.0
+cargo install cratestack-cli --locked --version 0.16.0
 ```
 
-~~`--version 0.12.0`~~ — **0.15.0 since 2026-09-29** (vaam-apps/vpay#259). The
+~~`--version 0.12.0`~~ ~~`0.15.0` (2026-09-29, vaam-apps/vpay#259)~~ —
+**0.16.0 since 2026-10-26** (vaam-apps/vpay#376). The
 recipe prints this line with the version it pins (`justfile`'s
 `cratestack_version`), so copy the recipe's, not this page's, if they ever
 differ.
@@ -115,9 +116,10 @@ began _compiling_ the file 2026-09-06. A syntax error in it is now a
 Three consequences:
 
 1. **The CLI and the library must stay on one version.** `justfile`'s
-   `cratestack_version` and `Cargo.toml`'s `cratestack = "=0.15.0"` (it was
-   `=0.12.0` until 2026-09-29) — bump them together, and `vpay-db`'s
-   `cratestack-codec-json` with them. A bump also repoints the two
+   `cratestack_version` and `Cargo.toml`'s `cratestack = "=0.16.0"` (it was
+   `=0.15.0` until 2026-10-26 and `=0.12.0` until 2026-09-29) — bump them
+   together, with `Cargo.toml`'s `cratestack-cose` and `cratestack-core` and
+   `vpay-db`'s `cratestack-codec-json` (all `=0.16.0` since 2026-10-26). A bump also repoints the two
    `install-cratestack-cli` steps in `.github/workflows/ci.yml` at the tag's
    commit, and moves the twelve `cratestack-*` entries in `Cargo.lock`
    (`cargo update -p cratestack-pg --precise <version>`).
