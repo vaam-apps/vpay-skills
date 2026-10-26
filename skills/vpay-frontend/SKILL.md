@@ -10,7 +10,7 @@ description: The vpay pnpm workspace under frontends/ — the seven packages and
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
 
-Node 22.23.2 (`.nvmrc`), pnpm ~~9.15.0~~ **11.18.0** (`packageManager` in the
+Node ~~22.23.2~~ **24.21.0** (`.nvmrc`; since 2026-10-26, vaam-apps/vpay#371, because `@cratestack/refine` declares `engines.node >= 24`), pnpm ~~9.15.0~~ **11.18.0** (`packageManager` in the
 root `package.json`, since 2026-09-19, vaam-apps/vpay#217; corrected here
 2026-10-21, stale since that day), TypeScript strict everywhere
 (`tsconfig.base.json` — `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`,

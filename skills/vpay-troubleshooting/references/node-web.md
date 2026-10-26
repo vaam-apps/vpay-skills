@@ -6,11 +6,16 @@ carry the date they became true — see [VERSIONING.md](https://github.com/vaam-
 ## `pnpm install` fails outright on Node version
 
 **Cause:** `.npmrc` sets `engine-strict=true`. The baseline is `.nvmrc`
-(`22.23.2` as of 2026-09-16). It **fails rather than warns**.
+(~~`22.23.2` as of 2026-09-16~~ **`24.21.0` since 2026-10-26**,
+vaam-apps/vpay#371, with root `engines.node` `>=24.0.0`). It **fails rather
+than warns**. The move to 24 was forced, not chosen: `@cratestack/refine`,
+which the dashboard depends on from that change, declares `engines.node >= 24`
+in every release (0.11.1 through 0.16.0), so a Node 22 install refuses it.
 
 **Related pin:** ESLint **9**, not 10, deliberately — ESLint 10 requires Node
 `^22.13.0` and `.nvmrc` (which CI reads) is below it. Re-check when `.nvmrc`
-moves.
+moves. _(It moved on 2026-10-26, to 24.21.0, which satisfies that floor; the
+ESLint pin was not revisited in that change.)_
 
 ## A **Rust** test fails with ``"`pnpm --filter @vpay/sdk build` failed:\nsh: 1: tsc: not found"``
 

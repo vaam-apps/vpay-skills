@@ -142,8 +142,8 @@ trustworthy than any table if the two disagree.
 | Image            | Base             | Contents                                                                                |
 | ---------------- | ---------------- | --------------------------------------------------------------------------------------- |
 | `vpay-server`    | `scratch`        | one static musl binary + `config/` baked at `/config`. **Runs both backend workloads.** |
-| `vpay-dashboard` | `node:22-alpine` | the Next standalone server                                                              |
-| `vpay-checkout`  | `node:22-alpine` | vpay's own hosted/embedded payment page                                                 |
+| `vpay-dashboard` | `node:24-alpine` | the Next standalone server (`node:22-alpine` before 2026-10-26, vaam-apps/vpay#371)     |
+| `vpay-checkout`  | `node:24-alpine` | vpay's own hosted/embedded payment page (likewise)                                      |
 
 **`ghcr.io/vaam-apps/vpay-worker` is retired and has not been deleted.** The
 package is frozen at the last `:edge` and `sha-<40 hex>` `release.yml` pushed

@@ -1,6 +1,6 @@
 ---
 name: vpay-dashboard
-description: The staff operator console at frontends/apps/dashboard — it is the OAuth client and runs the code leg in its own process, the /dash/v1 read seam over two transports, the BFF the payments screens are wired to, the shell mounted once in a layout so navigation does not reload the document, navigation enforced as a gate rather than a comment, the Overview's exact counts, and the honest-absence rules that decide what a screen may and may not show. Load before adding a page, a column, a nav entry, a filter, a CrateStack procedure or any read, before touching the shell, Refine's providers or a loading state, and before assuming a row you see is backed by a column something writes.
+description: The staff operator console at frontends/apps/dashboard — it is the OAuth client and runs the code leg in its own process, the /dash/v1 read seam over two transports, the BFF the payments screens are wired to, the shell mounted once in a layout so navigation does not reload the document, navigation enforced as a gate rather than a comment, the Overview's exact counts, the generated client and `@cratestack/refine` the procedure-backed lists read through, and the honest-absence rules that decide what a screen may and may not show. Load before adding a page, a column, a nav entry, a filter, a CrateStack procedure or any read, before touching the shell, Refine's providers or a loading state, and before assuming a row you see is backed by a column something writes.
 ---
 
 # vpay dashboard
@@ -62,7 +62,12 @@ Refine makes without a server-seeded answer would still go there. #318
 measured one click-through against a fake of `/dash/v1`, not every path. There are six
 handlers under `app/api/dash/`; the four added 2026-09-14 (`refunds`,
 `deliveries`, `customers`, `checkouts`) have no caller, because those four
-screens render on the server and use no client data layer. _(vpay's README
+screens render on the server and use no client data layer. _(Since
+2026-10-26, vaam-apps/vpay#371, they have one and it still does not call
+them on a normal render: each list hands its server read to `useList` as
+`initialData`, and the provider behind it — Refine's `procedures` data
+provider, `@cratestack/refine` over these four handlers — is reached only on a
+client refetch. See "The generated client and `@cratestack/refine`" below.)_ _(vpay's README
 has dated the first three 2026-09-13 since vaam-apps/vpay#255, after
 `f9c7d2cd`, the branch commit that wrote them. None of the four was on
 `master` before 2026-09-14, and this page dates a claim by `master`.)_ ~~So
@@ -87,20 +92,20 @@ stale sentences: `references/read-seam-and-bff.md`.
 
 ## The layout
 
-| Directory                  | What lives there                                                                                                                |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `app/`                     | Routes only. Composition, a redirect, a fetch — no logic worth testing alone                                                    |
-| `app/api/dash/`            | The BFF's route handlers. Four lines each; `src/server/bff.ts` is the substance                                                 |
-| `middleware.ts`            | Next reads a middleware **only** from the project root                                                                          |
-| `src/components/`          | Every rendered component. Pure props in, markup out — no `fetch`, no `next/headers`                                             |
-| `src/server/`              | Everything touching vpay, cookies or PKCE. Imported only by `app/` and itself                                                   |
-| `src/dash/`                | The `/dash/v1` read seam — `getList`/`getOne` over `readDash` — and, since 2026-10-21, `providers.tsx` (the `<Refine>` wrapper) |
-| `src/config/`              | `settings.ts` decides what a configuration means; `runtime.ts` reads the env once                                               |
-| `src/format.ts`            | Money, instants, the em dash                                                                                                    |
-| `src/payments-query.ts`    | The URL's filter vocabulary ↔ the API's, and the two paging links                                                               |
-| `src/client-navigation.ts` | Which plain-`<a>` clicks the shell routes client-side (since 2026-10-21)                                                        |
-| `src/status-systems.ts`    | Refund, delivery and checkout status systems (since 2026-10-21)                                                                 |
-| `src/testing/`             | Fixtures. Imported by tests and by nothing under `app/`                                                                         |
+| Directory                  | What lives there                                                                                                                                                                                                                 |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `app/`                     | Routes only. Composition, a redirect, a fetch — no logic worth testing alone                                                                                                                                                     |
+| `app/api/dash/`            | The BFF's route handlers. Four lines each; `src/server/bff.ts` is the substance                                                                                                                                                  |
+| `middleware.ts`            | Next reads a middleware **only** from the project root                                                                                                                                                                           |
+| `src/components/`          | Every rendered component. Pure props in, markup out — no `fetch`, no `next/headers`                                                                                                                                              |
+| `src/server/`              | Everything touching vpay, cookies or PKCE. Imported only by `app/` and itself                                                                                                                                                    |
+| `src/dash/`                | The `/dash/v1` read seam — `getList`/`getOne` over `readDash` — and, since 2026-10-21, `providers.tsx` (the `<Refine>` wrapper); since 2026-10-26 also `cratestack-client.ts`, `procedure-resources.ts`, `procedure-provider.ts` |
+| `src/config/`              | `settings.ts` decides what a configuration means; `runtime.ts` reads the env once                                                                                                                                                |
+| `src/format.ts`            | Money, instants, the em dash                                                                                                                                                                                                     |
+| `src/payments-query.ts`    | The URL's filter vocabulary ↔ the API's, and the two paging links                                                                                                                                                                |
+| `src/client-navigation.ts` | Which plain-`<a>` clicks the shell routes client-side (since 2026-10-21)                                                                                                                                                         |
+| `src/status-systems.ts`    | Refund, delivery and checkout status systems (since 2026-10-21)                                                                                                                                                                  |
+| `src/testing/`             | Fixtures. Imported by tests and by nothing under `app/`                                                                                                                                                                          |
 
 The split that matters is `src/server/` vs `src/components/`: a component that
 fetched would be a component no test could render, and a `fetch` inside a
@@ -128,11 +133,46 @@ read cookies.
 | `/refunds`, `/deliveries`, `/customers`, `/checkouts` | Procedure-backed lists, offset paged, no detail route yet. ~~No filters~~: since 2026-10-21 refunds and checkouts filter by `status` and deliveries by `state`, as chips, and refunds and checkouts link each row to its payment. Customers has no filter                                                                                                                            |
 | `/signed-out`, `/healthz`                             | Route handlers, not pages: clear a dead session cookie (since 2026-09-07); "Next is answering" (since 2026-09-16, ADR-0022, vpay#183)                                                                                                                                                                                                                                                |
 
-All four procedure-backed lists are Server Components reading through
-`readProcedurePage`, and all four share `src/components/procedure-table.tsx`
-and, since 2026-10-21, one server component,
-`src/components/procedure-list-screen.tsx`, with their words and filters in
-`src/dash/list-screens.ts`.
+All four procedure-backed lists ~~are Server Components reading through
+`readProcedurePage`~~ are read on the server by `readProcedureList` (since
+2026-10-26, vaam-apps/vpay#371 — `@cratestack/refine` over the generated
+client) inside one server component, `src/components/procedure-list-screen.tsx`
+(since 2026-10-21), which renders the header and the filter chips and hands the
+read to the list's client body, `app/(dash)/<list>/<list>-list.tsx`. That body
+owns the columns — they carry render functions, which cannot cross from a
+Server Component as props — and renders `ProcedureListView`, which feeds
+Refine's `useList` the server read as `initialData`. All four share
+`src/components/procedure-table.tsx`, with their words and filters in
+`src/dash/list-screens.ts`. Row types are the generated `*Summary` types from
+`@vpay/dash-client`, not hand-written interfaces.
+
+## The generated client and `@cratestack/refine` (since 2026-10-26)
+
+_Since vaam-apps/vpay#371. Absent from an older vpay._
+
+- **Two Refine data providers.** `default` is `dashDataProvider`
+  (hand-written, cursor-paged) for `payment_intents`; `procedures` is
+  `@cratestack/refine` for the four procedure-backed lists, picked by each
+  resource's `meta.dataProviderName`. **Payments did not move and must not be
+  moved on the side**: its list shares `/v1`'s cursor paging on purpose and
+  its detail is a four-table composite no procedure serves. Offset paging for
+  it is reserved decision RD2.
+- **`@vpay/dash-client` is generated** from `schemas/vpay.cstack`
+  (`just gen-dash-client`, drift-checked by `just check-schema`) — never edit
+  it, and regenerate after **any** schema edit. Only
+  `src/dash/cratestack-client.ts` may import it at runtime; the reason, and the
+  rest of the rules, are in `references/read-seam-and-bff.md`.
+- **Do not reach for `--refine`, and do not mount a generated model route to
+  "finish" the job.** The manifest binds models vpay does not serve, and the
+  money models cannot be served while `cratestack-core`'s
+  `Value::from_plain_json` demotes JSON integers to `f64` (still true at
+  0.16.0).
+- **No new browser surface.** The browser-side provider `GET`s the existing
+  `/api/dash/<list>` handlers; `middleware.ts` still refuses anything but
+  `GET`/`HEAD` there, and the BFF still forwards no filter (so that provider
+  refuses one).
+- **Node 24.** `@cratestack/refine` declares `engines.node >= 24` in every
+  release, so vpay's `.nvmrc` moved to `24.21.0` with it.
 
 `/healthz` takes no dependency and probes nothing. Probing `/dash/v1` from it
 would take the dashboard pod's readiness down with every `vpay-server`
@@ -425,8 +465,9 @@ route table above, and this is what that costs them.)
   that make `amr` exist. **Read this before touching `vpay_api::staff::sso` or
   the dashboard's `/api/auth/sso/*` routes.**
 - `references/read-seam-and-bff.md` — the two transports and the five mounted
-  procedures, `PROCEDURE_OF`, the token lifecycle, the BFF's properties and its
-  method policy. **Read this before adding a procedure or a read.**
+  procedures, ~~`PROCEDURE_OF`~~ the generated client and its rules (since
+  2026-10-26), the token lifecycle, the BFF's properties and its method
+  policy. **Read this before adding a procedure or a read.**
 - `references/what-a-screen-may-show.md` — the honest-absence rules, status
   colour, which `@vaam-apps/ui` components the app imports, the 0.5.0
   chrome (the top app bar, the More sheet and `accountSlot`, the loading

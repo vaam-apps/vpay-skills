@@ -314,7 +314,18 @@ the registry (that needs the network).
    `model`/`enum` declarations — an emptied or truncated file type-checks
    vacuously.
 
-Then it runs `cratestack check --schema schemas/vpay.cstack`.
+Then it runs `cratestack check --schema schemas/vpay.cstack`, and — since
+2026-10-26 (vaam-apps/vpay#371) — a fourth refusal:
+
+4. a committed `frontends/packages/dash-client` (`@vpay/dash-client`) that
+   `cratestack generate-typescript --check` no longer reproduces: a modified
+   file or a stale extra one. **Any** schema edit trips it, a comment
+   included, because the generated `src/runtime.ts` embeds the schema file's
+   SHA-256. The fix is `just gen-dash-client` and committing the result in the
+   same change. The check runs against a copy without `node_modules/`:
+   cratestack 0.15.0's drift walker follows pnpm's `decimal.js` symlink, `git
+check-ignore` exits 128 on paths beyond it, and the CLI reads that as
+   "nothing is ignored" — six false `unexpected:` lines on a clean tree.
 
 **Implements:** shell in the `justfile`.
 

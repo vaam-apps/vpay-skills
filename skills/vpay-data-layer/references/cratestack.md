@@ -133,6 +133,23 @@ being made `pub` or named in a `pub use`.
 `PgRepositories` is a real type with a real reason to be discussed and an
 intra-doc link is documentation, not a reach.
 
+## The schema produces a TypeScript client too (since 2026-10-26)
+
+_Since vaam-apps/vpay#371._ `just gen-dash-client` runs
+`cratestack generate-typescript` over `schemas/vpay.cstack` into
+`frontends/packages/dash-client` (`@vpay/dash-client`), with
+`schemas/typescript-client/package.json.j2` overriding that one template so
+the package is consumed as TypeScript source (the stock template builds
+`dist/` with its own `typescript ^7`). `just check-schema` fails if the
+committed tree drifts — and **any** schema edit, a comment included, drifts
+it, because `src/runtime.ts` embeds the schema's SHA-256. So an edit to this
+file is two commands now: the edit, and `just gen-dash-client`.
+
+The dashboard uses only the client's **procedures**. The generated model
+classes target routes nothing mounts (below), and the generator's `--refine`
+manifest is deliberately not generated for the same reason; the
+`@cratestack/refine` manifest is hand-written over the procedures.
+
 ## `procedure_router`, never `router()`
 
 The dashboard's read surface mounts `cratestack_schema::axum::procedure_router`.
