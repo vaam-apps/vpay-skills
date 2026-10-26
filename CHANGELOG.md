@@ -12,6 +12,38 @@ publishes no release tags and its workspace version has never moved off
 `v0.5.0` as of 2026-09-23 — and its workspace version is `0.5.0`. The naming
 rule stands, for the reasons VERSIONING.md now gives.)_
 
+## 2026-10-26 — authkestra `=0.7.1` → `=0.13.1`; RUSTSEC-2026-0387 stays accepted
+
+Read against vaam-apps/vpay#370 at `e289ddd3`, which moves all four authkestra
+crates to `=0.13.1`, their newest release. Its verification page is
+`docs/status/verification/2026-10-26-authkestra-0-13.md`.
+
+- `vpay-merchant-api`, `vpay-reconciler` and `vpay-conventions`
+  (`references/adr-index.md`, ADR-0028): the validator that leaves
+  `jsonwebtoken`'s 60 s leeway alone is `authkestra-op` `=0.13.1` now. The
+  leeway, the 300 s ceiling and everything else these pages say about the
+  validator were re-read at 0.13.1 and are unchanged.
+- `vpay-troubleshooting` (`references/build-toolchain.md`, and the router
+  row in `SKILL.md`) and `vpay-conventions` (`SKILL.md`): RUSTSEC-2026-0387,
+  `crypto-bigint` 0.5.5, was accepted in `deny.toml` on 2026-10-24 and no
+  skill said so. It now has the same "do not try to fix this" entry as
+  RUSTSEC-2023-0071. The upgrade was the obvious fix, and it does not clear
+  it: authkestra 0.13.1 still needs `jsonwebtoken` 11, and that still needs
+  `p256 ^0.13`.
+
+### Stopped being true
+
+- "`authkestra-op` 0.7.1 leaves `jsonwebtoken`'s 60 s leeway at its default"
+  (`vpay-merchant-api/SKILL.md`) and "`authkestra-op` 0.7.1 verifies an
+  assertion with" (`vpay-reconciler/SKILL.md`), as statements about the
+  running validator. The behaviour holds, but the version moved.
+- "the dependency is pinned `=0.7.1`" (`vpay-conventions/references/adr-index.md`,
+  ADR-0028's line). It was, when ADR-0028 was written.
+
+Still true: `authkestra-op` signs RS256 only (`build-toolchain.md`,
+RUSTSEC-2023-0071), and `rsa` remains an unconditional dependency of
+`authkestra-engine` at 0.13.1.
+
 ## 2026-10-24 — the rest of vaam-apps/vpay#349: the recipe, CI and troubleshooting pages
 
 Read against vaam-apps/vpay's `master` at `bcbbf6fe`. #81 (below) brought

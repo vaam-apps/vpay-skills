@@ -98,8 +98,8 @@ the decision."
   intent (the old order deadlocked with erasure, `40P01`) and refuses a just-erased
   customer with `409`; erasure writes nothing onto the intent.
 - **0028** — the defect: `authkestra-op` 0.7.1's `verify_client_assertion` leaves
-  `jsonwebtoken`'s default **60 s leeway** (vpay cannot set it; the dependency is
-  pinned `=0.7.1`), and the comparison is on whole seconds, so an assertion is
+  `jsonwebtoken`'s default **60 s leeway** (vpay cannot set it; the dependency was
+  pinned `=0.7.1`, and is `=0.13.1` since 2026-10-26 with the leeway unchanged), and the comparison is on whole seconds, so an assertion is
   accepted for up to **61 s after its `exp`**. The hourly `sweep_expired` used to
   delete `oauth_client_assertion_jtis` rows at `expires_at < now()`, with
   `expires_at` the client's raw `exp`. A sweep landing inside those 61 s deleted the

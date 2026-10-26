@@ -126,7 +126,7 @@ _Added 2026-09-29, from `docs/flows/merchant-auth/verification-and-limits.md`
   (Checked at `a33aac61`: the primary key is still `jti` alone.)
 - **A spent `jti` is kept five minutes past its `exp`, because the validator
   accepts the assertion for 61 s after it** (ADR-0028, vaam-apps/vpay#271,
-  2026-10-09). Single use is only as good as the row: `authkestra-op` 0.7.1 leaves
+  2026-10-09). Single use is only as good as the row: `authkestra-op` (`=0.13.1` since 2026-10-26, unchanged here from 0.7.1) leaves
   `jsonwebtoken`'s 60 s leeway at its default, on a whole-second `now`, so an
   assertion verifies until `exp + 61 s`. The worker's hourly sweep used to delete
   rows at `expires_at < now()`, and a sweep landing in those 61 s let a captured,

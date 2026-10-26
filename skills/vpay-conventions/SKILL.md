@@ -133,7 +133,9 @@ verification is never disabled, including against stub hosts.
 
 `RUSTSEC-2023-0071` is in `deny.toml`'s `ignore` list with its full reasoning —
 accepted by the maintainer 2026-08-09, no patched `rsa` release exists, and
-the entry genuinely fires. Do not "fix" it.
+the entry genuinely fires. Do not "fix" it. The same holds for
+`RUSTSEC-2026-0387` (`crypto-bigint` 0.5.5, accepted 2026-10-24 and again
+when authkestra moved to `=0.13.1` on 2026-10-26): no upgrade clears it.
 
 ## TypeScript
 
