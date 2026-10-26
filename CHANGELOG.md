@@ -1,5 +1,37 @@
 # Changelog
 
+## 2026-10-26 — vpay v0.15.0: cratestack 0.16.0 pins, and the merchant Ed25519 key registry
+
+Read against vpay v0.15.0 (`de8a7b72`). Two v0.15.0 changes had no skill
+change of their own: cratestack 0.16.0 (vaam-apps/vpay#376) and VP-2's merchant
+key registry (vaam-apps/vpay#379). `verify-coverage` passed without them,
+because it checks paths, not pins.
+
+- `vpay-merchant-api`: a new section, "Merchant Ed25519 keys: registered, and
+  read by no request". It covers `merchant_clients[].cose_keys`, its two boot
+  refusals, `vpay_api::merchant_keys` and `vpay-wire`. It says plainly that
+  `/v1` still takes the bearer token and that the signed transport is not
+  built.
+- `vpay-ops` (`references/configuration.md`): the `cose_keys` boot-refusal row.
+- `vpay-data-layer` (`references/cratestack.md`):
+  - the pin is `=0.16.0`, with `envelope` and `cose` on;
+  - the lockstep table names `cratestack-cose` and `cratestack-core`;
+  - the CI action ref is `f90ddbfc…`;
+  - the drift constants at 0.16.0 are 212 changes, 28 relations and 20
+    unmappable columns.
+- `vpay-troubleshooting` (`references/build-toolchain.md`): the install line
+  is `--version 0.16.0`, and the lockstep bullet names the sibling crates.
+- `vpay-frontend`: a `@vpay/dash-client` row in the package table.
+
+### Stopped being true
+
+- "`cargo install cratestack-cli --locked --version 0.15.0`" and
+  "`cratestack = \"=0.15.0\"`" in `vpay-troubleshooting` and `vpay-data-layer`.
+  Both are `0.16.0` since 2026-10-26.
+- "no COSE, no signed transport" as a description of the pinned cratestack.
+  The `cose` feature is on and linked. It is still true that **no request is
+  signed or verified**.
+
 ## 2026-10-26 — `verify-security-inventory`, the sixteenth vpay gate
 
 Read against vaam-apps/vpay#356 (issue #150, ADR-0034). It adds a sixteenth
@@ -2102,9 +2134,9 @@ factual accuracy against the tree, and fitness for purpose. Both were run
 against vpay `f063ee96`.
 
 The factual sweep mechanically extracted and grepped every backticked identifier
-across all twenty skills — 339 file paths, 429 snake_case names, 146 constants,
+across all twenty skills — 339 file paths, 429 snake*case names, 146 constants,
 351 CamelCase names, 26 env vars, 11 metric names — and every one resolves,
-except two whose absence _is_ the claim (`SQLX_OFFLINE`, `ChargeObject`). All 35
+except two whose absence \_is* the claim (`SQLX_OFFLINE`, `ChargeObject`). All 35
 route claims are mounted.
 
 Nine factual defects and six fitness defects were found and fixed before this

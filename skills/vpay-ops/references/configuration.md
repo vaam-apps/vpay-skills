@@ -218,19 +218,20 @@ budget and **a knob nobody sets is a knob nobody has tested**."
 
 ## Rules that refuse to boot
 
-| Rule                                                                                                   | Why                                                                                           |
-| ------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------- |
-| Every merchant's rail host appears in that rail's allowlist                                            | the host allowlist, checked before the FK                                                     |
-| Every referenced provider exists and is enabled                                                        | a typo fails at boot, not at first payment                                                    |
-| Every merchant registration carries a unique `merchant_id`                                             | the `/v1` tenancy boundary has no foreign key behind it                                       |
-| Currency exponent matches the canonical table                                                          | **a 100× amount bug is otherwise silent**                                                     |
-| `livemode` ⇒ every host is `https://`                                                                  |                                                                                               |
-| **`livemode` ⇒ no host labelled `wiremock`/`stub`/`mock`/`localhost`**                                 | see below                                                                                     |
-| `livemode` ⇒ secrets come from `${}`, not literals                                                     | stops a real key reaching git                                                                 |
-| `checkout.public_base_url` is a well-formed origin, `https://` under livemode                          | every payer link vpay mints is built on it                                                    |
-| every `checkout_origins` entry is an `https://` origin, no path, no duplicate, **spelled canonically** | it becomes `frame-ancestors`; a non-canonical spelling is dropped **silently** by the browser |
-| `checkout_origins` without a `checkout.public_base_url`                                                | there is no page for those origins to frame                                                   |
-| `merchant_clients[].display_name` non-blank, ≤ 80 chars                                                | it is painted into a heading on a phone-sized page                                            |
+| Rule                                                                                                                                                  | Why                                                                                                                                                        |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Every merchant's rail host appears in that rail's allowlist                                                                                           | the host allowlist, checked before the FK                                                                                                                  |
+| Every referenced provider exists and is enabled                                                                                                       | a typo fails at boot, not at first payment                                                                                                                 |
+| Every merchant registration carries a unique `merchant_id`                                                                                            | the `/v1` tenancy boundary has no foreign key behind it                                                                                                    |
+| Currency exponent matches the canonical table                                                                                                         | **a 100× amount bug is otherwise silent**                                                                                                                  |
+| `livemode` ⇒ every host is `https://`                                                                                                                 |                                                                                                                                                            |
+| **`livemode` ⇒ no host labelled `wiremock`/`stub`/`mock`/`localhost`**                                                                                | see below                                                                                                                                                  |
+| `livemode` ⇒ secrets come from `${}`, not literals                                                                                                    | stops a real key reaching git                                                                                                                              |
+| `checkout.public_base_url` is a well-formed origin, `https://` under livemode                                                                         | every payer link vpay mints is built on it                                                                                                                 |
+| every `checkout_origins` entry is an `https://` origin, no path, no duplicate, **spelled canonically**                                                | it becomes `frame-ancestors`; a non-canonical spelling is dropped **silently** by the browser                                                              |
+| `checkout_origins` without a `checkout.public_base_url`                                                                                               | there is no page for those origins to frame                                                                                                                |
+| `merchant_clients[].display_name` non-blank, ≤ 80 chars                                                                                               | it is painted into a heading on a phone-sized page                                                                                                         |
+| `merchant_clients[].cose_keys`: each an Ed25519 public key (unpadded base64url), label 1–64 chars; no thumbprint twice in the file (since 2026-10-26) | `MalformedCoseKey` / `DuplicateCoseKey`. The keys are registered for a signed transport that is not built, and no request reads them (`vpay-merchant-api`) |
 
 ### The livemode stub-host rule is the load-bearing one
 
@@ -263,19 +264,18 @@ present-but-empty value counts as missing.** MTN:
 `deployment.livemode` _(corrected 2026-10-20: this said "`test_` marker"
 alone, which the maintainer's real test keys do not carry)_ (`RailKeyLivemodeMismatch`, which names
 the key and never prints it). **In livemode it also refuses the rail unless
-`settings.accept_public_key_exposure` is `true`**
+`settings.accept_public_key_exposure`is`true`**
 (`PublicKeyExposureNotAcknowledged`, ADR-0031 condition 4); a sandbox may
 omit it. Those are four new **columns** of the same table, not a second
-table. Every boot of a deployment configuring it also logs a `WARN` about the
+table. Every boot of a deployment configuring it also logs a `WARN`about the
 public key's exposure (ADR-0031), acknowledged or not. The block ships
-**commented out** in `config/application.yml`, because uncommenting it makes
-`NOTCHPAY_PUBLIC_KEY` and `NOTCHPAY_PRIVATE_KEY` mandatory for every
-deployment, and, since 2026-10-23, `NOTCHPAY_HASH_KEY` too, which the block
-writes as `credentials.callback_signing_secret` (RFC-0014; the Helm values
-comment says "three keys"). **`cm.mobile` is now only the channel of a charge confirmed by the
-rail code `notchpay`** (2026-10-23): a charge routed from `mtn_wallet` or
-`orange_wallet` is sent `cm.mtn` or `cm.orange` per charge, so the setting
-stays `cm.mobile`.
+**commented out** in`config/application.yml`, because uncommenting it makes
+`NOTCHPAY_PUBLIC_KEY`and`NOTCHPAY_PRIVATE_KEY`mandatory for every
+deployment, and, since 2026-10-23,`NOTCHPAY_HASH_KEY`too, which the block
+writes as`credentials.callback_signing_secret` (RFC-0014; the Helm values
+comment says "three keys"). **`cm.mobile`is now only the channel of a charge confirmed by the
+rail code`notchpay`** (2026-10-23): a charge routed from `mtn_wallet`or`orange_wallet`is sent`cm.mtn`or`cm.orange`per charge, so the setting
+stays`cm.mobile`.
 
 This is a provider-code match outside an adapter crate — which ADR-0002 forbids
 — and it is a deliberate, recorded interim (ADR-0012) carrying a comment saying

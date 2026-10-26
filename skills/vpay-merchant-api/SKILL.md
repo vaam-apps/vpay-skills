@@ -98,6 +98,36 @@ constructor** — a handler cannot invent a tenant to query by. There is no
 that type is the whole tenancy boundary. Repository methods on this path take a
 `merchant_id` and have no unscoped variant.
 
+### Merchant Ed25519 keys: registered, and read by no request (since 2026-10-26)
+
+_vaam-apps/vpay#379 (VP-2), shipped in v0.15.0. Source: vpay
+`docs/status/backend.md`, "Merchant Ed25519 keys are registered…", and
+`docs/flows/merchant-auth.md` § Status._
+
+- **`merchant_clients[].cose_keys`** takes a merchant's Ed25519 **public**
+  keys: unpadded base64url, 43 characters, with an optional `label` of 1–64
+  characters. Boot refuses an entry that does not decode to a valid Ed25519
+  point (`ConfigError::MalformedCoseKey`), and a thumbprint registered twice,
+  across merchants or within one (`ConfigError::DuplicateCoseKey`). **An empty
+  list is legal**, and `config/application.yml` leaves it empty.
+- **`vpay_api::merchant_keys`** builds a `MerchantKeyRegistry` and a
+  `MerchantKeyResolver`, cratestack-cose's `CoseVerifierResolver` for Ed25519.
+  It maps a key to its merchant, tenant and YAML scopes. A `disabled_clients`
+  row resolves to nothing, and a failed kill-switch lookup is a `500`, never a
+  key and never a miss.
+- **`vpay-wire`** (`backends/crates/vpay-wire`) holds `V1_OPERATIONS` and
+  `V1_CONTRACTS`, one digest per `/v1` `(method, path)`. The digest is the
+  operation's identity, not its body's shape: adding a field to a form body
+  does not move it. `vpay_api::v1::contracts` tests the table against
+  `V1_ROUTES` in both directions.
+
+**None of it is on a request path.** `/v1` still takes the bearer token above,
+and `jwks` is still required. `require_merchant_token` is unchanged. There is
+no `EnvelopeLayer`, no server signing key and no nonce table, and both SDKs'
+token path is untouched. **Do not tell a merchant to sign requests with these
+keys, and do not describe the signed transport as built.** That is VP-3
+onward, and none of it is in v0.15.0. ADR-0010 is not superseded.
+
 ### What can go wrong signing in, and two limitations nobody has decided
 
 _Added 2026-09-29, from `docs/flows/merchant-auth/verification-and-limits.md`
