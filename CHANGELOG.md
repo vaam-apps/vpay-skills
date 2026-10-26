@@ -14,8 +14,9 @@ rule stands, for the reasons VERSIONING.md now gives.)_
 
 ## 2026-10-26 — authkestra `=0.7.1` → `=0.13.1`; RUSTSEC-2026-0387 stays accepted
 
-Read against vaam-apps/vpay#370 at `e289ddd3`, which moves all four authkestra
-crates to `=0.13.1`, their newest release. Its verification page is
+Read against vaam-apps/vpay#370 at `e289ddd3`, squash-merged as `fc8035ab` with
+the same tree. It moves all four authkestra crates to `=0.13.1`, their newest
+release. Its verification page is
 `docs/status/verification/2026-10-26-authkestra-0-13.md`.
 
 - `vpay-merchant-api`, `vpay-reconciler` and `vpay-conventions`
