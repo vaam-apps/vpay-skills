@@ -1,4 +1,4 @@
-# The fifteen gates
+# The sixteen gates
 
 _Verified against vpay `67c90ea5` (2026-09-20) — the merge of
 [#233](https://github.com/vaam-apps/vpay/pull/233), on top of `0799a8d2`
@@ -6,12 +6,13 @@ _Verified against vpay `67c90ea5` (2026-09-20) — the merge of
 sensitive claims carry the date they became true — see
 [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
-**Fifteen as of 2026-09-20.** ~~Fourteen.~~ ~~Twelve.~~ It was twelve until
-2026-09-17, when [#201](https://github.com/vaam-apps/vpay/pull/201) appended
-`verify-versions`; [#187](https://github.com/vaam-apps/vpay/pull/187) appended
-`verify-privacy-inventory` and made it fourteen on 2026-09-18;
+**Sixteen as of 2026-10-26.** ~~Fifteen.~~ ~~Fourteen.~~ ~~Twelve.~~ It was
+twelve until 2026-09-17, when [#201](https://github.com/vaam-apps/vpay/pull/201)
+appended `verify-versions`; [#187](https://github.com/vaam-apps/vpay/pull/187)
+appended `verify-privacy-inventory` and made it fourteen on 2026-09-18;
 [#233](https://github.com/vaam-apps/vpay/pull/233) appends `verify-doc-counts`
-and makes it fifteen on 2026-09-20.
+and makes it fifteen on 2026-09-20; issue #150 / ADR-0034 appends
+`verify-security-inventory` and makes it sixteen on 2026-10-26.
 
 > **Read the recipe, not the prose — and here is the authority rule caught in
 > the act.** Measured on `master` `aeb9e242` (2026-09-18), a full day after
@@ -27,16 +28,17 @@ and makes it fifteen on 2026-09-20.
 > a live defect. `AGENTS.md` predicted it about itself: "it has gone stale at
 > nearly every count it has carried".
 
-`just verify` runs fifteen gates and then one report:
+`just verify` runs sixteen gates and then one report:
 
 ```text
 verify: verify-no-mocks verify-status verify-errors verify-sdk-parity \
         verify-links verify-npm-scope check-schema verify-serde \
         verify-repositories verify-toolchain verify-ui verify-migrations \
-        verify-versions verify-privacy-inventory verify-doc-counts verify-docs
+        verify-versions verify-privacy-inventory verify-doc-counts \
+        verify-security-inventory verify-docs
 ```
 
-Thirteen are `cargo xtask` subcommands implemented in `.xtask/src/main.rs`;
+Fourteen are `cargo xtask` subcommands implemented in `.xtask/src/main.rs`;
 `check-schema` and `verify-ui` are shell in the `justfile`. CI's `self-checks`
 job runs exactly this list in exactly this order, and that job has no
 `changes` gating — **it runs on every push and every pull request**.
@@ -50,8 +52,9 @@ on 2026-09-05 and `verify-versions`/`verify-privacy-inventory` did on
 2026-09-17. It is resolved the same way both times: both, in the order they
 landed, and whichever lands second renumbers itself.
 
-`cargo xtask verify-all` chains the thirteen xtask gates, `verify-doc-counts`
-included since 2026-09-20. It excludes `verify-citations` (network) and cannot
+`cargo xtask verify-all` chains the fourteen xtask gates,
+`verify-doc-counts` included since 2026-09-20 and `verify-security-inventory`
+since 2026-10-26. It excludes `verify-citations` (network) and cannot
 run `check-schema` or `verify-ui`, which are shell. `just verify` is the real
 list; `verify-all` is a convenience.
 
@@ -323,7 +326,7 @@ Then it runs `cratestack check --schema schemas/vpay.cstack`, and — since
    included, because the generated `src/runtime.ts` embeds the schema file's
    SHA-256. The fix is `just gen-dash-client` and committing the result in the
    same change. The check runs against a copy without `node_modules/`:
-   cratestack 0.15.0's drift walker follows pnpm's `decimal.js` symlink, `git
+   cratestack 0.15.0's (and 0.16.0's) drift walker follows pnpm's `decimal.js` symlink, `git
 check-ignore` exits 128 on paths beyond it, and the CLI reads that as
    "nothing is ignored" — six false `unexpected:` lines on a clean tree.
 
@@ -723,7 +726,7 @@ is a hard failure, not a skip:**
 `verify-docs` exactly the way the recipe's own closing `@echo` does — so
 `docs/status.md`'s "the gate tally" sentence in **vpay itself** (not this
 skills repository, which `verify-doc-counts` never reads) carries
-`count:verify-gates` and must read fifteen.
+`count:verify-gates` and must read sixteen.
 
 **Frozen archives are skipped entirely, by directory name:** `docs/plans/`
 and `docs/status/verification/` — dated records where a number that was true
@@ -767,16 +770,43 @@ the `# Errors` and `# Panics` sections** that ADR-0011 and rustdoc depend on. A
 number that is read is worth more here than a number that is enforced.
 
 It is last so the report a human reads is the final thing on the terminal. The
-`verify: ok` line the recipe prints afterwards means the fifteen gates passed
+`verify: ok` line the recipe prints afterwards means the sixteen gates passed
 and says nothing about the numbers `verify-docs` printed.
 
-## `verify-citations` — a gate, but not one of the fifteen
+## 16. `verify-security-inventory`
+
+_The sixteenth gate, 2026-10-26 (issue #150, ADR-0034). The security
+counterpart of `verify-privacy-inventory`: it keeps
+`schemas/security-inventory.yaml` honest against the tree._
+
+**Refuses:** an unknown key anywhere in the inventory (`deny_unknown_fields`
+is on every struct, so a misspelt `tables:` is a hard error); a service path,
+named crate, implementation path, evidence path, runbook, ADR, threat model,
+Dockerfile stage, workflow or package manifest that does not exist; a table a
+migration does not create **or** a live table no state store names (both
+directions); a `config_keys` entry outside the closed set of `vpay-config`
+paths (so `rails.mtn_momo.api_key` and `webhooks.signing_secret` are refused);
+a cited test name no Rust source declares; a control status outside
+`implemented`/`partial`/`gap`; a `gap` control with no `related_gap`; a gap
+with no tracker or two trackers; and an issue number that no document under
+`docs/` cites (an offline liveness proxy — it does not call GitHub).
+
+**Implements:** `cargo xtask verify-security-inventory`,
+`verify_security_inventory` in `.xtask/src/main.rs`, with eleven mutation
+tests in `test_security_inventory`.
+
+**How you trip it:** add a migration table without adding it to a state store;
+rename a cited test; write a plausible-looking config path that `vpay-config`
+does not declare; or mark a control `implemented` while its evidence path is
+only aspirational.
+
+## `verify-citations` — a gate, but not one of the sixteen
 
 `just docs-check-citations` → `cargo xtask verify-citations`. ~~The thirteenth
 gate.~~ **Renumbered 2026-09-18:** `verify-versions` and
 `verify-privacy-inventory` took the thirteenth and fourteenth places, and this
 one was never in the list they are in anyway. **Renumbered again 2026-09-20:**
-`verify-doc-counts` took the fifteenth place, pushing `verify-docs` — the
+`verify-security-inventory` took the sixteenth place, pushing `verify-docs` — the
 report, not a gate — to being the **sixteenth** thing `just verify` prints,
 and `verify-citations` to the **seventeenth**, exactly as `justfile`'s own
 header now says. It is **not** in `just verify` and **not** in `just ci`,

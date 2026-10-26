@@ -1,5 +1,30 @@
 # Changelog
 
+## 2026-10-26 — `verify-security-inventory`, the sixteenth vpay gate
+
+Read against vaam-apps/vpay#356 (issue #150, ADR-0034). It adds a sixteenth
+`just verify` gate, `verify-security-inventory`, which checks
+`schemas/security-inventory.yaml` against the tree: both directions of the
+table set, every cited path and test name, a closed set of secret config keys,
+and every gap's tracker.
+
+- `vpay`: the before/after `just verify` count moved from fifteen to sixteen.
+- `vpay-tooling`: the gate table and `references/gates.md` gained section 16;
+  `references/recipes.md` gained `just verify-security-inventory`;
+  `references/ci.md` and the `just verify` section moved to sixteen.
+- `vpay-docs-status`: the gate-count history and the section pointer moved.
+- `vpay-troubleshooting` (`references/known-wrong-docs.md`): the gate-count row
+  now records sixteen.
+
+### Stopped being true
+
+- "the fifteen verify gates" and every "fifteen gates" sentence in `vpay`,
+  `vpay-tooling`, `vpay-docs-status` and `vpay-troubleshooting`. The recipe now
+  lists sixteen gates plus `verify-docs`.
+- "the recipe at `a33aac61` lists sixteen targets: fifteen gates plus
+  `verify-docs`" (`vpay/SKILL.md`). The target count is unchanged at seventeen
+  — sixteen gates plus the report — but the gate half moved.
+
 Each release records the vpay range it was verified against, which skills
 changed, and — the section worth reading — **any claim that stopped being true**,
 so someone upgrading can find the thing that will break them.
@@ -42,6 +67,39 @@ fails on exactly that claim (measured).
   Refine's `useList` the server read as `initialData` since #371.
 - "`.nvmrc` is `22.23.2`" and "`node:22-alpine`": 24.21.0 and
   `node:24-alpine` since #371.
+
+## 2026-10-26 — authkestra `=0.7.1` → `=0.13.1`; RUSTSEC-2026-0387 stays accepted
+
+Read against vaam-apps/vpay#370 at `e289ddd3`, squash-merged as `fc8035ab` with
+the same tree. It moves all four authkestra crates to `=0.13.1`, their newest
+release. Its verification page is
+`docs/status/verification/2026-10-26-authkestra-0-13.md`.
+
+- `vpay-merchant-api`, `vpay-reconciler` and `vpay-conventions`
+  (`references/adr-index.md`, ADR-0028): the validator that leaves
+  `jsonwebtoken`'s 60 s leeway alone is `authkestra-op` `=0.13.1` now. The
+  leeway, the 300 s ceiling and everything else these pages say about the
+  validator were re-read at 0.13.1 and are unchanged.
+- `vpay-troubleshooting` (`references/build-toolchain.md`, and the router
+  row in `SKILL.md`) and `vpay-conventions` (`SKILL.md`): RUSTSEC-2026-0387,
+  `crypto-bigint` 0.5.5, was accepted in `deny.toml` on 2026-10-24 and no
+  skill said so. It now has the same "do not try to fix this" entry as
+  RUSTSEC-2023-0071. The upgrade was the obvious fix, and it does not clear
+  it: authkestra 0.13.1 still needs `jsonwebtoken` 11, and that still needs
+  `p256 ^0.13`.
+
+### Stopped being true
+
+- "`authkestra-op` 0.7.1 leaves `jsonwebtoken`'s 60 s leeway at its default"
+  (`vpay-merchant-api/SKILL.md`) and "`authkestra-op` 0.7.1 verifies an
+  assertion with" (`vpay-reconciler/SKILL.md`), as statements about the
+  running validator. The behaviour holds, but the version moved.
+- "the dependency is pinned `=0.7.1`" (`vpay-conventions/references/adr-index.md`,
+  ADR-0028's line). It was, when ADR-0028 was written.
+
+Still true: `authkestra-op` signs RS256 only (`build-toolchain.md`,
+RUSTSEC-2023-0071), and `rsa` remains an unconditional dependency of
+`authkestra-engine` at 0.13.1.
 
 ## 2026-10-24 — the rest of vaam-apps/vpay#349: the recipe, CI and troubleshooting pages
 

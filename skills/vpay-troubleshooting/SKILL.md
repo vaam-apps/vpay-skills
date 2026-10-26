@@ -31,6 +31,7 @@ Two habits before anything else:
 | `check-schema: FAIL — needs the 'cratestack' CLI on PATH`               | [build-toolchain](references/build-toolchain.md)             |
 | a `schemas/vpay.cstack` edit breaks `cargo build`                       | [build-toolchain](references/build-toolchain.md)             |
 | `cargo deny` advisory on `rsa` / RUSTSEC-2023-0071                      | [build-toolchain](references/build-toolchain.md)             |
+| `cargo deny` advisory on `crypto-bigint` / RUSTSEC-2026-0387            | [build-toolchain](references/build-toolchain.md)             |
 | testcontainers cannot reach a Docker daemon                             | inline, below                                                |
 | `failed to create a container: Timeout error` at ~120 s                 | inline, below                                                |
 | `RootlessKit PortManager.AddPort(): bind: address already in use`       | [docker-testcontainers](references/docker-testcontainers.md) |

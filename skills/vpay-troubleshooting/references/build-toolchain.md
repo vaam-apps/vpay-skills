@@ -153,6 +153,31 @@ with its reasoning in full, accepted deliberately by the maintainer on
 Revisit if a fixed `rsa` appears, if authkestra gains non-RSA signing, or if
 the Keycloak/ZITADEL comparison ADR-0009 leaves open is carried out.
 
+## `cargo deny` — RUSTSEC-2026-0387
+
+**Do not try to fix this either.** `crypto-bigint` 0.5.5 has non-constant-time
+operations; the fix is only in 0.7.6. It is in `deny.toml`'s `ignore` list,
+accepted by the maintainer on 2026-10-24 and again on 2026-10-26.
+
+- **No upgrade clears it.** The chain is `crypto-bigint 0.5.5 <- elliptic-curve
+0.13.8 <- ecdsa 0.16.9 <- p256 0.13.2 / p384 0.13.1 <- jsonwebtoken 11.0.0`,
+  and `jsonwebtoken` arrives through all three authkestra crates and through
+  `vpay-sdk`. The fix needs `elliptic-curve` 0.14. `jsonwebtoken`'s newest
+  release (11.1.0) still requires `p256 ^0.13`, and authkestra's newest
+  (`=0.13.1`, which vpay moved to on 2026-10-26 from `=0.7.1`) still requires
+  `jsonwebtoken` 11. **Bumping authkestra was tried, and did not clear it.**
+- Why it is safe to accept: vpay uses P-256/P-384 only to **verify** ES256/ES384
+  signatures, against public keys — a merchant's client assertion, a staff SSO
+  id_token, a DPoP proof. Nothing in vpay or authkestra signs with an EC key
+  outside tests: the OP signs RS256, `vpay-sdk` signs RS256 only, merchant
+  webhooks use HMAC.
+- That rests on reading the call sites, not on a timing measurement. **If
+  vpay ever signs with, or generates, an EC key, the entry stops being safe
+  and must go.**
+
+Remove it when `jsonwebtoken` or authkestra reaches `p256` 0.14 /
+`elliptic-curve` 0.14, or when `cargo deny` reports `advisory-not-detected`.
+
 ## Adding a dependency that needs OpenSSL
 
 **It will fail `cargo deny`, and that is the intended friction.** `openssl`,

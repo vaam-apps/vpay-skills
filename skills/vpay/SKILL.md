@@ -100,18 +100,20 @@ miniature: the recipe wins over the prose.
 ## Before you start, and when you finish
 
 ```bash
-just verify        # 15 gates (2026-09-20) + 1 report — before AND after
+just verify        # 16 gates (2026-10-26) + 1 report — before AND after
 cat docs/status.md
 ```
 
 The recipe echoes its own count; trust that over any number written down,
 here or in vpay. It was twelve until 2026-09-17, thirteen on 2026-09-17
 (`verify-versions`, #201), fourteen from 2026-09-18 (`verify-privacy-inventory`,
-#187) and **fifteen since 2026-09-20** (`verify-doc-counts`, #233).
+#187), **fifteen since 2026-09-20** (`verify-doc-counts`, #233) and
+**sixteen since 2026-10-26** (`verify-security-inventory`, issue #150,
+ADR-0034).
 ~~It was fourteen until 2026-09-18~~ — this page said that, which has the dates
 backwards. `verify-doc-counts` now fails a vpay document whose marked count
-disagrees with the recipe. The recipe at `a33aac61` lists sixteen targets:
-fifteen gates plus `verify-docs`, the report that never fails.
+disagrees with the recipe. The recipe now lists seventeen targets: sixteen gates plus
+`verify-docs`, the report that never fails.
 
 When you finish: `just ci`, then update the status page your change belongs to
 **in the same commit**, then the relevant `docs/flows/*.md` **Status** section.

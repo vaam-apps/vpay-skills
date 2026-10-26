@@ -301,7 +301,7 @@ from `lib.rs`). The statement is
 computes the cut** and the worker's clock never reaches the comparison (ADR-0026
 D1's shape, applied to the column D8 had left out).
 
-Why a row may not go at `exp`: `authkestra-op` 0.7.1 verifies an assertion with
+Why a row may not go at `exp`: `authkestra-op` (`=0.13.1` since 2026-10-26) verifies an assertion with
 `jsonwebtoken`'s default 60 s leeway, on a whole-second `now`, so the API accepts
 it until `exp + 61 s`. A sweep inside that window deleted the `jti` of an assertion
 that still verified, and one captured, already-spent assertion could be replayed
