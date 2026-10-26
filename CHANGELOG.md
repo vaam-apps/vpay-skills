@@ -37,6 +37,37 @@ publishes no release tags and its workspace version has never moved off
 `v0.5.0` as of 2026-09-23 — and its workspace version is `0.5.0`. The naming
 rule stands, for the reasons VERSIONING.md now gives.)_
 
+## 2026-10-26 — vaam-apps/vpay#371: `@cratestack/refine` over a generated client, Node 24
+
+Read against vaam-apps/vpay#371's branch (`claude/dreamy-meitner-m8g1wz`, on
+top of `master` at `172a13a8`). **Merge after vaam-apps/vpay#371**:
+`coverage.json` now claims `frontends/packages/dash-client`, which exists only
+once that PR is on `master`, and `verify-coverage` against today's `master`
+fails on exactly that claim (measured).
+
+- `vpay-dashboard` (`SKILL.md`, `references/read-seam-and-bff.md`,
+  `references/what-a-screen-may-show.md`): the four procedure-backed lists
+  read through `@cratestack/refine` over the generated `@vpay/dash-client`'s
+  procedures; the two Refine data providers; why `--refine` is not used and no
+  model route may be mounted to "finish" it; the one-module runtime-import
+  rule; the shared `withOneRemint`; `@cratestack/refine`'s `0`-for-unknown
+  count gap. `PROCEDURE_OF` is gone.
+- `vpay-tooling` (`SKILL.md`, `references/gates.md`): `check-schema`'s fourth
+  refusal — a drifted generated client — and why any schema edit trips it.
+- `vpay-data-layer` (`references/cratestack.md`): the schema produces a
+  TypeScript client too; an edit to it is two commands now.
+- `vpay-frontend`, `vpay-troubleshooting` (`references/node-web.md`),
+  `vpay-ops`: Node `24.21.0` and `node:24-alpine`.
+
+### Stopped being true
+
+- "`PROCEDURE_OF` maps a resource to its procedure name": removed; the
+  mapping is a call (`LIST_OF` in `src/dash/cratestack-client.ts`).
+- "The four procedure-backed lists … use no client data layer": they feed
+  Refine's `useList` the server read as `initialData` since #371.
+- "`.nvmrc` is `22.23.2`" and "`node:22-alpine`": 24.21.0 and
+  `node:24-alpine` since #371.
+
 ## 2026-10-26 — authkestra `=0.7.1` → `=0.13.1`; RUSTSEC-2026-0387 stays accepted
 
 Read against vaam-apps/vpay#370 at `e289ddd3`, squash-merged as `fc8035ab` with

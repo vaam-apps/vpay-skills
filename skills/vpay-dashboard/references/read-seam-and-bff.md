@@ -22,10 +22,50 @@ notices until a screen is empty":
 | `CUSTOMERS`          | `procedure searchCustomers`                   |
 | `CHECKOUT_SESSIONS`  | `procedure searchCheckoutSessions`            |
 
-**`payment_intents` is deliberately absent from `PROCEDURE_OF`.** It is a
+~~**`payment_intents` is deliberately absent from `PROCEDURE_OF`.** It is a
 _partial_ map, not a total one: a lookup that misses means "this resource is
 not a procedure", which is a different thing from "unknown resource". Do not
-"fix" it by adding an entry.
+"fix" it by adding an entry.~~ **Replaced 2026-10-26 (vaam-apps/vpay#371):**
+`PROCEDURE_OF` (resource → procedure name as a string) is gone.
+`resource-name.ts` now holds `PROCEDURE_RESOURCES` (the four, with the
+`ProcedureResource` type and `isProcedureResource`) and `BFF_PATH_OF` (resource
+→ `app/api/dash/<path>`); which procedure serves which is a **call** into the
+generated client, `LIST_OF` in `src/dash/cratestack-client.ts`, so a renamed
+procedure is a compile error after `just gen-dash-client` rather than a `404`.
+`payment_intents` is still in none of them, for the same reason: it is not a
+procedure. Do not add it.
+
+### The procedure transport is the generated client (since 2026-10-26)
+
+_Since vaam-apps/vpay#371. On an older vpay, `callDashProcedure` in
+`src/server/dash-read.ts` and `postJson` in `src/server/api.ts` are the
+transport and the paragraph below does not apply._
+
+- **`@vpay/dash-client`** (`frontends/packages/dash-client`) is
+  `cratestack generate-typescript` output, written by `just gen-dash-client`
+  and drift-checked by `just check-schema`. **Never edit it.** Any edit to
+  `schemas/vpay.cstack` — a comment included — makes it stale, because
+  `src/runtime.ts` embeds the schema file's SHA-256.
+- **Only `src/dash/cratestack-client.ts` may import it at runtime** (ESLint
+  `no-restricted-imports`, `allowTypeImports: true`). The package carries a
+  class per **model**; vpay mounts none of those routes, and
+  `PaymentIntentApi.list()` would reach the hand-written
+  `GET /dash/v1/payment_intents` and cast its `ListObject` to an array with no
+  error. The wrapper hands out `procedures` and nothing else.
+- Every call goes through `callProcedure`, which runs `withOneRemint` — the
+  same function `readDash` now uses, so there is **one** copy of "a `401`
+  re-mints once, a second `401` is believed, a `403` is never retried".
+- `just gen-dash-client` does **not** pass `--refine`: its manifest binds
+  models. The `@cratestack/refine` manifest is hand-written over the
+  procedures (`src/dash/procedure-resources.ts`) and refuses, with a `400`
+  before anything is sent, any filter key the procedure does not declare (its
+  `getMany`'s `id__in` included), any sort, and `getOne`/writes.
+- **`@cratestack/refine` reports `0` for an unknown count.** Past the end of
+  the set a procedure answers `totalCount: null`; the provider falls back to
+  `items.length`. The screens read the count and `hasNextPage` from the
+  procedure's page (`ProcedureListPage`), never from refine's `total`.
+- `next.config.ts` maps `.js` → `.ts` for webpack because the generated
+  relative imports carry `.js` and `--check` holds the bytes.
 
 `resource-name.ts` exists separately from `provider.ts` because `provider.ts`
 is server-side — it reaches `readDash`, the config and `node:crypto` — so a
@@ -113,7 +153,8 @@ times per render (all payments with the latest six rows, then one per status,
 each `limit: 1`) beside six calls to the other procedures, **twelve in
 parallel on the server**, and reads each count from `totalCount`. `requireStaff`
 re-mints the token at 80 % of its TTL before they start. A `401` still re-mints
-once and retries (`callDashProcedure`), and each re-mint writes the same
+once and retries (`callDashProcedure`; `callProcedure` since
+vaam-apps/vpay#371), and each re-mint writes the same
 session row, so twelve parallel calls can mean more than one mint on one
 render; the module's own comment says no call is answered with another's
 token. Nothing here measured how many mints that is under load.

@@ -303,6 +303,7 @@
         "docs/adr/0008-dashboard-scope.md",
         "docs/adr/0017-staff-authentication.md",
         "frontends/apps/dashboard",
+        "frontends/packages/dash-client",
         "docs/flows/dashboard/slice-1-gaps.md",
         "docs/flows/dashboard/status-built-and-not-built.md",
         "docs/flows/dashboard/status-read-seam-and-bff.md",

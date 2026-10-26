@@ -37,15 +37,15 @@ point: there is no field there to be null.
 
 ## The general rules these are instances of
 
-| Situation                       | The honest shape                                                                                                                                                                                      |
-| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| A column nothing writes         | Render it from the column, show `ABSENT` (`—`), never derive a substitute                                                                                                                             |
-| A read that failed              | Return the refusal to the screen. `readProcedurePage` returns the refusal rather than an empty page: an empty list and a refused read look identical on screen unless the screen is told which it got |
-| A status this build cannot name | Render it as **text**, not as a coloured pill — "a green badge on an unfamiliar value is a claim"                                                                                                     |
-| A value the wire cannot parse   | Return it verbatim rather than replacing it (`formatIsoInstant`)                                                                                                                                      |
-| No `total` from the API         | No page count, no page numbers. Two cursors and nothing else                                                                                                                                          |
-| A field too large for a list    | Omit it and say so. `/refunds` does not show `failure_raw` — up to 2 000 characters of a rail's own prose, belonging to a detail read that does not exist                                             |
-| A slice nobody built            | No nav entry. `layout.test.tsx` fails if one appears                                                                                                                                                  |
+| Situation                       | The honest shape                                                                                                                                                                                                                                     |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A column nothing writes         | Render it from the column, show `ABSENT` (`—`), never derive a substitute                                                                                                                                                                            |
+| A read that failed              | Return the refusal to the screen. `readProcedurePage` (`readProcedureList` since vaam-apps/vpay#371) returns the refusal rather than an empty page: an empty list and a refused read look identical on screen unless the screen is told which it got |
+| A status this build cannot name | Render it as **text**, not as a coloured pill — "a green badge on an unfamiliar value is a claim"                                                                                                                                                    |
+| A value the wire cannot parse   | Return it verbatim rather than replacing it (`formatIsoInstant`)                                                                                                                                                                                     |
+| No `total` from the API         | No page count, no page numbers. Two cursors and nothing else                                                                                                                                                                                         |
+| A field too large for a list    | Omit it and say so. `/refunds` does not show `failure_raw` — up to 2 000 characters of a rail's own prose, belonging to a detail read that does not exist                                                                                            |
+| A slice nobody built            | No nav entry. `layout.test.tsx` fails if one appears                                                                                                                                                                                                 |
 
 ## Status colour has exactly one source
 
