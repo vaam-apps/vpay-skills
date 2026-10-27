@@ -1,6 +1,6 @@
 # Every mounted route, and the middleware around them
 
-_Verified against vpay `a33aac61` (2026-09-29) for § `/provider` and the step A table; the rest of this page was last read at `b747e5d5` (2026-09-23). Version-sensitive claims
+_Verified against vpay `f885170c` (2026-10-27) for the surface table, § `/v1/oauth`, § `/mcp/v1`, § `/dash/v1` and § Middleware; against `a33aac61` (2026-09-29) for § `/provider` and the step A table; the rest of this page was last read at `b747e5d5` (2026-09-23). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 Assembled in `vpay_api::router` (`backends/crates/vpay-api/src/lib.rs`).
@@ -13,15 +13,18 @@ Counts and contents verified against the code on **2026-09-23** (this said
 resolved from `deployment.surfaces` by
 `vpay_config::Deployment::enabled_surfaces`:
 
-| Surface      | Mounts                                                              |
-| ------------ | ------------------------------------------------------------------- |
-| `business`   | `/v1`, `/v1/browser`, `/provider`, and `POST /v1/oauth/token`       |
-| `management` | `/dash/v1` (the reads, the staff routes and `$procs`)               |
-| either       | `/v1/oauth/.well-known/openid-configuration`, `/v1/oauth/jwks.json` |
-| always       | `/healthz`                                                          |
+| Surface      | Mounts                                                                                                |
+| ------------ | ----------------------------------------------------------------------------------------------------- |
+| `business`   | `/v1`, `/v1/browser`, `/provider`, `POST /v1/oauth/token`, and `/svc/v1` (since 2026-10-27, vpay#383) |
+| `management` | `/dash/v1` (the reads and `$procs`), when `dashboard:` is configured                                  |
+| `mcp`        | `POST /mcp/v1` and its RFC 9728 metadata (since 2026-10-27, vpay#377); **never in `ALL`**             |
+| any          | `/v1/oauth/.well-known/openid-configuration`, `/v1/oauth/jwks.json`                                   |
+| always       | `/healthz`                                                                                            |
 
-An absent `surfaces:` key means both (`EnabledSurfaces::ALL`), which is every
-pre-ADR-0022 deployment. An empty list is `ConfigError::NoSurfacesConfigured`
+An absent `surfaces:` key means `business` and `management`
+(`EnabledSurfaces::ALL`), which is every pre-ADR-0022 deployment; `mcp` is
+mounted only when named. _(This table said `management` mounted "the staff
+routes" until 2026-10-27; vpay#383 deleted them.)_ An empty list is `ConfigError::NoSurfacesConfigured`
 at boot. `/token` is business-only because a management pod serving it would
 mint merchant credentials on the staff tier. A nest that is not mounted
 answers the outer `404 unknown_route`.
@@ -132,7 +135,16 @@ Things about this table that are decisions rather than accidents:
   anyone.** Mounting a route is not a rail call; do not read these five rows as
   a payout path.
 
-## `/v1/oauth` — the merchant OP
+## `/v1/oauth` — the merchant OP, now only for `/mcp/v1`
+
+**Since 2026-10-26 nothing on `/v1` reads what this mints** (vpay#380 signs
+every `/v1` request), so the OP's one remaining customer is the MCP endpoint
+below. It stays until VP-4, and VP-4 has no replacement for `/mcp/v1` yet
+(ADR-0033, "Left to the maintainer" item 4). Since vpay#377,
+`op::token::apply_resource_indicator` maps RFC 8707 `resource` onto the
+audience: one `resource` with no `audience` _is_ the audience, and two targets
+or a disagreeing pair is `invalid_target`. Before that the OP silently dropped
+`resource`.
 
 Built inline in `router`, not from a table. Unauthenticated by necessity: the
 credential _is_ the request body (RFC 7523 §2.2), so requiring a bearer token
@@ -153,6 +165,24 @@ an error is not an `ApiError`, other than `/healthz`.
 break every merchant who took the SDK default. There is **no rate limit** on
 `/token`; ADR-0009 leaves it to ingress, and nothing in this repository
 verifies that ingress actually limits it.
+
+## `/mcp/v1` — the merchant MCP endpoint (since 2026-10-27)
+
+Mounted only when `deployment.surfaces` names `mcp` (vpay#377, ADR-0033 step 3).
+`Repositories::merchant_mcp_router` in `vpay-db` builds it around CrateStack's
+generated tool table and `StreamableHttpServer`, and `vpay_api::mcp::merchant_router`
+supplies the authenticator and the `MerchantOperations` port. `vpay_api::router`
+merges it in after `with_state`, through `RouterDeps::merchant_mcp`.
+
+| Method | Path                                           | Notes                                                                  |
+| ------ | ---------------------------------------------- | ---------------------------------------------------------------------- |
+| POST   | `/mcp/v1`                                      | JSON-RPC `tools/list` and `tools/call`; bearer token, Origin allowlist |
+| GET    | `/.well-known/oauth-protected-resource/mcp/v1` | RFC 9728 metadata; names `{public_base_url}/v1/oauth`                  |
+
+The nine tools and what each does: `vpay-merchant-api` § "The merchant MCP
+endpoint". The tool-per-route map, and the 28 routes with no tool, is vpay
+`docs/api/mcp-parity.md`, which `cargo xtask verify-mcp-parity` holds to
+`V1_ROUTES` in both directions.
 
 ## `/v1/browser` — the payer's browser
 
@@ -277,6 +307,15 @@ per worker claim. Bounded only by the 16 KiB body limit and the dedupe key.
 
 ## `/dash/v1` — the dashboard (owned by `vpay-dashboard`)
 
+> **Superseded 2026-10-27 (vaam-apps/vpay#383).** Everything below about staff
+> routes, `require_dashboard_token`, `dashboard_client` and `/dash/v1/oauth` is
+> **history**: the staff routes are deleted, `/dash/v1` and `$procs` accept only
+> COSE_Sign1 messages under a paired console key, and `/svc/v1` (business
+> surface) pairs and revokes keys. Read `vpay-dashboard` for the current
+> surface. Still true: the two `DASH_ROUTES` reads, the five `$procs` searches,
+> and, since vpay#377, `only_dashboard_procedures`, which answers `404` for any
+> other procedure name (the merchant MCP procedures are in the same schema).
+
 Two `GET` reads from `DASH_ROUTES`, eight unauthenticated staff routes merged
 in from `staff::routes()`, and the CrateStack procedure transport
 `nest_service`d at the same prefix. The staff router is built inline.
@@ -350,9 +389,13 @@ Per-nest layers, **inside** each nest:
   404 only. Moving that line below the nests would double every `/v1` count and
   label half of them `unmatched`. A request's route _pattern_ only exists once
   the nest has matched, which is why the layer cannot live outside.
-- `RequestBodyLimitLayer` **outside** the auth layer on `/v1`, `/dash/v1` and
+- ~~`RequestBodyLimitLayer` **outside** the auth layer on `/v1`, `/dash/v1` and
   the `$procs` transport, so an anonymous caller cannot make the process buffer
-  a body before the 401.
+  a body before the 401.~~ **Corrected 2026-10-27:** since vpay#380 (and #383
+  for `/dash/v1`, `$procs` and `/svc/v1`) the body limit is **inside** the
+  `EnvelopeLayer`: the layer itself buffers at most `ENVELOPE_BODY_LIMIT_BYTES`
+  of COSE message, and the limit then bounds the _opened_ payload the handler
+  reads. `vpay_api::envelope`'s module header has the diagram.
 - `CorsLayer` on `/v1/browser` and nowhere else.
 - The `$procs` transport carries its **own** `.fallback(not_found)` added after
   its token layer, and it is not optional: `Router::nest_service` registers a

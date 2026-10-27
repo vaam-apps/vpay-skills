@@ -140,7 +140,22 @@
         "docs/flows/merchant-auth/verification-and-limits.md",
         "docs/adr/0025-session-customer-onto-intent.md",
         "docs/adr/0028-a-spent-jti-outlives-the-validators-leeway.md",
-        "backends/tests/integration/tests/merchant_token_flow.rs"
+        "backends/tests/integration/tests/merchant_token_flow.rs",
+        "docs/flows/signed-transport.md",
+        "docs/adr/0035-v1-is-a-signed-message-not-a-token.md",
+        "backends/crates/vpay-api/src/envelope",
+        "backends/migrations/0055_create-envelope-nonces.sql",
+        "backends/tests/integration/tests/signed_transport.rs",
+        "docs/flows/mcp.md",
+        "docs/api/mcp-parity.md",
+        "docs/adr/0033-mcp-is-the-primary-agent-surface.md",
+        "docs/security/threat-models/mcp.md",
+        "docs/reference/vpay-api/mcp.md",
+        "backends/crates/vpay-api/src/mcp.rs",
+        "backends/crates/vpay-db/src/merchant_operations.rs",
+        "backends/crates/vpay-db/src/mcp_transport.rs",
+        "backends/crates/vpay-db/src/schema/mcp_merchant.rs",
+        "backends/tests/integration/tests/mcp_merchant.rs"
       ]
     },
     "vpay-webhooks": {

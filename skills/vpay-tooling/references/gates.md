@@ -1,4 +1,4 @@
-# The sixteen gates
+# The seventeen gates
 
 _Verified against vpay `67c90ea5` (2026-09-20) — the merge of
 [#233](https://github.com/vaam-apps/vpay/pull/233), on top of `0799a8d2`
@@ -6,13 +6,17 @@ _Verified against vpay `67c90ea5` (2026-09-20) — the merge of
 sensitive claims carry the date they became true — see
 [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
-**Sixteen as of 2026-10-26.** ~~Fifteen.~~ ~~Fourteen.~~ ~~Twelve.~~ It was
+**Seventeen as of 2026-10-27.** ~~Sixteen.~~ ~~Fifteen.~~ ~~Fourteen.~~ ~~Twelve.~~ It was
 twelve until 2026-09-17, when [#201](https://github.com/vaam-apps/vpay/pull/201)
 appended `verify-versions`; [#187](https://github.com/vaam-apps/vpay/pull/187)
 appended `verify-privacy-inventory` and made it fourteen on 2026-09-18;
 [#233](https://github.com/vaam-apps/vpay/pull/233) appends `verify-doc-counts`
 and makes it fifteen on 2026-09-20; issue #150 / ADR-0034 appends
-`verify-security-inventory` and makes it sixteen on 2026-10-26.
+`verify-security-inventory` and makes it sixteen on 2026-10-26; and
+[#377](https://github.com/vaam-apps/vpay/pull/377) (ADR-0033 D8) appends
+`verify-mcp-parity` and makes it seventeen on 2026-10-27. #377 had added it as
+the sixteenth on a branch that predated #356, and renumbered itself on merge,
+by the rule below.
 
 > **Read the recipe, not the prose — and here is the authority rule caught in
 > the act.** Measured on `master` `aeb9e242` (2026-09-18), a full day after
@@ -28,17 +32,17 @@ and makes it fifteen on 2026-09-20; issue #150 / ADR-0034 appends
 > a live defect. `AGENTS.md` predicted it about itself: "it has gone stale at
 > nearly every count it has carried".
 
-`just verify` runs sixteen gates and then one report:
+`just verify` runs seventeen gates and then one report:
 
 ```text
 verify: verify-no-mocks verify-status verify-errors verify-sdk-parity \
         verify-links verify-npm-scope check-schema verify-serde \
         verify-repositories verify-toolchain verify-ui verify-migrations \
         verify-versions verify-privacy-inventory verify-doc-counts \
-        verify-security-inventory verify-docs
+        verify-security-inventory verify-mcp-parity verify-docs
 ```
 
-Fourteen are `cargo xtask` subcommands implemented in `.xtask/src/main.rs`;
+Fifteen are `cargo xtask` subcommands implemented in `.xtask/src/main.rs`;
 `check-schema` and `verify-ui` are shell in the `justfile`. CI's `self-checks`
 job runs exactly this list in exactly this order, and that job has no
 `changes` gating — **it runs on every push and every pull request**.
@@ -52,9 +56,9 @@ on 2026-09-05 and `verify-versions`/`verify-privacy-inventory` did on
 2026-09-17. It is resolved the same way both times: both, in the order they
 landed, and whichever lands second renumbers itself.
 
-`cargo xtask verify-all` chains the fourteen xtask gates,
-`verify-doc-counts` included since 2026-09-20 and `verify-security-inventory`
-since 2026-10-26. It excludes `verify-citations` (network) and cannot
+`cargo xtask verify-all` chains the fifteen xtask gates,
+`verify-doc-counts` included since 2026-09-20, `verify-security-inventory`
+since 2026-10-26 and `verify-mcp-parity` since 2026-10-27. It excludes `verify-citations` (network) and cannot
 run `check-schema` or `verify-ui`, which are shell. `just verify` is the real
 list; `verify-all` is a convenience.
 
@@ -726,7 +730,7 @@ is a hard failure, not a skip:**
 `verify-docs` exactly the way the recipe's own closing `@echo` does — so
 `docs/status.md`'s "the gate tally" sentence in **vpay itself** (not this
 skills repository, which `verify-doc-counts` never reads) carries
-`count:verify-gates` and must read sixteen.
+`count:verify-gates` and must read seventeen (sixteen until 2026-10-27).
 
 **Frozen archives are skipped entirely, by directory name:** `docs/plans/`
 and `docs/status/verification/` — dated records where a number that was true
@@ -770,7 +774,7 @@ the `# Errors` and `# Panics` sections** that ADR-0011 and rustdoc depend on. A
 number that is read is worth more here than a number that is enforced.
 
 It is last so the report a human reads is the final thing on the terminal. The
-`verify: ok` line the recipe prints afterwards means the sixteen gates passed
+`verify: ok` line the recipe prints afterwards means the seventeen gates passed
 and says nothing about the numbers `verify-docs` printed.
 
 ## 16. `verify-security-inventory`
@@ -800,7 +804,37 @@ rename a cited test; write a plausible-looking config path that `vpay-config`
 does not declare; or mark a control `implemented` while its evidence path is
 only aspirational.
 
-## `verify-citations` — a gate, but not one of the sixteen
+## 17. `verify-mcp-parity`
+
+_The seventeenth gate, 2026-10-27 (vaam-apps/vpay#377, ADR-0033 D8). It makes
+the merchant MCP endpoint's parity with `/v1` a gate rather than a promise._
+
+**Refuses:** a route in `V1_ROUTES` (`backends/crates/vpay-api/src/v1/mod.rs`)
+with no row in `docs/api/mcp-parity.md`, or two rows for one route; a row
+naming a route `V1_ROUTES` does not mount; a row whose answer is
+`` tool `name` `` for a tool `schemas/vpay.cstack` does not declare with
+`@mcp(tool: …)`; a gap that is not `gap YYYY-MM-DD: reason`, or an exclusion
+with no reason; and a declared tool that no row names. Both directions.
+
+**Does not check:** that a tool behaves like its route. That is
+`backends/tests/integration/tests/mcp_merchant.rs`, against a real Postgres.
+
+**Implements:** `cargo xtask verify-mcp-parity`, `verify_mcp_parity` in
+`.xtask/src/main.rs`, with three unit tests in `mcp_parity_tests`. CI's
+`self-checks` job runs it through `just verify-mcp-parity`. That step was
+missing from the job on the PR's first pushes, and was added before merge.
+Printed on 2026-10-27: "37 /v1 route(s), each with one row in
+docs/api/mcp-parity.md: 9 served by a tool, 28 dated gap(s), 0 excluded; all 9
+declared tool(s) named".
+
+**How you trip it:** add a `/v1` route without a parity row, the usual way;
+add an `@mcp(tool)` procedure without naming it in the table; or write a gap
+without a date. **A gotcha seen 2026-10-27:** with two vpay worktrees sharing
+one `CARGO_TARGET_DIR`, `cargo xtask verify-mcp-parity` can run the other
+worktree's stale xtask binary and answer `xtask: unknown command`. Touch
+`.xtask/src/main.rs` or use separate target dirs.
+
+## `verify-citations` — a gate, but not one of the seventeen
 
 `just docs-check-citations` → `cargo xtask verify-citations`. ~~The thirteenth
 gate.~~ **Renumbered 2026-09-18:** `verify-versions` and
@@ -808,8 +842,10 @@ gate.~~ **Renumbered 2026-09-18:** `verify-versions` and
 one was never in the list they are in anyway. **Renumbered again 2026-09-20:**
 `verify-security-inventory` took the sixteenth place, pushing `verify-docs` — the
 report, not a gate — to being the **sixteenth** thing `just verify` prints,
-and `verify-citations` to the **seventeenth**, exactly as `justfile`'s own
-header now says. It is **not** in `just verify` and **not** in `just ci`,
+and `verify-citations` to the **seventeenth**. **And again 2026-10-27:**
+`verify-mcp-parity` is the seventeenth gate, so `verify-docs` is the eighteenth
+thing printed and `verify-citations` the nineteenth, as vpay's `justfile`
+header says. It is **not** in `just verify` and **not** in `just ci`,
 because it needs the network and an authenticated `gh`. It is deliberately
 excluded from `cargo xtask verify-all` too.
 

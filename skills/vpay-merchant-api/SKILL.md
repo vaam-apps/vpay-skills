@@ -1,25 +1,32 @@
 ---
 name: vpay-merchant-api
-description: The vpay HTTP surface — the /v1 merchant API, its route tables, OAuth2 private_key_jwt auth (there are no API keys), the mandatory Idempotency-Key, the Stripe-shaped error envelope, and the routes that are declared in the wire contract but mounted nowhere. Load this before adding, changing, removing or calling any HTTP route, before touching authentication or scopes, and before writing anything that returns an error to a merchant.
+description: The vpay HTTP surface — the /v1 merchant API and its route tables, the signed transport that authenticates it (a COSE_Sign1 message under a registered Ed25519 key; no tokens, no API keys), the merchant MCP endpoint at /mcp/v1, the mandatory Idempotency-Key, the Stripe-shaped error envelope, and the routes declared in the wire contract but mounted nowhere. Load this before adding, changing, removing or calling any HTTP route or MCP tool, before touching authentication or scopes, and before writing anything that returns an error to a merchant.
 ---
 
 # The vpay HTTP surface
 
-> **Verified against vpay `87166eaf` (2026-10-09).** Version-sensitive claims below
+> **Verified against vpay `f885170c` (2026-10-27).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
 
-Four nests, one router function: `vpay_api::router` in
-`backends/crates/vpay-api/src/lib.rs`.
+One router function, `vpay_api::router` in
+`backends/crates/vpay-api/src/lib.rs`, mounts these nests:
 
-| Nest          | Who calls it        | Authenticated by                        |
-| ------------- | ------------------- | --------------------------------------- |
-| `/v1`         | a merchant's server | bearer token (`require_merchant_token`) |
-| `/v1/oauth`   | a merchant's server | the request body _is_ the credential    |
-| `/v1/browser` | a payer's browser   | publishable key + a `client_secret`     |
-| `/provider`   | a payment rail      | **nothing at all** — by design          |
-| `/dash/v1`    | the staff dashboard | staff session → authorization code      |
+| Nest          | Who calls it                 | Authenticated by                                                                                            |
+| ------------- | ---------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `/v1`         | a merchant's server          | a **COSE_Sign1 message** under the merchant's registered Ed25519 key (`EnvelopeLayer`, since 2026-10-26)    |
+| `/v1/oauth`   | a merchant's agent host      | the request body _is_ the credential; since 2026-10-26 it mints tokens for `/mcp/v1` only, until VP-4       |
+| `/mcp/v1`     | a merchant's **agent** (MCP) | a bearer token from `/v1/oauth` whose audience is the MCP resource (since 2026-10-27, opt-in surface `mcp`) |
+| `/v1/browser` | a payer's browser            | publishable key + a `client_secret`                                                                         |
+| `/provider`   | a payment rail               | **nothing at all** — by design                                                                              |
+| `/dash/v1`    | the staff console            | a COSE_Sign1 message under a paired console key (since 2026-10-27, vpay#383)                                |
+| `/svc/v1`     | a service (vaam)             | a COSE_Sign1 message under a `service_clients` key (since 2026-10-27, vpay#383)                             |
+
+_(Until 2026-10-27 this table had five rows and said `/v1` was authenticated by
+a bearer token (`require_merchant_token`) and `/dash/v1` by a staff session.
+vaam-apps/vpay#380 replaced the first and #383 the second; neither mechanism
+exists any more. `/mcp/v1` and `/svc/v1` are new.)_
 
 `/livez` and `/metrics` are on a **different port** (`vpay_api::observability`)
 and deliberately not on this router. `/healthz` is, and answers bare text
@@ -28,8 +35,8 @@ not an error envelope.~~ _(Corrected 2026-09-23: there are others —
 `/v1/oauth/token`'s RFC 6749 body, and axum's `405` and tower-http's `413`;
 see [references/errors.md](references/errors.md).)_
 
-`/dash/v1` belongs to the `vpay-dashboard` skill; the table here lists it for
-completeness.
+`/dash/v1` and `/svc/v1` belong to the `vpay-dashboard` skill; the table here
+lists them for completeness.
 
 **Which nests a process mounts depends on `deployment.surfaces`**, since
 2026-09-16 (ADR-0022, vpay#183; the ADR's status is still _Proposed_). This
@@ -37,7 +44,11 @@ page did not say so until 2026-09-23. `business` mounts `/v1`, `/v1/browser`,
 `/provider` and `POST /v1/oauth/token`. `management` mounts `/dash/v1` and the
 staff routes. Either surface mounts `/v1/oauth`'s discovery and JWKS, and
 `/healthz` is always mounted. An absent key means both surfaces
-(`EnabledSurfaces::ALL`), and an empty list is a boot error. A nest the
+(`EnabledSurfaces::ALL`), and an empty list is a boot error. **A third value,
+`mcp`, exists since 2026-10-27 (vaam-apps/vpay#377, ADR-0033) and is opt-in
+only:** it is not in `EnabledSurfaces::ALL`, so an absent key never mounts
+`/mcp/v1`, and nothing in the Helm chart or compose sets it (ADR-0033 step 6 is
+not built). A pod serving it needs `surfaces: [business, mcp]` or `[mcp]`. A nest the
 process does not mount gets the outer honest `404`, not a refusal. So a
 `404 unknown_route` from a pod can mean "wrong tier" as well as "no such
 route".
@@ -72,33 +83,64 @@ point.
 Full table for all four surfaces, plus the middleware order and why it is
 load-bearing: [references/routes.md](references/routes.md).
 
-## Authentication: OAuth2, and there are no API keys
+## Authentication: a signed message, and there are no tokens or API keys
 
-`/v1` takes `Authorization: Bearer <access_token>`. A merchant gets one by
-minting an RFC 7523 `client_assertion` signed with their own private key and
-POSTing it to `/v1/oauth/token` (`client_credentials` + `private_key_jwt`,
-ADR-0010). The issuer is derived in one place, `vpay_api::op::issuer_for`, as
-`{deployment.public_base_url}/v1/oauth`.
+**Since 2026-10-26 (vaam-apps/vpay#380, VP-3/VP-5/VP-7, ADR-0035), every `/v1`
+request is a COSE_Sign1 message** signed by an Ed25519 key registered in
+`merchant_clients[].cose_keys`, and every answer is a COSE_Sign1 message signed
+by one of vpay's two response keys (`VPAY_ENVELOPE_SIGNING_KEY_FILE`,
+`..._NEXT_FILE`), which every client pins. It is cratestack's `EnvelopeLayer`,
+mounted on the `/v1` router before it is nested, in mode `Required`. The
+signature binds the audience (`deployment.public_base_url`), method, route
+template, path parameters, canonical query, the operation's contract digest
+(`vpay-wire`'s table of 37), the payload type and the `Idempotency-Key`. A GET
+has a body: the message. Mechanism, key rotation and the replay cache
+(`envelope_nonces`, migration `0055`): vpay `docs/flows/signed-transport.md`.
+
+- **There is no bearer token on `/v1` at all.** `Authorization` is not read;
+  a token of any audience is the same coarse `401` as no signature. `curl`
+  cannot make a request — `sdks/nodejs/scripts/vpay-call.mjs` makes one signed
+  call from a shell.
+- **Every refusal before the handler is one coarse, unsigned `401`, identical
+  bytes for every cause** (unknown key, disabled client, bad signature, wrong
+  audience, a clock more than 300 s off, a replay). It is no longer the Stripe
+  envelope: it is `{"code": "UNAUTHORIZED", …}`. Errors **after** the layer
+  (validation, `403`, `404`, `409`) are still the Stripe-shaped envelope,
+  sealed. Diagnose a `401` from the table in `signed-transport.md` § "What a
+  refusal looks like", because the response will not tell you.
+- The SDKs map an unsigned answer to `Error::Unsigned` /
+  `VpayUnsignedResponseError` and one that fails the pinned keys to
+  `Error::Unverified` / `VpayUnverifiedResponseError` (see `vpay-sdks`).
+
+_(Until 2026-10-27 this section said `/v1` takes `Authorization: Bearer
+<access_token>` minted at `/v1/oauth/token` by `client_credentials` +
+`private_key_jwt` (ADR-0010). That stopped being true on 2026-10-26. The OP
+still exists — see "The OP, now only for `/mcp/v1`" below — but nothing on
+`/v1` consults it.)_
 
 **Do not reach for an API key.** `backends/migrations/0008_create-merchant-api-keys.sql`
 was dropped by `0009_drop-merchant-api-keys.sql`: API keys are a deliberately
 deleted design, not a missing feature. Publishable keys (`pk_test_…`) exist,
 authorise nothing, and are not secrets — they name a tenant on `/v1/browser`.
 
-`require_merchant_token` is mounted **in front of the whole nest, never
-per-handler**. That is what makes it impossible to add a `/v1` handler without
-it; the failure mode of a per-handler check is a handler that simply has none.
-The cost is that the rule only sees the method, which is why scopes are
-per-method.
+The layer is mounted **in front of the whole nest, never per-handler**, and
+`vpay_api::envelope::scope` (the step after it) turns the verified signer into
+the merchant, its tenant and its YAML scopes. That is what makes it impossible
+to add a `/v1` handler without authentication; the failure mode of a
+per-handler check is a handler that simply has none. The scope step only sees
+the method, which is why scopes are per-method. _(`require_merchant_token`,
+which this paragraph named until 2026-10-27, was deleted by vpay#380.)_
 
-It puts two things on the request: the validated `ResourceClaims` and a
-`MerchantScope`. **`MerchantScope` has a private field and no public
-constructor** — a handler cannot invent a tenant to query by. There is no
+It puts a `MerchantScope` on the request (`MerchantScope::for_signed`).
+**`MerchantScope` has a private field and no public constructor** — a handler
+cannot invent a tenant to query by. Its `pub(crate)` constructors are named for
+their callers (`for_signed`, `for_payer`, `for_dashboard`, and `for_mcp` for an
+MCP tool call). There is no
 `merchants` table and so no foreign key that would catch an unscoped query, so
 that type is the whole tenancy boundary. Repository methods on this path take a
 `merchant_id` and have no unscoped variant.
 
-### Merchant Ed25519 keys: registered, and read by no request (since 2026-10-26)
+### Merchant Ed25519 keys: what `cose_keys` is (since 2026-10-26)
 
 _vaam-apps/vpay#379 (VP-2), shipped in v0.15.0. Source: vpay
 `docs/status/backend.md`, "Merchant Ed25519 keys are registered…", and
@@ -121,17 +163,31 @@ _vaam-apps/vpay#379 (VP-2), shipped in v0.15.0. Source: vpay
   does not move it. `vpay_api::v1::contracts` tests the table against
   `V1_ROUTES` in both directions.
 
-**None of it is on a request path.** `/v1` still takes the bearer token above,
-and `jwks` is still required. `require_merchant_token` is unchanged. There is
-no `EnvelopeLayer`, no server signing key and no nonce table, and both SDKs'
-token path is untouched. **Do not tell a merchant to sign requests with these
-keys, and do not describe the signed transport as built.** That is VP-3
-onward, and none of it is in v0.15.0. ADR-0010 is not superseded.
+~~**None of it is on a request path.** `/v1` still takes the bearer token
+above, and `jwks` is still required. … **Do not tell a merchant to sign
+requests with these keys, and do not describe the signed transport as built.**
+That is VP-3 onward, and none of it is in v0.15.0. ADR-0010 is not
+superseded.~~ **Corrected 2026-10-27:** that was true of v0.15.0 (VP-2,
+vaam-apps/vpay#379) and stopped being true one PR later. Since vpay#380
+(2026-10-26) the resolver above is what the `EnvelopeLayer` verifies every
+`/v1` request against, the server signing keys and `envelope_nonces` exist,
+and both SDKs sign. **An empty `cose_keys` now means the merchant cannot call
+`/v1` at all.** `jwks` is still required in a registration and still read, but
+only by the OP (below), until VP-4.
 
-### What can go wrong signing in, and two limitations nobody has decided
+### The OP, now only for `/mcp/v1`, and two limitations nobody has decided
 
-_Added 2026-09-29, from `docs/flows/merchant-auth/verification-and-limits.md`
-(the page this skill did not cover before); nothing here was re-run._
+**Since 2026-10-26 this applies to `/mcp/v1` tokens only.** The OP
+(`/v1/oauth/token`, `client_credentials` + `private_key_jwt`, ADR-0010) is
+still mounted on the business surface, and since vpay#377 it is the only way
+to get a token for the MCP endpoint. Nothing on `/v1` reads what it mints.
+**VP-4 plans to retire it, and nothing replaces it for `/mcp/v1` yet** —
+ADR-0033's "Left to the maintainer" item 4. Do not delete the OP, or its
+`jwks` and `oauth_client_assertion_jtis`, without that decision.
+
+_Added 2026-09-29, from `docs/flows/merchant-auth/verification-and-limits.md`;
+nothing here was re-run. Read "`/v1` route" below as history: it was true until
+2026-10-26._
 
 - **Failures and where they surface**: a wrong private key, an unregistered
   `kid` or a mistyped `client_id` is `401`/`400` `invalid_client` from the token
@@ -192,24 +248,29 @@ _Added 2026-09-29, from `docs/flows/merchant-auth/verification-and-limits.md`
 Two strings, defined once in `vpay_api::v1`: `SCOPE_PAYMENTS_WRITE`
 (`payments:write`) and `SCOPE_PAYMENTS_READ` (`payments:read`).
 `required_scopes(method)` is **fail-closed** — `GET`/`HEAD` accept either;
-everything else, including verbs no route answers, requires write.
+everything else, including verbs no route answers, requires write. Since
+2026-10-26 the scopes are the signer's registered `scopes:` from YAML, read by
+`vpay_api::envelope::scope`; there is no token to carry them.
 
-| Situation                                       | Answer                                                   |
-| ----------------------------------------------- | -------------------------------------------------------- |
-| no bearer token                                 | `401` `missing_bearer_token`                             |
-| valid token, no scope for this method           | `403` `forbidden`                                        |
-| valid token, `client_id` in no registration     | `403` — the token is genuine, the _registration_ is gone |
-| valid token, object belongs to another merchant | `404`, byte-identical to a nonexistent id                |
-| authenticated, path has no route                | `404` `unknown_route`                                    |
+| Situation (since 2026-10-26)                             | Answer                                                         |
+| -------------------------------------------------------- | -------------------------------------------------------------- |
+| unsigned, unknown key, disabled client, replay, …        | `401`, coarse and **unsigned**, identical bytes for every case |
+| verified signer, no scope for this method                | `403` `forbidden`, sealed                                      |
+| verified signer, client disabled between the two lookups | `403` `forbidden`, sealed                                      |
+| verified signer, object belongs to another merchant      | `404`, byte-identical to a nonexistent id                      |
+| a path or method that is no operation                    | `404` `unknown_route`, the honest one, not a `401`             |
+
+_(Until 2026-10-27 the first row said "no bearer token → `401`
+`missing_bearer_token`", and the second and third said "valid token". Neither
+error code nor token exists on `/v1` now.)_
 
 The rule to internalise: a statement about the **credential** is 403 (the
-caller can inspect their own token); a statement about an **object** is a
+caller can see its own registration); a statement about an **object** is a
 uniform 404, because anything else is an enumeration oracle.
 
-A token request naming no `scope` is granted the client's registered `scopes:`
-from YAML (RFC 6749 §3.3's "locally defined default", applied in
-`op::token::token_handler`). Both SDKs omit `scope`, so every SDK call takes
-that path.
+For `/mcp/v1` only: a token request naming no `scope` is granted the client's
+registered `scopes:` (RFC 6749 §3.3's "locally defined default", applied in
+`op::token::token_handler`).
 
 ## Errors: derive, never decide
 
@@ -243,6 +304,94 @@ merchant's retry and a second payout.** Unlike a charge, which
 `one_charge_per_intent` makes unrepeatable, nothing in the schema forbids two
 refunds of one intent — two partial refunds are a legitimate thing a merchant
 does. Do not weaken or bypass the claim on that route.
+
+## The merchant MCP endpoint, `/mcp/v1` (since 2026-10-27)
+
+_vaam-apps/vpay#377, ADR-0033 step 3 (ADR-0033 is still **Proposed**). Source:
+vpay `docs/flows/mcp.md`, `docs/api/mcp-parity.md`,
+`docs/reference/vpay-api/mcp.md`, `docs/security/threat-models/mcp.md`._
+
+`POST /mcp/v1` speaks MCP revision `2026-07-28` over Streamable HTTP to a
+merchant's **agent**. It is mounted only when `deployment.surfaces` names
+`mcp` (above), so a default deployment does not have it.
+
+- **Nine tools, as of 2026-10-27:**
+  - `create_payment_intent`, `retrieve_payment_intent`,
+    `confirm_payment_intent` and `cancel_payment_intent`;
+  - `create_refund`, `retrieve_refund` and `cancel_refund`;
+  - `search_payment_intents` and `search_refunds`, the dashboard's existing
+    search procedures. These page by `offset`/`limit` and return
+    database-shaped summary rows, not the `/v1` list object.
+
+  The other **28** `/v1` routes are dated gaps in `docs/api/mcp-parity.md`:
+  customers, checkout sessions, invoices, invoice items, events, account
+  holders and the refund metadata update. **Do not tell an agent a tool exists
+  for them.**
+
+- **A tool runs the `/v1` operation, never a copy of it.** The tools are
+  `@mcp(tool)` procedures in `schemas/vpay.cstack`. Each write's body calls the
+  `MerchantOperations` port (`vpay-db`). `vpay-api` implements that port
+  (`mcp::MerchantOps`) by running the route's own `*_with` function, which
+  vaam-apps/vpay#375 split out of each handler. It passes a
+  `PostRequest::for_tool` whose parameters are what the form body would have
+  decoded to, so validation, idempotency and the rail call are `/v1`'s. **A
+  new rule belongs in the `*_with` function, where both surfaces get it**, not
+  in the procedure body.
+- **`idempotency_key` is a required argument on every write.** It is claimed
+  in the same per-merchant `idempotency_keys` store, under
+  `("MCP", "tool/<name>", hash of the arguments)`. A replay returns the first
+  answer; the same key with different arguments is `idempotency_key_in_use`.
+- **Shapes differ from `/v1` in named places, because MCP schemas take no free
+  JSON:**
+  - `metadata` is `[{key, value}]`;
+  - confirm's payer fields are `payer_fields: [{name, value}]`;
+  - outputs rename `next_action.type` to `kind` and
+    `payment_method_details.type` to `method_type`;
+  - outputs carry no `object` and no `client_secret`.
+
+  A refusal is an `isError` result whose message starts with `/v1`'s own
+  `error.code` and `(param)`.
+
+- **Authentication is a bearer token, unlike `/v1`.**
+  - A merchant opts in by adding `{public_base_url}/mcp/v1` to its
+    registration's `allowed_audiences`.
+  - Its agent gets a token from `/v1/oauth/token` (`client_credentials` +
+    `private_key_jwt`) with `audience=` or RFC 8707 `resource=` set to that
+    URL. The OP honours `resource` since vpay#377; it silently dropped it
+    before.
+  - `mcp::MerchantMcpAuth` validates the audience, maps the client to its
+    merchant (`MerchantScope::for_mcp`), and lets a write through only for
+    `payments:write`.
+  - A token for any other audience is `401` with an RFC 9728 challenge naming
+    `/.well-known/oauth-protected-resource/mcp/v1`.
+  - A foreign `Origin` is refused.
+- **CrateStack's generated `procedure_router` mounts every procedure**, so the
+  merchant writes would also be routable on `/dash/v1/$procs`. Three things
+  stop that, and **removing any of them is a defect**:
+  - `only_dashboard_procedures` in `vpay-api/src/lib.rs` allowlists the five
+    searches;
+  - each write's `@allow` needs `audience == "merchant"`;
+  - the dashboard's registry has no port.
+
+  The generated `@vpay/dash-client` still lists the seven procedures.
+
+- **A gate keeps it honest:** `cargo xtask verify-mcp-parity` (the
+  seventeenth `just verify` gate, see `vpay-tooling`) fails on a `/v1` route
+  with no row in `docs/api/mcp-parity.md`, on an undated gap, and on a declared
+  tool no row names. **A `/v1` route you add needs a parity row in the same
+  change.**
+- **Not built, as of 2026-10-27:**
+  - **No MCP resources.** ADR-0033 D5's `jsonb` measurement was never made.
+  - **No staff endpoint.** It waits on an upstream CrateStack per-audience
+    feature. Its auth design is also open: ADR-0033 assumed the staff OAuth
+    that vpay#383 deleted.
+  - **No Helm or compose workload.**
+  - **No real MCP client or agent host has called it.** The suite speaks
+    JSON-RPC over HTTP.
+  - **No MCP case drives a confirm to `succeeded`.**
+  - **No per-merchant amount ceiling.** That is the maintainer's call.
+  - **Nothing issues its tokens once VP-4 retires the OP.** That is an open
+    decision.
 
 ## `customer` on the lists — a filter, never a lookup
 
@@ -407,7 +556,10 @@ vpay fixed them). Fix the doc in the same commit if you touch the area.
 
 A `/v1` route change is not done until the SDKs agree: `cargo xtask
 verify-sdk-parity` refuses an SDK capability with no row in
-`docs/sdks/parity.md`, and a row naming no capability. Then
+`docs/sdks/parity.md`, and a row naming no capability. Since 2026-10-27 it is
+also not done until `docs/api/mcp-parity.md` has a row for it
+(`cargo xtask verify-mcp-parity`), and since 2026-10-26 until `vpay-wire`'s
+operation table has it, because a route with no operation cannot be signed. Then
 `docs/status/backend.md`, then the flow page.
 
 Wire objects, fields, id prefixes and validation bounds:

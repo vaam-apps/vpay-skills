@@ -1,5 +1,57 @@
 # Changelog
 
+## 2026-10-27 — the merchant MCP endpoint, the signed `/v1`, and the paired-key console
+
+Read against vpay `f885170c` (2026-10-27). Three vpay changes landed with no
+skill change of their own, and `verify-coverage` against vpay `master` failed
+on all three:
+
+- **vaam-apps/vpay#374, #375 and #377: the merchant MCP endpoint** (ADR-0033,
+  Proposed). New flow page `docs/flows/mcp.md`, a new route `POST /mcp/v1`, and
+  a seventeenth gate.
+- **vaam-apps/vpay#380: `/v1` is a signed message** (ADR-0035). New flow page
+  `docs/flows/signed-transport.md`. Bearer tokens on `/v1` are gone.
+- **vaam-apps/vpay#383: the console signs with a paired key** (ADR-0036). Five
+  `docs/flows/dashboard-auth/` pages and the staff SSO code this repository
+  claimed were deleted.
+
+What changed:
+
+- **`vpay-merchant-api`:**
+  - the nest table gains `/mcp/v1` and `/svc/v1`;
+  - "Authentication" is rewritten for the signed transport, including its
+    coarse unsigned `401`;
+  - the Ed25519-keys section is corrected;
+  - the OP section is reframed as `/mcp/v1`-only, with VP-4's open question;
+  - the scopes table is rewritten;
+  - a new section "The merchant MCP endpoint" covers the nine tools, the
+    opt-in, `idempotency_key`, the shapes, the three `$procs` defences, the
+    parity gate, and what is not built;
+  - `references/routes.md` and `references/errors.md` follow.
+- **`vpay-tooling`:**
+  - seventeen gates, with a `verify-mcp-parity` row and section;
+  - CrateStack is `0.16.0` with `mcp` in its features (this said `0.15.0`);
+  - `expected_suites` is 55, with its four moves on 2026-10-26/27;
+  - `wasm-bindgen` 0.2.128 and the wasm32 target are now on `lint-web`'s path.
+- **`vpay-sdks`:** both merchant SDKs seal, assertion minting is deleted, and
+  `references/stripe-compat.md` documents `createStripeHttpClient`, which
+  replaced `createStripeAuthenticator`.
+- **`vpay-ops`** (`references/configuration.md`): the two envelope key files.
+- **`vpay`:** the routing table, and one paragraph naming the three changes.
+- `coverage.json`: `vpay-merchant-api` claims `docs/flows/mcp.md`,
+  `docs/flows/signed-transport.md`, ADR-0033, ADR-0035 and the MCP and
+  envelope code and tests.
+
+### Stopped being true
+
+- "`/v1` takes `Authorization: Bearer <access_token>`", and every row built on
+  it (`missing_bearer_token`, "valid token, …"). Since 2026-10-26 `/v1` takes
+  no token at all.
+- "Merchant Ed25519 keys: registered, and read by no request" and "Do not
+  describe the signed transport as built". This repository's own previous
+  release said both, and vpay#380 built the transport one PR later.
+- "sixteen gates" and "`0.15.0` since 2026-09-29".
+
 ## 2026-10-26 — vpay v0.15.0: cratestack 0.16.0 pins, and the merchant Ed25519 key registry
 
 Read against vpay v0.15.0 (`de8a7b72`). Two v0.15.0 changes had no skill

@@ -97,9 +97,18 @@ shape on the TypeScript side — it declares a `compat` script and no `test`
 script, so `pnpm -r test` skips it.
 
 **The census `verify-ignored` enforces** (variables in `justfile`, read with
-`just --evaluate`): `expected_suites` = 48 test binaries (51 on `master` at
-`b8be107`; 52 with the Notch Pay adapter, 2026-10-20; 53 at `d14cbe9`, where
-the Notch Pay sandbox probe's unit tests became one), `expected_ignored` =
+`just --evaluate`): `expected_suites` = **55 test binaries at vpay `f885170c`
+(2026-10-27)**. It was 48 when this sentence was first written, 51 on `master` at
+`b8be107`, 52 with the Notch Pay adapter (2026-10-20), and 53 at `d14cbe9`, where
+the Notch Pay sandbox probe's unit tests became one. On 2026-10-26 and
+2026-10-27 it moved four times:
+
+- 54 → 55 with `vpay-wire` (VP-2);
+- 55 → 56 with the signed `/v1` (VP-3/5/7);
+- 56 → 54 when VP-6a deleted the staff sign-in suites (#383);
+- 54 → 55 with `mcp_merchant.rs` (#377).
+
+The `justfile` comment above the variable carries each move. `expected_ignored` =
 0, `min_tests` = 1080 (a floor, deliberately set under the measured count —
 1772 as of the last measurement — so it is not a number people bump
 reflexively). On failure the recipe prints the binary listing, which is how "a
@@ -111,18 +120,18 @@ Subsets: `cargo nextest run -p <crate>`, `cargo nextest run -E 'test(name)'`,
 
 ## Verify, lint and format
 
-| Recipe                | Does                                                                                                                                                               |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `just verify`         | the sixteen gates (2026-10-26; fifteen until 2026-10-26, fourteen until 2026-09-18, twelve until 2026-09-17) + the `verify-docs` report — see [gates.md](gates.md) |
-| `just lint`           | `fmt-check` `clippy` `lint-web`                                                                                                                                    |
-| `just fmt`            | `cargo fmt --all`; `pnpm exec prettier --write .`                                                                                                                  |
-| `just fmt-check`      | `fmt-check-rust` + `fmt-check-web`                                                                                                                                 |
-| `just fmt-check-rust` | `cargo fmt --all -- --check`                                                                                                                                       |
-| `just fmt-check-web`  | `pnpm exec prettier --check .`                                                                                                                                     |
-| `just clippy`         | `cargo clippy --workspace --all-targets -- -D warnings`                                                                                                            |
-| `just lint-web`       | depends on `build-sdk-node`; `pnpm -r typecheck` then `pnpm -r lint`                                                                                               |
-| `just deny`           | `cargo deny check`                                                                                                                                                 |
-| `just audit-web`      | two `pnpm audit` runs, `--prod` first then the whole workspace                                                                                                     |
+| Recipe                | Does                                                                                                                                                                                           |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `just verify`         | the seventeen gates (2026-10-27; sixteen until 2026-10-27, fifteen until 2026-10-26, fourteen until 2026-09-18, twelve until 2026-09-17) + the `verify-docs` report — see [gates.md](gates.md) |
+| `just lint`           | `fmt-check` `clippy` `lint-web`                                                                                                                                                                |
+| `just fmt`            | `cargo fmt --all`; `pnpm exec prettier --write .`                                                                                                                                              |
+| `just fmt-check`      | `fmt-check-rust` + `fmt-check-web`                                                                                                                                                             |
+| `just fmt-check-rust` | `cargo fmt --all -- --check`                                                                                                                                                                   |
+| `just fmt-check-web`  | `pnpm exec prettier --check .`                                                                                                                                                                 |
+| `just clippy`         | `cargo clippy --workspace --all-targets -- -D warnings`                                                                                                                                        |
+| `just lint-web`       | depends on `build-sdk-node`; `pnpm -r typecheck` then `pnpm -r lint`                                                                                                                           |
+| `just deny`           | `cargo deny check`                                                                                                                                                                             |
+| `just audit-web`      | two `pnpm audit` runs, `--prod` first then the whole workspace                                                                                                                                 |
 
 Two recipes joined that list in 2026-09-17/18 and each is runnable on its own,
 offline, in seconds — reach for them directly rather than the whole of
@@ -175,14 +184,14 @@ test-storybook` are what fail when the config breaks.
 
 ## End to end
 
-| Recipe                       | Does                                                                                                                                            | Needs                                                |
-| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
-| `just test-e2e`              | tears the stack down, `up -d --build --wait`, polls `/healthz` for 120 s, runs the specs, tears down                                            | Docker, network, two image builds                    |
-| `just e2e-specs`             | the Cypress half only, against a stack that is **already up**                                                                                   | a running demo stack                                 |
-| `just stripe-compat`         | brings up `compat_services` only, runs the stripe-node conformance suite                                                                        | Docker                                               |
-| `just sdk-live`              | brings up `compat_services`, runs the Rust `live_invoices` suite **and** `pnpm --filter @vaam-apps/vpay-sdk test:live`; **leaves the stack up** | Docker                                               |
-| `just test-flutter-e2e`      | drives the plugin's own `BrowserClient`/`SheetController` against a real stack, real `private_key_jwt`, real `cs_…` sessions                    | `curl docker jq node pnpm`, and `just demo-up` first |
-| `just test-flutter-emulator` | drives the real native sheet's confirm UI on an Android emulator                                                                                | `adb`, an AVD named `vpay_e2e_avd`, a running stack  |
+| Recipe                       | Does                                                                                                                                                                         | Needs                                                |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| `just test-e2e`              | tears the stack down, `up -d --build --wait`, polls `/healthz` for 120 s, runs the specs, tears down                                                                         | Docker, network, two image builds                    |
+| `just e2e-specs`             | the Cypress half only, against a stack that is **already up**                                                                                                                | a running demo stack                                 |
+| `just stripe-compat`         | brings up `compat_services` only, runs the stripe-node conformance suite                                                                                                     | Docker                                               |
+| `just sdk-live`              | brings up `compat_services`, runs the Rust `live_invoices` suite **and** `pnpm --filter @vaam-apps/vpay-sdk test:live`; **leaves the stack up**                              | Docker                                               |
+| `just test-flutter-e2e`      | drives the plugin's own `BrowserClient`/`SheetController` against a real stack, real signed `/v1` calls (`private_key_jwt` until 2026-10-26, vpay#380), real `cs_…` sessions | `curl docker jq node pnpm`, and `just demo-up` first |
+| `just test-flutter-emulator` | drives the real native sheet's confirm UI on an Android emulator                                                                                                             | `adb`, an AVD named `vpay_e2e_avd`, a running stack  |
 
 Cypress lives in `frontends/tests/e2e` (`@vpay/e2e`). Four specs:
 `checkout.cy.ts`, `dashboard.cy.ts`, `shop-embedded.cy.ts`,
@@ -256,7 +265,7 @@ and `check-tauri-mobile` needs an Android and an Apple target the image has
 no toolchain for. Adding either is a runner-image change — the maintainer's
 call, not a recipe's. So **every Rust count this repository quotes for this
 crate is a human running a recipe by hand**, exactly as with Flutter above.
-The justfile's gate tally is unchanged at sixteen: none of these is a gate.
+The justfile's gate tally is unchanged by them (seventeen as of 2026-10-27): none of these is a gate.
 
 `rustup target add aarch64-linux-android aarch64-apple-ios` before
 `check-tauri-mobile`. It sets no `IPHONEOS_DEPLOYMENT_TARGET` on purpose —
