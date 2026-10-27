@@ -7,7 +7,8 @@ carry the date they became true — see [VERSIONING.md](https://github.com/vaam-
 
 `vpay-db` compiles `schemas/vpay.cstack` with CrateStack's
 `include_server_schema!` macro
-(`cratestack = { package = "cratestack-pg", version = "=0.16.0", features = ["postgres", "envelope", "cose"] }`
+(`cratestack = { package = "cratestack-pg", version = "=0.16.0", features = ["postgres", "envelope", "cose", "mcp"] }`;
+`mcp` since 2026-10-27 for the merchant MCP endpoint, vaam-apps/vpay#377; the rest
 since 2026-10-26, vaam-apps/vpay#376; ~~`=0.15.0`~~ from 2026-09-29,
 vaam-apps/vpay#259; ~~`=0.12.0`~~ before that. Each was a version bump, not a
 feature: `schemas/vpay.cstack` needed no edit either time. 0.16.0 turns on

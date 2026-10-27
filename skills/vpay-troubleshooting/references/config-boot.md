@@ -31,7 +31,12 @@ cause. In order (`docs/flows/configuration.md`):
 
 1. Signal handlers and the rustls crypto provider.
 2. **Load and validate the YAML.** Missing or invalid `--config` / `VPAY_CONFIG`
-   → `78`, before any network round trip.
+   → `78`, before any network round trip. **Since 2026-10-27 (vaam-apps/vpay#383)
+   this includes `ConfigError::RetiredKey`:** a `dashboard_client` or
+   `staff_auth` key anywhere, even `dashboard_client: ~`, is refused by
+   `reject_retired_keys` (`vpay-config/src/config.rs`). Delete the key; do not
+   null it. Since 2026-10-26 a `serve` with a missing, malformed or duplicated
+   envelope key file is a `78` at step 3's stage (vpay#380).
    2b. **Join the YAML's rails against the linked adapters.** A configured rail
    with no linked adapter is `ConfigError::ProviderWithoutAdapter` → `78`, still
    before any network round trip.

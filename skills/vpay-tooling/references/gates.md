@@ -704,6 +704,10 @@ A number a document wants machine-checked carries an HTML comment,
 **27 cases** <!-- count:tokio-tests backends/tests/integration/tests/staff_sign_in.rs -->
 ```
 
+_(The example's file, `staff_sign_in.rs`, was deleted on 2026-10-27 by
+vaam-apps/vpay#383. The syntax is unchanged; a marker pointing at a deleted
+file is what this gate refuses.)_
+
 Same-line placement is load-bearing and it is safe here because
 `.prettierrc.json` sets `proseWrap: "preserve"` — prettier never reflows prose
 in this repository, so a formatter cannot split a marker from the number it

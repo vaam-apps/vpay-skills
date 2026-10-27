@@ -229,12 +229,12 @@ both apps share them. The short list, each a measured false green:
 
 ## End to end
 
-`frontends/tests/e2e/cypress/e2e/` — `checkout.cy.ts`, `shop-hosted.cy.ts`,
-`shop-embedded.cy.ts`, `dashboard.cy.ts`. `pnpm --filter @vpay/e2e e2e` runs
-the suite twice: plain, then with `VPAY_E2E_FRAMED=1`. `just e2e-specs` is what
-supplies every URL and port; the staff password is passed as a **path to a
-file** read in Node, so it never reaches `Cypress.env`, a browser, or a
-`cypress run` argument list.
+`frontends/tests/e2e/cypress/e2e/` — `checkout.cy.ts`, `shop-hosted.cy.ts` and
+`shop-embedded.cy.ts` as of 2026-10-27. `dashboard.cy.ts` was deleted with the
+staff sign-in (vaam-apps/vpay#383; VP-6b restores a dashboard spec), and with it
+the staff-password file this paragraph described. `pnpm --filter @vpay/e2e e2e`
+runs the suite twice: plain, then with `VPAY_E2E_FRAMED=1`. `just e2e-specs` is
+what supplies every URL and port.
 
 Two Node-side fixture servers are started by `cypress.config.ts` itself:
 `checkoutBrowserServer.ts` and `frameFixtureServer.ts`.
