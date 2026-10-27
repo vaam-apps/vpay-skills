@@ -8,7 +8,8 @@ description: "Orientation for working in the vpay repository — a Rust + TypeSc
 > **Verified against vpay `a33aac61` (2026-09-29).** The 2026-10-21 correction
 > in "The one thing to get right" was read against vpay `e28292d`
 > (2026-10-21), the merge of vaam-apps/vpay#310, and its "no webhook received"
-> against vpay `4df5e0d2` (2026-10-24), the merge of vaam-apps/vpay#364.
+> against vpay `4df5e0d2` (2026-10-24), the merge of vaam-apps/vpay#364. The
+> "Which skill to load" table was re-read against vpay `f885170c` (2026-10-27).
 > Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
@@ -158,29 +159,37 @@ Then state explicitly, in your summary, what you did _not_ do.
 
 ## Which skill to load
 
-| The work                                                   | Load                     |
-| ---------------------------------------------------------- | ------------------------ |
-| Writing Rust or TS here — errors, serde, lints, structure  | `vpay-conventions`       |
-| Running anything — `just`, gates, xtask, CI, toolchain     | `vpay-tooling`           |
-| Something broke and the message is not the cause           | `vpay-troubleshooting`   |
-| Finishing a change — status, flows, ADRs                   | `vpay-docs-status`       |
-| PaymentIntent states, money, ledger, crash safety          | `vpay-payments`          |
-| The worker — job loop, ladders, leases, crash recovery     | `vpay-reconciler`        |
-| The `/v1` wire contract, merchant auth, idempotency        | `vpay-merchant-api`      |
-| Events, the outbox, signatures, delivery                   | `vpay-webhooks`          |
-| The port, failure taxonomy, conformance, adding a rail     | `vpay-provider-adapters` |
-| MTN MoMo specifics                                         | `vpay-mtn-momo`          |
-| Orange Money specifics                                     | `vpay-orange-money`      |
-| Notch Pay specifics, and its public-key production risk    | `vpay-notchpay`          |
-| The web workspace, Tailwind/daisyUI, the `verify-ui` gate  | `vpay-frontend`          |
-| The payer page — hosted and embedded checkout, the popup   | `vpay-checkout`          |
-| Mobile checkout — the Flutter plugin                       | `vpay-sdks`              |
-| The dashboard, `/dash/v1`, staff auth, the BFF             | `vpay-dashboard`         |
-| Customers, addresses, erasure, retention, name lookup      | `vpay-customers`         |
-| Invoices                                                   | `vpay-invoices`          |
-| CrateStack, migrations, repositories, sqlx, Postgres tests | `vpay-data-layer`        |
-| The merchant SDKs and the parity rule                      | `vpay-sdks`              |
-| Config, deployment, images, Helm, observability            | `vpay-ops`               |
+| The work                                                          | Load                     |
+| ----------------------------------------------------------------- | ------------------------ |
+| Writing Rust or TS here — errors, serde, lints, structure         | `vpay-conventions`       |
+| Running anything — `just`, gates, xtask, CI, toolchain            | `vpay-tooling`           |
+| Something broke and the message is not the cause                  | `vpay-troubleshooting`   |
+| Finishing a change — status, flows, ADRs                          | `vpay-docs-status`       |
+| PaymentIntent states, money, ledger, crash safety                 | `vpay-payments`          |
+| The worker — job loop, ladders, leases, crash recovery            | `vpay-reconciler`        |
+| The `/v1` wire contract, signed transport, `/mcp/v1`, idempotency | `vpay-merchant-api`      |
+| Events, the outbox, signatures, delivery                          | `vpay-webhooks`          |
+| The port, failure taxonomy, conformance, adding a rail            | `vpay-provider-adapters` |
+| MTN MoMo specifics                                                | `vpay-mtn-momo`          |
+| Orange Money specifics                                            | `vpay-orange-money`      |
+| Notch Pay specifics, and its public-key production risk           | `vpay-notchpay`          |
+| The web workspace, Tailwind/daisyUI, the `verify-ui` gate         | `vpay-frontend`          |
+| The payer page — hosted and embedded checkout, the popup          | `vpay-checkout`          |
+| Mobile checkout — the Flutter plugin                              | `vpay-sdks`              |
+| The dashboard, `/dash/v1`, console keys and pairing (`/svc/v1`)   | `vpay-dashboard`         |
+| Customers, addresses, erasure, retention, name lookup             | `vpay-customers`         |
+| Invoices                                                          | `vpay-invoices`          |
+| CrateStack, migrations, repositories, sqlx, Postgres tests        | `vpay-data-layer`        |
+| The merchant SDKs and the parity rule                             | `vpay-sdks`              |
+| Config, deployment, images, Helm, observability                   | `vpay-ops`               |
+
+**Two surfaces changed under every skill on 2026-10-26/27.** `/v1` takes no
+token: every request and answer is a signed COSE_Sign1 message (vpay#380,
+ADR-0035). The staff sign-in is deleted, and `/dash/v1` takes a paired console
+key (vpay#383, ADR-0036). A skill sentence about bearer tokens on `/v1`, or about
+staff passwords, TOTP, sessions or SSO, describes code that no longer exists.
+The merchant MCP endpoint (`/mcp/v1`, vpay#377, ADR-0033 Proposed) is new, and
+it is opt-in, so a default deployment does not serve it.
 
 See also `references/reading-the-docs.md` — this repository's documentation has
 conventions that will mislead you if you do not know them, in particular why a

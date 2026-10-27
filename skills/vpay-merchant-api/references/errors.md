@@ -179,6 +179,20 @@ Two more responses in the process are deliberately not envelopes:
   one route whose failure must not depend on this module working.
 - **`POST /v1/oauth/token`** renders RFC 6749 §5.2's
   `{"error":…,"error_description":…}`, because every OAuth client parses that.
+  Since 2026-10-26 its only customer is the `/mcp/v1` token.
+
+Two more since 2026-10-26 and 2026-10-27, both added after this page was last
+read in full:
+
+- **The `EnvelopeLayer`'s coarse `401`** on `/v1` (vpay#380), and on `/dash/v1`,
+  `$procs` and `/svc/v1` (vpay#383): `{"code":"UNAUTHORIZED",…}`, **unsigned**,
+  identical bytes for every cause, and not the Stripe envelope. Everything a
+  handler answers after the layer is still the envelope, sealed. vpay
+  `docs/flows/signed-transport.md` § "What a refusal looks like".
+- **A `/mcp/v1` tool refusal** (vpay#377) is an MCP `isError` result carrying
+  CrateStack's error, whose `message` starts with `/v1`'s own `error.code` and
+  `(param)`. A missing or wrong-audience token is a `401` with an RFC 9728
+  `WWW-Authenticate` challenge.
 
 ## The gate
 

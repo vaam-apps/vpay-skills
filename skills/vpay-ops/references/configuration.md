@@ -1,6 +1,6 @@
 # Configuration: the CLI layer, the YAML, and what refuses to boot
 
-_Verified against vpay `87166eaf` (2026-10-09) for step 7 of "The boot sequence", and against `a33aac61` (2026-09-29) for "The ten environment variables"; the Notch Pay sentences under `callbacks.register` were read against `82a68f4e` (2026-10-23) plus the pull request that adds the 2026-10-23 Notch Pay sandbox verification page, restamped with its merge, and its default per rail against `9499f09d` plus the pull request that adds `docs/status/verification/2026-10-23-notchpay-defaults-and-wrong-network.md`, restamped with its merge; those sentences were re-read against `4df5e0d2` (2026-10-24), the merge of vaam-apps/vpay#364, for what Notch Pay's first delivered webhooks changed; the routing block's last sentence was re-read against `08fb2566` (2026-10-24, vaam-apps/vpay#365); the rest of this page was last read at `d3a8810b` (2026-09-16). Version-sensitive claims
+_Verified against vpay `f885170c` (2026-10-27) for the two signing-key paragraphs under "The signing key is a file"; against `87166eaf` (2026-10-09) for step 7 of "The boot sequence", and against `a33aac61` (2026-09-29) for "The ten environment variables"; the Notch Pay sentences under `callbacks.register` were read against `82a68f4e` (2026-10-23) plus the pull request that adds the 2026-10-23 Notch Pay sandbox verification page, restamped with its merge, and its default per rail against `9499f09d` plus the pull request that adds `docs/status/verification/2026-10-23-notchpay-defaults-and-wrong-network.md`, restamped with its merge; those sentences were re-read against `4df5e0d2` (2026-10-24), the merge of vaam-apps/vpay#364, for what Notch Pay's first delivered webhooks changed; the routing block's last sentence was re-read against `08fb2566` (2026-10-24, vaam-apps/vpay#365); the rest of this page was last read at `d3a8810b` (2026-09-16). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 ADR-0003. Flow doc `docs/flows/configuration.md`; crate reference
@@ -39,7 +39,20 @@ an env var only for a flag it declares.
 ### The signing key is a file, deliberately
 
 `--oauth-signing-key-file` names the RS256 private key (PKCS#8 PEM) the merchant
-OP signs `/v1` access tokens with. It is **serve-only**: the worker issues no
+OP signs access tokens with. _(Since 2026-10-26 those tokens are for `/mcp/v1`
+only: `/v1` takes no token after vaam-apps/vpay#380. This sentence said "`/v1`
+access tokens" until 2026-10-27.)_
+
+**Two more key files since 2026-10-26 (vpay#380):** `--envelope-signing-key-file`
+and `--envelope-signing-key-next-file` (`VPAY_ENVELOPE_SIGNING_KEY_FILE`,
+`..._NEXT_FILE`). Each holds a 32-byte Ed25519 seed, unpadded base64url, and
+they are vpay's `current` and `next` response keys for the signed `/v1`
+transport (and, since #383, for `/dash/v1` and `/svc/v1`). They are serve-only.
+`serve` exits 78 if either file is missing or malformed, or if the two are
+identical. `cargo xtask gen-envelope-key --out <dir> --name <stem>` writes a
+throwaway pair; compose uses `just gen-envelope-keys`. The Helm chart reads
+them from a Secret (`envelopeKeys.existingSecret`). Rotation order, which is
+not optional: vpay `docs/flows/signed-transport.md` § Rotation. It is **serve-only**: the worker issues no
 tokens, "so mounting the Secret into it would widen its blast radius for no
 capability", and `the_worker_is_not_handed_the_signing_key` pins that.
 

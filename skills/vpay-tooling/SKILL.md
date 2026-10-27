@@ -1,11 +1,11 @@
 ---
 name: vpay-tooling
-description: How to build, test, lint and gate vpay — the just recipes that matter, the sixteen verify gates and how contributors trip each one, what just ci actually runs, the toolchain pins that must move in lockstep, the compose stacks and ports, and the CI workflows. Load this before running any command in vpay, before adding a test binary or a migration, before bumping a toolchain pin, and whenever a gate fails and the message is not self-explanatory.
+description: How to build, test, lint and gate vpay — the just recipes that matter, the seventeen verify gates and how contributors trip each one, what just ci actually runs, the toolchain pins that must move in lockstep, the compose stacks and ports, and the CI workflows. Load this before running any command in vpay, before adding a test binary or a migration, before bumping a toolchain pin, and whenever a gate fails and the message is not self-explanatory.
 ---
 
 # vpay tooling and gates
 
-> **Verified against vpay `69d822ab` (2026-10-09).** Version-sensitive claims below
+> **Verified against vpay `f885170c` (2026-10-27).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -64,7 +64,7 @@ In execution order:
 1. `cargo fmt --all -- --check`
 2. `pnpm exec prettier --check .`
 3. `cargo clippy --workspace --all-targets -- -D warnings`
-4. `just verify` — the sixteen gates plus the `verify-docs` report
+4. `just verify` — the seventeen gates plus the `verify-docs` report
 5. `cargo nextest run --workspace`
 6. `cargo test --doc --workspace` — a **second runner**; nextest runs no doctests
 7. `just verify-ignored` — the suite census
@@ -79,12 +79,13 @@ tree where `pnpm install` has not been run.
 
 `AGENTS.md` requires `just ci` to pass locally before review.
 
-## `just verify` — the sixteen gates
+## `just verify` — the seventeen gates
 
-**Sixteen since 2026-10-26** (`verify-security-inventory`, issue #150,
-ADR-0034) — fifteen from 2026-09-20 (`verify-doc-counts`, PR #233), fourteen
+**Seventeen since 2026-10-27** (`verify-mcp-parity`, vaam-apps/vpay#377,
+ADR-0033 D8) — sixteen from 2026-10-26 (`verify-security-inventory`, issue
+#150, ADR-0034), fifteen from 2026-09-20 (`verify-doc-counts`, PR #233), fourteen
 from 2026-09-18 (`verify-privacy-inventory`, PR #187), thirteen from 2026-09-17
-(`verify-versions`, PR #201), twelve before that. Fourteen are `cargo xtask`
+(`verify-versions`, PR #201), twelve before that. Fifteen are `cargo xtask`
 subcommands; `check-schema` and `verify-ui` are shell in the justfile. The
 order is chronological by landing date on purpose, so that "check-schema is
 the seventh gate" — which four other files say — stays true when a gate is
@@ -108,6 +109,7 @@ added.
 | `verify-privacy-inventory`  | **14th, 2026-09-18 (#187, issue #144)** — a migrated column with no element in `schemas/privacy-inventory.yaml`, or an inventory copy naming no live column. Both directions. **Since 2026-10-09 (#273, which carried #268; RFC-0002 PR 3) also:** a `debug_protections`-registered type that derives `Debug`, or one no longer declared in its file, or an entry naming an element not in the inventory — the same both-directions rule for the hand-written redacting `Debug` boundary                                   |
 | `verify-doc-counts`         | **15th, 2026-09-20 (#233)** — a `<!-- count:KIND ARG… -->`-marked number in a tracked `*.md` that no longer equals what the tree measures, an unknown `KIND`, or no marker found at all                                                                                                                                                                                                                                                                                                                                    |
 | `verify-security-inventory` | **16th, 2026-10-26 (issue #150, ADR-0034)** — an unknown key in `schemas/security-inventory.yaml` (every struct has `deny_unknown_fields`); a service, crate, path or cited test that does not exist; a table that a migration does not create **or** a live table in no store; an invented secret `config_keys` path; a published manifest that is private or misnamed; a control with an unknown status; a `gap` control with no `related_gap`; a gap with no tracker or an issue number no document under `docs/` cites |
+| `verify-mcp-parity`         | **17th, 2026-10-27 (vaam-apps/vpay#377, ADR-0033 D8)** — a mounted `/v1` route (`V1_ROUTES`) with no row in `docs/api/mcp-parity.md`, two rows for one route, a row naming an unmounted route or a tool `schemas/vpay.cstack` does not declare, a gap with no `YYYY-MM-DD` date or no reason, or a declared `@mcp(tool: …)` no row names. Both directions. It checks the map, **not** that a tool behaves like its route: `mcp_merchant.rs` does that                                                                      |
 
 `verify-docs` runs last and is **not** a gate — it exits 0 whatever it finds.
 That is deliberate: the cheapest way to pass a doc-ratio gate is to delete the
@@ -134,13 +136,13 @@ Subsets: `cargo nextest run -p <crate>`, `cargo nextest run -E 'test(name)'`,
 
 ## What each thing needs
 
-| Need                           | Which commands                                                                                                                                                                                                                                                                            |
-| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Docker**                     | `just test-rust` and anything running the workspace suite — `vpay-tests-integration`, `vpay-tests-conformance`, `vpay-db`, `vpay-server`, `vpay-testkit` all start real `postgres:16-alpine` / WireMock testcontainers. Also `just up`, `demo-*`, `test-e2e`, `stripe-compat`, `sdk-live` |
-| **Network**                    | `just audit-web` (so `just ci`), `docs-check-citations`, `helm-check` (kubeconform fetches schemas), `test-storybook` (≈115 MB Chromium, first run), image builds                                                                                                                         |
-| **`gh`, authenticated**        | `just docs-check-citations` only. It **fails** rather than skipping when `gh` is missing                                                                                                                                                                                                  |
-| **A real Postgres you manage** | nothing. Tests bring their own container; `just up` brings up the dev one on `:5432`                                                                                                                                                                                                      |
-| **Extra binaries on PATH**     | `cratestack` (`check-schema`), `helm` + `kubeconform` (`helm-check`), `helm` + `promtool` (`test-alert-rules`), `jq` (`verify-ignored`), `openssl` (`gen-e2e-signing-key`)                                                                                                                |
+| Need                           | Which commands                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Docker**                     | `just test-rust` and anything running the workspace suite — `vpay-tests-integration`, `vpay-tests-conformance`, `vpay-db`, `vpay-server`, `vpay-testkit` all start real `postgres:16-alpine` / WireMock testcontainers. Also `just up`, `demo-*`, `test-e2e`, `stripe-compat`, `sdk-live`                                                                                                                                               |
+| **Network**                    | `just audit-web` (so `just ci`), `docs-check-citations`, `helm-check` (kubeconform fetches schemas), `test-storybook` (≈115 MB Chromium, first run), image builds                                                                                                                                                                                                                                                                       |
+| **`gh`, authenticated**        | `just docs-check-citations` only. It **fails** rather than skipping when `gh` is missing                                                                                                                                                                                                                                                                                                                                                |
+| **A real Postgres you manage** | nothing. Tests bring their own container; `just up` brings up the dev one on `:5432`                                                                                                                                                                                                                                                                                                                                                    |
+| **Extra binaries on PATH**     | `cratestack` (`check-schema`), `helm` + `kubeconform` (`helm-check`), `helm` + `promtool` (`test-alert-rules`), `jq` (`verify-ignored`), `openssl` (`gen-e2e-signing-key`), and since 2026-10-26 `wasm-bindgen` **0.2.128** plus the `wasm32-unknown-unknown` target: `lint-web` builds `sdks/nodejs`'s WebAssembly sealer first, and `scripts/build-wasm.sh` fails with `wasm-bindgen is not on PATH`, naming the `cargo install` line |
 
 Gates outside `just verify` **and** outside `just ci`: `test-storybook`,
 `helm-check`, `docs-check-citations`. CI runs all three on every PR, so a green
@@ -172,8 +174,13 @@ Change one of these and the other must move in the **same commit**.
 A `cratestack_version` bump (the lockstep row above) is more than the two pins:
 also `vpay-db`'s `cratestack-codec-json`, both `install-cratestack-cli` steps in
 `ci.yml` (pinned to the tag's commit), and the twelve `cratestack-*` entries in
-`Cargo.lock` (`cargo update -p cratestack-pg --precise <version>`). It is
-`0.15.0` since 2026-09-29 (vaam-apps/vpay#259); it was `0.12.0`.
+`Cargo.lock` (`cargo update -p cratestack-pg --precise <version>`), plus,
+since 2026-10-26, the two direct workspace pins `cratestack-cose` and
+`cratestack-core` (VP-2). It is `0.16.0` since 2026-10-26 (vaam-apps/vpay#376),
+with `features = ["postgres", "envelope", "cose", "mcp"]` (`envelope` and `cose`
+from #376, `mcp` from #377 for the merchant MCP endpoint); it was `0.15.0` from
+2026-09-29 (vaam-apps/vpay#259), and `0.12.0` before that. _(This said `0.15.0`
+until 2026-10-27.)_
 
 `verify-toolchain` exists because the drift was measured: with `channel` moved
 to 1.98.0 and the Dockerfile left on 1.95.0, the whole of `just ci` was green.
@@ -207,8 +214,8 @@ Four facts with no home above, kept short here on purpose — depth is in
   `cargo clippy --workspace`, `cargo nextest run --workspace` and `cargo deny`
   cannot see it at all. **None of the three Rust ones is in `just ci` or
   `just verify`** (T7: the CI image has no `libwebkit2gtk-4.1-dev`, no Android
-  SDK/NDK and no Xcode), and the justfile's gate tally is unchanged at
-  sixteen. The package's **TypeScript** half is gated regardless:
+  SDK/NDK and no Xcode), and the justfile's gate tally is unchanged by them
+  (seventeen as of 2026-10-27). The package's **TypeScript** half is gated regardless:
   `pnpm-workspace.yaml` names `sdks/tauri/*`, so `lint-web`, `test-web` and
   `fmt-check-web` reach it with no recipe change. `vpay-sdks` owns what the
   plugin does; `check-tauri-mobile` needs
@@ -228,7 +235,7 @@ Four facts with no home above, kept short here on purpose — depth is in
 
 ## Further reading
 
-- [references/gates.md](references/gates.md) — the sixteen gates in depth,
+- [references/gates.md](references/gates.md) — the seventeen gates in depth,
   including every `verify-ui` check (its numbering is non-contiguous, so count
   the recipe's greps rather than trusting its header), the both-directions
   gates, and the `<!-- count:KIND ARG… -->` marker convention

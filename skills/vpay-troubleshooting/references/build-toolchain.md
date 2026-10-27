@@ -1,6 +1,6 @@
 # Build and toolchain failures
 
-_Verified against vpay `a33aac61` (2026-09-29) for §§ `check-schema` and "Editing `schemas/vpay.cstack`"; the rest of this page was last read at `d3a8810b` (2026-09-16). Version-sensitive claims
+_Verified against vpay `f885170c` (2026-10-27) for the RUSTSEC-2026-0387 bullet on what verifies with P-256; against `a33aac61` (2026-09-29) for §§ `check-schema` and "Editing `schemas/vpay.cstack`"; the rest of this page was last read at `d3a8810b` (2026-09-16). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 ## Three version numbers that are not each other
@@ -169,8 +169,14 @@ accepted by the maintainer on 2026-10-24 and again on 2026-10-26.
   (`=0.13.1`, which vpay moved to on 2026-10-26 from `=0.7.1`) still requires
   `jsonwebtoken` 11. **Bumping authkestra was tried, and did not clear it.**
 - Why it is safe to accept: vpay uses P-256/P-384 only to **verify** ES256/ES384
-  signatures, against public keys — a merchant's client assertion, a staff SSO
-  id_token, a DPoP proof. Nothing in vpay or authkestra signs with an EC key
+  signatures, against public keys — a merchant's client assertion, ~~a staff SSO
+  id_token~~, a DPoP proof, and since 2026-10-27 a console key's possession
+  proof (`vpay_api::console_keys`, which links `p256` 0.13 directly and
+  signs with `SigningKey` only in its `#[cfg(test)]` module).
+  _(Corrected 2026-10-27: vaam-apps/vpay#383 deleted the SSO verifier.
+  `deny.toml`'s comment still cites `vpay-api/src/staff/sso/verify.rs` at
+  `f885170c`. ADR-0036 has the console's keys generated in a
+  browser by WebCrypto, which is VP-6b and not built; vpay only verifies.)_ Nothing in vpay or authkestra signs with an EC key
   outside tests: the OP signs RS256, `vpay-sdk` signs RS256 only, merchant
   webhooks use HMAC.
 - That rests on reading the call sites, not on a timing measurement. **If

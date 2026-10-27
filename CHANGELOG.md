@@ -1,5 +1,98 @@
 # Changelog
 
+## 2026-10-27 — the merchant MCP endpoint, the signed `/v1`, and the paired-key console
+
+Read against vpay `f885170c` (2026-10-27). Three vpay changes landed with no
+skill change of their own, and `verify-coverage` against vpay `master` failed
+on all three:
+
+- **vaam-apps/vpay#374, #375 and #377: the merchant MCP endpoint** (ADR-0033,
+  Proposed). New flow page `docs/flows/mcp.md`, a new route `POST /mcp/v1`, and
+  a seventeenth gate.
+- **vaam-apps/vpay#380: `/v1` is a signed message** (ADR-0035). New flow page
+  `docs/flows/signed-transport.md`. Bearer tokens on `/v1` are gone.
+- **vaam-apps/vpay#383: the console signs with a paired key** (ADR-0036). Five
+  `docs/flows/dashboard-auth/` pages and the staff SSO code this repository
+  claimed were deleted.
+
+What changed:
+
+- **`vpay-merchant-api`:**
+  - the nest table gains `/mcp/v1` and `/svc/v1`;
+  - "Authentication" is rewritten for the signed transport, including its
+    coarse unsigned `401`;
+  - the Ed25519-keys section is corrected;
+  - the OP section is reframed as `/mcp/v1`-only, with VP-4's open question;
+  - the scopes table is rewritten;
+  - a new section "The merchant MCP endpoint" covers the nine tools, the
+    opt-in, `idempotency_key`, the shapes, the three `$procs` defences, the
+    parity gate, and what is not built;
+  - `references/routes.md` and `references/errors.md` follow.
+- **`vpay-tooling`:**
+  - seventeen gates, with a `verify-mcp-parity` row and section;
+  - CrateStack is `0.16.0` with `mcp` in its features (this said `0.15.0`);
+  - `expected_suites` is 55, with its four moves on 2026-10-26/27;
+  - `wasm-bindgen` 0.2.128 and the wasm32 target are now on `lint-web`'s path.
+- **`vpay-sdks`:** both merchant SDKs seal, assertion minting is deleted, and
+  `references/stripe-compat.md` documents `createStripeHttpClient`, which
+  replaced `createStripeAuthenticator`.
+- **`vpay-ops`:**
+  - `references/configuration.md`: the two envelope key files;
+  - `references/deployment.md`: the surface table after #383 (`/svc/v1` on
+    business), and the `mcp` value with no chart workload.
+- **`vpay-dashboard`, rewritten for #383** (476 lines to 271):
+  - the backend is built, and the app cannot sign in until VP-6b;
+  - the paired-key invariant, the route table with `/svc/v1`, and writes now
+    answering the layer's `405`/`415`;
+  - `references/console-keys.md` is new, and replaces `staff-auth.md` and
+    `sso.md`, which are deleted;
+  - `references/read-seam-and-bff.md` is now `read-seam.md`, with the BFF
+    struck;
+  - `what-a-screen-may-show.md` has its deleted routes struck.
+- **`vpay-conventions`** (`references/adr-index.md`):
+  - ADR-0017 and ADR-0030 are superseded by ADR-0036, and ADR-0010 by
+    ADR-0035 for `/v1`;
+  - new rows for ADR-0030, ADR-0033, ADR-0034, ADR-0035 and ADR-0036.
+- **`vpay-troubleshooting`:**
+  - a new symptom table for the console: the notice page, `RetiredKey` exit
+    78, the coarse `401`, `404` with no `dashboard:`, pairing `403`/`409`;
+  - `config-boot.md` names `RetiredKey`;
+  - the loopback-alias section is moot.
+- **`vpay-data-layer`:**
+  - the two deleted models, and the two added;
+  - drift is 209 changes over 27 relations since `0056`;
+  - the pin's `mcp` feature.
+- **`vpay-frontend`, `vpay-checkout`, `vpay-tooling`:** the dashboard is no
+  longer "REAL", and `dashboard.cy.ts` and `just loopback-aliases` are
+  deleted.
+- **`vpay-tooling`:** `just demo-staff` now creates a member and no
+  password.
+- **`vpay`:** the routing table, and one paragraph naming the three changes.
+- `coverage.json`:
+  - `vpay-merchant-api` claims `docs/flows/mcp.md`,
+    `docs/flows/signed-transport.md`, ADR-0033, ADR-0035, and the MCP and
+    envelope code and tests;
+  - `vpay-dashboard` drops its 8 dead claims (`docs/flows/dashboard-auth/*`,
+    `staff/sso`, two SSO suites) and claims ADR-0036, `console_keys`,
+    `envelope/console.rs`, `envelope/service.rs`, `svc`, migrations
+    `0056`–`0057` and the console suites.
+
+`verify-coverage` against vpay `f885170c`: parity, with 0 gaps (it was 10 on
+`main`).
+
+### Stopped being true
+
+- "`/v1` takes `Authorization: Bearer <access_token>`", and every row built on
+  it (`missing_bearer_token`, "valid token, …"). Since 2026-10-26 `/v1` takes
+  no token at all.
+- "Merchant Ed25519 keys: registered, and read by no request" and "Do not
+  describe the signed transport as built". This repository's own previous
+  release said both, and vpay#380 built the transport one PR later.
+- "sixteen gates" and "`0.15.0` since 2026-09-29".
+- Every sentence about staff passwords, TOTP, staff sessions, OIDC SSO, the
+  BFF, `dashboard_client` and `staff_auth`. Since vpay#383 those are deleted,
+  and the two config keys are refused at boot.
+
 ## 2026-10-26 — vpay v0.15.0: cratestack 0.16.0 pins, and the merchant Ed25519 key registry
 
 Read against vpay v0.15.0 (`de8a7b72`). Two v0.15.0 changes had no skill
