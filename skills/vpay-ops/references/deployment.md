@@ -1,6 +1,6 @@
 # Deployment: images, the chart, and what it deliberately does not do
 
-_Verified against vpay `87166eaf` (2026-10-09) for § "Verifying the chart", and against `a33aac61` (2026-09-29) for § "Publishing the chart", re-read in full; the rest of this page was last read at `9653ee94` (2026-09-16). Version-sensitive claims
+_Verified against vpay `f885170c` (2026-10-27) for the surface table and the `/v1/oauth` split under `deployment.surfaces`; against `87166eaf` (2026-10-09) for § "Verifying the chart", and against `a33aac61` (2026-09-29) for § "Publishing the chart", re-read in full; the rest of this page was last read at `9653ee94` (2026-09-16). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 Everything here renders and validates. **Nothing here has run on a cluster.**
@@ -252,22 +252,45 @@ was checked against; `helm show chart` answers it.
 **Absent means every surface**, so a deployment that predates this key upgrades
 unchanged; an empty list or an unknown value is a boot refusal (exit 78).
 
-| Surface      | Mounts                                                   |
-| ------------ | -------------------------------------------------------- |
-| `business`   | `/v1`, `/v1/browser`, `/provider`, and `/v1/oauth/token` |
-| `management` | `/dash/v1` and the `staff` sign-in routes                |
+| Surface      | Mounts                                                                                                               |
+| ------------ | -------------------------------------------------------------------------------------------------------------------- |
+| `business`   | `/v1`, `/v1/browser`, `/provider`, and `/v1/oauth/token`; since 2026-10-27 also `/svc/v1` (when `dashboard:` is set) |
+| `management` | `/dash/v1` and its `$procs` transport (when `dashboard:` is set); ~~and the `staff` sign-in routes~~                 |
 
-`/v1/oauth` is **split rather than assigned**: `/token` is business-only
+**Changed 2026-10-27 (vaam-apps/vpay#383, ADR-0036).** The staff sign-in
+routes are deleted, so the management surface is `/dash/v1` and nothing else.
+`/svc/v1`, where a registered service (vaam) pairs and revokes console keys,
+is on the **business** surface, because vaam dials the `-server` Service
+(`http://vpay:8080`); a `surfaces: [management]` process answers `404` there.
+Neither nest is mounted without a `dashboard:` block. With
+`networkPolicy.enabled`, the calling service goes in
+`networkPolicy.serviceIngress.peers` (a guard refuses a peer that selects
+everything), and no HTTPRoute or Ingress publishes `/svc/v1`. The chart
+values `dashboard.clientId`, `dashboard.redirectUri` and `dashboard.scope` are
+gone. vpay's own `EnabledSurfaces` doc comment in `vpay-config` still says
+"`/dash/v1` and the `staff` sign-in routes" at `f885170c`; the code wins. A
+third value, `mcp` (vaam-apps/vpay#377), was not re-verified for this page.
+
+~~`/v1/oauth` is **split rather than assigned**: `/token` is business-only
 because it is the _merchant_ private-key-JWT grant, while `jwks.json` and the
 discovery document serve on both, so the management tier does not depend on the
 business tier being up to validate a staff token. Do not "simplify" this by
 mounting the whole nest on either surface — ADR-0017's staff grant terminates
 at `/dash/v1/oauth/token`, **not** at `/v1/oauth/token`, and the two are
-different grants.
+different grants.~~ **Corrected 2026-10-27:** there is no staff token and no
+staff grant any more, so **a `surfaces: [management]` pod serves no part of
+the OP**: `/v1/oauth/token`, `jwks.json` and the discovery document are all
+`404` there (`the_token_endpoint_is_business_only` in `vpay-api`'s `lib.rs`).
+The discovery pair is mounted on the business surface and on an MCP-only pod,
+whose merchant MCP validator fetches the JWKS over loopback. `/token` mints
+the merchant credential and stays business-only. Do not mount it on the
+management tier.
 
-It cannot be inferred from `merchant_clients`: `validate_dashboard_binding`
-requires the dashboard client's `merchant_id` to exist in that list, so a
-management-only process still needs it populated.
+The surface still cannot be inferred from `merchant_clients`:
+~~`validate_dashboard_binding` requires the dashboard client's `merchant_id`~~
+since 2026-10-27 `dashboard.merchant_id` must name an entry in that list
+(`ConfigError::DashboardUnknownMerchant`), so a management-only process still
+needs it populated.
 
 ### The ceiling that binds before CPU does
 

@@ -1,6 +1,6 @@
 # Wire objects
 
-_Verified against vpay `b747e5d5` (2026-09-23); the refund `destination` paragraphs at `98f4d32b` (2026-10-24, vaam-apps/vpay#363); the `payment_method_details` row and paragraph, the key count and the routing sentences at `08fb2566` (2026-10-24, vaam-apps/vpay#365). Version-sensitive claims
+_Verified against vpay `b747e5d5` (2026-09-23); the struck staff-surface paragraph at `f885170c` (2026-10-27, vaam-apps/vpay#383); the refund `destination` paragraphs at `98f4d32b` (2026-10-24, vaam-apps/vpay#363); the `payment_method_details` row and paragraph, the key count and the routing sentences at `08fb2566` (2026-10-24, vaam-apps/vpay#365). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 Every wire DTO lives in one module: `vpay_api::model`
@@ -31,9 +31,14 @@ _(This said "two exceptions" until 2026-09-23, when the restamp first wrote
 two. The `RailSpec` and `RailDisplayName` attributes postdate the `d3a8810b`
 stamp.)_
 
-The staff surface (`vpay-api/src/staff/mod.rs`) has four more:
+~~The staff surface (`vpay-api/src/staff/mod.rs`) has four more:
 `otpauth_uri`, `enrolment`, `access_token` and `access_token_expires_at`,
-each on a sign-in or enrolment response rather than a `/v1` object.
+each on a sign-in or enrolment response rather than a `/v1` object.~~
+**Corrected 2026-10-27:** vaam-apps/vpay#383 deleted `vpay-api/src/staff/`
+with the staff sign-in, and those four went with it. As of vpay `f885170c`
+no `skip_serializing_if` remains anywhere in `vpay-api/src/` outside
+`model.rs`; the console-key object on `/svc/v1` (`vpay_api::svc`) carries
+none.
 
 If you add a field, add it unconditionally. `cargo xtask verify-serde` checks
 the _naming_ convention (snake_case on the wire, with a table of exemptions in

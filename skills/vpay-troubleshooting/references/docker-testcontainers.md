@@ -1,6 +1,6 @@
 # Docker and testcontainers
 
-_Verified against vpay `a33aac61` (2026-09-29) for § "A bounded retry over `run_once` is a flake"; the rest of this page was last read at `d3a8810b` (2026-09-16). Version-sensitive claims
+_Verified against vpay `f885170c` (2026-10-27) for the correction at the top of § "macOS has one loopback address"; against `a33aac61` (2026-09-29) for § "A bounded retry over `run_once` is a flake"; the rest of this page was last read at `d3a8810b` (2026-09-16). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 Everything Postgres-backed in this workspace starts a real container. Nothing
@@ -128,7 +128,19 @@ testcontainers. CI's `rust` job also installs Node and builds the Node SDK
 before running tests, which is why one Rust test fails on a fresh local worktree
 and never in CI (see [node-web.md](node-web.md)).
 
-### macOS has one loopback address; Linux has sixteen million (2026-09-18)
+### macOS has one loopback address; Linux has sixteen million (2026-09-18; moot since 2026-10-27)
+
+**Corrected 2026-10-27: the four cases below, their file and the
+`just loopback-aliases` recipe are deleted** (vaam-apps/vpay#383, which
+deleted staff sign-in and its rate limiter; ADR-0036). On a vpay at or after
+`f885170c` nothing in the suite binds `127.0.0.2`–`127.0.0.35`, so this
+symptom should not appear, and the fix below does not exist. The helper
+`support::client_bound_to` (`backends/tests/integration/tests/support/mod.rs`)
+survives with no caller, and its doc comment still points at
+`just loopback-aliases` and at a `CLAUDE.md` paragraph #383 removed. If a
+**new** test reaches for distinct source addresses, it inherits the macOS
+problem and needs a recipe again. The rest of this section is the record for
+an older tree:
 
 Four cases in `backends/tests/integration/tests/staff_sign_in.rs` simulate
 distinct client source addresses with `reqwest::ClientBuilder::local_address` —
@@ -167,9 +179,10 @@ a reboot. Since 2026-09-18 the suite preflights the bind through a shared
 helper, so an unaliased machine fails with a message naming this command
 instead of `os error 49`.
 
-**Do not "fix" this by ignoring or gating the four cases.** A macOS developer
-seeing red here is correct; a green run that skipped them would claim the
-per-address limiter is covered when nothing measured it.
+~~**Do not "fix" this by ignoring or gating the four cases.**~~ _(On an older
+tree, still right: a green run that skipped them would claim the per-address
+limiter was covered when nothing measured it. From `f885170c` there is no
+limiter and no case.)_
 
 ### `/__admin/health` proves nothing about WireMock's stubs (2026-09-18)
 
