@@ -5,8 +5,10 @@ description: vpay's persistence layer — `backends/migrations/*.sql` as the aut
 
 # The data layer
 
-> **Verified against vpay `87166eaf` (2026-10-09).** Version-sensitive claims below
-> carry the date they became true — a feature in vpay's `master` may be absent
+> **Verified against vpay `f885170c` (2026-10-27)** for the lines vaam-apps/vpay#383
+> changed (the staff models, migrations `0055`–`0057`, the drift constants);
+> the rest of this page was last verified against `87166eaf` (2026-10-09).
+> Version-sensitive claims below carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
 
@@ -54,6 +56,16 @@ error there is a build failure. But:
 > compiler as well as by the CLI, read and written by no code, and several
 > **do not match the live table at all**.
 >
+> **Changed 2026-10-27 and not re-counted here.** vaam-apps/vpay#383 deleted
+> `model StaffSession` and `model OauthAuthorizationCode` (seven and three of
+> the thirty-six statements) with the staff sign-in, and added
+> `model ConsoleKey`, whose statements run through `vpay_db::ConsoleKeys`;
+> vaam-apps/vpay#380 had added `model EnvelopeNonce` the same day. The model
+> total is still twenty (`MODEL_TABLES` in `vpay-db`'s `schema.rs`). The
+> fourteen above, and the `.cstack` file's own header box, which at
+> `f885170c` still lists `StaffSession 7` and `OauthAuthorizationCode 3`, are
+> stale: re-derive the count as below.
+>
 > ~~Of its nineteen models … **five** carry real queries … Every other model is
 > a design sketch.~~ **Corrected 2026-09-23.** "Five" had been wrong since
 > 2026-09-06, when `Customer` joined the first five the same day — it was the
@@ -83,7 +95,13 @@ unmoved** (vaam-apps/vpay#259: the CLI reports 201 changes across 26 tables,
 the constant the test already asserted). **209 over 28, with 20 unmappable
 columns, since migration `0053` (2026-10-23)**, measured at 0.15.0; it went
 through 206 over 27 with `0050` (`staff_sso_attempts`, 2026-10-20), which this
-page did not record. `0053`'s three lines are `charges.method_type`
+page did not record. **209 over 27, 20 unmappable, since migration `0056`
+(2026-10-27, vaam-apps/vpay#383)**, which drops `staff_sessions`,
+`oauth_authorization_codes` and `staff_sso_attempts` and creates
+`console_keys`. The constant on `master` just before it was 214 over 29, a
+step (through `0055`, `envelope_nonces`, vaam-apps/vpay#380) this page did not
+record either. These are the test's constants at `f885170c`, read and not
+re-measured. `0053`'s three lines are `charges.method_type`
 undeclared, its CHECK `method_type_is_known`, and the undeclared table
 `routing_decisions`, whose `considered` is the 20th unmappable column (`jsonb`).
 **212 over 28 since migration `0054` (2026-10-24), measured.** The change was
@@ -157,7 +175,13 @@ paid_out_of_band)` at `invoices_payment_record_key`, a six-column `UNIQUE`
   `MethodType`), plus `charge_method_type_needs_a_rail`, and a backfill that
   copies each charge's pair. `charges::insert_for_intent` writes the pair in
   the transaction that opens the charge, a compare-and-swap guarded on
-  `charge_rail IS NULL`. The next is `0055`.)_
+  `charge_rail IS NULL`. The next is `0055`.)_ _(2026-10-27: `0055` is `create-envelope-nonces`
+  (vaam-apps/vpay#380, the `/v1` replay cache); `0056` is `console-keys`
+  (vaam-apps/vpay#383), which creates `console_keys` with its 30-day `CHECK`,
+  drops `staff_sessions`, `oauth_authorization_codes` and `staff_sso_attempts`,
+  and deletes every `password` and `totp` row of `credentials`; `0057` is
+  `console-keys-thumbprint-prefix-index`. So `0050`'s table no longer exists,
+  and `0050` stays applied and unedited regardless. The next is `0058`.)_
 - **The ADD COLUMN backfills with a DEFAULT and drops it in the next
   statement** (`0042`'s device), which is why `model Invoice.paid_out_of_band`
   carries no `@default` and costs the drift nothing.

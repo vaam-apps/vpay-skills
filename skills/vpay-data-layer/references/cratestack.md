@@ -1,6 +1,8 @@
 # CrateStack in vpay: the private module, the traps, and the drift
 
-_Verified against vpay `a33aac61` (2026-09-29). Version-sensitive claims
+_Verified against vpay `a33aac61` (2026-09-29); the staff-model rows and the
+note under the statement table were re-read against vpay `f885170c`
+(2026-10-27). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 `vpay-db` compiles `schemas/vpay.cstack` with CrateStack's
@@ -40,22 +42,35 @@ vpay `a33aac61` (2026-09-29):** the twenty `model`s and the per-file counts of
 statement — `claim_intent_customer` and the erasure statements are raw
 `sqlx`):
 
-| model                    | statements | what                                                                              |
-| ------------------------ | ---------- | --------------------------------------------------------------------------------- |
-| `DisabledClient`         | 3          | `find_unique`, `upsert`, `delete_many().where_(..)`                               |
-| `Currency`               | 2          | `find_unique(..).for_update()` then `upsert(..)`, both `run_in_tx` on boot step 4 |
-| `Provider`               | 1          | `upsert(..).run_in_tx` — migration `0033` is what made it possible                |
-| `Event`                  | 1          | the outbox: `update_many(..)` on the fan-out transaction                          |
-| `WebhookDelivery`        | 1          | the outbox: `upsert(..).do_nothing()` on the same transaction                     |
-| `Customer`               | 2          | `touch_last_used`'s `update_many`, the hard delete's `delete_many`                |
-| `CheckoutSession`        | 4          | four reads (`find_many`/`find_unique`), no generated write                        |
-| `Invoice`                | 1          | `mark_uncollectible`'s guarded `update_many`                                      |
-| `InvoiceItem`            | 1          | `items_for_invoice`, a `find_many`                                                |
-| `ManualPayment`          | 1          | `manual_payment_for_invoice`, a `find_many` (step A, 2026-09-23)                  |
-| `StaffMember`            | 5          | every `staff_members` statement                                                   |
-| `StaffSession`           | 7          | every `staff_sessions` statement                                                  |
-| `OauthAuthorizationCode` | 3          | every `oauth_authorization_codes` statement                                       |
-| `Credential`             | 4          | every `credentials` statement (2026-09-13)                                        |
+| model                        | statements | what                                                                                    |
+| ---------------------------- | ---------- | --------------------------------------------------------------------------------------- |
+| `DisabledClient`             | 3          | `find_unique`, `upsert`, `delete_many().where_(..)`                                     |
+| `Currency`                   | 2          | `find_unique(..).for_update()` then `upsert(..)`, both `run_in_tx` on boot step 4       |
+| `Provider`                   | 1          | `upsert(..).run_in_tx` — migration `0033` is what made it possible                      |
+| `Event`                      | 1          | the outbox: `update_many(..)` on the fan-out transaction                                |
+| `WebhookDelivery`            | 1          | the outbox: `upsert(..).do_nothing()` on the same transaction                           |
+| `Customer`                   | 2          | `touch_last_used`'s `update_many`, the hard delete's `delete_many`                      |
+| `CheckoutSession`            | 4          | four reads (`find_many`/`find_unique`), no generated write                              |
+| `Invoice`                    | 1          | `mark_uncollectible`'s guarded `update_many`                                            |
+| `InvoiceItem`                | 1          | `items_for_invoice`, a `find_many`                                                      |
+| `ManualPayment`              | 1          | `manual_payment_for_invoice`, a `find_many` (step A, 2026-09-23)                        |
+| `StaffMember`                | 5          | every `staff_members` statement                                                         |
+| ~~`StaffSession`~~           | ~~7~~      | ~~every `staff_sessions` statement~~ deleted 2026-10-27 (vaam-apps/vpay#383)            |
+| ~~`OauthAuthorizationCode`~~ | ~~3~~      | ~~every `oauth_authorization_codes` statement~~ deleted 2026-10-27 (vaam-apps/vpay#383) |
+| `Credential`                 | 4          | every `credentials` statement (2026-09-13)                                              |
+
+**Changed 2026-10-27 and not re-counted here.** vaam-apps/vpay#383 deleted
+`model StaffSession` and `model OauthAuthorizationCode` with the staff
+sign-in, and migration `0056` dropped their tables. It added `model ConsoleKey`
+(`console_keys`), whose repository, `vpay_db::ConsoleKeys`, runs generated
+chains (`create`, two `find_many`, one of them on a `starts_with` prefix,
+and the revoke's `update_many`), and it rewrote `staff.rs` and `credentials.rs`, so the `StaffMember`
+and `Credential` figures above may have moved too. vaam-apps/vpay#380 added
+`model EnvelopeNonce` the same day. The model total is still twenty. The table
+above is the 2026-09-23 count with the two deleted rows struck: recount by the
+method above before quoting any number from it. `schemas/vpay.cstack`'s
+header box still lists `StaffSession 7` and `OauthAuthorizationCode 3` at
+`f885170c`, so it is stale too.
 
 ~~Nineteen `model` declarations, **five** of which carry real queries~~ —
 **corrected 2026-09-23.** The five-row table was the figure in
@@ -73,9 +88,13 @@ figures (**36 statements over fourteen tables**, and what moved since). The
 page's body is still the 2026-09-10 registry, kept as written. **Recount by the
 method above before you quote any of these numbers.**
 
-Four whole tables have **every** repository statement on the generated layer,
+~~Four whole tables have **every** repository statement on the generated layer,
 with no raw `sqlx` in their modules: `staff_members` (5), `staff_sessions`
-(7), `oauth_authorization_codes` (3) and `credentials` (4). ~~Three … (7),
+(7), `oauth_authorization_codes` (3) and `credentials` (4).~~ **Two of those
+four tables were dropped on 2026-10-27** (`0056`, vaam-apps/vpay#383):
+`staff_sessions` and `oauth_authorization_codes`. Whether `staff_members` and
+`credentials` are still generated-only after #383 rewrote their modules was
+not re-checked for this note. ~~Three … (7),
 (6), (3), sixteen of the thirty-two statements~~ _(this said three tables and
 7/6/3 — the 2026-09-10 registry's counts; re-measured 2026-09-23.)_
 

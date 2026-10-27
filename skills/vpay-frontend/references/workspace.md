@@ -1,6 +1,6 @@
 # The workspace, package by package
 
-_Verified against vpay `d3a8810b` (2026-09-16). Version-sensitive claims
+_Verified against vpay `d3a8810b` (2026-09-16); the two dashboard BFF mentions re-read at `f885170c` (2026-10-27). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 Everything below verified 2026-09-16 against `frontends/`, `examples/shop` and
@@ -21,15 +21,15 @@ Root `package.json`: `pnpm -r build|lint|test|typecheck`, `test:e2e` →
 
 ## Which gate runs where
 
-| Gate                                                                                                                    | Command                            | In `just ci`?                                                                                          |
-| ----------------------------------------------------------------------------------------------------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| Prettier, repo-wide, working tree                                                                                       | `just fmt-check-web`               | yes, **first**                                                                                         |
-| Typecheck + ESLint, 15 packages / 214 files                                                                             | `just lint-web`                    | yes                                                                                                    |
-| jsdom/node suites (`a11y-gate`, `styling-gate`, `layout.test`, `bff.test`)                                              | `just test-web` (= `pnpm -r test`) | yes — but `a11y-gate`'s built-stylesheet case **skips** there, because nothing has built Storybook yet |
-| Class-string rules                                                                                                      | `just verify-ui`                   | yes, via `just verify`                                                                                 |
-| Storybook build, the theme-defined grep, **and** both apps' `a11y-gate.test.ts` against the artefact (since 2026-10-23) | `just build-storybook`             | **no** — CI `web` job                                                                                  |
-| Storybook + axe in real Chromium                                                                                        | `just test-storybook`              | **no** — needs a ~115 MB Playwright Chromium and `just ci` must pass offline                           |
-| Cypress against the compose stack                                                                                       | `just test-e2e` / `just e2e-specs` | no — CI `e2e (compose)`                                                                                |
+| Gate                                                                                                                        | Command                            | In `just ci`?                                                                                          |
+| --------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Prettier, repo-wide, working tree                                                                                           | `just fmt-check-web`               | yes, **first**                                                                                         |
+| Typecheck + ESLint, 15 packages / 214 files                                                                                 | `just lint-web`                    | yes                                                                                                    |
+| jsdom/node suites (`a11y-gate`, `styling-gate`, `layout.test`; ~~`bff.test`~~, deleted 2026-10-27 with the dashboard's BFF) | `just test-web` (= `pnpm -r test`) | yes — but `a11y-gate`'s built-stylesheet case **skips** there, because nothing has built Storybook yet |
+| Class-string rules                                                                                                          | `just verify-ui`                   | yes, via `just verify`                                                                                 |
+| Storybook build, the theme-defined grep, **and** both apps' `a11y-gate.test.ts` against the artefact (since 2026-10-23)     | `just build-storybook`             | **no** — CI `web` job                                                                                  |
+| Storybook + axe in real Chromium                                                                                            | `just test-storybook`              | **no** — needs a ~115 MB Playwright Chromium and `just ci` must pass offline                           |
+| Cypress against the compose stack                                                                                           | `just test-e2e` / `just e2e-specs` | no — CI `e2e (compose)`                                                                                |
 
 CI's `web` job calls **these recipes**, not copies of their commands, so the
 gate and the local check cannot drift.
@@ -143,6 +143,8 @@ design-system package — by design, so that what it demonstrates is reproducibl
 by a merchant. It pins Next ~~16.3.4~~ ~~16.3.8~~ **16.4.2** while the two vpay apps are on ~~15.5.25~~ ~~`^15.5.27`~~ **`^15.5.28`** (both since 2026-10-23, vaam-apps/vpay#341; 16.3.8 and `^15.5.27` from 2026-10-09, vaam-apps/vpay#272); that
 difference is real and intentional, and the dashboard's BFF review explicitly
 notes it read Next 16.3.4's behaviour while the dashboard resolved 15.5.25 at the time.
+_(The BFF that review was about was deleted on 2026-10-27, vaam-apps/vpay#383;
+the dashboard is one notice page until VP-6b. See `vpay-dashboard`.)_
 
 Its persistence is ZenStack over Postgres: `examples/shop/zenstack/schema.zmodel`
 plus migrations under `examples/shop/zenstack/migrations/`. Regenerate with
