@@ -7,9 +7,11 @@ Source of record: `docs/flows/stripe-sdk-compat.md`. Evidence:
 `sdks/stripe-compat`.
 
 vpay's `/v1` object model, form encoding, error envelope and idempotency
-semantics **are** Stripe's. Its **authentication is not**: there is no API key
-and, since 2026-10-26 (vaam-apps/vpay#380, ADR-0035), no token either. Every
-call is a signed COSE_Sign1 message and every answer is one.
+semantics **are** Stripe's. Its **authentication is not**: there is no API key,
+and since 2026-10-26 (vaam-apps/vpay#380, ADR-0035) this compat path signs every
+call and opens every answer. Since 2026-10-27 (vpay#384, ADR-0037) a deployment
+may also take a bearer token on `/v1`, but **the SDKs still only seal**; their
+token modes are VPA-6, not built, so nothing here sends one.
 
 ## The one seam: `config.httpClient` (since 2026-10-26)
 

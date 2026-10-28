@@ -179,7 +179,9 @@ Two more responses in the process are deliberately not envelopes:
   one route whose failure must not depend on this module working.
 - **`POST /v1/oauth/token`** renders RFC 6749 §5.2's
   `{"error":…,"error_description":…}`, because every OAuth client parses that.
-  Since 2026-10-26 its only customer is the `/mcp/v1` token.
+  It is mounted only where `auth.methods` permits `machine_tokens`, and mints
+  `/v1` and `/mcp/v1` tokens. _(From 2026-10-26 until vpay#384 on 2026-10-27
+  its only customer was the `/mcp/v1` token.)_
 
 Two more since 2026-10-26 and 2026-10-27, both added after this page was last
 read in full:
@@ -188,7 +190,13 @@ read in full:
   `$procs` and `/svc/v1` (vpay#383): `{"code":"UNAUTHORIZED",…}`, **unsigned**,
   identical bytes for every cause, and not the Stripe envelope. Everything a
   handler answers after the layer is still the envelope, sealed. vpay
-  `docs/flows/signed-transport.md` § "What a refusal looks like".
+  `docs/flows/signed-transport.md` § "What a refusal looks like". Since
+  2026-10-27 (ADR-0037) this is also what an **unsigned** `/v1` request gets
+  only where `auth.methods` leaves out `machine_tokens`; elsewhere an unsigned
+  request is a token caller, refused with the plain Stripe-shaped `401`
+  `missing_bearer_token` / `invalid_token`, `503` or `403` from before VP-3. A
+  signed request that also carries `Authorization` is a sealed `400`
+  (`param: authorization`) on every deployment.
 - **A `/mcp/v1` tool refusal** (vpay#377) is an MCP `isError` result carrying
   CrateStack's error, whose `message` starts with `/v1`'s own `error.code` and
   `(param)`. A missing or wrong-audience token is a `401` with an RFC 9728

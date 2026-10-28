@@ -1,6 +1,6 @@
 # Configuration: the CLI layer, the YAML, and what refuses to boot
 
-_Verified against vpay `f885170c` (2026-10-27) for the two signing-key paragraphs under "The signing key is a file"; against `87166eaf` (2026-10-09) for step 7 of "The boot sequence", and against `a33aac61` (2026-09-29) for "The ten environment variables"; the Notch Pay sentences under `callbacks.register` were read against `82a68f4e` (2026-10-23) plus the pull request that adds the 2026-10-23 Notch Pay sandbox verification page, restamped with its merge, and its default per rail against `9499f09d` plus the pull request that adds `docs/status/verification/2026-10-23-notchpay-defaults-and-wrong-network.md`, restamped with its merge; those sentences were re-read against `4df5e0d2` (2026-10-24), the merge of vaam-apps/vpay#364, for what Notch Pay's first delivered webhooks changed; the routing block's last sentence was re-read against `08fb2566` (2026-10-24, vaam-apps/vpay#365); the rest of this page was last read at `d3a8810b` (2026-09-16). Version-sensitive claims
+_Verified against vpay `3bcf0763` (2026-10-28, after vpay#384 and #386) for "`auth:`", the `cose_keys` row and the first signing-key paragraph; against `f885170c` (2026-10-27) for the second signing-key paragraph under "The signing key is a file"; against `87166eaf` (2026-10-09) for step 7 of "The boot sequence", and against `a33aac61` (2026-09-29) for "The ten environment variables"; the Notch Pay sentences under `callbacks.register` were read against `82a68f4e` (2026-10-23) plus the pull request that adds the 2026-10-23 Notch Pay sandbox verification page, restamped with its merge, and its default per rail against `9499f09d` plus the pull request that adds `docs/status/verification/2026-10-23-notchpay-defaults-and-wrong-network.md`, restamped with its merge; those sentences were re-read against `4df5e0d2` (2026-10-24), the merge of vaam-apps/vpay#364, for what Notch Pay's first delivered webhooks changed; the routing block's last sentence was re-read against `08fb2566` (2026-10-24, vaam-apps/vpay#365); the rest of this page was last read at `d3a8810b` (2026-09-16). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 ADR-0003. Flow doc `docs/flows/configuration.md`; crate reference
@@ -39,9 +39,9 @@ an env var only for a flag it declares.
 ### The signing key is a file, deliberately
 
 `--oauth-signing-key-file` names the RS256 private key (PKCS#8 PEM) the merchant
-OP signs access tokens with. _(Since 2026-10-26 those tokens are for `/mcp/v1`
-only: `/v1` takes no token after vaam-apps/vpay#380. This sentence said "`/v1`
-access tokens" until 2026-10-27.)_
+OP signs access tokens with: `/v1` and `/mcp/v1` tokens, where `auth.methods`
+permits `machine_tokens` (below). _(From vaam-apps/vpay#380 on 2026-10-26 until
+vpay#384 on 2026-10-27 they were for `/mcp/v1` only, and this sentence said so.)_
 
 **Two more key files since 2026-10-26 (vpay#380):** `--envelope-signing-key-file`
 and `--envelope-signing-key-next-file` (`VPAY_ENVELOPE_SIGNING_KEY_FILE`,
@@ -231,20 +231,20 @@ budget and **a knob nobody sets is a knob nobody has tested**."
 
 ## Rules that refuse to boot
 
-| Rule                                                                                                                                                  | Why                                                                                                                                                        |
-| ----------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Every merchant's rail host appears in that rail's allowlist                                                                                           | the host allowlist, checked before the FK                                                                                                                  |
-| Every referenced provider exists and is enabled                                                                                                       | a typo fails at boot, not at first payment                                                                                                                 |
-| Every merchant registration carries a unique `merchant_id`                                                                                            | the `/v1` tenancy boundary has no foreign key behind it                                                                                                    |
-| Currency exponent matches the canonical table                                                                                                         | **a 100× amount bug is otherwise silent**                                                                                                                  |
-| `livemode` ⇒ every host is `https://`                                                                                                                 |                                                                                                                                                            |
-| **`livemode` ⇒ no host labelled `wiremock`/`stub`/`mock`/`localhost`**                                                                                | see below                                                                                                                                                  |
-| `livemode` ⇒ secrets come from `${}`, not literals                                                                                                    | stops a real key reaching git                                                                                                                              |
-| `checkout.public_base_url` is a well-formed origin, `https://` under livemode                                                                         | every payer link vpay mints is built on it                                                                                                                 |
-| every `checkout_origins` entry is an `https://` origin, no path, no duplicate, **spelled canonically**                                                | it becomes `frame-ancestors`; a non-canonical spelling is dropped **silently** by the browser                                                              |
-| `checkout_origins` without a `checkout.public_base_url`                                                                                               | there is no page for those origins to frame                                                                                                                |
-| `merchant_clients[].display_name` non-blank, ≤ 80 chars                                                                                               | it is painted into a heading on a phone-sized page                                                                                                         |
-| `merchant_clients[].cose_keys`: each an Ed25519 public key (unpadded base64url), label 1–64 chars; no thumbprint twice in the file (since 2026-10-26) | `MalformedCoseKey` / `DuplicateCoseKey`. The keys are registered for a signed transport that is not built, and no request reads them (`vpay-merchant-api`) |
+| Rule                                                                                                                                                  | Why                                                                                                                                                                                                                                  |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Every merchant's rail host appears in that rail's allowlist                                                                                           | the host allowlist, checked before the FK                                                                                                                                                                                            |
+| Every referenced provider exists and is enabled                                                                                                       | a typo fails at boot, not at first payment                                                                                                                                                                                           |
+| Every merchant registration carries a unique `merchant_id`                                                                                            | the `/v1` tenancy boundary has no foreign key behind it                                                                                                                                                                              |
+| Currency exponent matches the canonical table                                                                                                         | **a 100× amount bug is otherwise silent**                                                                                                                                                                                            |
+| `livemode` ⇒ every host is `https://`                                                                                                                 |                                                                                                                                                                                                                                      |
+| **`livemode` ⇒ no host labelled `wiremock`/`stub`/`mock`/`localhost`**                                                                                | see below                                                                                                                                                                                                                            |
+| `livemode` ⇒ secrets come from `${}`, not literals                                                                                                    | stops a real key reaching git                                                                                                                                                                                                        |
+| `checkout.public_base_url` is a well-formed origin, `https://` under livemode                                                                         | every payer link vpay mints is built on it                                                                                                                                                                                           |
+| every `checkout_origins` entry is an `https://` origin, no path, no duplicate, **spelled canonically**                                                | it becomes `frame-ancestors`; a non-canonical spelling is dropped **silently** by the browser                                                                                                                                        |
+| `checkout_origins` without a `checkout.public_base_url`                                                                                               | there is no page for those origins to frame                                                                                                                                                                                          |
+| `merchant_clients[].display_name` non-blank, ≤ 80 chars                                                                                               | it is painted into a heading on a phone-sized page                                                                                                                                                                                   |
+| `merchant_clients[].cose_keys`: each an Ed25519 public key (unpadded base64url), label 1–64 chars; no thumbprint twice in the file (since 2026-10-26) | `MalformedCoseKey` / `DuplicateCoseKey`. Every signed `/v1` request is verified against them since 2026-10-26 (`vpay-merchant-api`); _until 2026-10-27 this cell said no request reads them, which stopped being true with vpay#380_ |
 
 ### The livemode stub-host rule is the load-bearing one
 
@@ -296,6 +296,47 @@ This is a provider-code match outside an adapter crate — which ADR-0002 forbid
 so. It moves behind the port the day `ProviderAdapter` grows a
 `required_settings()` hook. **It is the only sanctioned one; do not add a
 second.**
+
+## `auth:` — which ways in a deployment permits (since 2026-10-27)
+
+_vaam-apps/vpay#384 and #386, ADR-0037. Source: vpay
+`docs/reference/vpay-config.md` § "`auth:`"; code
+`backends/crates/vpay-config/src/auth.rs`._
+
+```yaml
+auth:
+  methods: [keypair, machine_tokens, hmac_webhooks, human_login]
+```
+
+**Absent means all four**, and that is what `config/application.yml` and the
+chart ship: the key is commented out in the base file on purpose, and it is not
+a chart value. It is YAML in the overlay. vaam's overlay is
+`methods: [keypair, hmac_webhooks]`. Every method gates blocks, and **a block
+for a method that is off is a boot refusal, not dormant config**:
+
+| Method           | Gates                                                                            |
+| ---------------- | -------------------------------------------------------------------------------- |
+| `keypair`        | `merchant_clients[].cose_keys`, `dashboard`, `service_clients`                   |
+| `machine_tokens` | `jwks`, `grant_types`, `allowed_audiences`; `/v1/oauth/token`; the `mcp` surface |
+| `hmac_webhooks`  | `merchant_clients[].webhooks` (any entry, until sealed webhooks, VP-8)           |
+| `human_login`    | nothing in this release; naming it is refused, VPA-3 restores it                 |
+
+Every refusal exits `78` with its own `ConfigError`: `NoAuthMethods` (an empty
+list, or `methods:` with every item commented out, which is a null and not the
+absent key), `UnknownAuthMethod`, `DuplicateAuthMethod`,
+`AuthMethodUnavailable` (`human_login` named), `NoWayIn` (neither `keypair` nor
+`machine_tokens`), `McpNeedsMachineTokens`, `AuthMethodNotConfigured`,
+`AuthMethodDisabled`, `MerchantGrantTypesMissing`, `MerchantOauthWithoutJwks`,
+`MerchantNoCredential` (a registration with neither `cose_keys` nor `jwks`),
+`NearMissKey` (a top-level `auth_methods:`, `authentication:`, a bare
+`methods:`, or `Auth:` in another case) and `MisplacedAuthKey` (an `auth` key
+below the top level, at any depth, except inside `providers[*].settings` and
+`credentials`). The last two exist because `Config` ignores unknown top-level
+keys, and a dropped `auth:` would silently permit all four.
+
+Boot logs one `info` line, `authentication methods`, with `permitted`, `served`
+and `explicit`. `GET /.well-known/vpay-auth` answers the served list,
+unauthenticated, on every process.
 
 ## `routing:` — static weights for the router (since 2026-10-23)
 

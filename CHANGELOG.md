@@ -1,5 +1,39 @@
 # Changelog
 
+## 2026-10-28 — `auth.methods`: a `/v1` token is a deployment option again
+
+Read against vpay `3bcf0763` (2026-10-28). vaam-apps/vpay#384 (ADR-0037) and
+#386 merged after the entry below and made several of its sentences false:
+`/v1` takes a `vpay:v1` bearer token beside a signature wherever `auth.methods`
+permits `machine_tokens`, and an absent key permits it. `verify-coverage` did
+not fail on this, because #384 adds no flow page; the sentences were simply
+wrong. Each is struck or qualified where it stood, with the date it stopped
+being true.
+
+- **`vpay-merchant-api`:** a new section on `auth.methods` (the three envelope
+  modes, the `400` for two credentials, a token caller's plain refusals, the
+  kill switch, `/.well-known/vpay-auth`); the nest table, "There is no bearer
+  token on `/v1` at all", the `cose_keys`/`jwks` paragraph, the OP section, the
+  scopes table and the MCP authentication bullet are corrected;
+  `references/routes.md` and `references/errors.md` follow.
+- **`vpay-ops`:** a new `auth:` section in `references/configuration.md` with
+  every boot refusal; the token Ingress and the `/v1/oauth` split in
+  `references/deployment.md`; and the `cose_keys` row, which had still said no
+  request reads the keys (stale since vpay#380, missed in the entry below).
+- **`vpay-troubleshooting`:** the `auth.methods` refusals under exit `78`.
+- **`vpay-conventions`:** the ADR-0037 row, ADR-0035 superseded in part, and
+  ADR-0010's note; the ADR range is `0001`–`0037`.
+- **`vpay-sdks`:** the Stripe-compat intro says the SDKs still only seal
+  (their token modes are VPA-6).
+- **`vpay`:** the orientation paragraph.
+- **`coverage.json`:** `vpay-merchant-api` claims ADR-0037.
+
+Not done: no vpay test was re-run for this. The facts come from ADR-0037,
+`docs/reference/vpay-config.md` § "`auth:`", `docs/flows/signed-transport.md`
+and `vpay_api::envelope::scope`'s doc comment at `3bcf0763`. Stamps on the
+edited pages name the sections re-read at `3bcf0763`; the rest keep their
+older stamps.
+
 ## 2026-10-27 — the merchant MCP endpoint, the signed `/v1`, and the paired-key console
 
 Read against vpay `f885170c` (2026-10-27). Three vpay changes landed with no

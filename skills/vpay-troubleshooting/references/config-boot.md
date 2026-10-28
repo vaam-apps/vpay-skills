@@ -35,7 +35,15 @@ cause. In order (`docs/flows/configuration.md`):
    this includes `ConfigError::RetiredKey`:** a `dashboard_client` or
    `staff_auth` key anywhere, even `dashboard_client: ~`, is refused by
    `reject_retired_keys` (`vpay-config/src/config.rs`). Delete the key; do not
-   null it. Since 2026-10-26 a `serve` with a missing, malformed or duplicated
+   null it. **Since 2026-10-27 (vpay#384, #386) it also includes the
+   `auth.methods` refusals** (`NoWayIn`, `McpNeedsMachineTokens`,
+   `AuthMethodDisabled`, `MerchantNoCredential`, `NearMissKey`,
+   `MisplacedAuthKey` and the rest; `vpay-ops` § "`auth:`"). The common one
+   after an upgrade: an overlay that sets `methods: [keypair]` but still
+   carries a merchant's `jwks`, `grant_types` or `allowed_audiences`, or a
+   `webhooks` entry without `hmac_webhooks`, is `AuthMethodDisabled`: delete
+   the block, because boot refuses dormant configuration. An `auth:` indented
+   under another key is `MisplacedAuthKey`, not ignored. Since 2026-10-26 a `serve` with a missing, malformed or duplicated
    envelope key file is a `78` at step 3's stage (vpay#380).
    2b. **Join the YAML's rails against the linked adapters.** A configured rail
    with no linked adapter is `ConfigError::ProviderWithoutAdapter` → `78`, still
