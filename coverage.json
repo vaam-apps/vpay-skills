@@ -143,6 +143,7 @@
         "backends/tests/integration/tests/merchant_token_flow.rs",
         "docs/flows/signed-transport.md",
         "docs/adr/0035-v1-is-a-signed-message-not-a-token.md",
+        "docs/adr/0037-authentication-methods-are-deployment-configuration.md",
         "backends/crates/vpay-api/src/envelope",
         "backends/migrations/0055_create-envelope-nonces.sql",
         "backends/tests/integration/tests/signed_transport.rs",

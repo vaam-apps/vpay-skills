@@ -183,11 +183,17 @@ Then state explicitly, in your summary, what you did _not_ do.
 | The merchant SDKs and the parity rule                             | `vpay-sdks`              |
 | Config, deployment, images, Helm, observability                   | `vpay-ops`               |
 
-**Two surfaces changed under every skill on 2026-10-26/27.** `/v1` takes no
-token: every request and answer is a signed COSE_Sign1 message (vpay#380,
-ADR-0035). The staff sign-in is deleted, and `/dash/v1` takes a paired console
-key (vpay#383, ADR-0036). A skill sentence about bearer tokens on `/v1`, or about
-staff passwords, TOTP, sessions or SSO, describes code that no longer exists.
+**Two surfaces changed under every skill on 2026-10-26/27.** `/v1` requests and
+answers are signed COSE_Sign1 messages (vpay#380, ADR-0035). The staff sign-in
+is deleted, and `/dash/v1` takes a paired console key (vpay#383, ADR-0036). A
+skill sentence about staff passwords, TOTP, sessions or SSO describes code that
+no longer exists. **Then, the same day, `auth.methods` made the ways in
+deployment configuration** (vpay#384, ADR-0037): absent, it permits all four,
+so a default deployment takes a bearer token on `/v1` **beside** a signature.
+vaam sets `[keypair, hmac_webhooks]`, where "signed only" still holds. A
+sentence that says `/v1` takes no token is true only of such a deployment.
+_(This paragraph said "`/v1` takes no token" without that qualification from
+2026-10-27 until vpay#384 merged later that day.)_
 The merchant MCP endpoint (`/mcp/v1`, vpay#377, ADR-0033 Proposed) is new, and
 it is opt-in, so a default deployment does not serve it.
 

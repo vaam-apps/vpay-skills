@@ -1,6 +1,6 @@
 # Deployment: images, the chart, and what it deliberately does not do
 
-_Verified against vpay `f885170c` (2026-10-27) for the surface table and the `/v1/oauth` split under `deployment.surfaces`; against `87166eaf` (2026-10-09) for § "Verifying the chart", and against `a33aac61` (2026-09-29) for § "Publishing the chart", re-read in full; the rest of this page was last read at `9653ee94` (2026-09-16). Version-sensitive claims
+_Verified against vpay `3bcf0763` (2026-10-28, after vpay#384) for the `-token` Ingress row and the `/v1/oauth` split under `deployment.surfaces`; against `f885170c` (2026-10-27) for the surface table; against `87166eaf` (2026-10-09) for § "Verifying the chart", and against `a33aac61` (2026-09-29) for § "Publishing the chart", re-read in full; the rest of this page was last read at `9653ee94` (2026-09-16). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 Everything here renders and validates. **Nothing here has run on a cluster.**
@@ -78,24 +78,24 @@ Two platforms, two spellings, and the difference matters:
 `deploy/helm/vpay/`. Both backend workloads run **one image**; the worker
 Deployment passes `args: ["worker"]`.
 
-| Object                             | Notes                                                                                                                                                                                    |
-| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Deployment` server                | `server.replicaCount` (2) — **or no `spec.replicas` at all** when `server.autoscaling.enabled`, so the HPA governs                                                                       |
-| `Deployment` management            | optional, `management.enabled` **false** by default; fixed `replicaCount` (2), **never autoscaled**                                                                                      |
-| `Deployment` worker                | 1 replica, `strategy: Recreate`, server image + `args: ["worker"]`                                                                                                                       |
-| `Deployment` checkout              | optional, `checkout.enabled` **false** by default                                                                                                                                        |
-| `Deployment` dashboard             | optional, `dashboard.enabled` **false** by default; fixed 2 replicas, **never autoscaled**                                                                                               |
-| `HorizontalPodAutoscaler`          | optional (`server.autoscaling.enabled`), **server only**                                                                                                                                 |
-| `Service`                          | ClusterIP, ports `http` (8080) and `metrics` (9090)                                                                                                                                      |
-| `Service` worker                   | **headless, `metrics` only** — exists so the worker can be scraped                                                                                                                       |
-| `Service` management, dashboard    | with their Deployments                                                                                                                                                                   |
-| `ServiceAccount`                   | `automountServiceAccountToken: false`                                                                                                                                                    |
-| `PodDisruptionBudget`              | `minAvailable: 1`; server, **and management when enabled**                                                                                                                               |
-| `ConfigMap` overlay                | optional; mounted with `subPath`. **Splits into two** when `management.enabled` — each tier needs its own `deployment.surfaces`                                                          |
-| `Ingress` ×4                       | `-api` (`/v1`), `-token` (`/v1/oauth/token`, tighter `limit-rps`; since 2026-10-26 it mints only `/mcp/v1` tokens), `-provider` (`/provider`, **on by default**), `-checkout` (optional) |
-| `HTTPRoute`                        | optional (`route.enabled`); **one** object, **four rules** since ADR-0022 added `/dash/v1`                                                                                               |
-| `NetworkPolicy`                    | optional, default-deny both directions                                                                                                                                                   |
-| `ServiceMonitor`, `PrometheusRule` | optional; every threshold proposed. Scrapes server, worker **and management**; the dashboard exports no metrics and gets none                                                            |
+| Object                             | Notes                                                                                                                                                                                                                                                                                                                                        |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Deployment` server                | `server.replicaCount` (2) — **or no `spec.replicas` at all** when `server.autoscaling.enabled`, so the HPA governs                                                                                                                                                                                                                           |
+| `Deployment` management            | optional, `management.enabled` **false** by default; fixed `replicaCount` (2), **never autoscaled**                                                                                                                                                                                                                                          |
+| `Deployment` worker                | 1 replica, `strategy: Recreate`, server image + `args: ["worker"]`                                                                                                                                                                                                                                                                           |
+| `Deployment` checkout              | optional, `checkout.enabled` **false** by default                                                                                                                                                                                                                                                                                            |
+| `Deployment` dashboard             | optional, `dashboard.enabled` **false** by default; fixed 2 replicas, **never autoscaled**                                                                                                                                                                                                                                                   |
+| `HorizontalPodAutoscaler`          | optional (`server.autoscaling.enabled`), **server only**                                                                                                                                                                                                                                                                                     |
+| `Service`                          | ClusterIP, ports `http` (8080) and `metrics` (9090)                                                                                                                                                                                                                                                                                          |
+| `Service` worker                   | **headless, `metrics` only** — exists so the worker can be scraped                                                                                                                                                                                                                                                                           |
+| `Service` management, dashboard    | with their Deployments                                                                                                                                                                                                                                                                                                                       |
+| `ServiceAccount`                   | `automountServiceAccountToken: false`                                                                                                                                                                                                                                                                                                        |
+| `PodDisruptionBudget`              | `minAvailable: 1`; server, **and management when enabled**                                                                                                                                                                                                                                                                                   |
+| `ConfigMap` overlay                | optional; mounted with `subPath`. **Splits into two** when `management.enabled` — each tier needs its own `deployment.surfaces`                                                                                                                                                                                                              |
+| `Ingress` ×4                       | `-api` (`/v1`), `-token` (`/v1/oauth/token`, tighter `limit-rps`; mounted behind it only where `auth.methods` permits `machine_tokens`, which an absent key does, and since 2026-10-27 it mints `/v1` and `/mcp/v1` tokens; from 2026-10-26 until then only `/mcp/v1`), `-provider` (`/provider`, **on by default**), `-checkout` (optional) |
+| `HTTPRoute`                        | optional (`route.enabled`); **one** object, **four rules** since ADR-0022 added `/dash/v1`                                                                                                                                                                                                                                                   |
+| `NetworkPolicy`                    | optional, default-deny both directions                                                                                                                                                                                                                                                                                                       |
+| `ServiceMonitor`, `PrometheusRule` | optional; every threshold proposed. Scrapes server, worker **and management**; the dashboard exports no metrics and gets none                                                                                                                                                                                                                |
 
 **It renders no Secret and no database.**
 
@@ -272,7 +272,9 @@ gone. vpay's own `EnabledSurfaces` doc comment in `vpay-config` still says
 third value, `mcp` (vaam-apps/vpay#377, 2026-10-27), mounts `POST /mcp/v1`. It
 is **not** in `EnabledSurfaces::ALL`, so an absent key never mounts it, and
 **nothing in the chart sets it**: no `-mcp` Deployment, values key, Ingress
-or NetworkPolicy rule exists (ADR-0033 step 6, not built).
+or NetworkPolicy rule exists (ADR-0033 step 6, not built). Since 2026-10-27 a
+process naming `mcp` also refuses to boot unless `auth.methods` permits
+`machine_tokens` (`McpNeedsMachineTokens`).
 
 ~~`/v1/oauth` is **split rather than assigned**: `/token` is business-only
 because it is the _merchant_ private-key-JWT grant, while `jwks.json` and the
@@ -285,8 +287,10 @@ staff grant any more, so **a `surfaces: [management]` pod serves no part of
 the OP**: `/v1/oauth/token`, `jwks.json` and the discovery document are all
 `404` there (`the_token_endpoint_is_business_only` in `vpay-api`'s `lib.rs`).
 The discovery pair is mounted on the business surface and on an MCP-only pod,
-whose merchant MCP validator fetches the JWKS over loopback. `/token` mints
-the merchant credential and stays business-only. Do not mount it on the
+whose merchant MCP validator fetches the JWKS over loopback; since 2026-10-27
+only where something reads it. `/token` mints the merchant credential, stays
+business-only, and since 2026-10-27 exists only where `machine_tokens` is
+permitted (ADR-0037). Do not mount it on the
 management tier.
 
 The surface still cannot be inferred from `merchant_clients`:

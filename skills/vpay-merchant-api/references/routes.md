@@ -1,6 +1,6 @@
 # Every mounted route, and the middleware around them
 
-_Verified against vpay `f885170c` (2026-10-27) for the surface table, § `/v1/oauth`, § `/mcp/v1`, § `/dash/v1` and § Middleware; against `a33aac61` (2026-09-29) for § `/provider` and the step A table; the rest of this page was last read at `b747e5d5` (2026-09-23). Version-sensitive claims
+_Verified against vpay `3bcf0763` (2026-10-28, after vpay#384) for the surface table and § `/v1/oauth`; against `f885170c` (2026-10-27) for § `/mcp/v1`, § `/dash/v1` and § Middleware; against `a33aac61` (2026-09-29) for § `/provider` and the step A table; the rest of this page was last read at `b747e5d5` (2026-09-23). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 Assembled in `vpay_api::router` (`backends/crates/vpay-api/src/lib.rs`).
@@ -13,13 +13,13 @@ Counts and contents verified against the code on **2026-09-23** (this said
 resolved from `deployment.surfaces` by
 `vpay_config::Deployment::enabled_surfaces`:
 
-| Surface      | Mounts                                                                                                |
-| ------------ | ----------------------------------------------------------------------------------------------------- |
-| `business`   | `/v1`, `/v1/browser`, `/provider`, `POST /v1/oauth/token`, and `/svc/v1` (since 2026-10-27, vpay#383) |
-| `management` | `/dash/v1` (the reads and `$procs`), when `dashboard:` is configured                                  |
-| `mcp`        | `POST /mcp/v1` and its RFC 9728 metadata (since 2026-10-27, vpay#377); **never in `ALL`**             |
-| any          | `/v1/oauth/.well-known/openid-configuration`, `/v1/oauth/jwks.json`                                   |
-| always       | `/healthz`                                                                                            |
+| Surface                                    | Mounts                                                                                                                                                                                |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `business`                                 | `/v1`, `/v1/browser`, `/provider`, `/svc/v1` (since 2026-10-27, vpay#383), and `POST /v1/oauth/token` only where `auth.methods` permits `machine_tokens` (since 2026-10-27, vpay#384) |
+| `management`                               | `/dash/v1` (the reads and `$procs`), when `dashboard:` is configured                                                                                                                  |
+| `mcp`                                      | `POST /mcp/v1` and its RFC 9728 metadata (since 2026-10-27, vpay#377); **never in `ALL`**                                                                                             |
+| business (with `machine_tokens`) and `mcp` | `/v1/oauth/.well-known/openid-configuration`, `/v1/oauth/jwks.json`: mounted where something reads them (since 2026-10-27; "any" until then)                                          |
+| always                                     | `/healthz`, and `GET /.well-known/vpay-auth` (`{"methods": [...]}`, unauthenticated, since 2026-10-27, ADR-0037)                                                                      |
 
 An absent `surfaces:` key means `business` and `management`
 (`EnabledSurfaces::ALL`), which is every pre-ADR-0022 deployment; `mcp` is
@@ -135,11 +135,14 @@ Things about this table that are decisions rather than accidents:
   anyone.** Mounting a route is not a rail call; do not read these five rows as
   a payout path.
 
-## `/v1/oauth` — the merchant OP, now only for `/mcp/v1`
+## `/v1/oauth` — the merchant OP, where `machine_tokens` is permitted
 
-**Since 2026-10-26 nothing on `/v1` reads what this mints** (vpay#380 signs
-every `/v1` request), so the OP's one remaining customer is the MCP endpoint
-below. It stays until VP-4, and VP-4 has no replacement for `/mcp/v1` yet
+**Since 2026-10-27 (ADR-0037, vpay#384) `POST /v1/oauth/token` is mounted iff
+`auth.methods` permits `machine_tokens`** (an honest `404` otherwise), and `/v1`
+reads the `vpay:v1` tokens it mints again. It is the only token source for the
+MCP endpoint below. _(From 2026-10-26 until #384 this section was headed "now
+only for `/mcp/v1`" and said nothing on `/v1` read what it mints; vpay#380 had
+made `/v1` signed-only.)_ It stays until VP-4, and VP-4 has no replacement for `/mcp/v1` yet
 (ADR-0033, "Left to the maintainer" item 4). Since vpay#377,
 `op::token::apply_resource_indicator` maps RFC 8707 `resource` onto the
 audience: one `resource` with no `audience` _is_ the audience, and two targets
