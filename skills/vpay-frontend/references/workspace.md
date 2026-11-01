@@ -1,6 +1,6 @@
 # The workspace, package by package
 
-_Verified against vpay `d3a8810b` (2026-09-16); the two dashboard BFF mentions re-read at `f885170c` (2026-10-27). Version-sensitive claims
+_Verified against vpay `d3a8810b` (2026-09-16); the two dashboard BFF mentions re-read at `f885170c` (2026-10-27), and the one under `examples/shop` again at `10f42747` (2026-10-30). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 Everything below verified 2026-09-16 against `frontends/`, `examples/shop` and
@@ -144,7 +144,10 @@ by a merchant. It pins Next ~~16.3.4~~ ~~16.3.8~~ **16.4.2** while the two vpay 
 difference is real and intentional, and the dashboard's BFF review explicitly
 notes it read Next 16.3.4's behaviour while the dashboard resolved 15.5.25 at the time.
 _(The BFF that review was about was deleted on 2026-10-27, vaam-apps/vpay#383;
-the dashboard is one notice page until VP-6b. See `vpay-dashboard`.)_
+~~the dashboard is one notice page until VP-6b~~. **Corrected 2026-10-30:** the
+dashboard signs staff in again where vpay serves `human_login`
+(vaam-apps/vpay#392–#394), with a server-side code leg, but the BFF is still
+deleted. See `vpay-dashboard`.)_
 
 Its persistence is ZenStack over Postgres: `examples/shop/zenstack/schema.zmodel`
 plus migrations under `examples/shop/zenstack/migrations/`. Regenerate with

@@ -5,7 +5,8 @@ description: A symptom index for vpay — the exact error text or observed behav
 
 # vpay troubleshooting
 
-> **Verified against vpay `87166eaf` (2026-10-09).** Version-sensitive claims below
+> **Verified against vpay `87166eaf` (2026-10-09); the dashboard row of the
+> index at `10f42747` (2026-10-30).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -62,7 +63,7 @@ Two habits before anything else:
 | every rail callback 404s while every object reports healthy                          | [deployment](references/deployment.md)                       |
 | a profile typo boots happily on placeholder credentials                              | [deployment](references/deployment.md)                       |
 | a server crash-loops after a signing-key rollback                                    | [deployment](references/deployment.md)                       |
-| the dashboard shows only a notice page, or `/dash/v1` is a coarse `401`              | [dashboard](references/dashboard.md)                         |
+| dashboard `/login` says "paired key" or lists variables; `/dash/v1` coarse `401`     | [dashboard](references/dashboard.md)                         |
 | the dashboard shows an em dash, no rail column, no page count (pre-VP-6a components) | [dashboard](references/dashboard.md)                         |
 | a document says X and the code/recipe says Y                                         | [known-wrong-docs](references/known-wrong-docs.md)           |
 

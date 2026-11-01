@@ -1,6 +1,6 @@
 # The error model
 
-_Verified against vpay `b747e5d5` (2026-09-23). Version-sensitive claims
+_Verified against vpay `b747e5d5` (2026-09-23); the 2026-10-30 note on `/dash/v1` under the coarse `401` against `10f42747` (2026-10-30). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 ADR-0011. Two tiers, and one rule that holds them together: **a boundary
@@ -196,7 +196,13 @@ read in full:
   request is a token caller, refused with the plain Stripe-shaped `401`
   `missing_bearer_token` / `invalid_token`, `503` or `403` from before VP-3. A
   signed request that also carries `Authorization` is a sealed `400`
-  (`param: authorization`) on every deployment.
+  (`param: authorization`) on every deployment. _(2026-10-30, vpay#390: the
+  same split now applies to `/dash/v1` and `$procs`. Where `human_login` is
+  served the envelope is `Optional` and an unsigned request is checked as a
+  staff session, refused with a plain `401` (`503` when the JWKS cannot be
+  read, `403` for the wrong tenant, scope or member); a signed request with a
+  bearer is `400`. Elsewhere it is still the coarse `401`. `/svc/v1` stays
+  `Required`.)_
 - **A `/mcp/v1` tool refusal** (vpay#377) is an MCP `isError` result carrying
   CrateStack's error, whose `message` starts with `/v1`'s own `error.code` and
   `(param)`. A missing or wrong-audience token is a `401` with an RFC 9728

@@ -1,11 +1,13 @@
 ---
 name: vpay-data-layer
-description: vpay's persistence layer — `backends/migrations/*.sql` as the authoritative schema and the rule that a shipped migration is never edited, the CrateStack `.cstack` file that compiles and runs real queries for fourteen of its twenty models while six stay a type-checked design sketch, the repository traits and why their implementations may never be named outside `vpay-db`, sqlx with no offline mode and no query macros, and the drift and testcontainer machinery. Load before adding a migration, touching `backends/crates/vpay-db`, editing `schemas/vpay.cstack`, or writing any SQL.
+description: vpay's persistence layer — `backends/migrations/*.sql` as the authoritative schema and the rule that a shipped migration is never edited, the CrateStack `.cstack` file that compiles and runs real queries for sixteen of its twenty-three models (2026-10-30) while seven stay a type-checked design sketch, the repository traits and why their implementations may never be named outside `vpay-db`, sqlx with no offline mode and no query macros, and the drift and testcontainer machinery. Load before adding a migration, touching `backends/crates/vpay-db`, editing `schemas/vpay.cstack`, or writing any SQL.
 ---
 
 # The data layer
 
-> **Verified against vpay `f885170c` (2026-10-27)** for the lines vaam-apps/vpay#383
+> **Verified against vpay `10f42747` (2026-10-30)** for the lines vaam-apps/vpay#388
+> changed (the restored staff models, migration `0058`, the drift constants,
+> `MODEL_TABLES`); against `f885170c` (2026-10-27) for the lines vaam-apps/vpay#383
 > changed (the staff models, migrations `0055`–`0057`, the drift constants);
 > the rest of this page was last verified against `87166eaf` (2026-10-09).
 > Version-sensitive claims below carry the date they became true — a feature in vpay's `master` may be absent
@@ -66,6 +68,19 @@ error there is a build failure. But:
 > `f885170c` still lists `StaffSession 7` and `OauthAuthorizationCode 3`, are
 > stale: re-derive the count as below.
 >
+> **Corrected 2026-10-30 (vaam-apps/vpay#388, VPA-2, merged 2026-10-29).**
+> Migration `0058` recreates the three sign-in tables and the models came back:
+> `StaffSession`, `OauthAuthorizationCode` and `StaffSsoAttempt` are declared
+> again, and **`MODEL_TABLES` lists twenty-three** (20 at `f885170c`). Their
+> repositories (`StaffSessions`, `StaffSsoAttempts`, `AuthorizationCodes`)
+> are generated-only and implemented only by `PgRepositories`; since vpay#390
+> (and #391 for SSO attempts) the served `human_login` calls them. By a
+> grep of accessor calls in non-test `vpay-db` code at `10f42747` — **not** the
+> chain recount below — sixteen models are used and seven are not: the six
+> above plus `EnvelopeNonce` (its repository is raw `sqlx`). The header box
+> still says "FOURTEEN OF TWENTY MODELS ARE QUERIED" at `10f42747`, so it is
+> stale in the other direction now.
+>
 > ~~Of its nineteen models … **five** carry real queries … Every other model is
 > a design sketch.~~ **Corrected 2026-09-23.** "Five" had been wrong since
 > 2026-09-06, when `Customer` joined the first five the same day — it was the
@@ -101,7 +116,11 @@ page did not record. **209 over 27, 20 unmappable, since migration `0056`
 `console_keys`. The constant on `master` just before it was 214 over 29, a
 step (through `0055`, `envelope_nonces`, vaam-apps/vpay#380) this page did not
 record either. These are the test's constants at `f885170c`, read and not
-re-measured. `0053`'s three lines are `charges.method_type`
+re-measured. **221 over 30, 20 unmappable, since migration `0058`
+(vaam-apps/vpay#388, measured 2026-10-28, merged 2026-10-29)**: the three
+tables' 13 lines come back and `credentials_password_and_totp_are_retired`'s
+one goes (209 + 13 − 1), read off the constants and their note at
+`10f42747`, not re-measured here. `0053`'s three lines are `charges.method_type`
 undeclared, its CHECK `method_type_is_known`, and the undeclared table
 `routing_decisions`, whose `considered` is the 20th unmappable column (`jsonb`).
 **212 over 28 since migration `0054` (2026-10-24), measured.** The change was
@@ -181,7 +200,17 @@ paid_out_of_band)` at `invoices_payment_record_key`, a six-column `UNIQUE`
   drops `staff_sessions`, `oauth_authorization_codes` and `staff_sso_attempts`,
   and deletes every `password` and `totp` row of `credentials`; `0057` is
   `console-keys-thumbprint-prefix-index`. So `0050`'s table no longer exists,
-  and `0050` stays applied and unedited regardless. The next is `0058`.)_
+  and `0050` stays applied and unedited regardless. ~~The next is `0058`.~~)_
+  _(2026-10-30: `0058` is `restore-human-login-tables` (vaam-apps/vpay#388,
+  VPA-2): it recreates `staff_sessions`, `oauth_authorization_codes` and
+  `staff_sso_attempts`, **empty**, with the DDL of `0035`, `0040` and `0050`,
+  and drops `credentials_password_and_totp_are_retired`. `0056` stays as
+  written — forward-only, so the fix was a new file, not an edit. **`0058`
+  does not bring back the staff `password` and `totp` credentials `0056`
+  deleted**: a deployment upgrading across both keeps them only by exporting
+  before `0056` runs and importing after `0058` (vpay
+  `docs/runbooks/deploy-and-rollback.md` § "Keeping staff passwords across
+  0056 and 0058"); otherwise those staff enrol again. The next is `0059`.)_
 - **The ADD COLUMN backfills with a DEFAULT and drops it in the next
   statement** (`0042`'s device), which is why `model Invoice.paid_out_of_band`
   carries no `@default` and costs the drift nothing.

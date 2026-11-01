@@ -4,14 +4,21 @@ _Verified against vpay `f885170c` (2026-10-27), the merge of
 vaam-apps/vpay#383, for every section. This page was
 `read-seam-and-bff.md` until that day and covered the BFF, the token
 lifecycle and the generated-client caller, all deleted by #383; what it said
-about them is kept, struck, at the end. Version-sensitive claims carry the
+about them is kept, struck, at the end. **Re-read against vpay `10f42747`
+(2026-10-30)** for the credential paragraph, `resource-name.ts`, the model
+count and the token lifecycle (each marked **Corrected 2026-10-30**); nothing
+on the read shapes changed. Version-sensitive claims carry the
 date they became true — see
 [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 The credential on every read below is a COSE_Sign1 message under a paired
-console key: [console-keys.md](console-keys.md). This page is the shape of
-the reads, which #383 did not change ("the routes and the tenancy rule are
-unchanged", `docs/status/backend.md`).
+console key: [console-keys.md](console-keys.md). **Corrected 2026-10-30
+(vpay#390):** or, on a deployment that serves `human_login`, a staff access
+token on an unsigned request, answered in plain JSON
+([human-login.md](human-login.md)); the routes, the five procedures and the
+allowlist are the same for both. This page is the shape of
+the reads, which neither #383 nor #390 changed ("the routes and the tenancy
+rule are unchanged", `docs/status/backend.md`).
 
 ## Two transports, one seam
 
@@ -29,12 +36,14 @@ Everything else is a **CrateStack procedure** at
 | `CHECKOUT_SESSIONS`                             | `procedure searchCheckoutSessions`            |
 
 `searchPaymentIntents` is the fifth procedure. No screen calls it today,
-because no screen calls anything (see `SKILL.md`). Until 2026-10-27 the
+because no screen reads anything (see `SKILL.md`; since 2026-10-30 the app
+calls the sign-in routes, and still no read). Until 2026-10-27 the
 Overview called it six times per render.
 
 `resource-name.ts` survived #383 with `PROCEDURE_RESOURCES` and
 `isProcedureResource`. `payment_intents` is in neither, because it is not a
-procedure. Do not add it. **Its comment is stale at `f885170c`**: it says the
+procedure. Do not add it. **Its comment is stale at `f885170c`, and still at
+`10f42747`**: it says the
 resource-to-procedure mapping is `LIST_OF` in `src/dash/cratestack-client.ts`,
 and #383 deleted that file. As of 2026-10-27 nothing maps a resource to a
 procedure, because nothing calls one. That is VP-6b's to rebuild.
@@ -84,7 +93,11 @@ the module name `schema/search_payment_intents.rs`, whose
 child of that module). Code wins. The test's model half covers all **twenty**
 models as of 2026-10-27 (`MODEL_TABLES: [(&str, &str); 20]`, compared both ways
 against `cratestack_schema::MODELS`; `ConsoleKey` is in it since #383, which
-removed `StaffSession` and `OauthAuthorizationCode`). So a model you declare
+removed `StaffSession` and `OauthAuthorizationCode`). **Corrected 2026-10-30:**
+**twenty-three** since vpay#388 (VPA-2), which put `StaffSession`,
+`OauthAuthorizationCode` and `StaffSsoAttempt` back
+(`MODEL_TABLES: [(&str, &str); 23]`; `schemas/vpay.cstack` has 23 models and
+12 procedures, counted at `10f42747`). So a model you declare
 fails that test until you add its pair. Its procedure half probes one path,
 so add a probe if you add a procedure.
 
@@ -178,7 +191,11 @@ agent on this one may meet a document that still describes it.
   `401` exactly once and never a `403` (`withOneRemint`).~~ **Deleted
   2026-10-27:** there is no token. A key expires 30 days after pairing, and a
   refused key means re-pairing, not re-minting (`docs/status/frontend.md`,
-  case 15's successor).
+  case 15's successor). **Corrected 2026-10-30 (vpay#392):** where
+  `human_login` is served the token is back: `src/server/gate.ts` mints it from
+  the session at the first render and replaces it at 80 % of its life
+  (`REMINT_AFTER_FRACTION = 0.8`), with no refresh grant. `withOneRemint` did
+  not come back. No read uses the token yet; a key still re-pairs.
 - ~~**The procedure transport is the generated client**: only
   `src/dash/cratestack-client.ts` imports `@vpay/dash-client` at runtime, every
   call goes through `callProcedure`, and four screens read through

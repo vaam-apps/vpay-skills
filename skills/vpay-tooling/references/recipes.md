@@ -1,6 +1,6 @@
 # The recipe inventory
 
-_Verified against vpay `67c90ea5` (2026-09-20), except § Helm, re-read against `87166eaf` (2026-10-09). Version-sensitive claims
+_Verified against vpay `67c90ea5` (2026-09-20), except § Helm, re-read against `87166eaf` (2026-10-09), and the `expected_suites` census, the Cypress spec list, the demo-stack traps, the `gen-demo-keys` row and the `.env.live` paragraph, re-read against `10f42747` (2026-10-30). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 `justfile` is 4 704 lines, two-thirds of them comment (2026-09-16).
@@ -63,17 +63,17 @@ so a grep for the triple finds the flag that applies to it (ADR-0014).
 
 ## Test
 
-| Recipe                      | Does                                                                                                                      | Needs                                               |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
-| `just test`                 | `test-rust` + `test-doc` + `test-web`                                                                                     |                                                     |
-| `just test-rust`            | `cargo nextest run --workspace`                                                                                           | **Docker**                                          |
-| ~~`just loopback-aliases`~~ | **deleted 2026-10-27** (vpay#383) with `staff_sign_in.rs`, the only suite that sent from `127.0.0.x` aliases              | —                                                   |
-| `just test-rust-all`        | `cargo nextest run --workspace --run-ignored all` — "expect failures; this is for seeing what is NOT covered, not for CI" | Docker                                              |
-| `just test-doc`             | `cargo test --doc --workspace`                                                                                            |                                                     |
-| `just test-web`             | `pnpm -r test`                                                                                                            | `node_modules`                                      |
-| `just verify-ignored`       | `cargo nextest list` + `jq`, three assertions                                                                             | `jq`                                                |
-| `just test-storybook`       | clears three Vite caches, then both apps' `vitest run --config vitest.storybook.config.ts`                                | Playwright Chromium (≈115 MB, network on first run) |
-| `just playwright-browser`   | `playwright install chromium` (no `--with-deps`; it needs root and CI's image already has the libraries)                  | network                                             |
+| Recipe                      | Does                                                                                                                                                                                                                                                                                                               | Needs                                               |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------- |
+| `just test`                 | `test-rust` + `test-doc` + `test-web`                                                                                                                                                                                                                                                                              |                                                     |
+| `just test-rust`            | `cargo nextest run --workspace`                                                                                                                                                                                                                                                                                    | **Docker**                                          |
+| ~~`just loopback-aliases`~~ | **deleted 2026-10-27** (vpay#383) with `staff_sign_in.rs`, the only suite that sent from `127.0.0.x` aliases. _2026-10-30: the suite is back (vpay#390) and binds those aliases again; the recipe is **not**, though the helper's error still names it. On macOS, `sudo ifconfig lo0 alias <addr> up` per address_ | —                                                   |
+| `just test-rust-all`        | `cargo nextest run --workspace --run-ignored all` — "expect failures; this is for seeing what is NOT covered, not for CI"                                                                                                                                                                                          | Docker                                              |
+| `just test-doc`             | `cargo test --doc --workspace`                                                                                                                                                                                                                                                                                     |                                                     |
+| `just test-web`             | `pnpm -r test`                                                                                                                                                                                                                                                                                                     | `node_modules`                                      |
+| `just verify-ignored`       | `cargo nextest list` + `jq`, three assertions                                                                                                                                                                                                                                                                      | `jq`                                                |
+| `just test-storybook`       | clears three Vite caches, then both apps' `vitest run --config vitest.storybook.config.ts`                                                                                                                                                                                                                         | Playwright Chromium (≈115 MB, network on first run) |
+| `just playwright-browser`   | `playwright install chromium` (no `--with-deps`; it needs root and CI's image already has the libraries)                                                                                                                                                                                                           | network                                             |
 
 **Docker is required for the Rust suite**, not optional.
 `vpay-tests-integration`, `vpay-tests-conformance`, `vpay-db`, `vpay-server`
@@ -97,8 +97,8 @@ shape on the TypeScript side — it declares a `compat` script and no `test`
 script, so `pnpm -r test` skips it.
 
 **The census `verify-ignored` enforces** (variables in `justfile`, read with
-`just --evaluate`): `expected_suites` = **55 test binaries at vpay `f885170c`
-(2026-10-27)**. It was 48 when this sentence was first written, 51 on `master` at
+`just --evaluate`): `expected_suites` = **58 test binaries at vpay `10f42747`
+(2026-10-30)** (`justfile` line 3226; ~~55 at `f885170c` (2026-10-27)~~). It was 48 when this sentence was first written, 51 on `master` at
 `b8be107`, 52 with the Notch Pay adapter (2026-10-20), and 53 at `d14cbe9`, where
 the Notch Pay sandbox probe's unit tests became one. On 2026-10-26 and
 2026-10-27 it moved four times:
@@ -107,6 +107,15 @@ the Notch Pay sandbox probe's unit tests became one. On 2026-10-26 and
 - 55 → 56 with the signed `/v1` (VP-3/5/7);
 - 56 → 54 when VP-6a deleted the staff sign-in suites (#383);
 - 54 → 55 with `mcp_merchant.rs` (#377).
+
+**Corrected 2026-10-30:** two more moves since, both restoring what VP-6a
+deleted:
+
+- 55 → 56 with `staff_sign_in.rs` (VPA-3, vpay#390, 2026-10-29). CI's `rust`
+  job caught it, not the PR's local run: `verify-ignored` is in `just ci` and
+  not in `just verify`'s seventeen;
+- 56 → 58 with `staff_sso.rs` and `staff_sso_keycloak.rs` (VPA-4, vpay#391,
+  2026-10-30; the second boots a real Keycloak container).
 
 The `justfile` comment above the variable carries each move. `expected_ignored` =
 0, `min_tests` = 1080 (a floor, deliberately set under the measured count —
@@ -193,9 +202,16 @@ test-storybook` are what fail when the config breaks.
 | `just test-flutter-e2e`      | drives the plugin's own `BrowserClient`/`SheetController` against a real stack, real signed `/v1` calls (`private_key_jwt` until 2026-10-26, vpay#380), real `cs_…` sessions | `curl docker jq node pnpm`, and `just demo-up` first |
 | `just test-flutter-emulator` | drives the real native sheet's confirm UI on an Android emulator                                                                                                             | `adb`, an AVD named `vpay_e2e_avd`, a running stack  |
 
-Cypress lives in `frontends/tests/e2e` (`@vpay/e2e`). Three specs as of
+Cypress lives in `frontends/tests/e2e` (`@vpay/e2e`). ~~Three specs as of
 2026-10-27: `checkout.cy.ts`, `shop-embedded.cy.ts`, `shop-hosted.cy.ts`
-(`dashboard.cy.ts` went with the staff sign-in, vpay#383). The `e2e` script runs **two passes** — `cypress run`, then
+(`dashboard.cy.ts` went with the staff sign-in, vpay#383).~~ **Four as of
+2026-10-30:** those three plus `dashboard-human-login.cy.ts` (vpay#394,
+VPA-5c), which drives the password sign-in, TOTP enrolment, the forced
+password change, the session cookie and sign-out against the compose stack.
+It reads the password from the file `just demo-staff` writes (via
+`VPAY_STAFF_PASSWORD_FILE`, Node-side, never in `Cypress.env`), so run
+`just demo-staff` against the stack first. Staff SSO has no e2e case: the
+stack has no identity provider. `dashboard.cy.ts` is not back. The `e2e` script runs **two passes** — `cypress run`, then
 `VPAY_E2E_FRAMED=1 cypress run`. Interactive: `pnpm --filter @vpay/e2e open`.
 
 The Cypress binary needs `pnpm exec cypress install` on a network that reaches
@@ -423,31 +439,47 @@ but a _list_ in an overlay replaces the base list entirely, so while the demo
 stack is up the base file's `acme-cameroon` is gone. That is correct — nobody
 holds its private key — but it means you cannot authenticate as it against a
 demo stack. Everything the overlay does not mention (`providers`,
-`currencies`, `deployment.public_base_url`, `dashboard_client`) still comes
-from the base file.
+`currencies`, `deployment.public_base_url`) still comes from the base file.
+_(This list also named `dashboard_client` until 2026-10-30. The base file has
+written none since vpay#383, and since vpay#394 the generated overlay writes
+its own, with `staff_auth`.)_
 
-**`just demo-staff` creates a member and no credential** (since 2026-10-27,
+~~**`just demo-staff` creates a member and no credential** (since 2026-10-27,
 vaam-apps/vpay#383). It runs `vpay-server staff add` in a one-shot container
 and writes the member's `stf_…` id to the demo's id file. The member can read
 `/dash/v1` only once a console key is attached with `vpay-server staff pair-key
 --staff <id>` or through vaam's pairing, and the demo dashboard application
 cannot sign in at all until VP-6b. A second run hits the unique email index
-and, if the id file is still there, says so and exits 0. ~~It captured a
+and, if the id file is still there, says so and exits 0.~~ ~~It captured a
 one-time password into `.e2e/vpay-demo/staff-password.txt`, and
 `dashboard.cy.ts` signed in as this account.~~ That was until 2026-10-27.
 
+**Corrected 2026-10-30 (vaam-apps/vpay#394, VPA-5c): `just demo-staff` writes a
+one-time password again.** The generated demo overlay serves `human_login`, so
+`vpay-server staff add` creates the member **and** a `must_change` password
+credential and prints the password once; the recipe writes it to
+`demo_staff_password_file` (`.e2e/<demo_project>/staff-password.txt`, mode
+0600, git-ignored) and no `staff-id.txt` any more. **If `staff add` prints an
+`stf_…` id instead, the recipe fails** on purpose: the overlay predates VPA-5c
+and does not serve `human_login`; `just demo-down`, delete
+`.e2e/application-demo.yml`, `just gen-demo-keys`, start again. A second run
+hits `staff_members_email_key` and exits 0 only if the password file is still
+there; any other failure is a `FAIL`, because the password cannot be
+recovered. `dashboard-human-login.cy.ts` signs in as this account. A paired
+console key (`vpay-server staff pair-key`) is still the other way in.
+
 ### The demo recipes
 
-| Recipe                                                | Does                                                                                                                            |
-| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `just demo`                                           | `demo-up` + `demo-walk`                                                                                                         |
-| `just demo-up`                                        | `gen-demo-keys`, then `up -d --build --wait`, then polls `/healthz` for 120 s                                                   |
-| `just demo-walk`                                      | `cargo run -q -p merchant-demo` against the running stack, then prints every useful URL                                         |
-| `just demo-status`                                    | `docker compose ... ps` plus every `vpay`-named container on the machine                                                        |
-| `just demo-down`                                      | `down -v` — containers **and volumes**                                                                                          |
-| `just demo-shop` / `demo-checkout` / `demo-dashboard` | echo the URL                                                                                                                    |
-| `just gen-demo-keys`                                  | `cargo xtask gen-signing-key` for `demo-merchant` and `shop-merchant`, extracts the public JWKs, writes the overlay. Idempotent |
-| `just gen-e2e-signing-key`                            | `openssl genpkey` RSA 3072 PKCS#8 → `.e2e/oauth-signing-key.pem`. Idempotent                                                    |
+| Recipe                                                | Does                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `just demo`                                           | `demo-up` + `demo-walk`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `just demo-up`                                        | `gen-demo-keys`, then `up -d --build --wait`, then polls `/healthz` for 120 s                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `just demo-walk`                                      | `cargo run -q -p merchant-demo` against the running stack, then prints every useful URL                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `just demo-status`                                    | `docker compose ... ps` plus every `vpay`-named container on the machine                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `just demo-down`                                      | `down -v` — containers **and volumes**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `just demo-shop` / `demo-checkout` / `demo-dashboard` | echo the URL                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `just gen-demo-keys`                                  | `cargo xtask gen-signing-key` for `demo-merchant` and `shop-merchant`, extracts the public JWKs, writes the overlay. Idempotent. **Since 2026-10-30 (vpay#394)** the overlay sets `auth.methods: [keypair, hmac_webhooks, human_login]` and writes `dashboard_client` and `staff_auth`, whose pepper and TOTP key are generated per checkout into `.e2e/staff-auth.env` (mode 0600, git-ignored, `env_file` of `compose.e2e.yml`); the overlay and that file regenerate together, because a password hashed under one pepper never verifies under another |
+| `just gen-e2e-signing-key`                            | `openssl genpkey` RSA 3072 PKCS#8 → `.e2e/oauth-signing-key.pem`. Idempotent                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 
 When `/healthz` does not answer, `demo-up` dumps `ps` and the last 80 log
 lines, and reminds you that **exit 78 in that log means a config or CLI
@@ -488,8 +520,9 @@ prints `notchpay off off -`, asks nothing and exits `0`.
 Anything you read describing `vpay-worker-bin` as a separate binary is stale.
 
 `.env.live.example` → `.env.live` (git-ignored) is for the `live` profile test
-against MTN's real sandbox: the three MTN values, `VPAY_STAFF_PEPPER` and
-`VPAY_STAFF_TOTP_KEY` (both base64url), and the **public** JWK halves
+against MTN's real sandbox: the three MTN values, ~~`VPAY_STAFF_PEPPER` and
+`VPAY_STAFF_TOTP_KEY` (both base64url),~~ _(removed from the file by vpay#383 on
+2026-10-27 and not put back by VPA-3–5c as of `10f42747`)_ and the **public** JWK halves
 `LIVE_MERCHANT_JWK_KID` / `LIVE_MERCHANT_JWK_N`. Source it with
 `set -a; . ./.env.live; set +a`. Walkthrough:
 `docs/runbooks/live-sandbox-test.md`.

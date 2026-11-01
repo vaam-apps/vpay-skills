@@ -1,6 +1,6 @@
 # Deployment: images, the chart, and what it deliberately does not do
 
-_Verified against vpay `3bcf0763` (2026-10-28, after vpay#384) for the `-token` Ingress row and the `/v1/oauth` split under `deployment.surfaces`; against `f885170c` (2026-10-27) for the surface table; against `87166eaf` (2026-10-09) for § "Verifying the chart", and against `a33aac61` (2026-09-29) for § "Publishing the chart", re-read in full; the rest of this page was last read at `9653ee94` (2026-09-16). Version-sensitive claims
+_Verified against vpay `10f42747` (2026-10-30) for the `management` row and the 2026-10-30 correction under `deployment.surfaces`; against `3bcf0763` (2026-10-28, after vpay#384) for the `-token` Ingress row and the `/v1/oauth` split under `deployment.surfaces`; against `f885170c` (2026-10-27) for the surface table; against `87166eaf` (2026-10-09) for § "Verifying the chart", and against `a33aac61` (2026-09-29) for § "Publishing the chart", re-read in full; the rest of this page was last read at `9653ee94` (2026-09-16). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 Everything here renders and validates. **Nothing here has run on a cluster.**
@@ -252,10 +252,10 @@ was checked against; `helm show chart` answers it.
 **Absent means every surface**, so a deployment that predates this key upgrades
 unchanged; an empty list or an unknown value is a boot refusal (exit 78).
 
-| Surface      | Mounts                                                                                                               |
-| ------------ | -------------------------------------------------------------------------------------------------------------------- |
-| `business`   | `/v1`, `/v1/browser`, `/provider`, and `/v1/oauth/token`; since 2026-10-27 also `/svc/v1` (when `dashboard:` is set) |
-| `management` | `/dash/v1` and its `$procs` transport (when `dashboard:` is set); ~~and the `staff` sign-in routes~~                 |
+| Surface      | Mounts                                                                                                                                                             |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `business`   | `/v1`, `/v1/browser`, `/provider`, and `/v1/oauth/token`; since 2026-10-27 also `/svc/v1` (when `dashboard:` is set)                                               |
+| `management` | `/dash/v1` and its `$procs` transport (when `dashboard:` is set); ~~and the `staff` sign-in routes~~ — back since 2026-10-30 where `human_login` is served (below) |
 
 **Changed 2026-10-27 (vaam-apps/vpay#383, ADR-0036).** The staff sign-in
 routes are deleted, so the management surface is `/dash/v1` and nothing else.
@@ -268,7 +268,34 @@ Neither nest is mounted without a `dashboard:` block. With
 everything), and no HTTPRoute or Ingress publishes `/svc/v1`. The chart
 values `dashboard.clientId`, `dashboard.redirectUri` and `dashboard.scope` are
 gone. vpay's own `EnabledSurfaces` doc comment in `vpay-config` still says
-"`/dash/v1` and the `staff` sign-in routes" at `f885170c`; the code wins. A
+"`/dash/v1` and the `staff` sign-in routes" at `f885170c`; the code wins.
+
+**Corrected 2026-10-30 (vaam-apps/vpay#390, #391, #394).** The paragraph above
+was true from vpay#383 to vpay#390. Where `auth.methods` serves `human_login`
+(permitted, and both `staff_auth` and `dashboard_client` in the overlay), the
+management surface mounts the staff sign-in routes again
+(`/dash/v1/staff/*`, `/dash/v1/oauth/*`, SSO's three when `staff_auth.sso` is
+written), `/dash/v1` also mounts with `dashboard_client` alone, and a
+management pod that serves the method mounts `/v1/oauth/jwks.json` and the
+discovery document again (its session validator reads them). So the
+`EnabledSurfaces` doc comment is right again on such a deployment. The chart
+values `dashboard.clientId`, `dashboard.redirectUri` and `dashboard.scope` are
+**back** (vpay#394, VPA-5c), with a fourth, `dashboard.ssoIssuer`; each renders
+into the dashboard Deployment's env (`VPAY_DASHBOARD_CLIENT_ID`,
+`_REDIRECT_URI`, `_SCOPE`, `_SSO_ISSUER`) **only when set**, so a release that
+sets none renders the same Deployment as before. They must equal the overlay's
+`dashboard_client` (the redirect URI byte for byte) and `staff_auth.sso.issuer`;
+Helm cannot check that, and a mismatch shows as "Signed in, but not
+authorised" on `/`, not as a render error. `NOTES.txt` prints the SSO callback
+to register (`<dashboard.publicOrigin>/api/auth/sso/callback`).
+`networkPolicy.idpEgress` is restored (vpay#391) for an identity provider that
+`railsEgress` does not reach (private address, in-cluster, another port, or
+`railsEgress` off); a public IdP on 443 needs nothing. vaam's
+`[keypair, hmac_webhooks]` overlay serves none of this. Source: vpay
+`deploy/helm/vpay/values.yaml` (`dashboard:`, `networkPolicy.idpEgress`) and
+`templates/NOTES.txt`.
+
+A
 third value, `mcp` (vaam-apps/vpay#377, 2026-10-27), mounts `POST /mcp/v1`. It
 is **not** in `EnabledSurfaces::ALL`, so an absent key never mounts it, and
 **nothing in the chart sets it**: no `-mcp` Deployment, values key, Ingress
@@ -284,7 +311,8 @@ mounting the whole nest on either surface — ADR-0017's staff grant terminates
 at `/dash/v1/oauth/token`, **not** at `/v1/oauth/token`, and the two are
 different grants.~~ **Corrected 2026-10-27:** there is no staff token and no
 staff grant any more, so **a `surfaces: [management]` pod serves no part of
-the OP**: `/v1/oauth/token`, `jwks.json` and the discovery document are all
+the OP** _(2026-10-30: unless it serves `human_login`, vpay#390, in which case
+it mounts `jwks.json` and the discovery document, and still no `/token`)_: `/v1/oauth/token`, `jwks.json` and the discovery document are all
 `404` there (`the_token_endpoint_is_business_only` in `vpay-api`'s `lib.rs`).
 The discovery pair is mounted on the business surface and on an MCP-only pod,
 whose merchant MCP validator fetches the JWKS over loopback; since 2026-10-27

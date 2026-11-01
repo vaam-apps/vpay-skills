@@ -9,7 +9,8 @@ description: "Orientation for working in the vpay repository — a Rust + TypeSc
 > in "The one thing to get right" was read against vpay `e28292d`
 > (2026-10-21), the merge of vaam-apps/vpay#310, and its "no webhook received"
 > against vpay `4df5e0d2` (2026-10-24), the merge of vaam-apps/vpay#364. The
-> "Which skill to load" table was re-read against vpay `f885170c` (2026-10-27).
+> "Which skill to load" table was re-read against vpay `f885170c` (2026-10-27),
+> and the paragraph under it against `10f42747` (2026-10-30).
 > Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
@@ -184,10 +185,20 @@ Then state explicitly, in your summary, what you did _not_ do.
 | Config, deployment, images, Helm, observability                   | `vpay-ops`               |
 
 **Two surfaces changed under every skill on 2026-10-26/27.** `/v1` requests and
-answers are signed COSE_Sign1 messages (vpay#380, ADR-0035). The staff sign-in
+answers are signed COSE_Sign1 messages (vpay#380, ADR-0035). ~~The staff sign-in
 is deleted, and `/dash/v1` takes a paired console key (vpay#383, ADR-0036). A
 skill sentence about staff passwords, TOTP, sessions or SSO describes code that
-no longer exists. **Then, the same day, `auth.methods` made the ways in
+no longer exists.~~ `/dash/v1` takes a paired console key (vpay#383, ADR-0036).
+**Corrected 2026-10-30:** the staff sign-in was deleted on 2026-10-27 and came
+back on 2026-10-29/30 as the `human_login` method, **beside** the console key,
+not in its place — migration `0058` (vpay#388), password, TOTP, session and
+authorization code on `/dash/v1` (vpay#390), staff SSO (vpay#391), and the
+dashboard app's sign-in pages (vpay#392/#393/#394). It is **served only where
+`auth.methods` permits `human_login` and both `staff_auth` and
+`dashboard_client` are written**; vaam's deployment does not permit it, so
+there it is still absent. A skill sentence about staff passwords, TOTP,
+sessions or SSO is true of a deployment that serves `human_login`, and of no
+vpay between vpay#383 and vpay#390. **Then, the same day, `auth.methods` made the ways in
 deployment configuration** (vpay#384, ADR-0037): absent, it permits all four,
 so a default deployment takes a bearer token on `/v1` **beside** a signature.
 vaam sets `[keypair, hmac_webhooks]`, where "signed only" still holds. A

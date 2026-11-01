@@ -2,7 +2,7 @@
 
 _Verified against vpay `a33aac61` (2026-09-29); the staff-model rows and the
 note under the statement table were re-read against vpay `f885170c`
-(2026-10-27). Version-sensitive claims
+(2026-10-27), and the 2026-10-30 corrections against `10f42747` (2026-10-30). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 `vpay-db` compiles `schemas/vpay.cstack` with CrateStack's
@@ -60,6 +60,16 @@ statement — `claim_intent_customer` and the erasure statements are raw
 | ~~`OauthAuthorizationCode`~~ | ~~3~~      | ~~every `oauth_authorization_codes` statement~~ deleted 2026-10-27 (vaam-apps/vpay#383) |
 | `Credential`                 | 4          | every `credentials` statement (2026-09-13)                                              |
 
+**Corrected 2026-10-30 (vaam-apps/vpay#388, VPA-2).** The two struck models
+are declared again, with `model StaffSsoAttempt`, and their tables are back
+(migration `0058`). Per file, before the first `#[cfg(test)]`, at
+`10f42747`: `staff_sessions.rs` **7** `.run(`, `authorization_codes.rs` **3**,
+`staff_sso_attempts.rs` **4**, `console_keys.rs` **5**, `credentials.rs` **5**
+and `staff.rs` **7** (one of `staff.rs`'s seven is the `Credential` create in
+the `staff add` transaction, so attribute by accessor, not by file). Those are
+`.run(`/`.run_in_tx(` counts, not the chain recount the method asks for. The
+model total is **twenty-three** (`MODEL_TABLES`).
+
 **Changed 2026-10-27 and not re-counted here.** vaam-apps/vpay#383 deleted
 `model StaffSession` and `model OauthAuthorizationCode` with the staff
 sign-in, and migration `0056` dropped their tables. It added `model ConsoleKey`
@@ -71,7 +81,10 @@ and `Credential` figures above may have moved too. vaam-apps/vpay#380 added
 above is the 2026-09-23 count with the two deleted rows struck: recount by the
 method above before quoting any number from it. `schemas/vpay.cstack`'s
 header box still lists `StaffSession 7` and `OauthAuthorizationCode 3` at
-`f885170c`, so it is stale too.
+`f885170c`, so it is stale too. _(2026-10-30: those two figures happen to be
+right again after vpay#388; the box's "FOURTEEN OF TWENTY" and its
+thirty-six-statement list are not — it names neither `ConsoleKey` nor
+`StaffSsoAttempt` at `10f42747`.)_
 
 ~~Nineteen `model` declarations, **five** of which carry real queries~~ —
 **corrected 2026-09-23.** The five-row table was the figure in
@@ -95,7 +108,12 @@ with no raw `sqlx` in their modules: `staff_members` (5), `staff_sessions`
 four tables were dropped on 2026-10-27** (`0056`, vaam-apps/vpay#383):
 `staff_sessions` and `oauth_authorization_codes`. Whether `staff_members` and
 `credentials` are still generated-only after #383 rewrote their modules was
-not re-checked for this note. ~~Three … (7),
+not re-checked for this note. **Corrected 2026-10-30:** both tables are back
+(`0058`, vaam-apps/vpay#388), and at `10f42747` none of `staff.rs`,
+`staff_sessions.rs`, `authorization_codes.rs`, `staff_sso_attempts.rs` or
+`credentials.rs` calls `sqlx::query*` before its first `#[cfg(test)]` — all
+five tables are generated-only, as is `console_keys`'s repository bar its
+transaction type. ~~Three … (7),
 (6), (3), sixteen of the thirty-two statements~~ _(this said three tables and
 7/6/3 — the 2026-09-10 registry's counts; re-measured 2026-09-23.)_
 

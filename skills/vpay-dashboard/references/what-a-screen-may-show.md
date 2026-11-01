@@ -2,13 +2,19 @@
 
 _Verified against vpay `f885170c` (2026-10-27), the merge of
 vaam-apps/vpay#383, for which files and tests still exist; the measurements
-below were not re-run, and each keeps the date it was made. Version-sensitive
-claims carry the date they became true — see
+below were not re-run, and each keeps the date it was made. **Re-read against
+vpay `10f42747` (2026-10-30)** for the passages marked **Corrected
+2026-10-30** (what the app renders, the theme control, the imported
+components, the story count, the page-list mutation); the rules themselves did
+not change. Version-sensitive claims carry the date they became true — see
 [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 > **Since 2026-10-27 no screen renders any data.** #383 deleted every page,
-> the shell, the navigation and the loading routes. `frontends/apps/dashboard`
-> renders `ConsoleUnavailable` for every path (`SKILL.md`). The
+> the shell, the navigation and the loading routes. ~~`frontends/apps/dashboard`
+> renders `ConsoleUnavailable` for every path (`SKILL.md`).~~ **Corrected
+> 2026-10-30 (vpay#392):** it renders the sign-in screens and an account page
+> where vpay serves `human_login`, and `PairedKeyOnly` on `/login` where it does
+> not; still no screen renders a payment, a refund or a count. The
 > **presentational components survive with their tests and stories**, because
 > VP-6b will render them again. The rules below are the rules those
 > components already obey and any restored screen must keep. Where a rule was
@@ -19,7 +25,11 @@ specific shape on an operator console, because the failure mode is not a lie in
 prose: it is a **populated-looking row**. Every rule below is a case where the
 honest answer is an absence, and where a plausible substitute was available and
 refused. The notice page is the same rule applied to the whole app: no form
-that cannot work and no page that cannot load.
+that cannot work and no page that cannot load. _(Since 2026-10-30 that is
+`/login`'s three notices, `PairedKeyOnly`, `NotConfigured` and
+`SignInUnreachable` in `src/components/login-notices.tsx`: three causes, three
+components, and none renders a field. A discovery read that failed is never
+shown as "paired key only".)_
 
 ## The two named absences
 
@@ -48,15 +58,15 @@ same point: there is no field there to be null.
 
 ## The general rules these are instances of
 
-| Situation                       | The honest shape                                                                                                                                                                                                                                       |
-| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| A column nothing writes         | Render it from the column, show `ABSENT` (`—`, `src/format.ts`), never derive a substitute                                                                                                                                                             |
-| A read that failed              | Hand the refusal to the screen as an `ApiResult` failure (`src/server/api.ts`, `read-failure.tsx`, `src/dash/failure.ts`), never an empty page: an empty list and a refused read look identical on screen unless the screen is told which it got       |
-| A status this build cannot name | Render it as **text**, not as a coloured pill: "a green badge on an unfamiliar value is a claim"                                                                                                                                                       |
-| A value the wire cannot parse   | Return it verbatim rather than replacing it (`formatIsoInstant`)                                                                                                                                                                                       |
-| No `total` from the API         | No page count, no page numbers. Two cursors and nothing else                                                                                                                                                                                           |
-| A field too large for a list    | Omit it and say so. The refunds list did not show `failure_raw` (up to 2 000 characters of a rail's own prose, belonging to a detail read that does not exist)                                                                                         |
-| A page nobody can feed          | No page. `src/layout.test.tsx` fails if any `page.*` but the notice's appears under `app/` (since 2026-10-27). ~~A slice nobody built: no nav entry, `layout.test.tsx` fails if one appears.~~ The nav is deleted; VP-6b's first page changes the test |
+| Situation                       | The honest shape                                                                                                                                                                                                                                              |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A column nothing writes         | Render it from the column, show `ABSENT` (`—`, `src/format.ts`), never derive a substitute                                                                                                                                                                    |
+| A read that failed              | Hand the refusal to the screen as an `ApiResult` failure (`src/server/api.ts`, `read-failure.tsx`, `src/dash/failure.ts`), never an empty page: an empty list and a refused read look identical on screen unless the screen is told which it got              |
+| A status this build cannot name | Render it as **text**, not as a coloured pill: "a green badge on an unfamiliar value is a claim"                                                                                                                                                              |
+| A value the wire cannot parse   | Return it verbatim rather than replacing it (`formatIsoInstant`)                                                                                                                                                                                              |
+| No `total` from the API         | No page count, no page numbers. Two cursors and nothing else                                                                                                                                                                                                  |
+| A field too large for a list    | Omit it and say so. The refunds list did not show `failure_raw` (up to 2 000 characters of a rail's own prose, belonging to a detail read that does not exist)                                                                                                |
+| A page nobody can feed          | No page. `src/layout.test.tsx` pins the `page.*` list under `app/`: ~~the notice's alone (2026-10-27)~~ the four sign-in and account pages since 2026-10-30. ~~A slice nobody built: no nav entry.~~ The nav is deleted; the first read page changes the test |
 
 ## Status colour has exactly one source
 
@@ -101,11 +111,18 @@ Whether an unregistered `data-theme` still renders dark on `@vaam-apps/ui`
 0.5.0 was **not re-measured** (it did on 0.4.0, measured 2026-09-25 in
 headless Chromium). `layout.test.tsx`'s header still says a `data-theme`
 naming neither theme "compiles no styling at all", which was measured false on
-0.4.0. Pin `dark` and do not rely on the fallback. As of 2026-10-27 no
+0.4.0. Pin `dark` and do not rely on the fallback. ~~As of 2026-10-27 no
 rendered component offers a theme control: `src/components/theme-toggle.tsx`
-survives, and nothing renders it.
+survives, and nothing renders it.~~ **Corrected 2026-10-30 (vpay#392):**
+`CenteredShell` (the one shell of the login pages, the account page and
+`not-found`) renders `ThemeToggle` in the corner, so a person can pick the
+light theme before signing in.
 
 ## Which components come from `@vaam-apps/ui` (`^0.5.0`)
+
+**Corrected 2026-10-30:** at `10f42747` the same read finds the list below
+**plus `Input` and `MoreDetailDrawer`** (the sign-in forms and the bottom
+sheets, vpay#392), and the types `IsoDateRange` and `StatusSystem`.
 
 **Imported by the app as of vpay `f885170c` (2026-10-27)**, read off every
 `import … from "@vaam-apps/ui"` under `frontends/apps/dashboard/` outside
@@ -119,13 +136,15 @@ stories and tests: `Table` and its parts
 
 ~~… `Input`, `Separator`, `SideNav`, `ThemeSwitcher` …~~ **Gone 2026-10-27**
 with the sign-in forms and the shell: none of the four is imported now
-(`SideNav` and `ThemeSwitcher` survive only in comments). The list was right
+(`SideNav` and `ThemeSwitcher` survive only in comments). _(`Input` is back
+since 2026-10-30; the other three are still not imported.)_ The list was right
 at `73c3a7cf` (2026-10-21). Earlier lists, from `f68fda09` and `b747e5d5`,
 were corrected on this page before and are in its git history.
 
 `InlineBanner` renders **no `role`** where the old `Alert` defaulted to
 `role="alert"`, so every site that needs one wraps it and names the role
-(`ConsoleUnavailable` wraps its banner in `role="status"`).
+(~~`ConsoleUnavailable`~~ `PairedKeyOnly` and `NotConfigured`, since
+2026-10-30, wrap theirs in `role="status"`).
 
 ## Filters, the date picker and the tables
 
@@ -197,6 +216,10 @@ Kept, struck, because these were the sections an agent most often acted on:
   the one declaration, and the rail's hrefs are exactly the registry's list
   routes.~~
 
+_(2026-10-30: `signed-in-bar.tsx` is back, rendered by the account page
+(`src/components/account-page.tsx`); the top app bar, the rail and the
+registry are not.)_
+
 **Deleted 2026-10-27** with `app/(dash)/layout.tsx`, `app-shell.tsx`,
 `signed-in-bar.tsx`, `src/dash/resources.ts` and their tests. What survives:
 `src/client-navigation.ts` and its test, the guard that decides which plain
@@ -211,8 +234,11 @@ plain `<a href>` without it is back to a full document load per click, which
 _(This section said "As of vpay `73c3a7cf`" until 2026-10-27, when every
 entry in it became a subset of the first.)_
 
-- **Anything at all.** It renders one notice and calls nothing. It cannot
-  sign anyone in, list a payment or show a count until VP-6b.
+- ~~**Anything at all.** It renders one notice and calls nothing. It cannot
+  sign anyone in, list a payment or show a count until VP-6b.~~ **Corrected
+  2026-10-30:** it signs a person in where `human_login` is served, and shows
+  who they are. **It still cannot list a payment or show a count anywhere**,
+  and cannot sign with a key until VP-6b.
 - **Anything to a payment, even after VP-6b.** `/dash/v1` refuses every write
   method in the layer, before the router matches: no re-poll, no replay, no
   refund, no annotation, and therefore **no `audit_log`, because there is
@@ -222,7 +248,8 @@ entry in it became a subset of the first.)_
   and rail health are not built.
 - **Contrast checking in the unit suite.** jsdom computes no paint.
   `src/a11y.test.tsx` runs axe-core's **structural** rules over the root
-  layout around the notice and over the payments list and filters, the
+  layout around ~~the notice~~ a page, over every sign-in screen (since
+  2026-10-30) and over the payments list and filters, the
   payment detail (with and without a charge) and the pager. Colour is answered only by
   `pnpm --filter @vpay/dashboard test-storybook`, in a real Chromium.
 - **Show a refund's events on the payment timeline.** Read from the code on
@@ -249,7 +276,10 @@ with the shell on 2026-10-27.
 The dashboard's Storybook has **20 stories as of vpay `f885170c`**
 (2026-10-27), 3 of them `light`, all over surviving components (payments
 table, filters, chips, pagers, detail, skeletons, a read failure, the timeline
-gap). It had 36 at `73c3a7cf`. The stories are bound to the same
+gap). It had 36 at `73c3a7cf`. **Corrected 2026-10-30:** `grep '^export
+const'` over `dashboard-screens.stories.tsx` at `10f42747` finds **39**, ten
+named `…Light`; the new ones are the sign-in, SSO, notice, password-change,
+enrolment, account and mint-refused screens (#392, #393). Counted, not run. The stories are bound to the same
 `src/testing/fixtures.ts` `a11y.test.tsx` renders, so a component cannot gain
 a story without a test already covering it.
 
@@ -258,14 +288,18 @@ a story without a test already covering it.
 Each was applied to the tree, the suite run, and the mutation reverted, when
 the row was written. None has been re-run for this restamp.
 
-| Mutation                                                               | Fails                                                                  |
-| ---------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| A second `page.*` under `app/` (since 2026-10-27)                      | `src/layout.test.tsx`, "serves `/` and nothing else" (not re-run here) |
-| `pageCursors` reads `has_more` the same way in both directions         | `src/payments-query.test.ts`, twice                                    |
-| `inAppNavigationTarget` drops its origin or modifier-key guards (#318) | `src/client-navigation.test.ts`                                        |
+| Mutation                                                               | Fails                                                                                                                    |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| A `page.*` under `app/` beyond the pinned list (since 2026-10-27)      | `src/layout.test.tsx` (named "the app has the pages the sign-in needs, and no others" since 2026-10-30; not re-run here) |
+| `pageCursors` reads `has_more` the same way in both directions         | `src/payments-query.test.ts`, twice                                                                                      |
+| `inAppNavigationTarget` drops its origin or modifier-key guards (#318) | `src/client-navigation.test.ts`                                                                                          |
 
 Struck 2026-10-27, because the code and the test are both deleted. A restored
-equivalent needs a new mutation and a new row:
+equivalent needs a new mutation and a new row. _(2026-10-30: `cookies.test.ts`
+and `oauth.test.ts` exist again with the restored sign-in, vpay#392; the two
+mutations were not re-applied for this page, so their rows stay struck. The
+BFF, `middleware`, `AppShell` and `readOverview` rows stay struck because
+their code is still deleted.)_
 
 | Mutation                                                                         | Failed                                           |
 | -------------------------------------------------------------------------------- | ------------------------------------------------ |

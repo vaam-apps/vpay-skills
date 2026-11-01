@@ -2,7 +2,8 @@
 
 _Verified against vpay `a33aac61` (2026-09-29); the `@vaam-apps/ui` 0.5.0
 notes re-read against `73c3a7cf` (2026-10-21); case 6 and `just build-storybook`
-re-read against `3bdbbeac` (2026-10-24, vaam-apps/vpay#349). Version-sensitive claims
+re-read against `3bdbbeac` (2026-10-24, vaam-apps/vpay#349); the spec list
+under "End to end" against `10f42747` (2026-10-30). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 > **Added 2026-09-29, and it is a limit on every number below.** The checkout
@@ -232,7 +233,13 @@ both apps share them. The short list, each a measured false green:
 `frontends/tests/e2e/cypress/e2e/` — `checkout.cy.ts`, `shop-hosted.cy.ts` and
 `shop-embedded.cy.ts` as of 2026-10-27. `dashboard.cy.ts` was deleted with the
 staff sign-in (vaam-apps/vpay#383; VP-6b restores a dashboard spec), and with it
-the staff-password file this paragraph described. `pnpm --filter @vpay/e2e e2e`
+the staff-password file this paragraph described. **Corrected 2026-10-30:** a
+fourth spec, `dashboard-human-login.cy.ts` (vaam-apps/vpay#394, VPA-5c), signs
+the demo staff member in through the dashboard against the compose stack, and
+the staff-password file is back
+(`.e2e/<demo_project>/staff-password.txt`, written by `just demo-staff`). It
+touches no checkout page; `dashboard.cy.ts` is not back, and the VP-6b spec
+for a paired-key console is still unwritten. `pnpm --filter @vpay/e2e e2e`
 runs the suite twice: plain, then with `VPAY_E2E_FRAMED=1`. `just e2e-specs` is
 what supplies every URL and port.
 

@@ -6,7 +6,12 @@ vaam-apps/vpay#383, by reading `docs/flows/dashboard-auth.md`, ADR-0036,
 console key", `docs/reference/vpay-config.md` and the identifiers below in the
 code. **Nothing here was re-run for this page**: the test names are checked to
 exist, not to pass. On a vpay before `f885170c` none of this exists, and
-`/dash/v1` takes a bearer token minted by a staff sign-in. See
+`/dash/v1` takes a bearer token minted by a staff sign-in. **Re-read against
+vpay `10f42747` (2026-10-30)** for the passages marked **Corrected
+2026-10-30**: the envelope mode, the built table, the configuration's
+mounting rule, "Upgrading" and "What this replaced". Since vpay#390 a
+deployment that serves `human_login` takes a staff token beside the key:
+[human-login.md](human-login.md). See
 [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 The mechanism is `docs/flows/dashboard-auth.md` (rewritten by #383, 244 lines
@@ -30,9 +35,15 @@ and `/svc/v1`.
 A console key is a **P-256 key a browser generated with WebCrypto
 `extractable: false`**, `ESP256` on the wire, stored in `console_keys`
 (migration `0056`). vpay answers under one of the two Ed25519 response keys
-`/v1` is sealed with. The layer is `EnvelopeMode::Required`: **there is no
-optional mode, no compatibility mode and no token fallback.** Do not add one
-to make a client easier to write.
+`/v1` is sealed with. ~~The layer is `EnvelopeMode::Required`: **there is no
+optional mode, no compatibility mode and no token fallback.**~~ **Corrected
+2026-10-30 (vpay#390, ADR-0037 decision 8):** the layer is `Required` where
+`human_login` is not served (vaam), `Optional` where it is, and `Off` where
+`keypair` is off too (`SurfaceMode::for_dashboard`; the `$procs` layer's
+`ProcedureSigning`). Under `Optional` a signed request takes exactly the path
+below; an unsigned one must carry a staff access token. `/svc/v1` is
+`Required` everywhere. Do not add another mode, or a fallback inside the key
+path, to make a client easier to write.
 
 ## What is built and what is not (as of 2026-10-27)
 
@@ -42,7 +53,7 @@ to make a client easier to write.
 | the `/dash/v1` and `$procs` `EnvelopeLayer`s, under console keys                       | vaam's side of `/svc/v1`: its key and its call   |
 | `POST /svc/v1/console_keys`, `DELETE /svc/v1/console_keys/{thumbprint}`                | the pairing screen on vaam's admin phone         |
 | `vpay-server staff pair-key` and `staff revoke-key`                                    | listing a person's keys (only pair and revoke)   |
-| `service_clients:` and `dashboard:` in the YAML, `RetiredKey` for the two deleted keys | any rate limit on `/svc/v1`                      |
+| `service_clients:` and `dashboard:` in the YAML; ~~`RetiredKey`~~ (deleted 2026-10-30) | any rate limit on `/svc/v1`                      |
 |                                                                                        | a run in a cluster; the Helm render was not run  |
 
 The suites: `backends/tests/integration/tests/console_pairing.rs` (10 cases
@@ -56,9 +67,11 @@ cases assert the layer's own body, not only the status, so loosening
 
 **The only signing client in the repository is test code**
 (`backends/tests/integration/tests/support/sealed.rs`). vpay ships no
-console, CLI or SDK that signs a `/dash/v1` request, so as of 2026-10-27 a
-person reads `/dash/v1` only through a client they bring. The dashboard app
-renders a notice saying so.
+console, CLI or SDK that signs a `/dash/v1` request, so as of 2026-10-30 a
+person reads `/dash/v1` with a key only through a client they bring. ~~The
+dashboard app renders a notice saying so.~~ **Corrected 2026-10-30:** its
+`/login` says so (`PairedKeyOnly`) where `human_login` is not served; where it
+is, the app signs a person in with a password and still reads nothing.
 
 ## Pairing: two doors, one function
 
@@ -193,7 +206,9 @@ service_clients:
 - **No `dashboard:` means no console**: `/dash/v1`, its procedure transport
   and `/svc/v1` are all the honest `404`, and every `vpay-server` mode still
   boots (owner ruling R4). The base `config/application.yml` carries neither
-  block.
+  block. **Corrected 2026-10-30 (vpay#390):** unless `human_login` is served,
+  which mounts `/dash/v1` on its own (tenant `dashboard_client.merchant_id`);
+  `/svc/v1` still needs `dashboard:`, since there is nothing to pair into.
 - **A capability is a field of this file and nothing else.** No route,
   database row or environment variable can grant one, so granting
   `console_pairing` is a reviewed configuration change, like adding a
@@ -214,7 +229,16 @@ service_clients:
 
 ### Upgrading a configuration from before `f885170c`
 
-**`dashboard_client` and `staff_auth` are refused at boot, even as a null.**
+**Corrected 2026-10-30 (vpay#390):** what follows is true only of a release cut
+**between VP-6a and VPA-3**. From VPA-3 on, `staff_auth` and `dashboard_client`
+are accepted again as `human_login`'s two blocks: write both to serve the
+sign-in, or neither. `RetiredKey`, `RETIRED_KEYS` and `reject_retired_keys` are
+deleted (review round, 2026-10-30). The refusals now are
+`AuthMethodNotConfigured` (half a sign-in) and `AuthMethodDisabled` (a block
+the explicit `auth.methods` does not permit, as on vaam). The paragraph below
+is kept as written.
+
+~~**`dashboard_client` and `staff_auth` are refused at boot, even as a null.**~~
 `dashboard_client: ~` is refused exactly as a populated block is: naming the
 key is the refusal. The process exits `78` with `ConfigError::RetiredKey`,
 whose message says what to delete and what to add instead
@@ -226,16 +250,27 @@ believing a sign-in exists that does not.
 _Docs↔code disagreement, 2026-10-27: `docs/reference/vpay-config.md` says a
 file carrying either key "fails to load (`deny_unknown_fields`)". The code's
 own comment says `Config` does **not** set `deny_unknown_fields`, which is why
-`reject_retired_keys` exists. The code wins._
+`reject_retired_keys` exists. The code wins._ _(Moot since 2026-10-30: both
+the sentence and the function are gone, and `vpay-config.md` now documents the
+two keys as `human_login`'s.)_
 
 The rest of the checklist is `docs/flows/dashboard-auth.md` § "Upgrading from
-before VP-6a": retire the password pepper, the TOTP key and the SSO client
+before VP-6a": ~~retire the password pepper, the TOTP key and the SSO client
 secret, which nothing reads now; the Helm values `dashboard.clientId`,
-`dashboard.redirectUri` and `dashboard.scope` are gone. **The migration signs
-everyone out**: `0056` drops `oauth_authorization_codes`, `staff_sessions` and
-`staff_sso_attempts` and deletes the `password` and `totp` rows of
-`credentials`. The `oidc` link rows stay. `0056` is an applied migration from
-the day it merged: do not edit it, write `0058`.
+`dashboard.redirectUri` and `dashboard.scope` are gone.~~ **Corrected
+2026-10-30:** that page now says **keep the pepper and the TOTP key and do not
+rotate them** (the only way a stored hash or sealed seed verifies again); the
+SSO client secret is `staff_auth.sso`'s again (VPA-4); and the three Helm
+values are back with `dashboard.ssoIssuer` (VPA-5c, vpay#394). **The migration
+signs everyone out**: `0056` drops `oauth_authorization_codes`,
+`staff_sessions` and `staff_sso_attempts` and deletes the `password` and
+`totp` rows of `credentials`. The `oidc` link rows stay. `0056` is an applied
+migration from the day it merged: do not edit it. **`0058` exists since
+2026-10-29 (vpay#388, VPA-2):** it recreates the three tables, empty, and drops
+`credentials_password_and_totp_are_retired`, but **restores no credential**.
+Keeping passwords takes an export before 0056 and an import after 0058:
+`docs/runbooks/deploy-and-rollback.md` § "Keeping staff passwords across 0056
+and 0058".
 
 ## Where each piece lives
 
@@ -254,7 +289,10 @@ the day it merged: do not edit it, write `0058`.
 Until vaam-apps/vpay#383 merged (2026-10-27), this skill had two reference
 pages here, `staff-auth.md` and `sso.md`. **Both were deleted with the code
 they described.** What they said, so an agent on an older tree, or reading an
-old document, recognises it:
+old document, recognises it. **Corrected 2026-10-30:** the code came back
+behind `human_login` (vpay#388, #390, #391) and its page is
+[human-login.md](human-login.md). Each item below is marked with what is true
+at `10f42747`:
 
 - ~~Staff sign in to `/dash/v1` with a password (argon2id, a deployment pepper)
   and an RFC 6238 TOTP code, get a server-side session (30 minutes idle, 12
@@ -262,26 +300,41 @@ old document, recognises it:
   900-second RS256 bearer token the dashboard re-mints at 80 % of its TTL
   (ADR-0017).~~ **Deleted 2026-10-27:** no password, TOTP code, session,
   authorization code or bearer token exists on `/dash/v1`. The eight routes
-  under `/dash/v1/staff/*` and `/dash/v1/oauth/*` are gone.
+  under `/dash/v1/staff/*` and `/dash/v1/oauth/*` are gone. **Restored
+  2026-10-30 where `human_login` is served**, with the same bounds, PKCE and
+  no refresh token; still absent on vaam.
 - ~~Sign-in is rate-limited per email and per source address in Postgres
   (`rate_limit_windows`, `staff_auth.rate_limits`, `staff_auth.trusted_proxies`),
   and every refusal is one `401`.~~ **Deleted 2026-10-27:** the limiter's
-  callers went with the sign-in. **`rate_limit_windows` and
-  `vpay_db::RateLimits` remain as unused scaffolding with no caller.** That is
-  not an invitation to wire them to `/svc/v1`: a pairing is a signed call from
-  a registered service, and rate limiting it is listed as not built.
+  callers went with the sign-in. ~~**`rate_limit_windows` and
+  `vpay_db::RateLimits` remain as unused scaffolding with no caller.**~~
+  **Restored 2026-10-30:** the sign-in limiter spends from
+  `rate_limit_windows` again where `human_login` is served
+  (`vpay_api::staff::rate_limit`). That is still not an invitation to wire it
+  to `/svc/v1`: a pairing is a signed call from a registered service, and
+  rate limiting it is listed as not built.
 - ~~Staff can sign in through an OpenID Connect provider (Keycloak) under
   `staff_auth.sso`, with password + TOTP kept as the break-glass (ADR-0030).~~
   **Deleted 2026-10-27 (owner ruling Q1: phone pairing only):** the broker, the
   `staff_sso_attempts` table, `vpay_api::staff::sso`, and
   `staff_sso.rs`/`staff_sso_keycloak.rs` are gone. The break-glass is now
-  `staff pair-key`.
+  `staff pair-key`. **Restored 2026-10-30 (VPA-4, vpay#391)** as part of
+  `human_login`, all of it, plus `networkPolicy.idpEgress`. Q1 ("phone pairing
+  only") is vaam's choice now, not every deployment's (ADR-0037 decision 8).
 - ~~`vpay-server staff add` prints a one-time password and the first sign-in
   forces a change.~~ **Changed 2026-10-27:** it creates a member and **no
-  credential** and prints the `stf_…` id alone on stdout.
-- `staff_members.last_sign_in_at` still exists and is **never written**
-  (2026-10-27). Do not read it as "last seen".
+  credential** and prints the `stf_…` id alone on stdout. **Changed again
+  2026-10-30:** where `human_login` is served it prints a one-time password
+  (`must_change`) alone on stdout; elsewhere the id, as above.
+- `staff_members.last_sign_in_at` still exists and is ~~**never written**
+  (2026-10-27)~~ written again by a password or SSO sign-in since 2026-10-30
+  (`record_sign_in`), and never by a key. Do not read it as "last seen".
 
-The four `staff_sign_in.rs` cases that needed `127.0.0.2`–`127.0.0.35` (and so
+~~The four `staff_sign_in.rs` cases that needed `127.0.0.2`–`127.0.0.35` (and so
 `just loopback-aliases` on macOS) were deleted with that file, and vpay's
-`CLAUDE.md` dropped its paragraph about them in the same change.
+`CLAUDE.md` dropped its paragraph about them in the same change.~~ **Corrected
+2026-10-30:** `staff_sign_in.rs` is back (vpay#390) and binds `127.0.0.2`–`.4`,
+`.20` and `.30`+ again, so those cases fail on macOS without aliases. **The
+recipe did not come back**: at `10f42747` the justfile has no
+`loopback-aliases`, while `support/mod.rs`'s error message still tells you to
+run it. Use `sudo ifconfig lo0 alias 127.0.0.N up` per address.

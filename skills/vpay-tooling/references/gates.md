@@ -1,6 +1,8 @@
 # The seventeen gates
 
-_Verified against vpay `67c90ea5` (2026-09-20) — the merge of
+_The 2026-10-30 note under "The marker convention" was read against vpay
+`10f42747` (2026-10-30); the gate count (seventeen) was re-checked there
+against the `verify` recipe and has not moved. Otherwise verified against vpay `67c90ea5` (2026-09-20) — the merge of
 [#233](https://github.com/vaam-apps/vpay/pull/233), on top of `0799a8d2`
 (2026-09-18, #187), with #197, #200, #204 and #206 beneath that. Version-
 sensitive claims carry the date they became true — see
@@ -706,7 +708,12 @@ A number a document wants machine-checked carries an HTML comment,
 
 _(The example's file, `staff_sign_in.rs`, was deleted on 2026-10-27 by
 vaam-apps/vpay#383. The syntax is unchanged; a marker pointing at a deleted
-file is what this gate refuses.)_
+file is what this gate refuses. **Corrected 2026-10-30:** vaam-apps/vpay#390
+(VPA-3) restored the file. The `27` is still only an illustration: the same
+example in `.xtask/src/main.rs`'s doc comment is not a live marker (the gate
+reads `*.md`), and the restored suite has **28** `#[tokio::test]` lines at
+`10f42747` (a grep, not the gate's measurer) — count it, do not copy the
+number.)_
 
 Same-line placement is load-bearing and it is safe here because
 `.prettierrc.json` sets `proseWrap: "preserve"` — prettier never reflows prose
