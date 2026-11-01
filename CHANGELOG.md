@@ -1,5 +1,50 @@
 # Changelog
 
+## 2026-10-30 — `human_login`: staff sign-in, SSO and the dashboard's sign-in pages are back
+
+Read against vpay `10f42747` (2026-10-30). vaam-apps/vpay#388 (VPA-2), #390
+(VPA-3), #391 (VPA-4) and #392–#394 (VPA-5a/b/c) restored what #383 deleted,
+behind ADR-0037's `human_login` method. It is served where `auth.methods`
+permits it (the default) **and** both `staff_auth` and `dashboard_client` are
+written; vaam's `[keypair, hmac_webhooks]` serves none of it.
+`verify-coverage` against vpay `master` failed on the two restored flow pages
+(`docs/flows/dashboard-auth/human-login.md`, `sso.md`). Worse, several skills
+said in the present tense that staff sign-in is deleted. Each such sentence is
+struck or scoped, with the date and PR that changed it.
+
+- **`vpay-dashboard`:**
+  - a new `references/human-login.md` covers when it is served, the flow, SSO,
+    the app's sign-in pages, the demo and e2e, the 0056/0058 upgrade, and its
+    tests;
+  - `SKILL.md`, `console-keys.md`, `read-seam.md` and
+    `what-a-screen-may-show.md` are corrected (`RetiredKey` is deleted,
+    `MODEL_TABLES` is 23, the four pinned pages).
+- **`vpay-troubleshooting`:** the dashboard symptoms for both deployments;
+  `RetiredKey` is scoped to releases between VP-6a and VPA-3; the macOS
+  loopback failure is live again (`just loopback-aliases` was not restored).
+- **`vpay-data-layer`:** migration 0058, which restores no credentials 0056
+  deleted; 23 models; drift 221/30/20; the next migration is `0059`.
+- **`vpay-tooling`:** `expected_suites` 55 → 58; four Cypress specs;
+  `demo-staff` writes `staff-password.txt`; `gen-demo-keys` writes
+  `.e2e/staff-auth.env`. The gate count is unchanged at 17.
+- **`vpay-ops`:** the `human_login` row and its boot refusals
+  (`AuthMethodUnavailable` is deleted); the chart's `dashboard.clientId`,
+  `redirectUri`, `scope` and `ssoIssuer`; `networkPolicy.idpEgress`.
+- **`vpay-merchant-api`:** the `/dash/v1` nest row and routes (11
+  `STAFF_ROUTES`), the `/dash/v1` unsigned-request split in `errors.md`, and
+  the staff MCP bullet (buildable only where `human_login` is served).
+- **`vpay-conventions`:** dated notes on the 0009, 0017, 0019, 0030, 0036 and
+  0037 rows.
+- **`vpay-checkout`, `vpay-frontend`, `vpay`:** the fourth spec, the
+  dashboard row, and the orientation paragraph.
+- **`coverage.json`:** `vpay-dashboard` claims `human-login.md`, `sso.md` and
+  migration 0058.
+
+Not done: no vpay test, Storybook run or CI was run for this; test names were
+checked to exist. Stamps name the sections re-read at `10f42747`. vpay
+disagrees with itself in places this repository records but cannot fix: see
+the description of the pull request that added this entry.
+
 ## 2026-10-28 — `auth.methods`: a `/v1` token is a deployment option again
 
 Read against vpay `3bcf0763` (2026-10-28). vaam-apps/vpay#384 (ADR-0037) and

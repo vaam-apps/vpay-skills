@@ -1,6 +1,6 @@
 # Build and toolchain failures
 
-_Verified against vpay `f885170c` (2026-10-27) for the RUSTSEC-2026-0387 bullet on what verifies with P-256; against `a33aac61` (2026-09-29) for §§ `check-schema` and "Editing `schemas/vpay.cstack`"; the rest of this page was last read at `d3a8810b` (2026-09-16). Version-sensitive claims
+_Verified against vpay `f885170c` (2026-10-27) for the RUSTSEC-2026-0387 bullet on what verifies with P-256, and its 2026-10-30 correction against `10f42747`; against `a33aac61` (2026-09-29) for §§ `check-schema` and "Editing `schemas/vpay.cstack`"; the rest of this page was last read at `d3a8810b` (2026-09-16). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 ## Three version numbers that are not each other
@@ -176,7 +176,14 @@ accepted by the maintainer on 2026-10-24 and again on 2026-10-26.
   _(Corrected 2026-10-27: vaam-apps/vpay#383 deleted the SSO verifier.
   `deny.toml`'s comment still cites `vpay-api/src/staff/sso/verify.rs` at
   `f885170c`. ADR-0036 has the console's keys generated in a
-  browser by WebCrypto, which is VP-6b and not built; vpay only verifies.)_ Nothing in vpay or authkestra signs with an EC key
+  browser by WebCrypto, which is VP-6b and not built; vpay only verifies.)_
+  _(**Corrected 2026-10-30:** vaam-apps/vpay#391 (VPA-4) restored
+  `vpay-api/src/staff/sso/verify.rs`, whose `ALLOWED_ALGORITHMS` includes
+  `ES256` and `ES384`, so a staff SSO `id_token` is a P-256/P-384 **verify**
+  call site again, compiled into every build and reached only where
+  `human_login` and `staff_auth.sso` are served. `deny.toml`'s citation is
+  accurate again at `10f42747`. It is still verify-only; the argument
+  below stands. VP-6b is still not built.)_ Nothing in vpay or authkestra signs with an EC key
   outside tests: the OP signs RS256, `vpay-sdk` signs RS256 only, merchant
   webhooks use HMAC.
 - That rests on reading the call sites, not on a timing measurement. **If

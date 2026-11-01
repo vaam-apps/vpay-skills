@@ -1,6 +1,6 @@
 # Boot failures, exit codes, and configuration refusals
 
-_Verified against vpay `d3a8810b` (2026-09-16); step 7 of the boot list below re-read against `87166eaf` (2026-10-09). Version-sensitive claims
+_Verified against vpay `d3a8810b` (2026-09-16); step 7 of the boot list below re-read against `87166eaf` (2026-10-09), and step 2's `staff_auth`/`dashboard_client` sentences against `10f42747` (2026-10-30). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 For the configuration model itself see **vpay-ops**. This page is the lookup:
@@ -31,11 +31,25 @@ cause. In order (`docs/flows/configuration.md`):
 
 1. Signal handlers and the rustls crypto provider.
 2. **Load and validate the YAML.** Missing or invalid `--config` / `VPAY_CONFIG`
-   → `78`, before any network round trip. **Since 2026-10-27 (vaam-apps/vpay#383)
+   → `78`, before any network round trip. ~~**Since 2026-10-27 (vaam-apps/vpay#383)
    this includes `ConfigError::RetiredKey`:** a `dashboard_client` or
    `staff_auth` key anywhere, even `dashboard_client: ~`, is refused by
    `reject_retired_keys` (`vpay-config/src/config.rs`). Delete the key; do not
-   null it. **Since 2026-10-27 (vpay#384, #386) it also includes the
+   null it.~~ **Corrected 2026-10-30 (vaam-apps/vpay#390, VPA-3):** that was
+   true from vpay#383 until #390, and still is of any release cut between
+   them. On a vpay at or after `623d659f` both blocks are accepted again as
+   `human_login`'s, and `RetiredKey`, its table and `reject_retired_keys` are
+   **deleted** (no retired key is left to refuse). Their refusals now:
+   one block without the other, or `human_login` named without both, is
+   `AuthMethodNotConfigured`; either block (or `staff_auth.sso`, vpay#391)
+   with `human_login` left out of an explicit `auth.methods` is
+   `AuthMethodDisabled`, naming the block; `staff_auth` without its pepper or
+   TOTP key is `StaffAuthSecretMissing`; `dashboard.merchant_id` ≠
+   `dashboard_client.merchant_id` is `DashboardTenantMismatch`. Upgrading
+   from a VP-6a–era release: the runbook's "Keeping staff passwords across
+   0056 and 0058" says to keep the old pepper and TOTP key, because migration
+   `0056` deleted staff `password`/`totp` credentials and `0058` does not
+   restore them. **Since 2026-10-27 (vpay#384, #386) it also includes the
    `auth.methods` refusals** (`NoWayIn`, `McpNeedsMachineTokens`,
    `AuthMethodDisabled`, `MerchantNoCredential`, `NearMissKey`,
    `MisplacedAuthKey` and the rest; `vpay-ops` § "`auth:`"). The common one

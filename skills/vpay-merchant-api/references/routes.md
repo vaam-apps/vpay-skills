@@ -1,6 +1,6 @@
 # Every mounted route, and the middleware around them
 
-_Verified against vpay `3bcf0763` (2026-10-28, after vpay#384) for the surface table and § `/v1/oauth`; against `f885170c` (2026-10-27) for § `/mcp/v1`, § `/dash/v1` and § Middleware; against `a33aac61` (2026-09-29) for § `/provider` and the step A table; the rest of this page was last read at `b747e5d5` (2026-09-23). Version-sensitive claims
+_Verified against vpay `10f42747` (2026-10-30) for the surface table's `management` and discovery rows and the 2026-10-30 note under § `/dash/v1`; against `3bcf0763` (2026-10-28, after vpay#384) for the rest of the surface table and § `/v1/oauth`; against `f885170c` (2026-10-27) for § `/mcp/v1`, § `/dash/v1` and § Middleware; against `a33aac61` (2026-09-29) for § `/provider` and the step A table; the rest of this page was last read at `b747e5d5` (2026-09-23). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 Assembled in `vpay_api::router` (`backends/crates/vpay-api/src/lib.rs`).
@@ -13,18 +13,19 @@ Counts and contents verified against the code on **2026-09-23** (this said
 resolved from `deployment.surfaces` by
 `vpay_config::Deployment::enabled_surfaces`:
 
-| Surface                                    | Mounts                                                                                                                                                                                |
-| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `business`                                 | `/v1`, `/v1/browser`, `/provider`, `/svc/v1` (since 2026-10-27, vpay#383), and `POST /v1/oauth/token` only where `auth.methods` permits `machine_tokens` (since 2026-10-27, vpay#384) |
-| `management`                               | `/dash/v1` (the reads and `$procs`), when `dashboard:` is configured                                                                                                                  |
-| `mcp`                                      | `POST /mcp/v1` and its RFC 9728 metadata (since 2026-10-27, vpay#377); **never in `ALL`**                                                                                             |
-| business (with `machine_tokens`) and `mcp` | `/v1/oauth/.well-known/openid-configuration`, `/v1/oauth/jwks.json`: mounted where something reads them (since 2026-10-27; "any" until then)                                          |
-| always                                     | `/healthz`, and `GET /.well-known/vpay-auth` (`{"methods": [...]}`, unauthenticated, since 2026-10-27, ADR-0037)                                                                      |
+| Surface                                    | Mounts                                                                                                                                                                                                                                                                                  |
+| ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `business`                                 | `/v1`, `/v1/browser`, `/provider`, `/svc/v1` (since 2026-10-27, vpay#383), and `POST /v1/oauth/token` only where `auth.methods` permits `machine_tokens` (since 2026-10-27, vpay#384)                                                                                                   |
+| `management`                               | `/dash/v1` (the reads and `$procs`), when `dashboard:` is configured **or `human_login` is served** (`dashboard_client` alone mounts it, since 2026-10-30, vpay#390); with `human_login` served, also the eleven `STAFF_ROUTES` (`/dash/v1/staff/*`, `/dash/v1/oauth/*`, vpay#390/#391) |
+| `mcp`                                      | `POST /mcp/v1` and its RFC 9728 metadata (since 2026-10-27, vpay#377); **never in `ALL`**                                                                                                                                                                                               |
+| business (with `machine_tokens`) and `mcp` | `/v1/oauth/.well-known/openid-configuration`, `/v1/oauth/jwks.json`: mounted where something reads them (since 2026-10-27; "any" until then) — and on a `management` pod that serves `human_login` (since 2026-10-30, vpay#390)                                                         |
+| always                                     | `/healthz`, and `GET /.well-known/vpay-auth` (`{"methods": [...]}`, unauthenticated, since 2026-10-27, ADR-0037)                                                                                                                                                                        |
 
 An absent `surfaces:` key means `business` and `management`
 (`EnabledSurfaces::ALL`), which is every pre-ADR-0022 deployment; `mcp` is
 mounted only when named. _(This table said `management` mounted "the staff
-routes" until 2026-10-27; vpay#383 deleted them.)_ An empty list is `ConfigError::NoSurfacesConfigured`
+routes" until 2026-10-27; vpay#383 deleted them. **Corrected 2026-10-30:**
+vpay#390 (VPA-3) mounts them again, only where `human_login` is served.)_ An empty list is `ConfigError::NoSurfacesConfigured`
 at boot. `/token` is business-only because a management pod serving it would
 mint merchant credentials on the staff tier. A nest that is not mounted
 answers the outer `404 unknown_route`.
@@ -318,6 +319,21 @@ per worker claim. Bounded only by the 16 KiB body limit and the dedupe key.
 > surface. Still true: the two `DASH_ROUTES` reads, the five `$procs` searches,
 > and, since vpay#377, `only_dashboard_procedures`, which answers `404` for any
 > other procedure name (the merchant MCP procedures are in the same schema).
+>
+> **Corrected 2026-10-30 (vaam-apps/vpay#390, VPA-3; #391, VPA-4).** The staff
+> routes are back **where `auth.methods` serves `human_login`** (permitted, and
+> both `staff_auth` and `dashboard_client` written) — not on vaam's
+> `[keypair, hmac_webhooks]` deployment. `staff::STAFF_ROUTES` lists **eleven**
+> as of `10f42747`: the eight in the table below plus `GET /dash/v1/staff/sso`,
+> `POST /dash/v1/staff/sso/start` and `POST /dash/v1/staff/sso/callback`. They
+> are merged in **outside** the envelope; where the method is not served none is
+> mounted and every one is the honest `404`. `require_dashboard_token` is not
+> back: a session bearer on `/dash/v1` is checked by
+> `envelope::console::session_scope`, beside the console key, with the envelope
+> in `Optional` mode. A request that is signed **and** carries a bearer is `400`;
+> writes stay key-only. The paragraph and table below remain the pre-#383
+> record; the current surface is `vpay-dashboard`'s, and vpay
+> `docs/flows/dashboard-auth/human-login.md` § "When it is served".
 
 Two `GET` reads from `DASH_ROUTES`, eight unauthenticated staff routes merged
 in from `staff::routes()`, and the CrateStack procedure transport

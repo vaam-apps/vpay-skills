@@ -1,6 +1,6 @@
 # Configuration: the CLI layer, the YAML, and what refuses to boot
 
-_Verified against vpay `3bcf0763` (2026-10-28, after vpay#384 and #386) for "`auth:`", the `cose_keys` row and the first signing-key paragraph; against `f885170c` (2026-10-27) for the second signing-key paragraph under "The signing key is a file"; against `87166eaf` (2026-10-09) for step 7 of "The boot sequence", and against `a33aac61` (2026-09-29) for "The ten environment variables"; the Notch Pay sentences under `callbacks.register` were read against `82a68f4e` (2026-10-23) plus the pull request that adds the 2026-10-23 Notch Pay sandbox verification page, restamped with its merge, and its default per rail against `9499f09d` plus the pull request that adds `docs/status/verification/2026-10-23-notchpay-defaults-and-wrong-network.md`, restamped with its merge; those sentences were re-read against `4df5e0d2` (2026-10-24), the merge of vaam-apps/vpay#364, for what Notch Pay's first delivered webhooks changed; the routing block's last sentence was re-read against `08fb2566` (2026-10-24, vaam-apps/vpay#365); the rest of this page was last read at `d3a8810b` (2026-09-16). Version-sensitive claims
+_Verified against vpay `10f42747` (2026-10-30) for the `human_login` row of "`auth:`" and the refusals list under it; against `3bcf0763` (2026-10-28, after vpay#384 and #386) for the rest of "`auth:`", the `cose_keys` row and the first signing-key paragraph; against `f885170c` (2026-10-27) for the second signing-key paragraph under "The signing key is a file"; against `87166eaf` (2026-10-09) for step 7 of "The boot sequence", and against `a33aac61` (2026-09-29) for "The ten environment variables"; the Notch Pay sentences under `callbacks.register` were read against `82a68f4e` (2026-10-23) plus the pull request that adds the 2026-10-23 Notch Pay sandbox verification page, restamped with its merge, and its default per rail against `9499f09d` plus the pull request that adds `docs/status/verification/2026-10-23-notchpay-defaults-and-wrong-network.md`, restamped with its merge; those sentences were re-read against `4df5e0d2` (2026-10-24), the merge of vaam-apps/vpay#364, for what Notch Pay's first delivered webhooks changed; the routing block's last sentence was re-read against `08fb2566` (2026-10-24, vaam-apps/vpay#365); the rest of this page was last read at `d3a8810b` (2026-09-16). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 ADR-0003. Flow doc `docs/flows/configuration.md`; crate reference
@@ -319,12 +319,33 @@ for a method that is off is a boot refusal, not dormant config**:
 | `keypair`        | `merchant_clients[].cose_keys`, `dashboard`, `service_clients`                   |
 | `machine_tokens` | `jwks`, `grant_types`, `allowed_audiences`; `/v1/oauth/token`; the `mcp` surface |
 | `hmac_webhooks`  | `merchant_clients[].webhooks` (any entry, until sealed webhooks, VP-8)           |
-| `human_login`    | nothing in this release; naming it is refused, VPA-3 restores it                 |
+| `human_login`    | `staff_auth` + `dashboard_client`, **both or neither** (since 2026-10-30)        |
+
+~~`human_login` — nothing in this release; naming it is refused, VPA-3 restores
+it.~~ **Corrected 2026-10-30 (vaam-apps/vpay#390, VPA-3; #391, VPA-4).** The
+two blocks are accepted again, and `human_login` is **served** — staff
+password, TOTP, session and authorization-code sign-in on `/dash/v1` beside
+the console key, plus SSO when `staff_auth.sso` is written — only where the
+method is permitted **and** both blocks are written
+(`AuthMethods::human_login_served`). Absent `auth.methods` permits it, so a
+default file that writes neither block boots and serves no sign-in. Naming
+`human_login` without both blocks, or writing one block under the default, is
+`AuthMethodNotConfigured`; either block (or `staff_auth.sso`) with the method
+left out of an explicit list is `AuthMethodDisabled`, naming the block.
+`staff_auth` written without `password_pepper` or `totp_encryption_key` is
+`StaffAuthSecretMissing` in every mode (livemode wants both as `${VAR}`,
+`LiteralSecret`), and `dashboard.merchant_id` must equal
+`dashboard_client.merchant_id` when both are written
+(`DashboardTenantMismatch`). Where it is served, `vpay-server staff add` also
+writes a `must_change` password and prints it once. vaam's
+`[keypair, hmac_webhooks]` serves none of it. Source: vpay
+`docs/reference/vpay-config.md` § "`staff_auth:` and `dashboard_client:`".
 
 Every refusal exits `78` with its own `ConfigError`: `NoAuthMethods` (an empty
 list, or `methods:` with every item commented out, which is a null and not the
 absent key), `UnknownAuthMethod`, `DuplicateAuthMethod`,
-`AuthMethodUnavailable` (`human_login` named), `NoWayIn` (neither `keypair` nor
+~~`AuthMethodUnavailable` (`human_login` named)~~ (deleted by vpay#390 on
+2026-10-30; naming `human_login` is legal again), `NoWayIn` (neither `keypair` nor
 `machine_tokens`), `McpNeedsMachineTokens`, `AuthMethodNotConfigured`,
 `AuthMethodDisabled`, `MerchantGrantTypesMissing`, `MerchantOauthWithoutJwks`,
 `MerchantNoCredential` (a registration with neither `cose_keys` nor `jwks`),

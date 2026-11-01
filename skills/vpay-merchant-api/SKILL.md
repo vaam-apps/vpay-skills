@@ -7,7 +7,8 @@ description: The vpay HTTP surface — the /v1 merchant API and its route tables
 
 > **Verified against vpay `f885170c` (2026-10-27); the authentication, OP, scopes
 > and MCP-auth sections re-read at `3bcf0763` (2026-10-28, after vpay#384 and
-> #386).** Version-sensitive claims below
+> #386); the nest table's `/dash/v1` row and the `human_login` sentences at
+> `10f42747` (2026-10-30, after vpay#390–#394).** Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -22,13 +23,16 @@ One router function, `vpay_api::router` in
 | `/mcp/v1`     | a merchant's **agent** (MCP) | a bearer token from `/v1/oauth` whose audience is the MCP resource (since 2026-10-27, opt-in surface `mcp`, which needs `machine_tokens`)                                                                          |
 | `/v1/browser` | a payer's browser            | publishable key + a `client_secret`                                                                                                                                                                                |
 | `/provider`   | a payment rail               | **nothing at all** — by design                                                                                                                                                                                     |
-| `/dash/v1`    | the staff console            | a COSE_Sign1 message under a paired console key (since 2026-10-27, vpay#383)                                                                                                                                       |
+| `/dash/v1`    | the staff console            | a COSE_Sign1 message under a paired console key (since 2026-10-27, vpay#383), **or** a staff-session bearer where `auth.methods` serves `human_login` (since 2026-10-30, vpay#390); both on one request is `400`   |
 | `/svc/v1`     | a service (vaam)             | a COSE_Sign1 message under a `service_clients` key (since 2026-10-27, vpay#383)                                                                                                                                    |
 
 _(Until 2026-10-27 this table had five rows and said `/v1` was authenticated by
 a bearer token (`require_merchant_token`) and `/dash/v1` by a staff session.
 vaam-apps/vpay#380 replaced the first and #383 the second; neither mechanism
-exists any more. `/mcp/v1` and `/svc/v1` are new.)_
+exists any more. `/mcp/v1` and `/svc/v1` are new. **Corrected 2026-10-30:**
+both came back as options beside the signature — the `/v1` bearer with
+`machine_tokens` (vpay#384) and the `/dash/v1` staff session with `human_login`
+(vpay#390) — on deployments that permit them.)_
 
 `/livez` and `/metrics` are on a **different port** (`vpay_api::observability`)
 and deliberately not on this router. `/healthz` is, and answers bare text
@@ -180,8 +184,14 @@ existed permits a bearer token beside a signature. vaam sets `[keypair]` plus
   signature and a token deduplicates on `(merchant_id, Idempotency-Key)`.
 - **The SDKs still only seal.** Their token modes are VPA-6, not built.
 - `GET /.well-known/vpay-auth` answers `{"methods": [...]}` unauthenticated:
-  what the deployment permits and serves (`human_login` is permitted by the
-  default and served by nothing in this release; VPA-3 restores staff sign-in).
+  what the deployment permits and serves. ~~(`human_login` is permitted by the
+  default and served by nothing in this release; VPA-3 restores staff sign-in).~~
+  **Corrected 2026-10-30:** VPA-3 landed (vpay#390): `human_login` is listed
+  where it is permitted **and** both `staff_auth` and `dashboard_client` are
+  written, and then staff password, TOTP, session and authorization-code
+  sign-in (and, with `staff_auth.sso`, SSO, vpay#391) are served on `/dash/v1`
+  beside the console key. A default deployment without those two blocks still
+  serves none of it; vaam's does not permit it. `vpay-dashboard` owns it.
 - Every boot refusal the key adds (`NoWayIn`, `McpNeedsMachineTokens`,
   `MerchantNoCredential`, `AuthMethodDisabled`, `NearMissKey`,
   `MisplacedAuthKey` and the rest) is in `vpay-ops`'s configuration reference.
@@ -292,7 +302,9 @@ true again for a token caller since 2026-10-27._
   before any signature check, and ADR-0009 leaves `/token` rate limiting to the
   ingress. Confirm the ingress does it before relying on that; nothing in the
   repository enforces it. (The _dashboard's_ staff sign-in does have a limiter —
-  that is `vpay-dashboard`.)
+  that is `vpay-dashboard`. _2026-10-30: it exists only where `human_login` is
+  served; it was deleted with the sign-in on 2026-10-27 and restored by vpay#390,
+  `vpay-api/src/staff/rate_limit.rs`._)
 - **Verifying a webhook** (the same page): `Vpay-Signature: t=<unix>,v1=<hex>`,
   several `v1=` allowed during a secret rotation, HMAC-SHA256 over the literal
   bytes `"<t>.<raw body>"`, constant-time compare, a 300 s default tolerance,
@@ -455,7 +467,12 @@ merchant's **agent**. It is mounted only when `deployment.surfaces` names
   - **No MCP resources.** ADR-0033 D5's `jsonb` measurement was never made.
   - **No staff endpoint.** It waits on an upstream CrateStack per-audience
     feature. Its auth design is also open: ADR-0033 assumed the staff OAuth
-    that vpay#383 deleted.
+    that vpay#383 deleted. _(2026-10-30: VPA-3, vpay#390, restored that OP
+    behind `human_login`, so ADR-0033 now says its staff design can be built
+    only on a deployment serving that method — still with one client,
+    `dashboard_client`, not the second one it needs — and that a keypair-only
+    deployment's staff-agent auth is a maintainer question. Nothing of it is
+    built.)_
   - **No Helm or compose workload.**
   - **No real MCP client or agent host has called it.** The suite speaks
     JSON-RPC over HTTP.

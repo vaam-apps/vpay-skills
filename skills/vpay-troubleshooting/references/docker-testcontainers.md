@@ -1,6 +1,6 @@
 # Docker and testcontainers
 
-_Verified against vpay `f885170c` (2026-10-27) for the correction at the top of § "macOS has one loopback address"; against `a33aac61` (2026-09-29) for § "A bounded retry over `run_once` is a flake"; the rest of this page was last read at `d3a8810b` (2026-09-16). Version-sensitive claims
+_Verified against vpay `10f42747` (2026-10-30) for the 2026-10-30 correction at the top of § "macOS has one loopback address", and `f885170c` (2026-10-27) for the one under it; against `a33aac61` (2026-09-29) for § "A bounded retry over `run_once` is a flake"; the rest of this page was last read at `d3a8810b` (2026-09-16). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 Everything Postgres-backed in this workspace starts a real container. Nothing
@@ -128,7 +128,20 @@ testcontainers. CI's `rust` job also installs Node and builds the Node SDK
 before running tests, which is why one Rust test fails on a fresh local worktree
 and never in CI (see [node-web.md](node-web.md)).
 
-### macOS has one loopback address; Linux has sixteen million (2026-09-18; moot since 2026-10-27)
+### macOS has one loopback address; Linux has sixteen million (2026-09-18; ~~moot since 2026-10-27~~ live again since 2026-10-30)
+
+**Corrected 2026-10-30 (vaam-apps/vpay#390, VPA-3).** The note below was true
+from vpay#383 to #390. `staff_sign_in.rs` is restored with its rate limiter,
+and at `10f42747` the four cases named below are in it again, binding
+`127.0.0.2`, `.3`, `.4`, `.20` and `.30`–`.35` through
+`support::client_bound_to`, so **on macOS
+they fail with `EADDRNOTAVAIL` again**. The helper's error names the fix
+(`sudo ifconfig lo0 alias <addr> up`). **`just loopback-aliases` was not
+restored**: the helper's message and doc comment still name it, and a
+`CLAUDE.md` paragraph, and neither exists at `10f42747` (no `loopback` in
+`justfile`, `CLAUDE.md` or `AGENTS.md`). Alias each address by hand until
+vpay restores the recipe; the `just loopback-aliases` block further down is
+the pre-#383 fix.
 
 **Corrected 2026-10-27: the four cases below, their file and the
 `just loopback-aliases` recipe are deleted** (vaam-apps/vpay#383, which
@@ -182,7 +195,9 @@ instead of `os error 49`.
 ~~**Do not "fix" this by ignoring or gating the four cases.**~~ _(On an older
 tree, still right: a green run that skipped them would claim the per-address
 limiter was covered when nothing measured it. From `f885170c` there is no
-limiter and no case.)_
+limiter and no case.)_ **Right again from `623d659f` (2026-10-30,
+vaam-apps/vpay#390):** the limiter and the four cases are back; alias the
+addresses, do not skip the cases.
 
 ### `/__admin/health` proves nothing about WireMock's stubs (2026-09-18)
 
