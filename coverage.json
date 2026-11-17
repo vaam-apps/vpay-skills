@@ -78,7 +78,9 @@
         "deploy/dev/postgres-init/10-shop-database.sql",
         "release-please-config.json",
         ".release-please-manifest.json",
-        "schemas/privacy-inventory.yaml"
+        "schemas/privacy-inventory.yaml",
+        "docs/flows/sdlc.md",
+        "docs/flows/emergency-changes.md"
       ]
     },
     "vpay-troubleshooting": {
@@ -115,7 +117,8 @@
         "backends/migrations/0004_create-charges.sql",
         "backends/migrations/0005_create-ledger.sql",
         "backends/migrations/0017_create-refunds.sql",
-        "backends/migrations/0031_refunds-fee.sql"
+        "backends/migrations/0031_refunds-fee.sql",
+        "docs/runbooks/charges-requires-review.md"
       ]
     },
     "vpay-merchant-api": {
@@ -213,7 +216,8 @@
         "docs/runbooks/live-sandbox-test.md",
         "backends/crates/vpay-adapter-mtn-momo",
         "backends/tests/conformance/wiremock/mtn",
-        "config/application-live.yml"
+        "config/application-live.yml",
+        "mtn-sandbox-test/test.sh"
       ]
     },
     "vpay-notchpay": {
@@ -270,7 +274,8 @@
         "docs/flows/customers/privacy-and-erasure.md",
         "docs/flows/customers/retention-sweep.md",
         "docs/adr/0025-session-customer-onto-intent.md",
-        "docs/adr/0027-erasure-reaches-through-checkout-sessions.md"
+        "docs/adr/0027-erasure-reaches-through-checkout-sessions.md",
+        "backends/crates/vpay-db/src/audit_events.rs"
       ]
     },
     "vpay-invoices": {

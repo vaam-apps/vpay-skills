@@ -133,7 +133,11 @@ vpay#242.)_
   the exact popup it opened. Origin alone is not enough; the Flutter web suite
   found a same-origin window could spoof completion on 2026-09-15. `stopUrls`
   and `allowInsecureUrl` are documented as **inapplicable** here rather than
-  silently ignored.
+  silently ignored. _(2026-11-17: `@vaam-apps/vpay-stripe-js` began accepting
+  vpay's own `vpay:complete` from the checkout origin as its primary channel,
+  issue #65. **This host was not changed** — it still accepts only the
+  merchant-origin message, i.e. stripe-js's fallback. Changing it is its own
+  piece of work with its own T5-style source pin, not a copy of `popup.ts`.)_
 
 ## T1–T7, one line and one reason each
 

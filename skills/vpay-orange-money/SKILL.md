@@ -311,7 +311,11 @@ real rail stores `return_url` and `cancel_url` against the `pay_token` at
 submit and renders them from its own state; the stub does not.** The
 four-rung `PENDING` chain the stub serves, and the four conformance cases
 over it, are facts about the stub and not measurements of Orange — see
-[references/unverified.md](references/unverified.md).
+[references/unverified.md](references/unverified.md). Two stub fixes of
+2026-11-17 (issue #106, vpay#402) are recorded there too: the test-number
+form's hidden inputs are percent-encoded, and every payer action sits at
+WireMock priority 5, below the demo's mappings. **Neither touched this
+adapter.**
 
 ## See also
 

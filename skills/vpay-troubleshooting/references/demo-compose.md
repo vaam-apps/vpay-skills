@@ -151,9 +151,25 @@ is chosen at the rail stub, never in the demo** — MTN's by the payer's MSISDN,
 Orange's by the amount, "because those are the only fields of each rail's
 protocol a merchant actually controls". Nothing rewrites stored state.
 
-The three MSISDNs (`237600000ce0`, `237600000f01`, `237600000f02`) are **not
+~~The three MSISDNs (`237600000ce0`, `237600000f01`, `237600000f02`) are **not
 phone numbers**: the last three characters are a hex steering code the stub keys
-its scenario on.
+its scenario on.~~ **Corrected 2026-11-17 (vaam-apps/vpay#399, verified at
+`44b19d69`):** issue #186's server-side validation (libphonenumber, in
+`vpay_api::v1::payer_fields`) refuses the whole `2376000000xx` block — `60` is
+not a Cameroon mobile prefix — so those hex codes made `just demo-walk` fail on
+the first MTN confirm with vpay's own `400`, before any charge reached the rail.
+`examples/merchant-demo` now steers MTN with **`237670000900`** (settles),
+**`237670000101`** (`insufficient_funds`) and **`237670000102`**
+(`payer_timeout`): real, `phonenumber`-valid numbers whose last three digits
+select the scenario, already in each mapping's `partyId` matcher — the family
+the Cypress suite moved to on 2026-09-17. **If `demo-walk` fails with a `400` on
+the first MTN confirm, you are on a merchant-demo older than #399.** The
+account-holder step still sends `237600000100` and `237600000199` (digits
+only) and the hex `237600000f01` on purpose: the lookup canonicalises through a
+digit-stripper, and the hex one is there to show `/v1` refusing it.
+`docs/runbooks/demo/hosted-page.md`'s numbers to type moved off the
+`2376000001xx` twins the same way in vpay#402. #399's "re-proven green" is the
+author's report; no verification page backs it.
 
 **A `succeeded` here means `vpay-worker` asked a stub and the stub said
 `SUCCESSFUL`. It does not mean anyone paid.** ~~As of 2026-09-15 exactly one real

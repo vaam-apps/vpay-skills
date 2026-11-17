@@ -1,6 +1,6 @@
 # The state machines
 
-_Verified against vpay `9499f09d` (2026-10-23) for § `ChargeState`, and `a33aac61` (2026-09-29) for § `InvoiceStatus`; the rest of this page was last read at `b747e5d5` (2026-09-23). Version-sensitive claims
+_§ `requires_review` was read on vpay's issue #96 branch (2026-11-17) before it merged. Verified against vpay `9499f09d` (2026-10-23) for § `ChargeState`, and `a33aac61` (2026-09-29) for § `InvoiceStatus`; the rest of this page was last read at `b747e5d5` (2026-09-23). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 Every enum below is in `backends/crates/vpay-core/src/state.rs` except
@@ -74,6 +74,56 @@ Two `None`s that surprise people:
 
 `ChargeState::is_live()` is the reconciler's predicate and
 `is_terminal()` its complement.
+
+### `requires_review` — the seventh state (issue #96, 2026-11-17, on its branch when written)
+
+**A rail-accepted payment on a `canceled` intent.** A cancel and a confirm can
+interleave so that the confirm's charge commits onto an intent the cancel has
+already moved to `canceled` (since migration `0054` the charge insert waits on
+the cancel's row lock, then commits). When the rail then reports that charge
+paid, `Settlement::apply_succeeded`'s intent guard matches nothing. **Until
+issue #96 the whole settlement rolled back** with `DbError::WriteMatchedNoRow`:
+the charge stayed live, the rail's `provider_txn_id` was discarded, the poll
+job retried until it dead-lettered, and a page was the only record that money
+had moved.
+
+Now the settlement **parks** the charge, in the same transaction, and commits:
+
+- the charge becomes `requires_review` (`park_for_review` in
+  `vpay_db::settlement`) and keeps `amount`, `provider_reference_id` and
+  `provider_txn_id`. It is **terminal and not live** — absent from
+  `LIVE_CHARGE_STATES` and from `charges_live_idx` — so the poll ladder never
+  touches it again and a second delivery of the rail's answer answers
+  `Ok(None)`: no second parking, no second alert;
+- **the intent stays `canceled`** with `amount_received = 0`, and the
+  merchant's one terminal event is still `payment_intent.canceled`. **No event,
+  no session or invoice flip, no ledger posting, no refund** — the #96
+  decision is "no automatic refund";
+- after the commit, `vpay_charge_transitions_total{to="requires_review"}` is
+  counted once and an `ERROR` `alert = true` line names the charge id; the
+  chart's `VpayChargeRequiresReview` (critical) reads the counter, and
+  `docs/runbooks/charges-requires-review.md` is its runbook;
+- `settle` answers `None` for the state (the 28-pair table, 24 before), and
+  `contradiction` treats it as "recorded as paid", so a later **decline**
+  against a parked charge is flagged as a money-bearing contradiction.
+
+**What is NOT built, and an agent must not describe as built:** no operator
+action moves a charge out of `requires_review` — neither a refund through the
+rail nor "mark reconciled" exists; no dashboard list can find parked charges
+(`/dash/v1` lists intents by **intent** status, and a parked charge's intent is
+`canceled` like any other); no merchant event says money arrived. Until those
+exist, the runbook's SQL is the listing. **And the sibling case is an open
+hole:** a rail **decline** on a canceled intent (`apply_failed`) still rolls
+back with `WriteMatchedNoRow`, pages, and is `Retry::Never` — pinned by a test
+on purpose, so changing it is deliberate. A live charge on a `succeeded` intent
+is still a broken invariant and still rolls back.
+
+The label lands in five places at once, and nothing ties them together: the
+`charges_state_enum_check` CHECK (a new migration, numbered `0059` on the
+issue #96 branch — see the `vpay-data-layer` skill on the numbering clash with
+PR #396's `0059`), `vpay_core::ChargeState`, `schemas/vpay.cstack`'s
+`enum ChargeState`, and the regenerated `@vpay/dash-client`'s
+`ChargeStateValues`. `ChargeState` is still never on the merchant wire.
 
 **`unresolved` is escalated, not abandoned.** It is still polled — once an hour
 (`vpay_worker::UNRESOLVED_POLL_INTERVAL`), with an alert raised for a human.

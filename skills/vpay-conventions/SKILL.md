@@ -136,6 +136,12 @@ accepted by the maintainer 2026-08-09, no patched `rsa` release exists, and
 the entry genuinely fires. Do not "fix" it. The same holds for
 `RUSTSEC-2026-0387` (`crypto-bigint` 0.5.5, accepted 2026-10-24 and again
 when authkestra moved to `=0.13.1` on 2026-10-26): no upgrade clears it.
+**Two more entries arrive with vpay#402 (2026-11-17) and are not the same
+kind:** `RUSTSEC-2026-0543` (`chrono` unmaintained) and `RUSTSEC-2026-0440`
+(`astral-tokio-tar` unmaintained, test code only) are ignored **pending the
+maintainer's acceptance** — no decision is recorded. Do not cite them as
+accepted, and do not copy them as precedent for a real vulnerability; the
+`vpay-troubleshooting` skill's `build-toolchain.md` has the detail.
 
 ## TypeScript
 

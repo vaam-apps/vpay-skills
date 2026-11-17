@@ -5,7 +5,8 @@ description: vpay's payment domain model — the PaymentIntent lifecycle (which 
 
 # The payment domain
 
-> **Verified against vpay `a33aac61` (2026-09-29).** Version-sensitive claims below
+> **Verified against vpay `a33aac61` (2026-09-29).** The 2026-11-17 `requires_review`
+> passages were read on vpay's issue #96 branch before it merged. Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -27,10 +28,18 @@ with `last_payment_error` set. `docs/flows/payment-lifecycle.md`'s own diagram
 labels its "failed" box as an _alias_ for exactly that — it is not a state.
 
 The reason is that a merchant must be able to try another rail. `canceled`
-means "cancelled before any rail saw it", not "did not work".
+means "cancelled before any rail saw it", not "did not work". _(Qualified
+2026-11-17, issue #96: a cancel that races a confirm can leave a `canceled`
+intent whose charge the rail **did** see and accepted — that charge is parked
+in `requires_review`, below. The intent's meaning to the merchant is unchanged;
+the money is an operator's problem.)_
 
 `ChargeState`, which is operator-facing and internal, **does** have a real
-terminal `failed`. So does `RefundStatus`. Do not carry the charge's vocabulary
+terminal `failed` — and, since issue #96 (2026-11-17), a seventh, terminal
+`requires_review`: a charge the rail reported paid after its intent was
+canceled, parked with its rail ids and **no** event, posting or refund, and
+with no operator action yet to move it anywhere
+([references/state-machines.md](references/state-machines.md)). `RefundStatus` has a terminal `failed` too. Do not carry the charge's vocabulary
 onto the intent, and do not add a status because a screen wants one: the label
 is simultaneously a `serde` form, a database CHECK, a `schemas/vpay.cstack`
 enum and both SDKs' enum, and nothing ties those four together automatically.

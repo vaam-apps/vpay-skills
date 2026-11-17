@@ -130,6 +130,37 @@ If the real page's window turns out to be minutes rather than seconds, **the
 thing that changes is the escalation in `docs/flows/reconciler.md`, not this
 adapter.**
 
+### Two stub fixes, 2026-11-17 (issue #106, vpay#402; read on its branch before merge)
+
+Again about the stub, and not this adapter — no adapter, handler or ladder
+moved:
+
+- **The test-number form's hidden inputs are percent-encoded.**
+  `stub-hosted-page.json` wrote `value="{{request.query.return}}"`, and
+  WireMock 3.9.2 escapes no stache, so a `return_url` carrying `"` — which
+  `/v1`'s `checked_return_url` accepts — closed the attribute and injected into
+  the page. Both inputs are now `{{{urlEncode …}}}`, like the links, and `/pay`
+  is split on the presence of `msisdn` (only the form sends it): the links' arm
+  is unchanged, and the form's arm and `demo-outcomes.json`'s two test-number
+  arms answer `{{{urlEncode request.query.return decode=true}}}`, undoing the
+  layer a GET form adds. `a_hostile_return_url_survives_the_form_on_the_rails_page`
+  submits a URL with `"`, `<`, `&` and a space through the page's own form and
+  links and asserts each `302` lands on it byte for byte.
+- **Every payer action is priority 5** — `/pay` (both arms), `/cancel` (was 3)
+  and the `SUCCESS`/`EXPIRED` answers they arm — below every mapping in
+  `demo-outcomes.json` (3 and 4), so a click on one charge's page no longer
+  pays or expires a charge whose amount the demo steers (`5001`/`5002`).
+  `the_payers_actions_on_the_hosted_page_sit_below_every_demo_mapping` reads
+  both files and pins the ladder without a container;
+  `a_click_on_one_charges_page_does_not_decide_a_demo_amounts_charge` drives
+  the overlap against one. **If you add a payer-action mapping, give it
+  priority 5 or the first test fails.**
+- **Not fixable by a priority, and still open:** one scenario per container.
+  Two overlapping Orange charges share it, and a click on one page still
+  decides a charge steered by a test number typed on another. Nothing drives
+  two at once. No Cypress spec touches the form (they click `#pay`/`#cancel`),
+  so the browser half of the encoding fix is the conformance case.
+
 ## What _is_ proven, and by what
 
 Worth knowing so you do not re-prove it, and so you do not over-claim it.

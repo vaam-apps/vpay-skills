@@ -8,7 +8,9 @@ description: The vpay HTTP surface — the /v1 merchant API and its route tables
 > **Verified against vpay `f885170c` (2026-10-27); the authentication, OP, scopes
 > and MCP-auth sections re-read at `3bcf0763` (2026-10-28, after vpay#384 and
 > #386); the nest table's `/dash/v1` row and the `human_login` sentences at
-> `10f42747` (2026-10-30, after vpay#390–#394).** Version-sensitive claims below
+> `10f42747` (2026-10-30, after vpay#390–#394).** The 2026-11-17 `account_holders:read`
+> and MCP-credential passages were read on the branch carrying PR #396 before it
+> merged. Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -316,7 +318,26 @@ true again for a token caller since 2026-10-27._
 Two strings, defined once in `vpay_api::v1`: `SCOPE_PAYMENTS_WRITE`
 (`payments:write`) and `SCOPE_PAYMENTS_READ` (`payments:read`).
 `required_scopes(method)` is **fail-closed** — `GET`/`HEAD` accept either;
-everything else, including verbs no route answers, requires write. Since
+everything else, including verbs no route answers, requires write.
+
+**A third scope, and a route-declared policy (issue #56, PR #396's carry,
+2026-11-17; read on its branch before merge).** `SCOPE_ACCOUNT_HOLDERS_READ`
+(`account_holders:read`) guards `GET /v1/account_holders`. Every `V1_ROUTES`
+entry now declares a `scopes: fn(&Method)` policy — `default_payment_scopes`
+(which is `required_scopes`, unchanged) for every route but that one — and
+`required_scopes_for(matched_template, method)` resolves it, with `HEAD` held
+to the route's `GET` policy (axum serves `HEAD` from the `GET` handler, so the
+method default would have let a payments-only credential trigger a rail
+lookup). `every_mounted_v1_route_has_a_declared_scope_policy` pins it. **No
+payment scope implies the new one, and it was enforced with no migration
+window** (provisional, RFC-0002 D5): a registration without it is `403` on the
+lookup and on **any refund that names a `destination`** — the refund route's
+own `payments:write` policy is unchanged, and the extra check is in
+`v1::refunds::resolve_target`, keyed on a `CallerCredential` (the signer's
+thumbprint or the token's `client_id` and scopes) that every `/v1` request now
+carries. The same credential keys the lookup rate limit (`429` + `Retry-After`,
+`rate_limit_error`/`rate_limit`). See the `vpay-customers` skill for the
+budget and the audit journal, all on PROVISIONAL values. Since
 2026-10-26 a signer's scopes are its registered `scopes:` from YAML, read by
 `vpay_api::envelope::scope`. Since 2026-10-27 a token caller's are the
 intersection of its `scope` claim and the same registration's **current** YAML
@@ -444,7 +465,17 @@ merchant's **agent**. It is mounted only when `deployment.surfaces` names
     before.
   - `mcp::MerchantMcpAuth` validates the audience, maps the client to its
     merchant (`MerchantScope::for_mcp`), and lets a write through only for
-    `payments:write`.
+    `payments:write`. **Since PR #396's carry (2026-11-17) the call also carries
+    the token's own `client_id` and scopes** — its `scope` claim intersected
+    with the registration's YAML, exactly as `/v1`'s bearer path computes them,
+    never widened. (An earlier revision of that PR ran a tool call as an
+    invented `mcp:<merchant>` principal with the payments scopes only, so a
+    `create_refund` with a `destination` was always `403` and the lookup
+    budget was per tenant; the review fixed it before merge.) Now
+    `create_refund` with a destination needs `account_holders:read` (its tool
+    description says so, and the RFC 9728 metadata lists the scope) and spends
+    the same per-client budget as that client's `/v1` calls. Proven at its
+    seams only: no integration test drives it end to end.
   - A token for any other audience is `401` with an RFC 9728 challenge naming
     `/.well-known/oauth-protected-resource/mcp/v1`.
   - A foreign `Origin` is refused.

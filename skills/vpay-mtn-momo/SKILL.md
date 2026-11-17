@@ -7,7 +7,8 @@ description: The MTN MoMo Cameroon adapter (`vpay-adapter-mtn-momo`) — a push 
 
 > **Verified against vpay `a33aac61` (2026-09-29).** The 2026-10-21 correction
 > under "Status as of 2026-09-16" was read against vpay `e28292d`
-> (2026-10-21), the merge of vaam-apps/vpay#310. Version-sensitive claims below
+> (2026-10-21), the merge of vaam-apps/vpay#310. The 2026-11-17 `mtn-sandbox-test`
+> paragraph was read on vpay#402's branch before it merged. Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -197,6 +198,17 @@ vaam-apps/vpay#319 corrects it.)_ MTN's pages also disagree on the method:
 setup steps. The route mounts `POST` only. That is "To confirm with MTN" item
 1 in `docs/flows/adapter-mtn-momo.md`: unobserved, and not something to change
 from the documentation alone.
+
+**The observation is issue #330, and it is still unanswered (2026-11-17).**
+`mtn-sandbox-test/test.sh` (from vpay#395, carried in vpay#402) is a **by-hand**
+helper for it: it creates the sandbox API user with a request inspector's host
+as `providerCallbackHost`, sends request-to-pays, polls them, and writes
+redacted evidence to `mtn-sandbox-test/evidence/` following
+`evidence-template.md`. **It has never completed a payment** — its author's one
+run ended `FAILED` / `INTERNAL_PROCESSING_ERROR` with no callback received — so
+nothing about the method question moved. It is not a test, it is in no `just`
+recipe or CI job, and it calls MTN directly rather than through this adapter:
+a green run of it would say something about MTN's sandbox, not about vpay.
 
 ## The 500s that are our own misconfiguration
 

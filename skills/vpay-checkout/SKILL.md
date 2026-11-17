@@ -9,6 +9,10 @@ description: The payer-facing checkout page at frontends/apps/checkout — the t
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
+> The 2026-11-17 passages (§ "Who listens on the opener's side" and § "The
+> invoice line") were read on vpay's pull-request branches for issue #65
+> (vpay#402) and issue #91 before either merged; the stamp stays put until they
+> are on `master`.
 
 `frontends/apps/checkout` (`@vpay/checkout`). Next ~~15.5.25~~ ~~`^15.5.27`~~ **`^15.5.28`** (since 2026-10-23, vaam-apps/vpay#341; `^15.5.27` from 2026-10-09, vaam-apps/vpay#272) App Router, React 19. Process doc: `docs/flows/hosted-checkout.md` plus the four pages under
 `docs/flows/hosted-checkout/`. The surface underneath it is
@@ -115,6 +119,53 @@ nothing into the frame at all — the child learns its framer's origin from the
 CSP vpay served it, not from a message. The strongest form of "never
 `postMessage(…, '*')`" is "never `postMessage`".
 
+### Who listens on the opener's side (since 2026-11-17, issue #65, vpay#402)
+
+**Until 2026-11-17 nobody did.** `@vaam-apps/vpay-stripe-js`'s
+`openCheckoutPopup` accepted `vpay:complete` only from the merchant's own
+origin, so this page's message was posted and dropped, and a popup completed
+only when the merchant's `success_url` page called `notifyCheckoutOpener`.
+Now the SDK has **two channels**:
+
+- **Primary — this page's own `vpay:complete`**, accepted only from the origin
+  of `loadStripe`'s `checkoutBaseUrl` and only from the window the SDK opened.
+  Without `checkoutBaseUrl` the primary channel is off.
+- **Fallback — the merchant's `success_url` → `notifyCheckoutOpener`**, pinned
+  to `completionOrigin` (the merchant's origin by default) as before. It is not
+  redundant: when this page cannot pin its opener it opens no channel and, once
+  the payer is done, navigates the popup to `success_url`, the only thing left
+  that can tell the opener.
+- **Deduplicated per checkout session id on the opening window**, so
+  `onComplete` fires once whichever arrives first; a message naming a
+  _different_ session is not deduplicated against. **One exception:** this page
+  also reports `status: "open"` when the payer goes back to the merchant before
+  paying. A claim made with status `open` lasts only until the next
+  `openCheckoutPopup` on that window, so a reopened session can still complete;
+  every other status stays claimed for the life of the opener page.
+
+Both messages are `{type, session, status}` — `CompleteMessage` in
+`src/lib/frame.ts` already carried the session id, so **this app did not
+change**. The change is in `sdks/stripe-js/src/popup.ts`.
+
+**The merchant's `Referrer-Policy` decides whether the primary channel exists.**
+This page pins its opener by matching `document.referrer` against the
+registered `checkout_origins`, and refuses rather than guesses on an empty one.
+A merchant page served with `no-referrer` (or `same-origin`, which strips a
+cross-origin referrer just as completely) gets **no** primary message, and
+nothing errors — the popup completes later through the fallback, so the loss is
+silent. The requirement is stated in `sdks/stripe-js/README.md` and
+`examples/shop` serves `Referrer-Policy: strict-origin-when-cross-origin` on
+every route from `next.config.ts` (pinned by `src/referrer-policy.test.ts`). Do
+not "harden" the shop to `no-referrer`.
+
+**Proven against stub windows only.** `sdks/stripe-js/src/popup.test.ts` is
+**41** cases (27 before #65), every window a stub; no test opens a real popup.
+_(`docs/flows/browser-checkout.md`'s Status and the SDK README still say 39 —
+written before the "reopened `open` session" fix added two; `docs/status/merchant-sdks.md`
+and the verification page say 41.)_ **Not changed:** the Tauri plugin's web
+host and the Flutter plugin's web platform still ignore this page's message
+and complete on the fallback only.
+
 The **return** page resolves its opener by a different rule and has to:
 a payer arriving there came from the _rail_, so `document.referrer` names
 Orange, not the merchant. It uses `soleOrigin` — exactly one registered
@@ -185,6 +236,25 @@ redirect back and will not echo a vpay-added parameter.
 session (ADR-0008), and this app never holds a merchant credential of any kind.
 The confirm and poll routes belong to `@vaam-apps/vpay-stripe-js`;
 re-implementing them here would be a second client for one wire contract.
+
+### The invoice line (since 2026-11-17, issue #91 D6)
+
+Both session reads carry an **`invoice` member — `{"number": "…"}` and nothing
+else** — when the session's intent is the one `POST /v1/invoices/{id}/pay`
+minted, and **omit it** otherwise (omitted, not `null`). The server looks the
+number up with `vpay_db::Invoices::number_for_intent`, scoped to the session's
+merchant; it is **not** parsed out of the intent's `description`, which a
+merchant can set to anything. The payment page and the return page draw an
+"Invoice: …" / "Facture: …" line under the amount, and `invoiceOf`
+(`src/lib/machine.ts`) treats absent, `null`, a non-object and a blank number
+alike: no line, and never a reason to refuse the payment. **Do not widen the
+member** — no `in_…` id, customer, lines or due date reaches this
+unauthenticated surface, deliberately (`CheckoutInvoiceObject`'s doc comment in
+`vpay_api::model`). Proven against a real Postgres
+(`the_payers_checkout_reads_name_the_invoice_number_and_nothing_else_about_it`,
+`a_session_whose_intent_pays_no_invoice_renders_no_invoice_member`), in jsdom,
+and by three Storybook stories under the axe run; **no Cypress case follows a
+`hosted_invoice_url`** to a paid charge.
 
 **Nothing in that module throws or rejects.** Every call answers a `Result`
 with a closed `CheckoutErrorCode`, because a payment page that renders a thrown

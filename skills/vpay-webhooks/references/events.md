@@ -55,6 +55,17 @@ rule exists.
 `payment_intent.created` and `payment_intent.processing` are **progress**, and
 vpay writes events for terminal transitions only.
 
+**And one transition that writes nothing, deliberately (issue #96, 2026-11-17,
+read on its branch before merge).** When a rail reports a charge paid after a
+racing cancel already moved its intent to `canceled`, the settlement parks the
+charge in `requires_review` and writes **no event**: the merchant's one
+terminal event for that intent is still `payment_intent.canceled`, and no
+`payment_intent.succeeded` follows. The payer was charged; the merchant is not
+told. That gap is recorded as not built (a merchant event is one of the open
+halves of #96), not as a decision — do not "fix" it by emitting
+`payment_intent.succeeded` onto a `canceled` intent, which would contradict the
+intent's own status. See the `vpay-payments` skill.
+
 ~~The two refund types have no writer because no rail in this repository
 refunds anything — `mtn_momo::refund` is `NotImplemented` and Orange Money's
 Web Payment product documents no refund API at all, so its adapter inherits

@@ -77,6 +77,15 @@ router's source rather than a description of it.
 | POST                     | `/v1/invoice_items`                    | `invoice_items::create`                             |
 | GET, POST, PATCH, DELETE | `/v1/invoice_items/{id}`               | `invoice_items::{retrieve, update, update, delete}` |
 
+**Scopes (2026-11-17, PR #396's carry; read on its branch before merge).**
+Each row now declares its scope policy beside its methods. Every row takes
+`payments:read` or `payments:write` for `GET`/`HEAD` and `payments:write`
+otherwise — **except `GET /v1/account_holders`, which takes
+`account_holders:read` and nothing else** (no payment scope implies it), with
+`HEAD` held to the same policy. `POST /v1/refunds` keeps `payments:write` but
+additionally requires `account_holders:read` when the body names a
+`destination`, checked in the handler. No path or method was added.
+
 **Since vaam-apps/vpay step A (RFC-0004 §§ 5–6, merged in vaam-apps/vpay#251 on
 2026-09-23), no row is added** — only parameters, on rows that exist:
 

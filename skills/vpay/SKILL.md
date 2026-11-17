@@ -208,6 +208,22 @@ _(This paragraph said "`/v1` takes no token" without that qualification from
 The merchant MCP endpoint (`/mcp/v1`, vpay#377, ADR-0033 Proposed) is new, and
 it is opt-in, so a default deployment does not serve it.
 
+**One breaking change and several provisional ones arrive on 2026-11-17**
+(PR #396's carry, issue #56/#152, read on its branch before merge):
+`GET /v1/account_holders` and every refund that names a `destination` need the
+new scope `account_holders:read`, which no payment scope implies and which was
+enforced with no migration window; the lookup gained a per-credential rate
+limit and an append-only `audit_events` journal. Every value behind them is
+**PROVISIONAL pending RFC-0002 D3/D5/D6/D7/D9**, and the operator query surface
+(D8), the journal's retention handler (D9) and break-glass access are not
+built — `vpay-customers` has the table. The same day: a charge the rail paid
+after its intent was canceled is parked in a new `requires_review` state with
+no repair path yet (issue #96, `vpay-payments`); the popup completes on vpay's
+own message first (issue #65, `vpay-checkout`); the payer sees an invoice's
+number (issue #91); and two policy pages, `docs/flows/sdlc.md` and
+`docs/flows/emergency-changes.md`, describe controls that are largely practice
+rather than gates (issue #387, `vpay-tooling`).
+
 See also `references/reading-the-docs.md` — this repository's documentation has
 conventions that will mislead you if you do not know them, in particular why a
 page tells you what it used to say and was wrong about.

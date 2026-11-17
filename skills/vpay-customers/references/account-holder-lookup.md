@@ -1,7 +1,9 @@
-# `GET /v1/account_holders` — the three-way answer and three unbuilt controls
+# `GET /v1/account_holders` — the three-way answer and three provisional controls
 
-_Verified against vpay `b747e5d5` (2026-09-23). Version-sensitive claims
-carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
+_Verified against vpay `b747e5d5` (2026-09-23). § "The three controls" and
+every 2026-11-17 note were read on the branch carrying PR #396 (issue #56 and
+#152) before it merged — on an older `master` the controls do not exist.
+Version-sensitive claims carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 "Whose mobile-money account is this number?" Built for issue #47: an integrator
 whose refund flow lets a buyer nominate a _different_ number must match the
@@ -37,10 +39,10 @@ What follows for the rest of this page:
 
 - **the four rules below now describe every lookup vpay makes**, not this
   route's;
-- **the reserved decisions are reserved about _lookups_, not about a path.** A
-  merchant holding `payments:write` can ask the same question through
-  `POST /v1/refunds` and read the answer off the `400`, so a rate limit
-  covering only this route would not be the control it reads as;
+- **the controls govern _lookups_, not a path.** A merchant can ask the same
+  question through `POST /v1/refunds` and read the answer off the `400`, so
+  since 2026-11-17 the scope, the rate-limit budget and the audit journal all
+  sit in `ask_rail` and the refund path, not on this route alone;
 - **the refund caller never compares a name.** It branches on `Some`/`None`:
   registered means the transfer may be attempted, `Ok(None)` is a `400` naming
   `destination`, and an `Err` keeps its `502`/`500`. vpay holds no verified
@@ -106,13 +108,15 @@ rule with no edit. `vpay_provider::AccountHolder` carries one private `String`
 and a hand-written `Debug` that redacts even that, so a `{:?}` of a holder — or
 of any `Result`/`Option` containing one — cannot print a name.
 
-**2. Nothing is persisted.** Not the name, not the number, not the fact that
-the question was asked. There is **no repository call in the module and no
-migration behind it**, and none on the refund path's use of `ask_rail` either:
-a refund refused for an unregistered payee is refused before any row is
-written, so it too leaves nothing but the log line. Do not add one casually:
-this is the same fact rule 4 points at from the other side — a merchant
-enumerating the number space leaves no record in vpay.
+**2. The name and the number are never stored — but since 2026-11-17 the
+question is.** ~~Nothing is persisted. Not the name, not the number, not the
+fact that the question was asked.~~ _(True until PR #396's carry, issue #56.)_
+Every lookup, from either caller, now writes two `audit_events` rows (see §
+"The three controls" below): `initiated` before the rail is asked and a
+terminal outcome after, carrying an HMAC of `tenant:canonical MSISDN` — never
+the raw number, never the name. The tension this rule used to name — an audit
+trail _is_ a record of who asked about whom — was resolved by keying the
+target, on a **provisional** answer to RFC-0002 D3.
 
 **3. Logs carry a masked number and never a name.** One line per lookup, at
 `info` (`warn` on a rail failure), carrying the rail's code, `+2376••••200`,
@@ -134,12 +138,86 @@ trouble, which is a merchant's mistake sitting in a label an operator reads as
 an outage (a fifth `invalid_request` value is a reserved decision recorded on
 the constant).
 
-## The three controls issue #47 asked for — RESERVED, NOT BUILT
+## The three controls — BUILT on 2026-11-17, every value PROVISIONAL
 
-As of 2026-09-16 none of these exists, and none has a chosen default. They are
-maintainer decisions; taking one quietly in either direction would be wrong.
+**Read this box before quoting any number below.** PR #396 (issue #56 / #152,
+which the owner decided on 2026-11-17 to merge on that basis) implemented RFC-0002's
+_recommendations_ so they could be reviewed against working code. RFC-0002's
+decision register still reads **D3, D5, D6, D7, D8 and D9 OPEN**. Every value is
+a change point, not a decision; `docs/flows/account-holder-lookup.md` § Status
+carries the one table of them. Do not describe any of it as "decided".
 
-**Rate limit — not built.** §3 asks for a per-merchant limit and says why:
+| RFC-0002 | What ships                                                                                                                                                                                                                  | Where it changes                                                          |
+| -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| D3       | `target_repr` = HMAC-SHA256(`tenant_id:canonical MSISDN`) under `privacy.lookup_audit_salt`; rotating the key breaks correlation with every earlier row                                                                     | `account_holders::audit_target_hash`, `privacy.lookup_audit_salt`         |
+| D5       | scope `account_holders:read`, implied by **no** payment scope, enforced from the first request after deploy with **no migration window** — breaking for every credential without it                                         | `vpay_api::v1::SCOPE_ACCOUNT_HOLDERS_READ`, `v1::refunds::resolve_target` |
+| D6       | per credential (signing-key thumbprint / token `client_id`), `attempts: 10` per `window_seconds: 60`; **every attempt counts, a malformed number included**; `Retry-After` is the remaining window, rounded up; fail closed | `privacy.lookup_rate_limit`, `ask_rail`                                   |
+| D7       | `initiated` + one terminal row under one `operation_id`; outcomes `initiated`, `found`, `not_found`, `invalid`, `unsupported`, `rate_limited`, `rail_error`, frozen by a CHECK                                              | a new migration replacing `audit_events_outcome_is_known`                 |
+| D9       | class `operational` in `schemas/privacy-inventory.yaml` — and **no retention handler: the journal is unbounded**                                                                                                            | a handler, RFC-0002 Stage 3 PR 7 — not built                              |
+
+**D8, the operator surface, has no answer at all: it is not built.** The only
+reader of `audit_events` is `vpay_db::AuditEvents::list_audit_events_by_tenant`,
+which no route, CLI or dashboard screen calls — ad-hoc SQL is the only way an
+operator sees the journal. GAP-56 stays open on it. The break-glass mechanism
+issue #152 asked for is not built either (`GAP-152-BREAK-GLASS`).
+
+**The scope (D5).** `GET /v1/account_holders` requires `account_holders:read`
+(not `payments:read`, which served it until 2026-11-17). A refund that names a
+`destination` requires it **in addition to** `payments:write` — checked before
+the capability branch, so it applies on `orange_money` too, where no lookup is
+made. The merchant MCP `create_refund` tool with a destination requires it as
+well: since the PR #396 review an MCP tool call runs as the token's own
+`client_id` with exactly the token's scopes held to the registration's YAML
+(an earlier revision of that PR ran it as an invented `mcp:<merchant>`
+principal with the payments scopes only, so a nominated-payee `create_refund`
+was always `403`; on `master` before the PR it needed `payments:write` alone). An
+implicit `HEAD` to the route is held to the `GET` policy. A credential without
+the scope is `403` — `forbidden` in `/v1`'s envelope (`ApiError::Forbidden`);
+the flow page's "`insufficient_scope`" is the MCP transport's wording. Operators must add it to each
+`merchant_clients[].scopes` that needs it **before** upgrading — see the
+`vpay-ops` skill's `privacy:` section.
+
+**The rate limit (D6).** Counted before the rail call in `rate_limit_windows`
+under scope `lookup:merchant_key`, one fixed-window budget per credential shared
+by the route, nominated-payee refunds and MCP `create_refund` — so a client's
+`/v1` token and its MCP calls spend one budget. Over budget: `429`,
+`rate_limit_error` / `rate_limit`, `Retry-After` = seconds left in the window.
+A database failure while counting is a `500`. Since PR #396 each row stores its
+own `window_expires_at` (the follow-up migration), so a 60 s lookup sweep no
+longer deletes staff sign-in counters still inside their 300 s window. **Still
+not a substitute for ingress limiting**: it bounds one key, not a merchant with
+many keys or many merchants. Neither merchant SDK surfaces `Retry-After`
+(two dated `⛔` rows in `docs/sdks/parity.md`).
+
+**The audit journal (D3/D7/D9).** `audit_events`, append-only **in the
+database**: triggers refuse `UPDATE`, `DELETE` and `TRUNCATE` for every role
+(`restrict_violation`) — a guard against mistakes, not tamper-proofing, since
+the owner can disable a trigger; the generated `@vpay/dash-client` has no
+create/update/delete on `auditEvents` (`@@internal`). **Which writes fail
+closed is one rule:** a row that precedes or accompanies a disclosure fails
+closed (`initiated` before the rail is asked; the terminal row before the name
+is released — if it cannot be written the answer is withheld with a `500`); a
+row that records a refusal (`rate_limited`, `invalid`) is best-effort, logged at
+`error`, keyed over the canonical number. A retention handler, when D9 is
+decided, will need a deliberate exception to the trigger.
+
+**Proven** by `credential_without_account_holders_read_scope_is_refused_403`,
+`a_nominated_payee_refund_without_account_holders_read_is_refused_403`,
+`a_head_to_account_holders_is_held_to_the_get_scope_policy`,
+`rate_limit_blocks_and_retry_after_is_provided_and_second_credential_unaffected`,
+`a_nominated_payee_refund_spends_the_lookup_rate_limit_budget`,
+`audit_table_holds_hmac_target_representation_and_no_raw_pii` (integration),
+`the_audit_journal_refuses_update_delete_and_truncate` (`vpay-db`), and the
+two MCP seam tests. **The MCP nominated-payee path is proven at its seams only**
+— no integration test drives `create_refund` with a destination end to end.
+
+### What this section said until 2026-11-17
+
+The three controls were "RESERVED, NOT BUILT", with no chosen default. The
+reasoning below is kept because it is still why the controls are scoped to
+lookups and why every value is provisional.
+
+~~**Rate limit — not built.**~~ §3 asks for a per-merchant limit and says why:
 "unlimited lookup of arbitrary MSISDNs is a name-harvesting oracle", and the
 abuse is _exfiltration_ rather than load. Rate limiting in this deployment is an
 ingress concern (`docs/flows/provider-port.md` records the same for the callback
@@ -150,7 +228,9 @@ per merchant per MSISDN? a daily ceiling?), the enforcement point (ingress or
 **this route lets any merchant with a valid credential turn a list of phone
 numbers into a list of names, at whatever rate they can make HTTP requests, and
 vpay keeps no record that it happened.** That is the condition on turning the
-route on, not a caveat about it.
+route on, not a caveat about it. _(No longer true per credential since
+2026-11-17; still true for a merchant holding many keys, absent ingress
+limiting.)_
 
 **Widened 2026-09-16, and this is the part to carry into any design.** It is no
 longer only this route. `POST /v1/refunds` asks the same question under
@@ -161,7 +241,7 @@ scoped to `GET /v1/account_holders` would therefore be a control that looks
 like one.** Scope the decision to lookups, at `ask_rail` or at ingress across
 both paths.
 
-**Audit log — not built, and it contradicts rule 2.** A per-merchant,
+~~**Audit log — not built, and it contradicts rule 2.**~~ A per-merchant,
 per-MSISDN trail _is_ a stored record of who asked about whom, which is
 precisely the record rule 2 declines to keep. Which wins is a policy choice.
 `MerchantScope` is already bound on the handler, so the key such a log would
@@ -169,8 +249,10 @@ need is in hand the day it is decided. Same widening as the rate limit: the
 refund path makes lookups too, so a trail that covered only this route would
 under-report its own subject.
 
-**A dedicated scope (`identity:read`) — not built.** The route is served under
-`payments:read` like every other `GET`. Adding one is a three-place change that
+~~**A dedicated scope (`identity:read`) — not built.** The route is served under
+`payments:read` like every other `GET`.~~ (It was built as
+`account_holders:read`, not `identity:read`, and it did refuse every existing
+credential on the day it landed — the warning below is exactly what happened.) Adding one is a three-place change that
 fails **silently** when the places disagree (see `SCOPE_PAYMENTS_WRITE`'s own
 doc comment: the string an operator writes in a registration, the string the OP
 mints, the string the middleware checks), and it would refuse every existing
@@ -195,8 +277,9 @@ what an SDK branches on — and it is **not** a claim that anything was
 cryptographically verified.
 
 **There is no `livemode`, and that is a departure from every other object on
-this surface.** Elsewhere it is read off the row; there is no row here and never
-will be (rule 2), so the only available value would be the deployment's
+this surface.** Elsewhere it is read off the row; there is no row for the
+answer (rule 2 — the `audit_events` rows of 2026-11-17 record the question, not
+an object), so the only available value would be the deployment's
 configuration read at render time — the same field name carrying a weaker
 guarantee. Recorded as a decision, not settled: if the maintainer wants it, it
 is one line in `vpay_api::model::AccountHolderObject` plus a row in each SDK.
@@ -235,10 +318,14 @@ on `vpay_db::ProviderSeed`. Nothing reads a capability out of that table.
 **byte-identical `400`** — telling them apart would let a merchant enumerate
 which rails a deployment has configured but switched off.
 
-## The tenant is bound and unused, on purpose
+## ~~The tenant is bound and unused, on purpose~~ — used since 2026-11-17
 
-The handler's signature is `_scope: MerchantScope`. Nothing is scoped by it,
-because nothing is stored or read. It is bound so that the auth middleware must
-have resolved a tenant (a failure there is a `500`, fail-closed) and so the
-value an audit log would key on is in hand the day that decision is taken.
-Deleting the parameter would silently remove both properties.
+~~The handler's signature is `_scope: MerchantScope`. Nothing is scoped by it,
+because nothing is stored or read.~~ It was bound so that the auth middleware
+must have resolved a tenant (a failure there is a `500`, fail-closed) and so
+the value an audit log would key on was in hand the day that decision was
+taken. Since PR #396's carry it is used: the tenant keys the `audit_events`
+row and the HMAC input, and the handler also takes a `CallerCredential` (the
+signer's thumbprint or the token's `client_id`) for the scope check and the
+rate-limit budget. Deleting either parameter now breaks the controls, not just
+the fail-closed property.

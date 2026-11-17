@@ -188,12 +188,19 @@ The recipe runs `--audit-level=moderate`, so moderate advisories fail, and
 network**. Both have been true since 2026-09-11 (issue #103); the prose around
 them said the opposite until 2026-09-16.
 
-One thing #103 asked for is **not built**: a documented allowlist for an
+~~One thing #103 asked for is **not built**: a documented allowlist for an
 accepted advisory. `pnpm.auditConfig.ignoreCves` is absent from `package.json`
-and nothing is suppressed (checked 2026-09-16). So a moderate advisory in a
-transitive dev dependency blocks every merge with no sanctioned way to accept
-it — if you hit one, that is the state of things, not something you have
-misconfigured.
+and nothing is suppressed (checked 2026-09-16).~~ **Corrected 2026-11-17 —
+stale since 2026-10-09:** `pnpm-workspace.yaml`'s `auditConfig.ignoreGhsas`
+is the sanctioned way, one id per entry with a dated paragraph, the scope of
+exposure and a `REMOVE WHEN`. On `master` (`44b19d69`) it holds one,
+`GHSA-vfj7-8cjw-p6xm` (braces, maintainer decision 2026-10-09); vpay#402 adds
+`GHSA-fc5q-39xc-vjpf` (picomatch), **proposed, pending acceptance**. What #103
+asked for and is still not built is the _dated_ escape hatch — nothing expires
+an entry, so an accepted advisory stays green until someone removes it
+(`docs/flows/sdlc.md` says the same, [sdlc.md](sdlc.md)). Prefer an override
+that actually clears the advisory: vpay#400 cleared nine moderates that way on
+2026-11-17 with nothing ignored.
 
 Nothing in `ci.yml` itself retries anything.
 

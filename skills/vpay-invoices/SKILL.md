@@ -36,6 +36,18 @@ intent's — writes nothing onto the intent; 16 above is the 2026-09-16 figure),
 day was 29 passed and 0 ignored. That run was not repeated for this page.
 [§ Paid out of band](#paid-out-of-band--a-statement-not-a-payment).
 
+**Since issue #91's D6 slice (2026-11-17, on its pull-request branch when this
+was written): the payer sees the invoice number.** Both browser reads of the
+checkout session carry `invoice: {"number": "…"}` — that member and nothing
+else about the invoice — when the session's intent is the one `pay` minted, and
+omit it otherwise; `vpay_db::Invoices::number_for_intent` looks the number up
+scoped to the session's merchant. `invoices.rs` is **32** cases on that branch
+(32 passed, 0 ignored). The same change added `sdks/stripe-compat`'s first
+invoice cases, and recorded that **`stripe.invoiceItems` cannot reach vpay at
+all** (`/v1/invoiceitems` vs `/v1/invoice_items`). Both are in
+[references/not-built.md](references/not-built.md), struck where they used to
+be gaps.
+
 **The "What is not built" list is the whole reason the flow page exists** —
 read it before assuming anything:
 [references/not-built.md](references/not-built.md). Short version: no PDF, no

@@ -148,6 +148,29 @@ file says the same. CI's `deploy (helm chart)` job runs it, with promtool
 expressions, and nothing about vpay's real series, which no Prometheus has
 scraped.
 
+**`VpayChargeRequiresReview` (critical; issue #96, 2026-11-17, read on its
+branch before merge).** It reads
+`vpay_charge_transitions_total{to="requires_review"}`, which
+`vpay_db::settlement` counts once per charge, after the commit that parks a
+rail-accepted payment whose intent was already `canceled` (see the
+`vpay-payments` skill). Runbook: `docs/runbooks/charges-requires-review.md`,
+whose SQL is the only listing of parked charges — no dashboard screen and no
+operator action exist. Two things to know before you touch it:
+
+- **It has two halves joined by `or`, and both are load-bearing.** Nothing
+  registers the series at 0, so the first parked charge on a pod creates it
+  already at 1 and `increase()` over it is 0. One half fires on a series that
+  exists now and did not an hour ago (`unless … offset 1h`), the other on
+  `increase(...[1h]) > 0`. Both aggregate to `{provider, from, to}` so one
+  charge is one alert. `prometheusrule.test.yaml` pins both halves, including a
+  series that appears already at 1. "Simplifying" it to `increase() > 0` makes
+  the commonest case — the first one — silent.
+- **The charge id is not a label** (unbounded cardinality); it is on the
+  `alert = true` line the same commit writes.
+
+Like every rule here it carries `provisional: "true"` and has never been
+evaluated against a real scrape.
+
 `VpayPageableErrorEvents` has no runbook of its own: it fires on any error
 ADR-0011 classifies `Severity::Page`, and **the classification _is_ the alert —
 there is no threshold to tune.** That is the design paying off: if you want

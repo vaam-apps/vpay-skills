@@ -1,6 +1,8 @@
 # Using the official Stripe SDKs against vpay
 
-_Verified against vpay `f885170c` (2026-10-27) for the seam and the `401` row; against `a33aac61` (2026-09-29) for the `customer` bullet and `98f4d32b` (2026-10-24, vaam-apps/vpay#363) for the refunds section's first bullet; the rest of this page was last read at `b747e5d5` (2026-09-23). Version-sensitive claims
+_The 2026-11-17 invoice section and the `account_holders:read` sentence under
+"Refunds" were read on vpay's branches for issue #91 and PR #396's carry
+before either merged. Verified against vpay `f885170c` (2026-10-27) for the seam and the `401` row; against `a33aac61` (2026-09-29) for the `customer` bullet and `98f4d32b` (2026-10-24, vaam-apps/vpay#363) for the refunds section's first bullet; the rest of this page was last read at `b747e5d5` (2026-09-23). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 Source of record: `docs/flows/stripe-sdk-compat.md`. Evidence:
@@ -204,7 +206,35 @@ prevent.
   of band — ADR-0024 D5 chose Stripe's spelling so that exactly this call
   works. **Neither is driven through stripe-node** by `sdks/stripe-compat` as
   of 2026-09-23, which has no invoice or list-filter case, so both are
-  untested rather than known from that side.
+  untested rather than known from that side. _(Narrowed 2026-11-17, issue #91:
+  the invoice half now is — see § Invoices below. The `customer` list filter
+  still has no stripe-node case.)_
+
+### Invoices: `stripe.invoices` works, `stripe.invoiceItems` cannot (2026-11-17, issue #91)
+
+`sdks/stripe-compat/src/invoices.compat.test.ts`, **six cases, every one
+asserting response bodies**, drives `stripe.invoices` through the nine routes
+it can reach: `create`, `retrieve`, `update` (key-wise `metadata` merge),
+`del` (`{"object": "invoice", "deleted": true}`, then a `404`), `list` with
+`autoPagingToArray`, `finalizeInvoice`, `voidInvoice` (after the `409` naming
+the live intent, once it is cancelled), `markUncollectible`, and `pay` —
+cast-free with Stripe's own `paid_out_of_band: true`, and with **one cast**
+(`payInvoiceHosted` in `src/client.ts`) for the hosted
+`success_url`/`cancel_url` that Stripe's `InvoicePayParams` lacks.
+
+- **`stripe.invoiceItems` reaches none of vpay's line routes.** stripe-node
+  addresses `/v1/invoiceitems`; vpay mounts `/v1/invoice_items`. The sealing
+  client refuses the unknown operation **unsent** (`404`,
+  `unknown_operation`), and a case pins that. The suite adds lines through the
+  same client's `rawRequest`. A merchant porting Stripe code must do the same,
+  or use `@vaam-apps/vpay-sdk`'s `invoiceItems`.
+- **`stripe.invoices.listLineItems`** (`/v1/invoices/{id}/lines`) is not
+  mounted either.
+- **Run once, outside the compose job:** 6 of 6 passed against the branch's
+  own `vpay-server` run natively over a Postgres container with the
+  `just gen-demo-keys` overlay — no worker, rails or receiver, which no invoice
+  case needs. CI's `e2e (compose)` job is the first place they run beside the
+  other five files.
 
 ### Refunds: two divergences a Stripe-shaped client meets, and one it cannot
 
@@ -213,7 +243,15 @@ Neither divergence is Stripe's and both are deliberate.
 - **`destination[<rail_code>][msisdn]` is required on `mtn_momo` and
   `orange_money`**, because a refund there is an outbound transfer and needs
   a payee (RFC-0003 § 1); `notchpay` refunds to the instrument that paid and
-  refuses one. The key is the charge's rail code or, since 2026-10-24, the
+  refuses one. **Since issue #56's lookup controls (PR #396's carry, 2026-11-17)
+  a refund that carries a `destination` also needs the credential to hold
+  `account_holders:read`** — a `payments:write`-only credential is `403`
+  before anything else is checked, on `orange_money` too, where no lookup is
+  made (the scope check precedes the capability branch in
+  `vpay_api::v1::refunds::resolve_target`), and a deployment with no
+  `privacy.lookup_audit_salt` answers it `500`. It also spends the lookup rate-limit
+  budget and writes `audit_events` rows wherever the rail supports a lookup.
+  See the `vpay-customers` skill. The key is the charge's rail code or, since 2026-10-24, the
   payment-method type the charge records (`destination[mtn_wallet]` for a
   routed `mtn_wallet` charge); another type is a `400`. Stripe has no such parameter, so a copied
   `stripe.refunds.create({ payment_intent })` is a `400` naming `destination`.
@@ -267,7 +305,9 @@ in the gap ledger cover it.
 **Built and proven against a real stack, 2026-09-03**: the real
 `stripe@22.6.1` driven through `createStripeHttpClient` (through `createStripeAuthenticator` until 2026-10-26) against a real
 `vpay-server` + Postgres + WireMock rails + worker + WireMock receiver, out of
-process over TCP. **25 cases as of 2026-09-16, 0 skipped**, via `just demo_port=18080
+process over TCP. **25 cases as of 2026-09-16, 0 skipped** (plus the six
+invoice cases of 2026-11-17, above, whose only run so far was outside the
+compose job), via `just demo_port=18080
 stripe-compat`; CI runs it in the `e2e (compose)` job. The suite **cannot
 skip** — `src/preflight.ts` fails the run when no stack answers.
 

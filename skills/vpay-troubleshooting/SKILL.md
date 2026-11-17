@@ -6,7 +6,9 @@ description: A symptom index for vpay — the exact error text or observed behav
 # vpay troubleshooting
 
 > **Verified against vpay `87166eaf` (2026-10-09); the dashboard row of the
-> index at `10f42747` (2026-10-30).** Version-sensitive claims below
+> index at `10f42747` (2026-10-30).** The 2026-11-17 rows (the advisories, the
+> `account_holders:read` `403`) were read on vpay's branches for vpay#402 and PR
+> #396's carry before they merged. Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -33,6 +35,8 @@ Two habits before anything else:
 | a `schemas/vpay.cstack` edit breaks `cargo build`                                    | [build-toolchain](references/build-toolchain.md)             |
 | `cargo deny` advisory on `rsa` / RUSTSEC-2023-0071                                   | [build-toolchain](references/build-toolchain.md)             |
 | `cargo deny` advisory on `crypto-bigint` / RUSTSEC-2026-0387                         | [build-toolchain](references/build-toolchain.md)             |
+| `cargo deny` on `rmcp`, `chrono` or `astral-tokio-tar`; `audit-web` on `picomatch`   | [build-toolchain](references/build-toolchain.md)             |
+| `403` on `/v1/account_holders` or a refund with `destination` after an upgrade       | inline, below                                                |
 | testcontainers cannot reach a Docker daemon                                          | inline, below                                                |
 | `failed to create a container: Timeout error` at ~120 s                              | inline, below                                                |
 | `RootlessKit PortManager.AddPort(): bind: address already in use`                    | [docker-testcontainers](references/docker-testcontainers.md) |
@@ -141,6 +145,22 @@ migration. To repair a database already in the broken state, follow
 [references/migrations-database.md](references/migrations-database.md) first,
 because the first draft of that runbook told operators to write the **original**
 checksum, which changes nothing and reports success.
+
+### `403` on `/v1/account_holders`, or on a refund with a `destination`, after an upgrade
+
+_Since PR #396's carry (issue #56, 2026-11-17; read on its branch before
+merge)._ **Cause:** the credential lacks `account_holders:read`. No payment
+scope implies it, and it was enforced from the first request with no migration
+window (provisional, RFC-0002 D5). It applies to every refund that names a
+`destination` — every MTN and Orange refund — and to MCP `create_refund` with
+one, not only to the lookup route.
+
+**Fix:** add `account_holders:read` to that `merchant_clients[].scopes` entry
+(and mint a new token if the caller uses one; a token's scopes are its claim
+intersected with the YAML). A `500` "privacy controls not configured" on the
+same calls is the other half: the deployment has no `privacy.lookup_audit_salt`.
+A `429` with `Retry-After` is the per-credential lookup budget, which a
+malformed number spends too. See the `vpay-customers` skill.
 
 ## The rest
 

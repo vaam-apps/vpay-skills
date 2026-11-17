@@ -246,6 +246,25 @@ entry in it became a subset of the first.)_
   asked to add a write, that is the conversation, not a route.
 - **Any other slice.** Webhook configuration and retries, balances, settings
   and rail health are not built.
+- **A list of charges parked in `requires_review`** (issue #96, 2026-11-17,
+  recorded as not built on its branch in
+  `docs/flows/dashboard/status-built-and-not-built.md`). There is nothing to add
+  the state to: `/dash/v1` has no charges list and no procedure searches
+  charges; `GET /dash/v1/payment_intents` and `searchPaymentIntents` filter by
+  **intent** status, and a parked charge's intent is `canceled` like every other
+  cancelled intent. `PAYMENT_STATUS_SYSTEM` is intent statuses; the payment
+  detail prints `charge.state` as text, so `requires_review` shows only to
+  someone who already has the intent id. The regenerated `@vpay/dash-client`
+  knows the label (`ChargeStateValues`) and nothing renders it through a pill.
+  Building it is a new read with a tenant filter **through the intent**,
+  because `charges` has no `merchant_id`. Until then the runbook's SQL
+  (`docs/runbooks/charges-requires-review.md`) is the listing. Do not add the
+  label to `PAYMENT_STATUS_SYSTEM` — it is not an intent status.
+- **The `audit_events` journal** (PR #396's carry, 2026-11-17). The generated
+  client has an `auditEvents` model with no create/update/delete (`@@internal`)
+  and, with no `@@allow` arm, its reads answer no rows. The operator query
+  surface RFC-0002 D8 asks for is not built anywhere — not here, not on a
+  route.
 - **Contrast checking in the unit suite.** jsdom computes no paint.
   `src/a11y.test.tsx` runs axe-core's **structural** rules over the root
   layout around ~~the notice~~ a page, over every sign-in screen (since

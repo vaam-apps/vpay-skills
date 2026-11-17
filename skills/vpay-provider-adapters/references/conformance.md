@@ -357,5 +357,11 @@ same as still proving it.
 
 Orange-only, and **about the stub rather than about the adapter**: the four
 hosted-page payer-window cases, plus
-`a_test_number_typed_on_the_rails_hosted_page_reaches_the_documented_outcome`.
-See the `vpay-orange-money` skill before reading anything into them.
+`a_test_number_typed_on_the_rails_hosted_page_reaches_the_documented_outcome`
+(which since 2026-11-17, issue #106 in vpay#402, submits the page's own form
+as a browser does), and three more from that change —
+`the_payers_actions_on_the_hosted_page_sit_below_every_demo_mapping` (reads
+both mapping files, no container),
+`a_click_on_one_charges_page_does_not_decide_a_demo_amounts_charge` and
+`a_hostile_return_url_survives_the_form_on_the_rails_page`. See the
+`vpay-orange-money` skill before reading anything into them.

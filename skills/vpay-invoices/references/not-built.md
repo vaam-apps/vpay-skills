@@ -21,14 +21,20 @@ nothing to send it with. `hosted_invoice_url` is a **checkout session URL**,
 not a document — a payer following it sees the existing checkout page (the
 merchant's name and the amount) and pays through the rails that already exist.
 
-**The payer's checkout page does not show the invoice number** (2026-09-07,
-recorded as a gap rather than a decision). `pay` writes `Invoice {number}` into
-the intent's `description`, so the number _does_ reach the payer's browser —
-`GET /v1/browser/checkout/sessions/{id}` expands the intent and `description`
-is one of its keys — and `frontends/apps/checkout` renders the amount and the
-merchant name only. So a payer following a `hosted_invoice_url` from an e-mail
-sees a bill they cannot tie to the document that asked for it. Closing it is a
-change to the checkout screens, not to this resource.
+~~**The payer's checkout page does not show the invoice number** (2026-09-07,
+recorded as a gap rather than a decision).~~ **Closed 2026-11-17 (issue #91,
+D6; read on its pull-request branch before merge).** Both browser reads —
+`GET /v1/browser/checkout/sessions/{id}` and its `/return` — carry an
+`invoice` member, `{"number": "…"}` and nothing else, when the session's intent
+is the one `pay` minted, and omit it for every other payment; the payment page
+and the return page draw an "Invoice: …" / "Facture: …" line. The number comes
+from `vpay_db::Invoices::number_for_intent` (one column, scoped to the
+session's merchant), **not** from parsing the intent's `description` — `pay`
+still writes `Invoice {number}` there, but a merchant can write anything into a
+`description`. Do not add the `in_…` id, the customer or the lines to that
+member: the browser surface is unauthenticated. See the `vpay-checkout` skill.
+_(Until 2026-11-17 this said the page rendered the amount and merchant name
+only, and that closing it was a change to the checkout screens.)_
 
 ## No tax, no discount, no credit note
 
@@ -151,13 +157,30 @@ operator can neither see nor record an out-of-band payment. **No Cypress case re
 invoice's `hosted_invoice_url`** — the URL is asserted to be a real
 checkout-session URL by the integration suite and the checkout page it points
 at is covered by `checkout.cy.ts`, but nothing has driven a browser from an
-invoice to a paid charge.
+invoice to a paid charge. _(2026-11-17: the blocker issue #91 named for this
+item, #78's hard-coded dashboard port, has been gone since 2026-09-10. The
+case is still unwritten — the D6 slice could not run the compose e2e stack, and
+a browser spec nobody ran would be a claim nothing checked.)_
 
-## `sdks/stripe-compat` has no invoice cases
+## ~~`sdks/stripe-compat` has no invoice cases~~ — six since 2026-11-17
 
-That suite drives the real `stripe@22.6.1` package rather than either merchant
-SDK, so the closed SDK parity rows say nothing about it. It gets no parity rows
-of its own (ADR-0015 decision 4) and is recorded here instead.
+**Corrected 2026-11-17 (issue #91, read on its branch before merge).**
+`sdks/stripe-compat/src/invoices.compat.test.ts` drives `stripe.invoices`
+through the nine routes it can reach and asserts bodies. Two things it found
+that an agent porting Stripe code needs:
+
+- **`stripe.invoiceItems` cannot drive vpay at all.** It addresses
+  `/v1/invoiceitems`; vpay mounts `/v1/invoice_items`, and the sealing client
+  refuses the unknown operation unsent (`404 unknown_operation`). Lines go
+  through `rawRequest`, or through `@vaam-apps/vpay-sdk`'s `invoiceItems`. Do
+  not "fix" this by mounting a second spelling without a decision.
+- **`stripe.invoices.listLineItems`** (`/v1/invoices/{id}/lines`) is not
+  mounted.
+
+The six passed once, 6 of 6, against a natively run `vpay-server` (no worker
+or rails), **not** in the compose job. The suite still gets no parity rows of
+its own (ADR-0015 decision 4). _(Until 2026-11-17 this heading said the suite
+had no invoice cases.)_
 
 ## What was closed, so you do not re-open it as a gap
 

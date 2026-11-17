@@ -106,7 +106,13 @@ alert's label and the JSON log line that produced it are joinable by eye.
 `CheckoutNotConfigured`, `CheckoutSessionNotOpen`, `Internal`. _(Until
 2026-09-23 this said "seven" and listed `StaffAuth` among the own variants.
 `StaffAuth` wraps `StaffAuthError` with `#[from]`, and did at `d3a8810b`
-too. The file has not changed since then.)_
+too. The file has not changed since then.)_ _(2026-11-17, PR #396's carry,
+read on its branch before merge: a thirteenth own variant,
+`AccountHolderLookupRateLimited { retry_after_seconds }` — `RateLimited`,
+`429`, `rate_limit_error` / `rate_limit`, `Retry::AfterBackoff` — and the only
+`ApiError` whose `IntoResponse` adds a header: `Retry-After`, the seconds left
+in the window. `StaffSignInRateLimited` sets none. Neither merchant SDK reads
+the header yet.)_
 
 > **A composite never re-classifies.** Every `Classify` method — `category`,
 > `code`, `retry`, `severity`, `public_message` — delegates **wholesale** for a

@@ -44,7 +44,12 @@ Two consequences follow for this method, and they are the sharp ones:
 1. **A `payments:write` credential can now probe registration and read the
    answer off a `400`.** The reserved rate-limit decision in issue #47 § 3 is
    therefore about _lookups_, not about a route — a limit that covered only
-   `GET /v1/account_holders` would not be the control it reads as.
+   `GET /v1/account_holders` would not be the control it reads as. _(2026-11-17,
+   PR #396's carry, issue #56: the controls were built that way — scope
+   `account_holders:read`, a per-credential budget and the `audit_events`
+   journal, all in `ask_rail` and the refund path, on PROVISIONAL RFC-0002
+   values. `payments:write` alone no longer reaches this method by either
+   route. Nothing in this adapter changed; see the `vpay-customers` skill.)_
 2. **The refund caller never compares a name.** It branches on
    `Some`/`None` only: `Some(_)` means the number is a registered account and
    the transfer may be attempted, `None` is a `400` naming `destination`, and

@@ -5,7 +5,9 @@ description: How to build, test, lint and gate vpay — the just recipes that ma
 
 # vpay tooling and gates
 
-> **Verified against vpay `f885170c` (2026-10-27).** Version-sensitive claims below
+> **Verified against vpay `f885170c` (2026-10-27).** The merchant-demo MSISDN
+> sentence was re-read at `44b19d69` (2026-11-17); the SDLC section was read on
+> an unmerged branch. Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -231,7 +233,24 @@ Four facts with no home above, kept short here on purpose — depth is in
   server-side phone validation (#186) rejects it before the mock rail is
   ever asked. `worker_e2e`/`worker_kill9` and `examples/shop`'s demo table
   now use real, `phonenumber`-valid Cameroon numbers matching
-  `2376[579]\d{7}`.
+  `2376[579]\d{7}`. `examples/merchant-demo` followed on 2026-11-17
+  (vaam-apps/vpay#399, verified at `44b19d69`): its three MTN outcomes are
+  `237670000900`/`101`/`102`.
+
+## The SDLC policy pages — what is enforced and what is practice (issue #387, 2026-11-17)
+
+_Read on vpay's `impl/387-sdlc` branch before it merged._ Two new flow pages,
+`docs/flows/sdlc.md` (the ISO/IEC 27001 A.8.25 secure-SDLC control) and
+`docs/flows/emergency-changes.md`, write the change-to-production path down as
+policy. **They describe gates this page already covers, and they say plainly
+which of their own controls nothing enforces**: no `CODEOWNERS`, no evidenced
+branch protection, no review or retrospective record, a remediation SLA that is
+**proposed and pending maintainer approval**, and an allowlist entry that turns
+`audit-web` or `deny` green with no time limit. **Do not cite either page as
+evidence that a control is enforced**, and do not describe the SLA as approved.
+Their advisory lists were written on that branch and already disagree with
+`master`'s files — trust `pnpm-workspace.yaml` and `deny.toml`. Details:
+[references/sdlc.md](references/sdlc.md).
 
 ## Further reading
 
@@ -245,3 +264,6 @@ Four facts with no home above, kept short here on purpose — depth is in
 - [references/ci.md](references/ci.md) — the three workflows, `changes` path
   gating, the readiness-poll lore, the `audit-web` retry loop, and the
   testcontainers serialisation in `.config/nextest.toml`.
+- [references/sdlc.md](references/sdlc.md) — `docs/flows/sdlc.md` and
+  `docs/flows/emergency-changes.md`: the policy, the advisory exception path,
+  and which sentences are practice rather than a gate.

@@ -193,6 +193,38 @@ accepted by the maintainer on 2026-10-24 and again on 2026-10-26.
 Remove it when `jsonwebtoken` or authkestra reaches `p256` 0.14 /
 `elliptic-curve` 0.14, or when `cargo deny` reports `advisory-not-detected`.
 
+## `cargo deny` — RUSTSEC-2026-0462, -0543 and -0440 (2026-11-17, vpay#402)
+
+_Read on vpay#402's branch before it merged._ `cargo deny check` failed on
+`master` that day, and CI showed it only on a pull request touching a Cargo or
+CI file, because the `supply-chain` job is path-filtered.
+
+- **RUSTSEC-2026-0462 (`rmcp` < 3.9.0 reads MCP HTTP response bodies with no
+  size limit) is fixed, not ignored:** a lockfile bump, `rmcp` 3.7.0 → 3.10.0
+  via `cratestack-mcp`. If you see it, your lockfile predates vpay#402.
+- **RUSTSEC-2026-0543 (`chrono` unmaintained) and RUSTSEC-2026-0440
+  (`astral-tokio-tar` unmaintained) are ignored in `deny.toml`, each "pending
+  the maintainer's acceptance"** — no maintainer decision is recorded, unlike
+  the two entries above. Both are "unmaintained" notices with no exploitable
+  defect named and no safe upgrade. `chrono` is in every shipping binary
+  (through authkestra, `cratestack-client-rust` and `schemars`); revisit when
+  those drop it, or at once if a real vulnerability is published.
+  `astral-tokio-tar` reaches only test code (testcontainers 0.27 ←
+  `vpay-testkit`); moving to testcontainers 0.28 is its own PR. **Do not
+  describe either as accepted.**
+- PR #396's branch adds the same `RUSTSEC-2026-0440` entry independently, so
+  `deny.toml` conflicts when both merge; keep one entry.
+
+The web graph gained the same kind of entry that day: **GHSA-fc5q-39xc-vjpf**
+(`picomatch` ≤ 4.0.7, ReDoS via repeated extglobs, published 2026-11-17 with no
+fixed release on npm) is ignored by id in `pnpm-workspace.yaml`'s
+`auditConfig.ignoreGhsas`, reached only through build, test and lint tooling,
+**proposed, pending the maintainer's acceptance**, `REMOVE WHEN` picomatch
+publishes 4.0.8. Before it, `just audit-web` was red on `master` and every open
+PR. vpay#400 the same day cleared nine other moderate advisories (glob,
+minimatch, hono, `@hono/node-server`, next) **by overrides, with nothing
+ignored**.
+
 ## Adding a dependency that needs OpenSSL
 
 **It will fail `cargo deny`, and that is the intended friction.** `openssl`,

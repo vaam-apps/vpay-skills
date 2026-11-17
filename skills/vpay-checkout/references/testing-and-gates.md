@@ -252,6 +252,13 @@ Two Node-side fixture servers are started by `cypress.config.ts` itself:
   `sdks/stripe-js/src/popup.test.ts` is a stub, because jsdom implements
   neither `window.open` nor cross-window `postMessage`. `examples/shop`'s popup
   mode was exercised by hand. This is a dated ⛔ in `docs/sdks/parity.md`.
+  _(2026-11-17, issue #65, vpay#402: that file is 41 cases now and proves the
+  primary/fallback channels, the per-session dedupe in both orders and the
+  reopened-`open`-session release — still against stub windows. vpay's own
+  message is a literal of `CompleteMessage` there, not this page.)_
+- No Cypress case follows an invoice's `hosted_invoice_url` to a paid charge,
+  so the invoice line (2026-11-17, issue #91) is proven in jsdom, Storybook and
+  the integration suite only.
 - The `@vaam-apps/vpay-stripe-js` package has never run against a live stack;
   its server is always `src/testing/browser-stub.ts`. The `/v1/browser` routes
   themselves are proven server-side by

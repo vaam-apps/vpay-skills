@@ -359,6 +359,41 @@ Boot logs one `info` line, `authentication methods`, with `permitted`, `served`
 and `explicit`. `GET /.well-known/vpay-auth` answers the served list,
 unauthenticated, on every process.
 
+## `privacy:` and the `account_holders:read` scope (issue #56, PR #396's carry, 2026-11-17)
+
+_Read on that pull request's branch before it merged; every value below is
+**PROVISIONAL pending RFC-0002 D3/D5/D6** and says so in the shipped YAML._
+
+```yaml
+privacy:
+  lookup_audit_salt: "${VPAY_LOOKUP_AUDIT_SALT}" # keys the audit_events HMAC
+  lookup_rate_limit:
+    attempts: 10 # per credential, per window
+    window_seconds: 60
+```
+
+- **The key is `attempts`.** `docs/flows/configuration.md`'s example on that
+  branch spells it `max_attempts`; `vpay_config::RateLimitPolicy` reads
+  `attempts`, as all three shipped overlays do. Trust the struct.
+- **Boot refusals (exit `78`):** a `lookup_audit_salt` with no
+  `lookup_rate_limit` is `ConfigError::MissingPrivacyLookupRateLimit`; under
+  `livemode` an empty salt, or a `lookup_rate_limit` with no salt, is
+  `MissingPrivacyLookupAuditSalt`; and under `livemode` the salt is a secret, so
+  a literal is refused like any other.
+- **No `privacy:` block boots** — and then every account-holder lookup, and
+  every refund that names a `destination`, answers `500` ("privacy controls
+  not configured") at request time. An upgraded deployment that adds nothing
+  loses both.
+- **`merchant_clients[].scopes` needs `account_holders:read`** for any client
+  that calls `GET /v1/account_holders` or creates a refund with a
+  `destination` (every MTN and Orange refund). No payment scope implies it, and
+  it is enforced from the first request after deploy, with no migration window
+  — **a breaking change for every merchant registration without it**. The
+  shipped overlays and `just gen-demo-keys` (which now regenerates a demo
+  overlay lacking it) already carry it. See the `vpay-customers` skill.
+- **Rotating `lookup_audit_salt` breaks correlation** with every earlier
+  `audit_events` row; key custody and rotation are RFC-0002 D3, undecided.
+
 ## `routing:` — static weights for the router (since 2026-10-23)
 
 Optional. With no block, every rail weighs `100` for each payment-method type
