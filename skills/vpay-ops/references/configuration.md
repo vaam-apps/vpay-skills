@@ -389,9 +389,12 @@ privacy:
   that calls `GET /v1/account_holders` or creates a refund with a
   `destination` (every MTN and Orange refund). No payment scope implies it, and
   it is enforced from the first request after deploy, with no migration window
-  — **a breaking change for every merchant registration without it**. The
-  shipped overlays and `just gen-demo-keys` (which now regenerates a demo
-  overlay lacking it) already carry it. See the `vpay-customers` skill.
+  — **a breaking change for every merchant registration without it**.
+  `config/application.yml`, `application-live.yml` and
+  `application-notchpay-sandbox.yml` register it, and carry the `privacy:`
+  block above; `application-sandbox.yml` has neither and inherits both from the
+  base. `just gen-demo-keys` (which now regenerates a demo overlay lacking it)
+  writes it too. See the `vpay-customers` skill.
 - **Rotating `lookup_audit_salt` breaks correlation** with every earlier
   `audit_events` row; key custody and rotation are RFC-0002 D3, undecided.
 

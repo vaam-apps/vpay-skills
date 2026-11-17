@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-11-17 (review fixes) — vpay#405 merged, `batch4` is vpay#406
+
+- **`vpay-tooling`:** vpay#405 merged as `9580c2d8`. `SKILL.md` and
+  `references/sdlc.md` are stamped to it and lose their "unmerged" wording;
+  the page's "accepts"/"are accepted" wording for three pending entries is
+  recorded, and its one-word fix is pending in vpay#406.
+- **`batch4` is vpay#406** (`ea604522` #147, `d080da35` #79, `3c00027d` the
+  `sdlc.md` wording), rebased on `9580c2d8`; every reference is renamed.
+- **`vpay-sdks` `references/stripe-compat.md`:** a `payments:write`-only
+  refund with a `destination` is refused `403` once the request is otherwise
+  valid, before the account-holder lookup — not "before anything else is
+  checked", which it said in the first commit of this batch:
+  `resolve_target`'s intent `404`, no-charge `409`, `supports_refunds` `400` and
+  amount/`destination` `400`s come first.
+- **`vpay-customers`, `vpay-ops`:** the limiter values and the scope are in
+  `config/application.yml`, `application-live.yml` and
+  `application-notchpay-sandbox.yml`, not "every shipped overlay";
+  `application-sandbox.yml` inherits them from the base.
+- **`vpay-data-layer`:** a duplicated "vpay#404, vpay#404" removed.
+
 ## 2026-11-17 (later) — vpay#402–#404 merged, the eighteenth gate, and `batch4`'s telemetry sweep and payer mask
 
 Re-read against vpay `c3358352` (`master` after vpay#402, #397, #403 and

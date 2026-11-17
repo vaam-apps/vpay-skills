@@ -178,7 +178,7 @@ something paged, give its leaf error `Severity::Page`; do not add a rule.
 ## Logging
 
 **What a log line may hold about a person is now an operator document:** vpay's
-`docs/runbooks/privacy-telemetry.md` (pending in `batch4`, issue #147,
+`docs/runbooks/privacy-telemetry.md` (pending in vpay#406, issue #147,
 2026-11-17) goes surface by surface — logs, metrics, traces, error responses,
 webhook payloads, the diagnostic columns beside them — and says what form each
 may hold, how to find the copies earlier builds wrote (read-only SQL over

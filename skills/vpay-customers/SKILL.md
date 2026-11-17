@@ -283,7 +283,10 @@ values, pending RFC-0002 D3/D5/D6/D7/D9**:
   implies it, and it was enforced with **no migration window**: a registration
   without it is `403` from the first request after the upgrade. **Breaking.**
 - **A per-credential fixed-window budget** (`privacy.lookup_rate_limit`,
-  `attempts: 10` per 60 s in every shipped overlay) shared by all three callers;
+  `attempts: 10` per 60 s in `config/application.yml`,
+  `application-live.yml` and `application-notchpay-sandbox.yml` — the three
+  files that carry a `privacy:` block; the `sandbox` profile inherits the
+  base's) shared by all three callers;
   `429` with `Retry-After`. Every attempt counts, a malformed number included.
 - **An append-only `audit_events` journal**: two rows per lookup, the target an
   HMAC of tenant and number under `privacy.lookup_audit_salt` — never the raw

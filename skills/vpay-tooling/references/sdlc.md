@@ -1,7 +1,7 @@
 # `docs/flows/sdlc.md` and `docs/flows/emergency-changes.md`
 
-_Read on the head of vpay#405 (`5c39baf9`, issue #387, refs #151) on
-2026-11-17, before it merged; restamp against `master` once it has. Version-sensitive
+_Verified against vpay `9580c2d8` (2026-11-17), the merge of vpay#405 (issue
+#387, refs #151). Version-sensitive
 claims carry the date they became true — see
 [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
@@ -35,8 +35,7 @@ stale when a gate is added — the count is in `AGENTS.md` and [gates.md](gates.
 
 ### Its advisory lists — "accepted" and "pending" are different words there
 
-As of the head of vpay#405 (`5c39baf9`), the page's lists match the files on
-`master` (`c3358352`):
+At `9580c2d8` the page's lists match the files on `master`:
 
 - **Web** — `GHSA-vfj7-8cjw-p6xm` (braces, maintainer decision 2026-10-09) and
   `GHSA-fc5q-39xc-vjpf` (picomatch, added 2026-11-17 in vpay#402, **pending the
@@ -47,8 +46,11 @@ As of the head of vpay#405 (`5c39baf9`), the page's lists match the files on
   `RUSTSEC-2026-0543` (`chrono`) and `RUSTSEC-2026-0440` (`astral-tokio-tar`),
   "unmaintained" notices added in vpay#402 **pending acceptance**.
 
-The page's own heading calls all of them "accepted"; three web-and-Rust entries
-have no decision behind them. Write "pending" for those. The files stay the
+At `9580c2d8` the page says `deny.toml` "accepts" five and that two web
+advisories "are accepted", yet three entries have no decision behind them.
+vpay#406 (pending) changes both sentences to "ignores"/"ignored" and says
+which are accepted by the maintainer and which pending. Either way, write
+"pending" for those three. The files stay the
 authority — `pnpm-workspace.yaml`'s `auditConfig.ignoreGhsas` and `deny.toml`'s
 `[advisories] ignore` — and the `vpay-troubleshooting` skill's
 `build-toolchain.md` has the 2026-11-17 entries. _(Until 2026-11-17 this section

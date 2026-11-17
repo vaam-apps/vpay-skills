@@ -43,7 +43,7 @@ was taken by one, and wrong **invisibly**. The detail component has a real
 
 **The masked payer is an em dash, and it is a real `null`.**
 ~~`charges.payer_ref_masked` is never written by anything (the module doc of
-`vpay_api::dash::payment_intents`)~~ — _pending in vpay's `batch4` (issue #79
+`vpay_api::dash::payment_intents`)~~ — _pending in vpay#406 (issue #79
 item 4, 2026-11-17): the confirm path writes it (`+237••••67` on push rails,
 `NULL` on `orange_money`), migration `0062` backfills it and a CHECK ties it to
 `payer_ref`, and `/dash/v1`'s detail now carries it (asserted: the mask

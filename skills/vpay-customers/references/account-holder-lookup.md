@@ -124,7 +124,7 @@ whether a holder was found and which caller asked. **The bullet count is fixed, 
 digit** — a mask whose length revealed the input's length would be a small
 oracle for free. ~~A gap, named: nothing writes `charges.payer_ref_masked` yet;
 the confirm path stores `NULL`, and this route's mask is the first producer of
-the shape in the workspace.~~ **Pending in vpay's `batch4` (issue #79 item 4,
+the shape in the workspace.~~ **Pending in vpay#406 (issue #79 item 4,
 2026-11-17):** the confirm path writes `charges.payer_ref_masked` as
 `+237••••67` — the first three and last two digits, four bullets — from
 `vpay_core::privacy::payer_msisdn_mask`, and migration `0062` backfills and

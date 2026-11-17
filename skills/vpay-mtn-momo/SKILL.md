@@ -221,7 +221,7 @@ a 500 to `Transport`. A retry loop against them is an outage that looks like
 a flake. All three vocabularies, row by row and with what each is evidenced
 by, are in [references/failure-mapping.md](references/failure-mapping.md).
 
-**What those errors may print (pending in vpay's `batch4`, issue #147,
+**What those errors may print (pending in vpay#406, issue #147,
 2026-11-17).** The `basicuserinfo` URL carries the payer's MSISDN in its path,
 and reqwest's own `Display` ends in `for url (…)`: every transport failure now
 names the rail's **origin** only (`vpay_provider::http::redact_url`, through

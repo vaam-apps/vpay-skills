@@ -224,7 +224,7 @@ no repair path yet (issue #96, `vpay-payments`); the popup completes on vpay's
 own message first (issue #65, `vpay-checkout`); the payer sees an invoice's
 number (issue #91); and two policy pages, `docs/flows/sdlc.md` and
 `docs/flows/emergency-changes.md`, describe controls that are largely practice
-rather than gates (issue #387, pending as vpay#405, `vpay-tooling`).
+rather than gates (issue #387, vpay#405, `vpay-tooling`).
 
 See also `references/reading-the-docs.md` — this repository's documentation has
 conventions that will mislead you if you do not know them, in particular why a

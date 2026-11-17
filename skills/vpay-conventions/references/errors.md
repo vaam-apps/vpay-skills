@@ -221,7 +221,7 @@ port's own rustdoc, and `#![warn(clippy::missing_errors_doc)]` on
 
 `ProviderError::Rejected` is the seam between system errors and business
 outcomes. A rail declining a charge is not a system failure. _(Pending in
-vpay's `batch4`, issue #147, 2026-11-17: it gains `context: Option<String>`,
+vpay#406, issue #147, 2026-11-17: it gains `context: Option<String>`,
 and its `Display` stops printing the rail's `message` — that text goes to
 `failure_raw` only, because `Display` is what every log line and
 `jobs.last_error` render. `context` is adapter-authored and printed;

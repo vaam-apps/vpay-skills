@@ -22,7 +22,7 @@ description: The vpay provider port (`vpay-provider`) and how to add a payment r
 > `default_callback_registration` bullet, the RFC-0012 and RFC-0013 entries
 > and the RFC-0014 heading) was read against vpay `4df5e0d2` (2026-10-24), the
 > merge of vaam-apps/vpay#364. The 2026-11-17 bullet on what an error may say
-> about a payer was read on vpay's unmerged `batch4` (`6e55317c`); restamp when
+> about a payer was read on the unmerged vpay#406 (`ea604522`); restamp when
 > it lands.
 
 One trait, `vpay_provider::ProviderAdapter`, in
@@ -269,7 +269,7 @@ fn accepted_exposure(&self) -> Option<AcceptedExposure>; // default: None — si
   `Malformed` and `NeedsReconciliation` leave the charge's fate **unknown**,
   which is the distinction the whole port is arranged around.
 - **What an error may say about a payer (issue #147, RFC-0002 PR 4; pending in
-  vpay's `batch4`, 2026-11-17).** An error's `Display` reaches every
+  vpay#406, 2026-11-17).** An error's `Display` reaches every
   `ApiError`/`JobError` log line, `jobs.last_error` and the worker's
   `job failed:` line — copies the personal-data inventory does not govern — so
   after that change:

@@ -170,7 +170,7 @@ grammar, you are changing four things: the signer, both verifiers, and
 512 characters of something recognisable rather than a full body.
 
 **The endpoint URL in an excerpt and in the alert is its origin (pending in
-vpay's `batch4`, issue #147, 2026-11-17).** An endpoint URL may carry a
+vpay#406, issue #147, 2026-11-17).** An endpoint URL may carry a
 receiver's credential in its query — whether it may is RFC-0002 D4, open, so
 vpay still accepts and stores it in `webhook_deliveries.url`. What stops is the
 repetition: `transport_excerpt` passes the reqwest error through

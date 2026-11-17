@@ -244,10 +244,12 @@ Neither divergence is Stripe's and both are deliberate.
   a payee (RFC-0003 § 1); `notchpay` refunds to the instrument that paid and
   refuses one. **Since issue #56's lookup controls (vpay#404, 2026-11-17)
   a refund that carries a `destination` also needs the credential to hold
-  `account_holders:read`** — a `payments:write`-only credential is `403`
-  before anything else is checked, on `orange_money` too, where no lookup is
-  made (the scope check precedes the capability branch in
-  `vpay_api::v1::refunds::resolve_target`), and a deployment with no
+  `account_holders:read`** — a `payments:write`-only credential is `403` once
+  the request is otherwise valid (after the intent's `404`, the no-charge
+  `409`, the `supports_refunds` `400` and the amount and `destination` `400`s
+  in `vpay_api::v1::refunds::resolve_target`), before the account-holder
+  lookup — on `orange_money` too, where no lookup is made, because the scope
+  check precedes the capability branch. A deployment with no
   `privacy.lookup_audit_salt` answers it `500`. It also spends the lookup rate-limit
   budget and writes `audit_events` rows wherever the rail supports a lookup.
   See the `vpay-customers` skill. The key is the charge's rail code or, since 2026-10-24, the

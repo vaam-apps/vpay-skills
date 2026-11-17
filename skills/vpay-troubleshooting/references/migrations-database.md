@@ -138,7 +138,7 @@ landed has no `shop` database.
   `amount: row.amount - row.fee.unwrap_or(0)` once passed all 244 of
   `vpay-api`'s tests.
 - ~~**`charges.payer_ref_masked` is never written by anything.**~~ **Pending in
-  vpay's `batch4` (issue #79 item 4, 2026-11-17):** the confirm path writes it
+  vpay#406 (issue #79 item 4, 2026-11-17):** the confirm path writes it
   and migration `0062` backfills it and adds
   `payer_ref_masked_derives_from_payer_ref` — a mask is `NULL` or exactly the
   mask of its own row's normalised `payer_ref`. **A hand-written or fixture

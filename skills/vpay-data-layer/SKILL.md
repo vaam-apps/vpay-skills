@@ -11,7 +11,7 @@ description: vpay's persistence layer — `backends/migrations/*.sql` as the aut
 > changed (the staff models, migrations `0055`–`0057`, the drift constants);
 > the rest of this page was last verified against `87166eaf` (2026-10-09). The
 > 2026-11-17 notes on migrations `0059`–`0061` were re-read at `c3358352` (vpay
-> `master` after #402–#404); the `0062` note was read on the unmerged `batch4`.
+> `master` after #402–#404); the `0062` note was read on the unmerged vpay#406.
 > Version-sensitive claims below carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -129,7 +129,7 @@ migrations `0060`/`0061`** (vpay#404) for `audit_events` and
 layer reads no rows and offers no writes; `vpay_db::audit_events` is
 hand-written SQL. `0059` (vpay#403) moved nothing: a CHECK value and a `.cstack`
 enum label (`ChargeState.requires_review`) the report does not count. `0062`
-(batch4, pending) moves nothing either.)_ `0053`'s three lines are `charges.method_type`
+(vpay#406, pending) moves nothing either.)_ `0053`'s three lines are `charges.method_type`
 undeclared, its CHECK `method_type_is_known`, and the undeclared table
 `routing_decisions`, whose `considered` is the 20th unmappable column (`jsonb`).
 **212 over 28 since migration `0054` (2026-10-24), measured.** The change was
@@ -224,7 +224,7 @@ paid_out_of_band)` at `invoices_payment_record_key`, a six-column `UNIQUE`
   (issue #96, vpay#403) — `requires_review` added to
   `charges_state_enum_check` and kept out of `charges_live_idx`; see the
   `vpay-payments` skill. `0060` is `audit-events-and-lookup-rate-limits` and
-  `0061` is `rate-limit-window-expiry` (vpay#404, vpay#404):
+  `0061` is `rate-limit-window-expiry` (vpay#404):
   `audit_events` with triggers that refuse `UPDATE`/`DELETE`/`TRUNCATE`, the
   `lookup:merchant_key` scope on `rate_limit_windows_scope_is_known`, and
   `rate_limit_windows.window_expires_at` (add nullable, backfill start + 300 s,
@@ -232,7 +232,7 @@ paid_out_of_band)` at `invoices_payment_record_key`, a six-column `UNIQUE`
   vpay#404 renumbered its two before merging** — the rule below permits
   renaming or editing a file that has never shipped, and only that. 61 files
   on `master`. ~~The next is `0059`.~~)_
-  _(Pending in vpay's `batch4` when written: `0062` is
+  _(Pending in vpay#406 when written: `0062` is
   `charges-payer-ref-masked` (issue #79 item 4). It clears any
   `payer_ref_masked` that is not the derived mask, backfills the mask for rows
   whose `payer_ref` is a normalised 8–15-digit number, and adds

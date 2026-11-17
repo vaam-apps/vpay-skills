@@ -5,10 +5,11 @@ description: How to build, test, lint and gate vpay — the just recipes that ma
 
 # vpay tooling and gates
 
-> **Verified against vpay `f885170c` (2026-10-27).** The merchant-demo MSISDN
-> sentence was re-read at `44b19d69` (2026-11-17), the gate count and
-> `verify-adr-numbers` row at `c3358352` (2026-11-17, after vpay#397); the SDLC
-> section was read on unmerged vpay#405. Version-sensitive claims below
+> **Verified against vpay `9580c2d8` (2026-11-17)** for the SDLC section (after
+> vpay#405 merged), and at `c3358352` (2026-11-17, after vpay#397) for the gate
+> count and the `verify-adr-numbers` row; the merchant-demo MSISDN sentence was
+> re-read at `44b19d69` (2026-11-17), and the rest of this page was last verified
+> against `f885170c` (2026-10-27). Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -244,8 +245,7 @@ Four facts with no home above, kept short here on purpose — depth is in
 
 ## The SDLC policy pages — what is enforced and what is practice (issue #387, 2026-11-17)
 
-_Read on the head of vpay#405 (`5c39baf9`, the carry of #387) before it
-merged._ Two new flow pages,
+_vpay#405 (the carry of #387), merged as `9580c2d8`._ Two flow pages,
 `docs/flows/sdlc.md` (the ISO/IEC 27001 A.8.25 secure-SDLC control) and
 `docs/flows/emergency-changes.md`, write the change-to-production path down as
 policy. **They describe gates this page already covers, and they say plainly
@@ -254,9 +254,11 @@ branch protection, no review or retrospective record, a remediation SLA that is
 **proposed and pending maintainer approval**, and an allowlist entry that turns
 `audit-web` or `deny` green with no time limit. **Do not cite either page as
 evidence that a control is enforced**, and do not describe the SLA as approved.
-Their advisory lists match `master`'s files at #405's head, but call three
-entries "accepted" that are only **pending** acceptance (picomatch, `chrono`,
-`astral-tokio-tar`) — trust `pnpm-workspace.yaml` and `deny.toml`. Details:
+Their advisory lists match `master`'s files, but at `9580c2d8` the page says
+`deny.toml` "accepts" five advisories when two of them (`chrono`,
+`astral-tokio-tar`), and picomatch on the web side, are only **pending**
+acceptance; a one-word fix ("ignores", saying which are accepted and which
+pending) is pending in vpay#406. Trust `pnpm-workspace.yaml` and `deny.toml`. Details:
 [references/sdlc.md](references/sdlc.md).
 
 ## Further reading
