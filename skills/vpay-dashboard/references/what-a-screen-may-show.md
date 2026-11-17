@@ -42,9 +42,14 @@ was taken by one, and wrong **invisibly**. The detail component has a real
 `Rail`, from `charge.provider_code`.
 
 **The masked payer is an em dash, and it is a real `null`.**
-`charges.payer_ref_masked` is never written by anything (the module doc of
-`vpay_api::dash::payment_intents`), so `payment-detail.tsx` renders it **from
-the column** and never derives it. The only other value that could produce a
+~~`charges.payer_ref_masked` is never written by anything (the module doc of
+`vpay_api::dash::payment_intents`)~~ — _pending in vpay's `batch4` (issue #79
+item 4, 2026-11-17): the confirm path writes it (`+237••••67` on push rails,
+`NULL` on `orange_money`), migration `0062` backfills it and a CHECK ties it to
+`payer_ref`, and `/dash/v1`'s detail now carries it (asserted: the mask
+arrives, the number does not). **The app still renders nothing from
+`/dash/v1` until VP-6b**, so no page shows it yet._ `payment-detail.tsx`
+renders it **from the column** and never derives it. The only other value that could produce a
 mask is the payer's unmasked phone number, and reading that into a staff
 surface to make a row look populated is the trade this refuses. The row
 exists rather than being omitted so the value appears the day the column is
@@ -246,8 +251,8 @@ entry in it became a subset of the first.)_
   asked to add a write, that is the conversation, not a route.
 - **Any other slice.** Webhook configuration and retries, balances, settings
   and rail health are not built.
-- **A list of charges parked in `requires_review`** (issue #96, 2026-11-17,
-  recorded as not built on its branch in
+- **A list of charges parked in `requires_review`** (issue #96, vpay#403, 2026-11-17,
+  recorded as not built in
   `docs/flows/dashboard/status-built-and-not-built.md`). There is nothing to add
   the state to: `/dash/v1` has no charges list and no procedure searches
   charges; `GET /dash/v1/payment_intents` and `searchPaymentIntents` filter by
@@ -260,7 +265,7 @@ entry in it became a subset of the first.)_
   because `charges` has no `merchant_id`. Until then the runbook's SQL
   (`docs/runbooks/charges-requires-review.md`) is the listing. Do not add the
   label to `PAYMENT_STATUS_SYSTEM` — it is not an intent status.
-- **The `audit_events` journal** (PR #396's carry, 2026-11-17). The generated
+- **The `audit_events` journal** (vpay#404, 2026-11-17). The generated
   client has an `auditEvents` model with no create/update/delete (`@@internal`)
   and, with no `@@allow` arm, its reads answer no rows. The operator query
   surface RFC-0002 D8 asks for is not built anywhere — not here, not on a

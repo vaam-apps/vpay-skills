@@ -1,6 +1,6 @@
 # The state machines
 
-_§ `requires_review` was read on vpay's issue #96 branch (2026-11-17) before it merged. Verified against vpay `9499f09d` (2026-10-23) for § `ChargeState`, and `a33aac61` (2026-09-29) for § `InvoiceStatus`; the rest of this page was last read at `b747e5d5` (2026-09-23). Version-sensitive claims
+_§ `requires_review` was re-read at `c3358352` (2026-11-17, vpay#403 on `master`). Verified against vpay `9499f09d` (2026-10-23) for § `ChargeState`, and `a33aac61` (2026-09-29) for § `InvoiceStatus`; the rest of this page was last read at `b747e5d5` (2026-09-23). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 Every enum below is in `backends/crates/vpay-core/src/state.rs` except
@@ -75,7 +75,7 @@ Two `None`s that surprise people:
 `ChargeState::is_live()` is the reconciler's predicate and
 `is_terminal()` its complement.
 
-### `requires_review` — the seventh state (issue #96, 2026-11-17, on its branch when written)
+### `requires_review` — the seventh state (issue #96, vpay#403, 2026-11-17)
 
 **A rail-accepted payment on a `canceled` intent.** A cancel and a confirm can
 interleave so that the confirm's charge commits onto an intent the cancel has
@@ -118,12 +118,11 @@ back with `WriteMatchedNoRow`, pages, and is `Retry::Never` — pinned by a test
 on purpose, so changing it is deliberate. A live charge on a `succeeded` intent
 is still a broken invariant and still rolls back.
 
-The label lands in five places at once, and nothing ties them together: the
-`charges_state_enum_check` CHECK (a new migration, numbered `0059` on the
-issue #96 branch — see the `vpay-data-layer` skill on the numbering clash with
-PR #396's `0059`), `vpay_core::ChargeState`, `schemas/vpay.cstack`'s
-`enum ChargeState`, and the regenerated `@vpay/dash-client`'s
-`ChargeStateValues`. `ChargeState` is still never on the merchant wire.
+The label lands in four places at once, and nothing ties them together: the
+`charges_state_enum_check` CHECK (migration `0059_charges-requires-review.sql`;
+`postgres_smoke.rs` writes the label once to prove the CHECK takes it),
+`vpay_core::ChargeState`, `schemas/vpay.cstack`'s `enum ChargeState`, and the
+regenerated `@vpay/dash-client`'s `ChargeStateValues`. `ChargeState` is still never on the merchant wire.
 
 **`unresolved` is escalated, not abandoned.** It is still polled — once an hour
 (`vpay_worker::UNRESOLVED_POLL_INTERVAL`), with an alert raised for a human.

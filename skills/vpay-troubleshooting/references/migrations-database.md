@@ -137,8 +137,14 @@ landed has no `shop` database.
   `a_reported_fee_never_moves_the_payers_amount` exists because
   `amount: row.amount - row.fee.unwrap_or(0)` once passed all 244 of
   `vpay-api`'s tests.
-- **`charges.payer_ref_masked` is never written by anything.** The dashboard
-  renders it as null rather than deriving a mask. See
+- ~~**`charges.payer_ref_masked` is never written by anything.**~~ **Pending in
+  vpay's `batch4` (issue #79 item 4, 2026-11-17):** the confirm path writes it
+  and migration `0062` backfills it and adds
+  `payer_ref_masked_derives_from_payer_ref` — a mask is `NULL` or exactly the
+  mask of its own row's normalised `payer_ref`. **A hand-written or fixture
+  mask that is not the derived one is refused by Postgres**, and `0062` clears
+  any such value before adding the CHECK so boot cannot abort on it; its
+  validation scans `charges` under `ACCESS EXCLUSIVE`. See
   [dashboard.md](dashboard.md).
 - **Configuration reconcile disables rather than deletes.** A rail absent from
   the seed is set `enabled = false`, "because a rail that has ever taken money

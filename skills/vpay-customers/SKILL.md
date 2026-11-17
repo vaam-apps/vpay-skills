@@ -6,7 +6,7 @@ description: The vpay Customer object and the account-holder lookup — phone-fi
 # Customers, addresses, erasure, and the account-holder lookup
 
 > **Verified against vpay `87166eaf` (2026-10-09).** The 2026-11-17 account-holder
-> passages were read on the branch carrying PR #396 before it merged. Version-sensitive claims below
+> passages were re-read at `c3358352` (vpay#404 on `master`). Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -32,7 +32,7 @@ erasure-through-sessions cases on 2026-09-23.
 sweep (no vpay has been up for twelve months); the account-holder lookup has
 never called MTN's real sandbox, only a WireMock container; ~~the lookup has no
 rate limit, no audit log and no dedicated scope (three reserved maintainer
-decisions, below)~~ **since 2026-11-17 (PR #396's carry, issue #56) the lookup
+decisions, below)~~ **since 2026-11-17 (vpay#404, issue #56) the lookup
 has all three, on PROVISIONAL RFC-0002 values, with no operator surface for the
 audit journal (D8) and no retention handler for it (D9)** — below; neither SDK has run against a live vpay for this resource
 (dated ⛔/⛔ rows in `docs/sdks/parity.md`); and **two issue #113 questions are
@@ -274,7 +274,7 @@ customer routes are no longer the only non-`Verbatim` callers.)_
 
 A name lookup with a **three-way** answer that nothing may collapse, privacy
 rules that apply only here, and three controls issue #47 asked for —
-**built on 2026-11-17 (PR #396's carry, issue #56 / #152) on PROVISIONAL
+**built on 2026-11-17 (vpay#404, issue #56 / #152) on PROVISIONAL
 values, pending RFC-0002 D3/D5/D6/D7/D9**:
 [references/account-holder-lookup.md](references/account-holder-lookup.md).
 
@@ -289,8 +289,8 @@ values, pending RFC-0002 D3/D5/D6/D7/D9**:
   HMAC of tenant and number under `privacy.lookup_audit_salt` — never the raw
   number or the name. **No operator can read it except by SQL (D8, not built),
   and nothing ever deletes a row (D9, not built).** Customer erasure does not
-  touch it (nothing in `vpay_db::customers` names the table, read on that
-  branch); whether it should is part of D3/D9, not something to add quietly.
+  touch it (nothing in `vpay_db::customers` names the table at
+  `c3358352`); whether it should is part of D3/D9, not something to add quietly.
 - A deployment with no `privacy:` block answers every lookup — and every
   refund with a `destination` — `500`.
 

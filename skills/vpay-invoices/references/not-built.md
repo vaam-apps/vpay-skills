@@ -22,8 +22,8 @@ not a document — a payer following it sees the existing checkout page (the
 merchant's name and the amount) and pays through the rails that already exist.
 
 ~~**The payer's checkout page does not show the invoice number** (2026-09-07,
-recorded as a gap rather than a decision).~~ **Closed 2026-11-17 (issue #91,
-D6; read on its pull-request branch before merge).** Both browser reads —
+recorded as a gap rather than a decision).~~ **Closed 2026-11-17 (issue #91
+D6, vpay#403).** Both browser reads —
 `GET /v1/browser/checkout/sessions/{id}` and its `/return` — carry an
 `invoice` member, `{"number": "…"}` and nothing else, when the session's intent
 is the one `pay` minted, and omit it for every other payment; the payment page
@@ -164,7 +164,7 @@ a browser spec nobody ran would be a claim nothing checked.)_
 
 ## ~~`sdks/stripe-compat` has no invoice cases~~ — six since 2026-11-17
 
-**Corrected 2026-11-17 (issue #91, read on its branch before merge).**
+**Corrected 2026-11-17 (issue #91, vpay#403).**
 `sdks/stripe-compat/src/invoices.compat.test.ts` drives `stripe.invoices`
 through the nine routes it can reach and asserts bodies. Two things it found
 that an agent porting Stripe code needs:

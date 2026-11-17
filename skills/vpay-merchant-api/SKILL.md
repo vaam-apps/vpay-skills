@@ -9,8 +9,7 @@ description: The vpay HTTP surface — the /v1 merchant API and its route tables
 > and MCP-auth sections re-read at `3bcf0763` (2026-10-28, after vpay#384 and
 > #386); the nest table's `/dash/v1` row and the `human_login` sentences at
 > `10f42747` (2026-10-30, after vpay#390–#394).** The 2026-11-17 `account_holders:read`
-> and MCP-credential passages were read on the branch carrying PR #396 before it
-> merged. Version-sensitive claims below
+> and MCP-credential passages were re-read at `c3358352` (vpay#404 on `master`). Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -320,8 +319,8 @@ Two strings, defined once in `vpay_api::v1`: `SCOPE_PAYMENTS_WRITE`
 `required_scopes(method)` is **fail-closed** — `GET`/`HEAD` accept either;
 everything else, including verbs no route answers, requires write.
 
-**A third scope, and a route-declared policy (issue #56, PR #396's carry,
-2026-11-17; read on its branch before merge).** `SCOPE_ACCOUNT_HOLDERS_READ`
+**A third scope, and a route-declared policy (issue #56, vpay#404,
+2026-11-17).** `SCOPE_ACCOUNT_HOLDERS_READ`
 (`account_holders:read`) guards `GET /v1/account_holders`. Every `V1_ROUTES`
 entry now declares a `scopes: fn(&Method)` policy — `default_payment_scopes`
 (which is `required_scopes`, unchanged) for every route but that one — and
@@ -465,7 +464,7 @@ merchant's **agent**. It is mounted only when `deployment.surfaces` names
     before.
   - `mcp::MerchantMcpAuth` validates the audience, maps the client to its
     merchant (`MerchantScope::for_mcp`), and lets a write through only for
-    `payments:write`. **Since PR #396's carry (2026-11-17) the call also carries
+    `payments:write`. **Since vpay#404 (2026-11-17) the call also carries
     the token's own `client_id` and scopes** — its `scope` claim intersected
     with the registration's YAML, exactly as `/v1`'s bearer path computes them,
     never widened. (An earlier revision of that PR ran a tool call as an

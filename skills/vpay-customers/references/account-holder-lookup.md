@@ -1,8 +1,8 @@
 # `GET /v1/account_holders` — the three-way answer and three provisional controls
 
 _Verified against vpay `b747e5d5` (2026-09-23). § "The three controls" and
-every 2026-11-17 note were read on the branch carrying PR #396 (issue #56 and
-#152) before it merged — on an older `master` the controls do not exist.
+every 2026-11-17 note were re-read at `c3358352`, after vpay#404 (issue #56
+and #152) merged — on an older `master` the controls do not exist.
 Version-sensitive claims carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 "Whose mobile-money account is this number?" Built for issue #47: an integrator
@@ -110,7 +110,7 @@ of any `Result`/`Option` containing one — cannot print a name.
 
 **2. The name and the number are never stored — but since 2026-11-17 the
 question is.** ~~Nothing is persisted. Not the name, not the number, not the
-fact that the question was asked.~~ _(True until PR #396's carry, issue #56.)_
+fact that the question was asked.~~ _(True until vpay#404, issue #56.)_
 Every lookup, from either caller, now writes two `audit_events` rows (see §
 "The three controls" below): `initiated` before the rail is asked and a
 terminal outcome after, carrying an HMAC of `tenant:canonical MSISDN` — never
@@ -122,9 +122,16 @@ target, on a **provisional** answer to RFC-0002 D3.
 `info` (`warn` on a rail failure), carrying the rail's code, `+2376••••200`,
 whether a holder was found and which caller asked. **The bullet count is fixed, not one per hidden
 digit** — a mask whose length revealed the input's length would be a small
-oracle for free. A gap, named: nothing writes `charges.payer_ref_masked` yet;
+oracle for free. ~~A gap, named: nothing writes `charges.payer_ref_masked` yet;
 the confirm path stores `NULL`, and this route's mask is the first producer of
-the shape in the workspace.
+the shape in the workspace.~~ **Pending in vpay's `batch4` (issue #79 item 4,
+2026-11-17):** the confirm path writes `charges.payer_ref_masked` as
+`+237••••67` — the first three and last two digits, four bullets — from
+`vpay_core::privacy::payer_msisdn_mask`, and migration `0062` backfills and
+constrains it. **That is a different shape from this log mask on purpose:**
+#79 decided the stored column only; the log lines keep `+2376••••NNN` because
+the log and telemetry shape is RFC-0002 D3, still open. Do not unify them
+without that decision.
 
 **4. No metric label carries the number, the name, the merchant, or even the
 rail.** `vpay_account_holder_lookups_total{outcome}`, `outcome` one of
@@ -141,7 +148,8 @@ the constant).
 ## The three controls — BUILT on 2026-11-17, every value PROVISIONAL
 
 **Read this box before quoting any number below.** PR #396 (issue #56 / #152,
-which the owner decided on 2026-11-17 to merge on that basis) implemented RFC-0002's
+merged on 2026-11-17 as vpay#404, on the owner's decision to merge it on that
+basis) implemented RFC-0002's
 _recommendations_ so they could be reviewed against working code. RFC-0002's
 decision register still reads **D3, D5, D6, D7, D8 and D9 OPEN**. Every value is
 a change point, not a decision; `docs/flows/account-holder-lookup.md` § Status
@@ -172,8 +180,11 @@ well: since the PR #396 review an MCP tool call runs as the token's own
 principal with the payments scopes only, so a nominated-payee `create_refund`
 was always `403`; on `master` before the PR it needed `payments:write` alone). An
 implicit `HEAD` to the route is held to the `GET` policy. A credential without
-the scope is `403` — `forbidden` in `/v1`'s envelope (`ApiError::Forbidden`);
-the flow page's "`insufficient_scope`" is the MCP transport's wording. Operators must add it to each
+the scope is `403`, `invalid_request_error` / `forbidden` — `/v1`'s one
+`ApiError::Forbidden`, which names no scope. There is no `insufficient_scope`
+on `/v1`; that code exists only on `/mcp/v1`, for a token with no MCP scope.
+_(The flow page said `insufficient_scope` on the pull-request branch; vpay#404
+corrected it.)_ Operators must add it to each
 `merchant_clients[].scopes` that needs it **before** upgrading — see the
 `vpay-ops` skill's `privacy:` section.
 
@@ -183,7 +194,7 @@ by the route, nominated-payee refunds and MCP `create_refund` — so a client's
 `/v1` token and its MCP calls spend one budget. Over budget: `429`,
 `rate_limit_error` / `rate_limit`, `Retry-After` = seconds left in the window.
 A database failure while counting is a `500`. Since PR #396 each row stores its
-own `window_expires_at` (the follow-up migration), so a 60 s lookup sweep no
+own `window_expires_at` (migration `0061`; the journal is `0060`), so a 60 s lookup sweep no
 longer deletes staff sign-in counters still inside their 300 s window. **Still
 not a substitute for ingress limiting**: it bounds one key, not a merchant with
 many keys or many merchants. Neither merchant SDK surfaces `Retry-After`
@@ -324,7 +335,7 @@ which rails a deployment has configured but switched off.
 because nothing is stored or read.~~ It was bound so that the auth middleware
 must have resolved a tenant (a failure there is a `500`, fail-closed) and so
 the value an audit log would key on was in hand the day that decision was
-taken. Since PR #396's carry it is used: the tenant keys the `audit_events`
+taken. Since vpay#404 it is used: the tenant keys the `audit_events`
 row and the HMAC input, and the handler also takes a `CallerCredential` (the
 signer's thumbprint or the token's `client_id`) for the scope check and the
 rate-limit budget. Deleting either parameter now breaks the controls, not just

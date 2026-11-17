@@ -1,14 +1,14 @@
-# The seventeen gates
+# The eighteen gates
 
-_The 2026-10-30 note under "The marker convention" was read against vpay
-`10f42747` (2026-10-30); the gate count (seventeen) was re-checked there
-against the `verify` recipe and has not moved. Otherwise verified against vpay `67c90ea5` (2026-09-20) — the merge of
+_The gate count (eighteen) and § 18 were read against vpay `c3358352`
+(2026-11-17, after vpay#397). The 2026-10-30 note under "The marker
+convention" was read against vpay `10f42747` (2026-10-30). Otherwise verified against vpay `67c90ea5` (2026-09-20) — the merge of
 [#233](https://github.com/vaam-apps/vpay/pull/233), on top of `0799a8d2`
 (2026-09-18, #187), with #197, #200, #204 and #206 beneath that. Version-
 sensitive claims carry the date they became true — see
 [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
-**Seventeen as of 2026-10-27.** ~~Sixteen.~~ ~~Fifteen.~~ ~~Fourteen.~~ ~~Twelve.~~ It was
+**Eighteen as of 2026-11-17.** ~~Seventeen.~~ ~~Sixteen.~~ ~~Fifteen.~~ ~~Fourteen.~~ ~~Twelve.~~ It was
 twelve until 2026-09-17, when [#201](https://github.com/vaam-apps/vpay/pull/201)
 appended `verify-versions`; [#187](https://github.com/vaam-apps/vpay/pull/187)
 appended `verify-privacy-inventory` and made it fourteen on 2026-09-18;
@@ -18,7 +18,9 @@ and makes it fifteen on 2026-09-20; issue #150 / ADR-0034 appends
 [#377](https://github.com/vaam-apps/vpay/pull/377) (ADR-0033 D8) appends
 `verify-mcp-parity` and makes it seventeen on 2026-10-27. #377 had added it as
 the sixteenth on a branch that predated #356, and renumbered itself on merge,
-by the rule below.
+by the rule below. [#397](https://github.com/vaam-apps/vpay/pull/397) (issue
+#170) appends `verify-adr-numbers` and makes it eighteen; it merged on
+2026-11-17, and its own docs date the gate 2026-11-16, the day it was written.
 
 > **Read the recipe, not the prose — and here is the authority rule caught in
 > the act.** Measured on `master` `aeb9e242` (2026-09-18), a full day after
@@ -34,17 +36,18 @@ by the rule below.
 > a live defect. `AGENTS.md` predicted it about itself: "it has gone stale at
 > nearly every count it has carried".
 
-`just verify` runs seventeen gates and then one report:
+`just verify` runs eighteen gates and then one report:
 
 ```text
 verify: verify-no-mocks verify-status verify-errors verify-sdk-parity \
         verify-links verify-npm-scope check-schema verify-serde \
         verify-repositories verify-toolchain verify-ui verify-migrations \
         verify-versions verify-privacy-inventory verify-doc-counts \
-        verify-security-inventory verify-mcp-parity verify-docs
+        verify-security-inventory verify-mcp-parity verify-adr-numbers \
+        verify-docs
 ```
 
-Fifteen are `cargo xtask` subcommands implemented in `.xtask/src/main.rs`;
+Sixteen are `cargo xtask` subcommands implemented in `.xtask/src/main.rs`;
 `check-schema` and `verify-ui` are shell in the `justfile`. CI's `self-checks`
 job runs exactly this list in exactly this order, and that job has no
 `changes` gating — **it runs on every push and every pull request**.
@@ -741,7 +744,9 @@ is a hard failure, not a skip:**
 `verify-docs` exactly the way the recipe's own closing `@echo` does — so
 `docs/status.md`'s "the gate tally" sentence in **vpay itself** (not this
 skills repository, which `verify-doc-counts` never reads) carries
-`count:verify-gates` and must read seventeen (sixteen until 2026-10-27).
+`count:verify-gates` and must read eighteen (seventeen until vpay#397 on
+2026-11-17, sixteen until 2026-10-27). #397 moved `AGENTS.md`, `CLAUDE.md`,
+`docs/status.md` and `docs/status/gates.md` with it.
 
 **Frozen archives are skipped entirely, by directory name:** `docs/plans/`
 and `docs/status/verification/` — dated records where a number that was true
@@ -785,7 +790,7 @@ the `# Errors` and `# Panics` sections** that ADR-0011 and rustdoc depend on. A
 number that is read is worth more here than a number that is enforced.
 
 It is last so the report a human reads is the final thing on the terminal. The
-`verify: ok` line the recipe prints afterwards means the seventeen gates passed
+`verify: ok` line the recipe prints afterwards means the eighteen gates passed
 and says nothing about the numbers `verify-docs` printed.
 
 ## 16. `verify-security-inventory`
@@ -845,7 +850,30 @@ one `CARGO_TARGET_DIR`, `cargo xtask verify-mcp-parity` can run the other
 worktree's stale xtask binary and answer `xtask: unknown command`. Touch
 `.xtask/src/main.rs` or use separate target dirs.
 
-## `verify-citations` — a gate, but not one of the seventeen
+## 18. `verify-adr-numbers`
+
+_The eighteenth gate, merged 2026-11-17 (vaam-apps/vpay#397, issue #170; dated
+2026-11-16 in vpay's own docs). Read at `c3358352`._
+
+**Refuses:** a file in `docs/adr/` whose name is not `NNNN-slug.md` — four
+ASCII digits, a hyphen, a slug of lowercase ASCII letters, digits and
+hyphens, `.md`; two files sharing a leading `NNNN` (the error names **every**
+colliding file); and an empty `docs/adr/`. **Gaps are allowed** — a withdrawn
+number need not be reused.
+
+**Implements:** `cargo xtask verify-adr-numbers`, `verify_adr_numbers` in
+`.xtask/src/main.rs`, with four unit tests in `adr_numbers_tests` (valid
+names with gaps, a duplicate, a malformed name, an empty directory). CI's
+`self-checks` job runs it as its own step through `just verify-adr-numbers`.
+
+**How you trip it:** two branches each writing "the next ADR" with the same
+number — the ADR-0018 collision issue #170 was filed about — or a file named
+`0038_Foo.md`. Whichever lands second renumbers, exactly as gates do above.
+It checks names only, and **every** regular file in `docs/adr/` is held to the
+pattern — so a `README.md` or an index file dropped into that directory fails
+it (there is none at `c3358352`). It does not read an ADR or its status.
+
+## `verify-citations` — a gate, but not one of the eighteen
 
 `just docs-check-citations` → `cargo xtask verify-citations`. ~~The thirteenth
 gate.~~ **Renumbered 2026-09-18:** `verify-versions` and
@@ -855,8 +883,10 @@ one was never in the list they are in anyway. **Renumbered again 2026-09-20:**
 report, not a gate — to being the **sixteenth** thing `just verify` prints,
 and `verify-citations` to the **seventeenth**. **And again 2026-10-27:**
 `verify-mcp-parity` is the seventeenth gate, so `verify-docs` is the eighteenth
-thing printed and `verify-citations` the nineteenth, as vpay's `justfile`
-header says. It is **not** in `just verify` and **not** in `just ci`,
+thing printed and `verify-citations` the nineteenth. **And again 2026-11-17
+(vpay#397):** `verify-adr-numbers` is the eighteenth gate, `verify-docs` the
+nineteenth thing printed and `verify-citations` the twentieth, as vpay's
+`justfile` header says. It is **not** in `just verify` and **not** in `just ci`,
 because it needs the network and an authenticated `gh`. It is deliberately
 excluded from `cargo xtask verify-all` too.
 

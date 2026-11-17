@@ -10,8 +10,8 @@ description: vpay's persistence layer — `backends/migrations/*.sql` as the aut
 > `MODEL_TABLES`); against `f885170c` (2026-10-27) for the lines vaam-apps/vpay#383
 > changed (the staff models, migrations `0055`–`0057`, the drift constants);
 > the rest of this page was last verified against `87166eaf` (2026-10-09). The
-> 2026-11-17 notes on migrations `0059`/`0060` were read on two unmerged vpay
-> branches (issue #96, PR #396's carry).
+> 2026-11-17 notes on migrations `0059`–`0061` were re-read at `c3358352` (vpay
+> `master` after #402–#404); the `0062` note was read on the unmerged `batch4`.
 > Version-sensitive claims below carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -122,14 +122,14 @@ re-measured. **221 over 30, 20 unmappable, since migration `0058`
 (vaam-apps/vpay#388, measured 2026-10-28, merged 2026-10-29)**: the three
 tables' 13 lines come back and `credentials_password_and_totp_are_retired`'s
 one goes (209 + 13 − 1), read off the constants and their note at
-`10f42747`, not re-measured here. _(2026-11-17, unmerged: PR #396's carry sets
-the constants to **232 over 31** for `audit_events` and `window_expires_at`,
-and adds `AuditEvent` as the 24th `MODEL_TABLES` entry — an `@@internal`
-create/update/delete model with no `@@allow` arm, so the generated layer reads
-no rows and offers no writes; `vpay_db::audit_events` is hand-written SQL.
-Issue #96's branch leaves them at 221/30 — its change is a CHECK value and a
-`.cstack` enum label (`ChargeState.requires_review`), which the drift report
-does not count. Re-read both after they merge.)_ `0053`'s three lines are `charges.method_type`
+`10f42747`, not re-measured here. _(2026-11-17, verified at `c3358352`: **232 over 31, 20 unmappable, since
+migrations `0060`/`0061`** (vpay#404) for `audit_events` and
+`window_expires_at`, and `AuditEvent` is the 24th `MODEL_TABLES` entry — an
+`@@internal` create/update/delete model with no `@@allow` arm, so the generated
+layer reads no rows and offers no writes; `vpay_db::audit_events` is
+hand-written SQL. `0059` (vpay#403) moved nothing: a CHECK value and a `.cstack`
+enum label (`ChargeState.requires_review`) the report does not count. `0062`
+(batch4, pending) moves nothing either.)_ `0053`'s three lines are `charges.method_type`
 undeclared, its CHECK `method_type_is_known`, and the undeclared table
 `routing_decisions`, whose `considered` is the 20th unmappable column (`jsonb`).
 **212 over 28 since migration `0054` (2026-10-24), measured.** The change was
@@ -220,22 +220,27 @@ paid_out_of_band)` at `invoices_payment_record_key`, a six-column `UNIQUE`
   before `0056` runs and importing after `0058` (vpay
   `docs/runbooks/deploy-and-rollback.md` § "Keeping staff passwords across
   0056 and 0058"); otherwise those staff enrol again. The next is `0059`.)_
-  _(2026-11-17: **two open vpay branches both number their migration `0059`,
-  and whichever merges second must renumber before it ships.** Issue #96's is
-  `0059_charges-requires-review.sql` (adds `requires_review` to
-  `charges_state_enum_check`, keeps it out of `charges_live_idx`; see the
-  `vpay-payments` skill). PR #396's carry has
-  `0059_audit-events-and-lookup-rate-limits.sql` (`audit_events`, with
-  triggers that refuse `UPDATE`/`DELETE`/`TRUNCATE`, and the
-  `lookup:merchant_key` scope on `rate_limit_windows_scope_is_known`) **and**
-  `0060_rate-limit-window-expiry.sql` (`rate_limit_windows.window_expires_at`:
-  add nullable, backfill start + 300 s, `SET NOT NULL`). PR #396 edited its
-  `0059`/`0060` in place during review, which the rule below permits only
-  because neither had shipped. Renumbering an unshipped file is the same
-  case — renumbering a **shipped** one is not. Do not cite either file by
-  number until it is on `master`; `postgres_smoke.rs`'s applied-count tripwire
-  (58 → 59 on one branch, 58 → 60 on the other), `MANIFEST.sha256` and
-  `backends/migrations/README.md`'s count collide too.)_
+  _(2026-11-17, verified at `c3358352`: `0059` is `charges-requires-review`
+  (issue #96, vpay#403) — `requires_review` added to
+  `charges_state_enum_check` and kept out of `charges_live_idx`; see the
+  `vpay-payments` skill. `0060` is `audit-events-and-lookup-rate-limits` and
+  `0061` is `rate-limit-window-expiry` (vpay#404, vpay#404):
+  `audit_events` with triggers that refuse `UPDATE`/`DELETE`/`TRUNCATE`, the
+  `lookup:merchant_key` scope on `rate_limit_windows_scope_is_known`, and
+  `rate_limit_windows.window_expires_at` (add nullable, backfill start + 300 s,
+  `SET NOT NULL`). **Both branches had numbered their first file `0059`;
+  vpay#404 renumbered its two before merging** — the rule below permits
+  renaming or editing a file that has never shipped, and only that. 61 files
+  on `master`. ~~The next is `0059`.~~)_
+  _(Pending in vpay's `batch4` when written: `0062` is
+  `charges-payer-ref-masked` (issue #79 item 4). It clears any
+  `payer_ref_masked` that is not the derived mask, backfills the mask for rows
+  whose `payer_ref` is a normalised 8–15-digit number, and adds
+  `payer_ref_masked_derives_from_payer_ref` — a mask is `NULL` or exactly the
+  mask of its own row's number. Its validation scans `charges` under an
+  `ACCESS EXCLUSIVE` lock, and the migration says so. A two-column CHECK, so the
+  drift report cannot see it; `postgres_smoke.rs` lists it by name. The next
+  after it is `0063`.)_
 - **The ADD COLUMN backfills with a DEFAULT and drops it in the next
   statement** (`0042`'s device), which is why `model Invoice.paid_out_of_band`
   carries no `@default` and costs the drift nothing.

@@ -1,5 +1,54 @@
 # Changelog
 
+## 2026-11-17 (later) — vpay#402–#404 merged, the eighteenth gate, and `batch4`'s telemetry sweep and payer mask
+
+Re-read against vpay `c3358352` (`master` after vpay#402, #397, #403 and
+#404), the head of vpay#405 (`5c39baf9`, the #387 carry, docs only, unmerged)
+and vpay's unmerged `batch4` (`6e55317c`, `f4a70876`). The entry below this one
+was written before those merged; what it said about branches is corrected
+here rather than rewritten there.
+
+- **Branch notes become merge notes.** Every "read on its branch before
+  merge" note for vpay#402, #403 and #404 now names `c3358352`. The branch
+  versions differed from `master` only in vpay#404's doc corrections, which are
+  folded in: every `mtn_momo`/`orange_money` refund needs
+  `account_holders:read`; the limiter keys are `attempts` and
+  `window_seconds`; `/v1`'s 403 is `forbidden`, and `insufficient_scope`
+  exists only on `/mcp/v1`.
+- **`vpay-data-layer`, `vpay-payments`, `vpay-customers`:** vpay#404
+  renumbered its migrations to `0060_audit-events-and-lookup-rate-limits.sql`
+  and `0061_rate-limit-window-expiry.sql`; #96 kept `0059`. 61 on `master`,
+  drift 232/31/20, 24 `MODEL_TABLES`. The "two `0059`s" note is replaced.
+- **`vpay-tooling`, `vpay`, `vpay-docs-status`, README:** `verify-adr-numbers`
+  (vpay#397, issue #170) is the eighteenth gate — a new row, a new § 18 in
+  `gates.md`, and every "seventeen" moved with its history. This skills
+  repository's previous entry said the gate count was unchanged; it was
+  measured on branches that predated #397.
+- **`vpay-tooling` `references/sdlc.md`:** at vpay#405's head the page's
+  advisory lists match the files (braces and picomatch; five Rust entries),
+  but it calls three **pending** entries "accepted". The "they disagree"
+  section is replaced.
+- **`batch4` (pending), issue #147:** `ProviderError::Rejected` gains
+  `context` and its `Display` drops the rail's words;
+  `credentials_refused`, `malformed_json`, `http::redact_url`, Orange's
+  `wire::ErrorEnvelope`; webhook excerpts and the exhausted alert print an
+  origin; `docs/runbooks/privacy-telemetry.md` with every retention and owner
+  undecided — in `vpay-provider-adapters`, `vpay-conventions`, `vpay-mtn-momo`,
+  `vpay-orange-money`, `vpay-webhooks` and `vpay-ops`.
+- **`batch4` (pending), issue #79 item 4:** `charges.payer_ref_masked` is
+  written (`+237••••67`, push rails only), backfilled and constrained by
+  migration `0062`; the log mask `+2376••••NNN` stays separate until RFC-0002
+  D3; the dashboard still renders nothing from `/dash/v1` — in
+  `vpay-customers`, `vpay-dashboard`, `vpay-data-layer` and
+  `vpay-troubleshooting`.
+- **`coverage.json`:** claims migrations `0059`–`0062` and
+  `docs/runbooks/privacy-telemetry.md`. Against `master` alone the gate fails
+  on `0062`, the runbook and the two #387 pages until `batch4` and vpay#405
+  merge.
+
+Not done: no vpay test or gate was run; names were checked to exist on the ref
+cited. Stamps are unchanged; each re-read passage names its ref.
+
 ## 2026-11-17 — the popup's two channels, `requires_review`, the invoice number, `account_holders:read`, and the SDLC pages
 
 Read against vpay `44b19d69` (`master`, 2026-11-17: vaam-apps/vpay#399 and

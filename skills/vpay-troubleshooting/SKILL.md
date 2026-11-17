@@ -7,8 +7,8 @@ description: A symptom index for vpay — the exact error text or observed behav
 
 > **Verified against vpay `87166eaf` (2026-10-09); the dashboard row of the
 > index at `10f42747` (2026-10-30).** The 2026-11-17 rows (the advisories, the
-> `account_holders:read` `403`) were read on vpay's branches for vpay#402 and PR
-> #396's carry before they merged. Version-sensitive claims below
+> `account_holders:read` `403`) were re-read at `c3358352` (vpay#402 and #404
+> on `master`). Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -148,8 +148,7 @@ checksum, which changes nothing and reports success.
 
 ### `403` on `/v1/account_holders`, or on a refund with a `destination`, after an upgrade
 
-_Since PR #396's carry (issue #56, 2026-11-17; read on its branch before
-merge)._ **Cause:** the credential lacks `account_holders:read`. No payment
+_Since vpay#404 (issue #56, 2026-11-17)._ **Cause:** the credential lacks `account_holders:read`. No payment
 scope implies it, and it was enforced from the first request with no migration
 window (provisional, RFC-0002 D5). It applies to every refund that names a
 `destination` — every MTN and Orange refund — and to MCP `create_refund` with

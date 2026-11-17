@@ -169,6 +169,20 @@ grammar, you are changing four things: the signer, both verifiers, and
 **state row read by humans**, not a log. That is why the response excerpt is
 512 characters of something recognisable rather than a full body.
 
+**The endpoint URL in an excerpt and in the alert is its origin (pending in
+vpay's `batch4`, issue #147, 2026-11-17).** An endpoint URL may carry a
+receiver's credential in its query — whether it may is RFC-0002 D4, open, so
+vpay still accepts and stores it in `webhook_deliveries.url`. What stops is the
+repetition: `transport_excerpt` passes the reqwest error through
+`vpay_provider::http::redact_url` (`no response: error sending request for url
+(https://host/): …`), and the `exhausted` alert's `url` field is
+`SafeUrl(https://host)`. `an_exhausted_delivery_never_logs_or_stores_the_endpoints_query`
+proves both against a real Postgres. **Rows and log lines written before that
+build still hold the whole URL**; vpay's `docs/runbooks/privacy-telemetry.md`
+gives the read-only SQL to find them, and what to do with them is undecided
+(RFC-0002 D9/D13). A livemode webhook URL refused at boot is still printed as
+written.
+
 **The excerpt is personal data, and an erasure rewrites it.** A receiver that
 echoes what it was sent has put the payer's details in it. Since 2026-09-19
 (vaam-apps/vpay#211) a customer erasure replaces `response_excerpt` with

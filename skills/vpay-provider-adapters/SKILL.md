@@ -21,7 +21,9 @@ description: The vpay provider port (`vpay-provider`) and how to add a payment r
 > What they say about Notch Pay's 2026-10-24 webhooks (the
 > `default_callback_registration` bullet, the RFC-0012 and RFC-0013 entries
 > and the RFC-0014 heading) was read against vpay `4df5e0d2` (2026-10-24), the
-> merge of vaam-apps/vpay#364.
+> merge of vaam-apps/vpay#364. The 2026-11-17 bullet on what an error may say
+> about a payer was read on vpay's unmerged `batch4` (`6e55317c`); restamp when
+> it lands.
 
 One trait, `vpay_provider::ProviderAdapter`, in
 `backends/crates/vpay-provider/src/lib.rs`. The core owns the payment
@@ -266,6 +268,39 @@ fn accepted_exposure(&self) -> Option<AcceptedExposure>; // default: None — si
 - Only `ProviderError::Rejected` says the money did not move. `Transport`,
   `Malformed` and `NeedsReconciliation` leave the charge's fate **unknown**,
   which is the distinction the whole port is arranged around.
+- **What an error may say about a payer (issue #147, RFC-0002 PR 4; pending in
+  vpay's `batch4`, 2026-11-17).** An error's `Display` reaches every
+  `ApiError`/`JobError` log line, `jobs.last_error` and the worker's
+  `job failed:` line — copies the personal-data inventory does not govern — so
+  after that change:
+  - `Rejected` is `{ code, message, context }` and its `Display` is
+    `rail rejected the request: <code>` **without the rail's words**. `message`
+    (the rail's text, `rail_failure_text`) still reaches `charges.failure_raw` /
+    `refunds.failure_raw`. `context: Option<String>` is the **adapter's own**
+    sentence and is in `Display` — never rail-authored text, never a payer
+    identifier. A refusal of this deployment's own keys is built with
+    `ProviderError::credentials_refused("<rail>: the rail refused our
+credentials (HTTP 403)")`, so the `ProviderAccountBlocked` page still says
+    which rail and 401 or 403. A new adapter writes `context: None` for a plain
+    decline and uses that constructor for 401/403 — do not put the rail's body
+    in `context`.
+  - A rail URL reaches a `Display` chain as its **origin** only:
+    `vpay_provider::http::redact_url`, applied in `RailFailure`'s
+    (now hand-written) `From<reqwest::Error>` and in `HttpBodyError::read`.
+    MTN's lookup path carries the MSISDN. Build `Transport`/`Malformed` through
+    `transport_from` / `malformed_from` (which take `impl Into<RailFailure>`),
+    never by naming the variant, or the redaction is skipped.
+  - A body serde could not decode is `ProviderError::malformed_json(context,
+&err)`, not `format!("…: {e}")` — serde quotes the scalar it choked on. A
+    rail error body in a `Transport`/`Config`/`Malformed` context keeps the
+    status, the length and only a code that `http::rail_token` admits (a
+    token, at most four digits), never free text.
+  - Eighteen canary tests each assert the protected literal absent **and** the
+    correlation present. There is **no static scanner** over `tracing!` sites:
+    a new `tracing::info!(msisdn = %raw)` passes every gate. vpay's
+    `docs/runbooks/privacy-telemetry.md` is the operator's statement of what
+    each telemetry surface may hold; every retention period and owner in it is
+    "undecided (RFC-0002 Dn)".
 - **`Malformed` versus `NeedsReconciliation`** (the seventh variant, since
   2026-10-23, vaam-apps/vpay#313). `Malformed` is an answer the adapter could
   not read, which a later read may fix; the poll ladder retries it at `Warn`.

@@ -55,8 +55,8 @@ rule exists.
 `payment_intent.created` and `payment_intent.processing` are **progress**, and
 vpay writes events for terminal transitions only.
 
-**And one transition that writes nothing, deliberately (issue #96, 2026-11-17,
-read on its branch before merge).** When a rail reports a charge paid after a
+**And one transition that writes nothing, deliberately (issue #96, vpay#403,
+2026-11-17).** When a rail reports a charge paid after a
 racing cancel already moved its intent to `canceled`, the settlement parks the
 charge in `requires_review` and writes **no event**: the merchant's one
 terminal event for that intent is still `payment_intent.canceled`, and no

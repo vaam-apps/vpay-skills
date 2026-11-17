@@ -359,9 +359,9 @@ Boot logs one `info` line, `authentication methods`, with `permitted`, `served`
 and `explicit`. `GET /.well-known/vpay-auth` answers the served list,
 unauthenticated, on every process.
 
-## `privacy:` and the `account_holders:read` scope (issue #56, PR #396's carry, 2026-11-17)
+## `privacy:` and the `account_holders:read` scope (issue #56, vpay#404, 2026-11-17)
 
-_Read on that pull request's branch before it merged; every value below is
+_Re-read at `c3358352` (vpay `master` after #404). Every value below is
 **PROVISIONAL pending RFC-0002 D3/D5/D6** and says so in the shipped YAML._
 
 ```yaml
@@ -372,9 +372,10 @@ privacy:
     window_seconds: 60
 ```
 
-- **The key is `attempts`.** `docs/flows/configuration.md`'s example on that
-  branch spells it `max_attempts`; `vpay_config::RateLimitPolicy` reads
-  `attempts`, as all three shipped overlays do. Trust the struct.
+- **The keys are `attempts` and `window_seconds`**, both at least 1 —
+  `vpay_config::RateLimitPolicy`, the type the staff sign-in limits use too.
+  _(`docs/flows/configuration.md` spelled it `max_attempts` on the pull-request
+  branch; vpay#404 corrected it before merge.)_
 - **Boot refusals (exit `78`):** a `lookup_audit_salt` with no
   `lookup_rate_limit` is `ConfigError::MissingPrivacyLookupRateLimit`; under
   `livemode` an empty salt, or a `lookup_rate_limit` with no salt, is

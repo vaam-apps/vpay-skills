@@ -118,7 +118,8 @@
         "backends/migrations/0005_create-ledger.sql",
         "backends/migrations/0017_create-refunds.sql",
         "backends/migrations/0031_refunds-fee.sql",
-        "docs/runbooks/charges-requires-review.md"
+        "docs/runbooks/charges-requires-review.md",
+        "backends/migrations/0059_charges-requires-review.sql"
       ]
     },
     "vpay-merchant-api": {
@@ -252,7 +253,8 @@
         "docs/adr/0026-the-database-clock-schedules-jobs.md",
         "backends/crates/vpay-db/src/jobs.rs",
         "backends/crates/vpay-db/src/checkout_sessions.rs",
-        "docs/reference/vpay-db/jobs.md"
+        "docs/reference/vpay-db/jobs.md",
+        "backends/migrations/0062_charges-payer-ref-masked.sql"
       ]
     },
     "vpay-customers": {
@@ -275,7 +277,9 @@
         "docs/flows/customers/retention-sweep.md",
         "docs/adr/0025-session-customer-onto-intent.md",
         "docs/adr/0027-erasure-reaches-through-checkout-sessions.md",
-        "backends/crates/vpay-db/src/audit_events.rs"
+        "backends/crates/vpay-db/src/audit_events.rs",
+        "backends/migrations/0060_audit-events-and-lookup-rate-limits.sql",
+        "backends/migrations/0061_rate-limit-window-expiry.sql"
       ]
     },
     "vpay-invoices": {
@@ -391,7 +395,8 @@
         "backends/Dockerfile",
         "backends/crates/vpay-config",
         "backends/apps/vpay-server",
-        ".github/workflows/release.yml"
+        ".github/workflows/release.yml",
+        "docs/runbooks/privacy-telemetry.md"
       ]
     }
   },

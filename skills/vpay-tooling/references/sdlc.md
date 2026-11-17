@@ -1,7 +1,7 @@
 # `docs/flows/sdlc.md` and `docs/flows/emergency-changes.md`
 
-_Read on vpay's `impl/387-sdlc` branch (issue #387, refs #151) on 2026-11-17,
-before it merged; restamp against `master` once it has. Version-sensitive
+_Read on the head of vpay#405 (`5c39baf9`, issue #387, refs #151) on
+2026-11-17, before it merged; restamp against `master` once it has. Version-sensitive
 claims carry the date they became true — see
 [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
@@ -31,29 +31,30 @@ never one of these pages.**
 The page lists the security-relevant `verify` gates by name and calls the set
 "the gates the `verify` recipe lists" rather than a number, so it does not go
 stale when a gate is added — the count is in `AGENTS.md` and [gates.md](gates.md)
-(17 as of 2026-10-27, unchanged by this batch).
+(eighteen since vpay#397 merged on 2026-11-17 with `verify-adr-numbers`; its own docs date the gate 2026-11-16).
 
-### Its advisory lists disagree with the files — trust the files
+### Its advisory lists — "accepted" and "pending" are different words there
 
-`sdlc.md` names the accepted advisories. Written on its branch, the lists
-already disagree with `master` and with the other changes landing the same day:
+As of the head of vpay#405 (`5c39baf9`), the page's lists match the files on
+`master` (`c3358352`):
 
-- **Web.** It lists three accepted: `GHSA-vfj7-8cjw-p6xm` (braces, maintainer
-  decision 2026-10-09), `GHSA-3g3m-2fjr-6pw4` (glob) and `GHSA-g3hv-75wg-m249`
-  (minimatch), and its branch adds the last two to `ignoreGhsas`. But
-  vaam-apps/vpay#400, on `master` since 2026-11-17, **cleared glob and minimatch
-  by overrides with nothing ignored**, and vpay#402 adds
-  `GHSA-fc5q-39xc-vjpf` (picomatch, pending acceptance). The two branches also
-  conflict in `pnpm-workspace.yaml`.
-- **Rust.** It lists `RUSTSEC-2023-0071`, `RUSTSEC-2024-0449` and
-  `RUSTSEC-2026-0387`. vpay#402 adds `RUSTSEC-2026-0543` and
-  `RUSTSEC-2026-0440`, both pending the maintainer's acceptance (PR #396's
-  carry adds `-0440` too).
+- **Web** — `GHSA-vfj7-8cjw-p6xm` (braces, maintainer decision 2026-10-09) and
+  `GHSA-fc5q-39xc-vjpf` (picomatch, added 2026-11-17 in vpay#402, **pending the
+  maintainer's acceptance**). The glob and minimatch advisories an earlier
+  draft listed were cleared by overrides in vpay#400 and are no longer ignored.
+- **Rust** — five in `deny.toml`: `RUSTSEC-2023-0071`, `RUSTSEC-2024-0449`
+  and `RUSTSEC-2026-0387` under dated maintainer decisions, and
+  `RUSTSEC-2026-0543` (`chrono`) and `RUSTSEC-2026-0440` (`astral-tokio-tar`),
+  "unmaintained" notices added in vpay#402 **pending acceptance**.
 
-Whichever merges last must reconcile the page. Until then
-`pnpm-workspace.yaml`'s `auditConfig.ignoreGhsas` and `deny.toml`'s
-`[advisories] ignore` are the list; the `vpay-troubleshooting` skill's
-`build-toolchain.md` has the 2026-11-17 entries.
+The page's own heading calls all of them "accepted"; three web-and-Rust entries
+have no decision behind them. Write "pending" for those. The files stay the
+authority — `pnpm-workspace.yaml`'s `auditConfig.ignoreGhsas` and `deny.toml`'s
+`[advisories] ignore` — and the `vpay-troubleshooting` skill's
+`build-toolchain.md` has the 2026-11-17 entries. _(Until 2026-11-17 this section
+said the lists disagreed with the files: the first draft on `impl/387-sdlc`
+listed glob and minimatch as accepted and three Rust entries. vpay#405
+reconciled them.)_
 
 ## `emergency-changes.md` — an unexercised procedure
 

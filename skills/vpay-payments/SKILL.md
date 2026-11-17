@@ -6,7 +6,7 @@ description: vpay's payment domain model — the PaymentIntent lifecycle (which 
 # The payment domain
 
 > **Verified against vpay `a33aac61` (2026-09-29).** The 2026-11-17 `requires_review`
-> passages were read on vpay's issue #96 branch before it merged. Version-sensitive claims below
+> passages were re-read at `c3358352` (vpay#403 on `master`). Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).

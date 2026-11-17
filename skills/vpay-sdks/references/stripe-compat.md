@@ -1,8 +1,7 @@
 # Using the official Stripe SDKs against vpay
 
 _The 2026-11-17 invoice section and the `account_holders:read` sentence under
-"Refunds" were read on vpay's branches for issue #91 and PR #396's carry
-before either merged. Verified against vpay `f885170c` (2026-10-27) for the seam and the `401` row; against `a33aac61` (2026-09-29) for the `customer` bullet and `98f4d32b` (2026-10-24, vaam-apps/vpay#363) for the refunds section's first bullet; the rest of this page was last read at `b747e5d5` (2026-09-23). Version-sensitive claims
+"Refunds" were re-read at `c3358352` (vpay `master` after vpay#403 and #404). Verified against vpay `f885170c` (2026-10-27) for the seam and the `401` row; against `a33aac61` (2026-09-29) for the `customer` bullet and `98f4d32b` (2026-10-24, vaam-apps/vpay#363) for the refunds section's first bullet; the rest of this page was last read at `b747e5d5` (2026-09-23). Version-sensitive claims
 carry the date they became true — see [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
 Source of record: `docs/flows/stripe-sdk-compat.md`. Evidence:
@@ -243,7 +242,7 @@ Neither divergence is Stripe's and both are deliberate.
 - **`destination[<rail_code>][msisdn]` is required on `mtn_momo` and
   `orange_money`**, because a refund there is an outbound transfer and needs
   a payee (RFC-0003 § 1); `notchpay` refunds to the instrument that paid and
-  refuses one. **Since issue #56's lookup controls (PR #396's carry, 2026-11-17)
+  refuses one. **Since issue #56's lookup controls (vpay#404, 2026-11-17)
   a refund that carries a `destination` also needs the credential to hold
   `account_holders:read`** — a `payments:write`-only credential is `403`
   before anything else is checked, on `orange_money` too, where no lookup is

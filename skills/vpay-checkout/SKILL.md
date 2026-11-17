@@ -10,9 +10,8 @@ description: The payer-facing checkout page at frontends/apps/checkout — the t
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
 > The 2026-11-17 passages (§ "Who listens on the opener's side" and § "The
-> invoice line") were read on vpay's pull-request branches for issue #65
-> (vpay#402) and issue #91 before either merged; the stamp stays put until they
-> are on `master`.
+> invoice line") were re-read at `c3358352` (vpay `master` after vpay#402 and
+> #403).
 
 `frontends/apps/checkout` (`@vpay/checkout`). Next ~~15.5.25~~ ~~`^15.5.27`~~ **`^15.5.28`** (since 2026-10-23, vaam-apps/vpay#341; `^15.5.27` from 2026-10-09, vaam-apps/vpay#272) App Router, React 19. Process doc: `docs/flows/hosted-checkout.md` plus the four pages under
 `docs/flows/hosted-checkout/`. The surface underneath it is
@@ -160,9 +159,9 @@ not "harden" the shop to `no-referrer`.
 
 **Proven against stub windows only.** `sdks/stripe-js/src/popup.test.ts` is
 **41** cases (27 before #65), every window a stub; no test opens a real popup.
-_(`docs/flows/browser-checkout.md`'s Status and the SDK README still say 39 —
-written before the "reopened `open` session" fix added two; `docs/status/merchant-sdks.md`
-and the verification page say 41.)_ **Not changed:** the Tauri plugin's web
+_(On the pull-request branch `docs/flows/browser-checkout.md` and the SDK
+README said 39, written before the "reopened `open` session" fix added two;
+both say 41 on `master`.)_ **Not changed:** the Tauri plugin's web
 host and the Flutter plugin's web platform still ignore this page's message
 and complete on the fallback only.
 

@@ -6,7 +6,7 @@ description: The vpay worker — the job loop, the poll and delivery ladders, le
 # The vpay worker
 
 > **Verified against vpay `87166eaf` (2026-10-09).** The 2026-11-17 `requires_review`
-> paragraph was read on vpay's issue #96 branch before it merged. Version-sensitive claims below
+> paragraph was re-read at `c3358352` (vpay#403 on `master`). Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -161,7 +161,7 @@ finishes without calling the rail, so the poll job carries the alert from
 there.
 
 **A paid answer on a canceled intent is parked, not retried (issue #96,
-2026-11-17; read on its branch before merge).** When the poll's `succeeded`
+vpay#403, 2026-11-17).** When the poll's `succeeded`
 lands on an intent a racing cancel already moved to `canceled`,
 `vpay_db::settlement` commits the charge as `requires_review` — terminal, not
 live — and has already counted the transition and written the `alert = true`

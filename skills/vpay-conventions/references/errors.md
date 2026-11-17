@@ -220,7 +220,13 @@ port's own rustdoc, and `#![warn(clippy::missing_errors_doc)]` on
   `Unsupported` is on `account_holder_name`, which Orange inherits.
 
 `ProviderError::Rejected` is the seam between system errors and business
-outcomes. A rail declining a charge is not a system failure.
+outcomes. A rail declining a charge is not a system failure. _(Pending in
+vpay's `batch4`, issue #147, 2026-11-17: it gains `context: Option<String>`,
+and its `Display` stops printing the rail's `message` — that text goes to
+`failure_raw` only, because `Display` is what every log line and
+`jobs.last_error` render. `context` is adapter-authored and printed;
+`ProviderError::credentials_refused` builds every 401/403 refusal of our own
+keys. See the `vpay-provider-adapters` skill.)_
 
 **`ProviderError::NeedsReconciliation { context }` is the seam between "ask
 again" and "a person must look"** (vaam-apps/vpay#313, ADR-0011's 2026-10-23

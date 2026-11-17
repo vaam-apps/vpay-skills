@@ -279,7 +279,7 @@ Flutter plugin, that none of its `just` recipes is in `just ci`; and, since
 iOS cannot reach `stopUrlReached`, desktop has no dismissal signal, no deep
 link ever observed, Chrome declined the partial Custom Tab).
 
-**Two rows from the 2026-11-17 batch, read on their branches before merge:**
+**Two rows from the 2026-11-17 batch (vpay#402 and #404, re-read at `c3358352`):**
 
 - **The browser surface (issue #65, vpay#402).** `docs/sdks/parity.md` §
   "The browser surface" names the new `src/popup.test.ts` cases for the popup's
@@ -289,7 +289,7 @@ link ever observed, Chrome declined the partial Custom Tab).
   entry above **stands**: every window is still a stub. The Tauri web host and
   the Flutter web platform were not changed and still complete on the fallback
   only, so do not cite the stripe-js rows as proof for either plugin.
-- **A rate-limited `429` (issue #56, PR #396's carry).** A new merchant row —
+- **A rate-limited `429` (issue #56, vpay#404).** A new merchant row —
   "a rate-limited request exposes `Retry-After` and maps to a typed rate-limit
   error" — is `⛔`/`⛔` dated 2026-10-30: Rust decodes the `429` the lookup
   limiter answers as a generic `Error::Api` and drops the headers; Node maps it

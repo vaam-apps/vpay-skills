@@ -8,7 +8,7 @@ description: The MTN MoMo Cameroon adapter (`vpay-adapter-mtn-momo`) — a push 
 > **Verified against vpay `a33aac61` (2026-09-29).** The 2026-10-21 correction
 > under "Status as of 2026-09-16" was read against vpay `e28292d`
 > (2026-10-21), the merge of vaam-apps/vpay#310. The 2026-11-17 `mtn-sandbox-test`
-> paragraph was read on vpay#402's branch before it merged. Version-sensitive claims below
+> paragraph was re-read at `c3358352` (vpay#402 on `master`). Version-sensitive claims below
 > carry the date they became true — a feature in vpay's `master` may be absent
 > from the tree you are editing. On an older or newer vpay, trust the
 > repository over this page. See [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md).
@@ -220,6 +220,21 @@ reason a 500 is never blindly retried here: `internal_error()` maps these to
 a 500 to `Transport`. A retry loop against them is an outage that looks like
 a flake. All three vocabularies, row by row and with what each is evidenced
 by, are in [references/failure-mapping.md](references/failure-mapping.md).
+
+**What those errors may print (pending in vpay's `batch4`, issue #147,
+2026-11-17).** The `basicuserinfo` URL carries the payer's MSISDN in its path,
+and reqwest's own `Display` ends in `for url (…)`: every transport failure now
+names the rail's **origin** only (`vpay_provider::http::redact_url`, through
+`ProviderError::transport_from`). An unexplained 500 and a refused
+`basicuserinfo` 400 keep the status, MTN's documented error fields and the
+body's length — a `code` only if `http::rail_token` admits it — never free
+text; the decode sites use `ProviderError::malformed_json`, because serde's
+message quotes the value it choked on; 401/403 refusals of our keys are
+`ProviderError::credentials_refused` (both products). A decline's rail text
+still reaches `failure_raw`, not `Display`. Canaries:
+`a_lookup_transport_failure_never_prints_the_payers_number` and four more in
+this crate. The masked-MSISDN log lines (`+2376••••NNN`) were left as they are
+— RFC-0002 D3.
 
 ## `wire.rs` — three rules
 

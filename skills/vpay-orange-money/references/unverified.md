@@ -72,6 +72,18 @@ here at all.
 | 10  | **Whether `FAILED` carries a sub-reason under any field name**                                                                                                                                                                                     | Item 2 restated from the other side. MTN's equivalent question has a published answer — a seventeen-value `ErrorReason.code` enum — and comparing the adapter against it is what closed `payer_declined` on that rail                                                                                                                                                                                                                                                                                                                                                                                      |
 | 11  | **Whether the notification carries `order_id` at all** (added 2026-10-21, RFC-0013 § 11 item 3). `parse_callback` requires it; third-party sources say the body is `status`, `notif_token` and `txnid` only                                        | If so, every real Orange callback is a `400` and a `warn`, and the poll ladder settles the charge anyway: latency, not money. The repair is a design decision (the `notif_token` already kept in `ref_extra`, which nothing can look a charge up by today, or a reference in `notif_url`), not relaxing the check. `docs/flows/adapter-orange-money.md` item 11 has the sources; none that was read is Orange Cameroun                                                                                                                                                                                     |
 
+_Row 1, and what an error may print (pending in vpay's `batch4`, issue #147,
+2026-11-17):_ the raw body of that `Rejected{provider_error}` still reaches
+`charges.failure_raw`, but no longer the error's `Display`, which every log line
+and `jobs.last_error` render. Where a submit 5xx/404 or a status-query 5xx/4xx
+becomes `Transport`/`Config`/`Malformed`, the adapter parses
+`wire::ErrorEnvelope` (`code` and `message` only — `description`, the free
+text, is deliberately not a field) and prints the status, the body's length, a
+`code` only if `vpay_provider::http::rail_token` admits it, and `message` only
+if it is an HTTP reason phrase. `token_url` prints `base_url` through `SafeUrl`.
+Since row 1 is unknown, this envelope shape is the stubs' shape, not Orange's
+documented one.
+
 ## `notif_token` verification is unbuilt — in two places
 
 The adapter returns the received `notif_token` in `ref_extra` and **fails
@@ -130,7 +142,7 @@ If the real page's window turns out to be minutes rather than seconds, **the
 thing that changes is the escalation in `docs/flows/reconciler.md`, not this
 adapter.**
 
-### Two stub fixes, 2026-11-17 (issue #106, vpay#402; read on its branch before merge)
+### Two stub fixes, 2026-11-17 (issue #106, vpay#402)
 
 Again about the stub, and not this adapter — no adapter, handler or ladder
 moved:

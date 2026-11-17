@@ -195,7 +195,7 @@ Remove it when `jsonwebtoken` or authkestra reaches `p256` 0.14 /
 
 ## `cargo deny` — RUSTSEC-2026-0462, -0543 and -0440 (2026-11-17, vpay#402)
 
-_Read on vpay#402's branch before it merged._ `cargo deny check` failed on
+_vpay#402, re-read at `c3358352`._ `cargo deny check` failed on
 `master` that day, and CI showed it only on a pull request touching a Cargo or
 CI file, because the `supply-chain` job is path-filtered.
 
@@ -212,8 +212,8 @@ CI file, because the `supply-chain` job is path-filtered.
   `astral-tokio-tar` reaches only test code (testcontainers 0.27 ←
   `vpay-testkit`); moving to testcontainers 0.28 is its own PR. **Do not
   describe either as accepted.**
-- PR #396's branch adds the same `RUSTSEC-2026-0440` entry independently, so
-  `deny.toml` conflicts when both merge; keep one entry.
+- PR #396's branch had added the same `RUSTSEC-2026-0440` entry
+  independently; `master` after vpay#404 (`c3358352`) carries it once.
 
 The web graph gained the same kind of entry that day: **GHSA-fc5q-39xc-vjpf**
 (`picomatch` ≤ 4.0.7, ReDoS via repeated extglobs, published 2026-11-17 with no

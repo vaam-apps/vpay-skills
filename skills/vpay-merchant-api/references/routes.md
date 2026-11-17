@@ -77,7 +77,7 @@ router's source rather than a description of it.
 | POST                     | `/v1/invoice_items`                    | `invoice_items::create`                             |
 | GET, POST, PATCH, DELETE | `/v1/invoice_items/{id}`               | `invoice_items::{retrieve, update, update, delete}` |
 
-**Scopes (2026-11-17, PR #396's carry; read on its branch before merge).**
+**Scopes (2026-11-17, vpay#404, re-read at `c3358352`).**
 Each row now declares its scope policy beside its methods. Every row takes
 `payments:read` or `payments:write` for `GET`/`HEAD` and `payments:write`
 otherwise — **except `GET /v1/account_holders`, which takes
