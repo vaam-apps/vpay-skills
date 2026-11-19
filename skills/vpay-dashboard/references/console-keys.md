@@ -14,6 +14,14 @@ deployment that serves `human_login` takes a staff token beside the key:
 [human-login.md](human-login.md). See
 [VERSIONING.md](https://github.com/vaam-apps/vpay-skills/blob/main/VERSIONING.md)._
 
+_Re-read against vpay `acafba2c` (2026-11-19) for the passages marked
+**Changed 2026-11-19**: the break-glass is now **bounded and journalled**
+(vpay#152, ADR-0038). `staff pair-key` defaults to a **24-hour** key
+(`--ttl-hours`, at most 30 days) and both `staff pair-key` and `staff
+revoke-key` **require `--operator`** and write to the append-only
+`audit_events` journal (migration `0063`); the life `CHECK` is
+`console_keys_lives_at_most_thirty_days`, not `…_exactly_…`._
+
 The mechanism is `docs/flows/dashboard-auth.md` (rewritten by #383, 244 lines
 as of 2026-10-27, one page with no directory). The decision is
 `docs/adr/0036-the-console-is-a-signed-message-under-a-paired-key.md`
@@ -99,11 +107,16 @@ Both end in `vpay_api::console_keys::store_key`.
    - Answers `201` with `{thumbprint, staff_member_id, expires_at, …}`, `200`
      for a repeat of the same pairing.
 2. **`vpay-server staff pair-key --staff <email|stf_…> --public-key <key>
-[--label …]`**, the break-glass (owner ruling Q2), for an **existing,
-   active** member. No possession proof, because an operator with database
-   access already holds more authority than a pairing grants. It creates no
-   member, changes no flag, and prints one line:
-   `<staff id> <key id> <thumbprint> <expires_at>`.
+[--label …] --operator <identity> [--ttl-hours <n>]`**, the break-glass (owner
+   ruling Q2, bounded and journalled since vpay#152/ADR-0038), for an
+   **existing, active** member. No possession proof, because an operator with
+   database access already holds more authority than a pairing grants. It
+   creates no member, changes no flag, and prints one line:
+   `<staff id> <key id> <thumbprint> <expires_at>`. The key lives **24 hours**
+   by default (`--ttl-hours`, at most the ordinary 30 days), **`--operator` is
+   required**, and the pairing writes a `console_key:pair` row to the
+   append-only `audit_events` journal in the same transaction as the key. Do
+   not drop the operator flag or widen the default: both are the point.
 
 `public_key` is the 65-byte SEC1 **uncompressed** point as base64url. A
 compressed point is refused, not normalised
@@ -139,16 +152,21 @@ These are the rules an agent is most likely to "simplify" away:
 
 ## Revocation, expiry, and the per-request read
 
-- **Revocation has two doors**, both through `console_keys::revoke`:
-  `DELETE /svc/v1/console_keys/{thumbprint}` and
-  `vpay-server staff revoke-key --thumbprint <64 hex>`. Either may revoke
+- **Revocation has two doors**: `DELETE /svc/v1/console_keys/{thumbprint}` runs
+  `console_keys::revoke`;
+  `vpay-server staff revoke-key --thumbprint <64 hex> --operator <identity>`
+  runs `console_keys::revoke_from_operator` and, since vpay#152/ADR-0038,
+  **requires `--operator`** and writes a `console_key:revoke` row to
+  `audit_events` in the same transaction as the revoke. Either may revoke
   **an administrator's** key. The asymmetry with pairing is deliberate:
   revoking grants nothing, and a service that could not cut off the most
   privileged keys would be useless in the incident it exists for. Idempotent
   (`a_revocation_takes_effect_on_the_next_request_and_is_idempotent`).
-- **A key lives exactly 30 days (720 h) from `paired_at`**, enforced by the
-  `CHECK` `console_keys_lives_exactly_thirty_days` and by the read. There is no
-  job to run and no extension. A console pairs again with a **new** key.
+- **A key lives at most 30 days (720 h) from `paired_at`**, enforced by the
+  `CHECK` `console_keys_lives_at_most_thirty_days` and by the read. The ordinary
+  vaam pairing writes exactly 720 hours; `staff pair-key` writes its shorter
+  break-glass life (24 hours by default). There is no job to run and no
+  extension. A console pairs again with a **new** key.
 - **Revocation and expiry take effect on the next request.** The resolver
   (`vpay_api::envelope::console`, `ConsoleKeyResolver`) reads `console_keys`
   on every request and **caches nothing**. Do not add a cache to save the
