@@ -150,17 +150,20 @@ event body never does. See the SKILL.md quote block for why, and for the two
 render sites. _(This said "three render sites" until 2026-09-23. The create
 and the transitions share one, `write_with_event`.)_
 
-## No dashboard screen, no browser test
+## No dashboard screen
 
 `/dash/v1` exposes nothing about this resource — so, since step A, an
-operator can neither see nor record an out-of-band payment. **No Cypress case renders an
-invoice's `hosted_invoice_url`** — the URL is asserted to be a real
-checkout-session URL by the integration suite and the checkout page it points
-at is covered by `checkout.cy.ts`, but nothing has driven a browser from an
-invoice to a paid charge. _(2026-11-17: the blocker issue #91 named for this
-item, #78's hard-coded dashboard port, has been gone since 2026-09-10. The
-case is still unwritten — the D6 slice could not run the compose e2e stack, and
-a browser spec nobody ran would be a claim nothing checked.)_
+operator can neither see nor record an out-of-band payment. **A Cypress case renders an
+invoice's `hosted_invoice_url` and pays (2026-11-20, issue #91 item 5)** —
+`hosted-invoice.cy.ts` mints a finalized invoice, follows the link `pay`
+answered with, pays it on the hosted page and reads the invoice back as
+`paid`. Writing it found that `pay` minted the intent with no
+`payment_method_types`, so the hosted page refused `no_supported_rail`; see
+`constraints-and-transitions.md` § Paying. _(2026-11-17: the blocker issue #91
+named for this item, #78's hard-coded dashboard port, had already been gone
+since 2026-09-10; the case was still unwritten because the D6 slice could not
+run the compose e2e stack, and a browser spec nobody ran would have been a
+claim nothing checked.)_
 
 ## ~~`sdks/stripe-compat` has no invoice cases~~ — six since 2026-11-17
 

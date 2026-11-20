@@ -252,8 +252,9 @@ unauthenticated surface, deliberately (`CheckoutInvoiceObject`'s doc comment in
 `vpay_api::model`). Proven against a real Postgres
 (`the_payers_checkout_reads_name_the_invoice_number_and_nothing_else_about_it`,
 `a_session_whose_intent_pays_no_invoice_renders_no_invoice_member`), in jsdom,
-and by three Storybook stories under the axe run; **no Cypress case follows a
-`hosted_invoice_url`** to a paid charge.
+and by three Storybook stories under the axe run; **a Cypress case follows a
+`hosted_invoice_url`** to a paid charge since 2026-11-20
+(`hosted-invoice.cy.ts`, issue #91 item 5).
 
 **Nothing in that module throws or rejects.** Every call answers a `Result`
 with a closed `CheckoutErrorCode`, because a payment page that renders a thrown
