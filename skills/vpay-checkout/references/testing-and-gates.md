@@ -256,9 +256,12 @@ Two Node-side fixture servers are started by `cypress.config.ts` itself:
   primary/fallback channels, the per-session dedupe in both orders and the
   reopened-`open`-session release — still against stub windows. vpay's own
   message is a literal of `CompleteMessage` there, not this page.)_
-- No Cypress case follows an invoice's `hosted_invoice_url` to a paid charge,
-  so the invoice line (2026-11-17, issue #91) is proven in jsdom, Storybook and
-  the integration suite only.
+- A Cypress case follows an invoice's `hosted_invoice_url` to a paid charge
+  since 2026-11-20 (`hosted-invoice.cy.ts`, issue #91 item 5), so the invoice
+  line is now proven in a real browser as well as in jsdom, Storybook and the
+  integration suite. Writing it found that `pay` minted the intent with no
+  rails and the page refused `no_supported_rail`; see the `vpay-invoices`
+  skill.
 - The `@vaam-apps/vpay-stripe-js` package has never run against a live stack;
   its server is always `src/testing/browser-stub.ts`. The `/v1/browser` routes
   themselves are proven server-side by

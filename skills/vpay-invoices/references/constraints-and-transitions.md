@@ -131,6 +131,21 @@ with a compare-and-swap, and answers the invoice with a `hosted_invoice_url`.
 **No new rail code and no invoice page** — `hosted_invoice_url` is a checkout
 session URL, not a document.
 
+**The intent names the deployment's rails (2026-11-20, issue #91 item 5).**
+`pay` mints the `pi_…` with every enabled rail that settles the invoice's
+currency (`ResourceConfig::enabled_rails_for_currency`), because a payer
+following a link out of an e-mail has no merchant process choosing one, and
+the hosted page renders one rail per code in the intent's
+`payment_method_types`. It used to mint the intent with **none**, and
+`frontends/apps/checkout` refuses a session with zero supported rails
+(`no_supported_rail`) — so the link opened a page that offered no way to pay.
+A currency no enabled rail settles is refused `checkout_not_configured`
+rather than minting that intent. Proven end to end by
+`frontends/tests/e2e/cypress/e2e/hosted-invoice.cy.ts`, and at the API level
+by `a_payer_following_a_hosted_invoice_url_is_offered_the_deployments_rails`
+and `paying_an_invoice_in_a_currency_no_rail_settles_is_refused`
+(`backends/tests/integration/tests/invoices.rs`).
+
 Stripe's `pay` charges a stored payment method; vpay has none on this market,
 so it hands back a page, and `0028`'s `urls_match_ui_mode` requires both URLs
 on a hosted session. They may be configured per merchant (issue #91 D2,
