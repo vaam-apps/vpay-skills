@@ -136,6 +136,17 @@ multi-currency support.
   units overcharges by 100× on a two-decimal currency, with nothing downstream
   able to detect it.
 
+## `charges.provider_account_id` (RFC-0009 Phase A2, 2026-11-20)
+
+Every `charges` row carries `provider_account_id TEXT NOT NULL` (migration `0064`,
+no column `DEFAULT` after backfill). Confirm (`open_charge`) writes
+`vpay_core::DEFAULT_PROVIDER_ACCOUNT_ID` (`"default"`) in the same transaction
+before any rail call, and `prepare`, `submit`, `query_status`,
+`verify_registered_holder`, and `refund` resolve the rail configuration from
+`(provider_code, provider_account_id)` via `vpay_provider::resolve_account_config`
+(failing closed with `ProviderError::Config` on any unknown id, never falling
+back).
+
 ## Refunds: a merchant can create one, and no rail has ever returned money
 
 ~~Nothing writes a `refunds` row. `POST /v1/refunds` is mounted nowhere,

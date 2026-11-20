@@ -297,6 +297,20 @@ so. It moves behind the port the day `ProviderAdapter` grows a
 `required_settings()` hook. **It is the only sanctioned one; do not add a
 second.**
 
+### `deployment.legal_entity` and `merchant_clients[].legal_entity` (RFC-0009 Phase A1)
+
+Until Phase B adds per-account rail credentials, all `merchant_clients` on one
+deployment share the deployment's rail-level accounts (`default`). To prevent
+accidental aggregation across separate companies:
+
+- **Two or more distinct `merchant_id`s**: `deployment.legal_entity` (`{ id, name? }`)
+  is required (`ConfigError::MerchantsWithoutLegalEntity`), and every
+  `merchant_clients[].legal_entity` must be present and equal `deployment.legal_entity.id`
+  (`ConfigError::MerchantOfAnotherLegalEntity`).
+- **One `merchant_id`**: both `legal_entity` fields are optional so existing
+  single-merchant deployments boot unchanged (explicit mismatches and
+  whitespace-only values are still refused).
+
 ## `auth:` — which ways in a deployment permits (since 2026-10-27)
 
 _vaam-apps/vpay#384 and #386, ADR-0037. Source: vpay
